@@ -1,0 +1,18 @@
+digraph "TLidProc"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="TLidProc",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" surface" ,fontname="Helvetica"];
+  Node2 [label="TSurfaceLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$df/dc9/struct_t_surface_layer.html"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" soil" ,fontname="Helvetica"];
+  Node3 [label="TSoilLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$d3/d34/struct_t_soil_layer.html"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" drain" ,fontname="Helvetica"];
+  Node4 [label="TDrainLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$d3/d81/struct_t_drain_layer.html"];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" drainMat" ,fontname="Helvetica"];
+  Node5 [label="TDrainMatLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$d5/d61/struct_t_drain_mat_layer.html"];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" storage" ,fontname="Helvetica"];
+  Node6 [label="TStorageLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$db/d40/struct_t_storage_layer.html"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" pavement" ,fontname="Helvetica"];
+  Node7 [label="TPavementLayer",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$d0/d6b/struct_t_pavement_layer.html"];
+}

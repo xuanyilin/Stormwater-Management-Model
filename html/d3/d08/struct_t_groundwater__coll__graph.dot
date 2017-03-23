@@ -1,0 +1,8 @@
+digraph "TGroundwater"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="TGroundwater",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" stats" ,fontname="Helvetica"];
+  Node2 [label="TGWaterStats",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$db/dd5/struct_t_g_water_stats.html"];
+}
