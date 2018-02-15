@@ -209,7 +209,7 @@ int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___simulation_settings_gaccc66292021
 \begin{DoxyCompactList}\small\item\em Get the current simulation datetime information. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___simulation_settings_ga2539c5004593b674f972e757828a0759}{swmm\+\_\+set\+Simulation\+Date\+Time} (int timetype, char $\ast$dtimestr)
 \begin{DoxyCompactList}\small\item\em Set simulation datetime information. \end{DoxyCompactList}\item 
-int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{toolkit_a_p_i_8h_a9e6fca79cdcaaf6d3bc45aafaf12f553}{swmm\+\_\+get\+Current\+Date\+Time\+Str} (char $\ast$dtimestr)
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga1035b4f45546c1c90da4dafda7e3677d}{swmm\+\_\+get\+Current\+Date\+Time\+Str} (char $\ast$dtimestr)
 \begin{DoxyCompactList}\small\item\em Get the simulation current datetime as a string. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_gacef44d121a8f9a646f4e6f108b494373}{swmm\+\_\+get\+Node\+Result} (int index, int type, double $\ast$result)
 \begin{DoxyCompactList}\small\item\em Get a result value for specified node. \end{DoxyCompactList}\item 
@@ -821,29 +821,4 @@ S\+M\+\_\+\+F\+L\+O\+W\+U\+N\+IT&Flow Units \\
 
 
 Definition at line 77 of file toolkit\+A\+P\+I.\+h.
-
-
-
-\subsection{Function Documentation}
-\mbox{\Hypertarget{toolkit_a_p_i_8h_a9e6fca79cdcaaf6d3bc45aafaf12f553}\label{toolkit_a_p_i_8h_a9e6fca79cdcaaf6d3bc45aafaf12f553}} 
-\index{toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}!swmm\+\_\+get\+Current\+Date\+Time\+Str@{swmm\+\_\+get\+Current\+Date\+Time\+Str}}
-\index{swmm\+\_\+get\+Current\+Date\+Time\+Str@{swmm\+\_\+get\+Current\+Date\+Time\+Str}!toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}}
-\subsubsection{\texorpdfstring{swmm\+\_\+get\+Current\+Date\+Time\+Str()}{swmm\_getCurrentDateTimeStr()}}
-{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Current\+Date\+Time\+Str (\begin{DoxyParamCaption}\item[{char $\ast$}]{dtimestr }\end{DoxyParamCaption})}
-
-
-
-Get the simulation current datetime as a string. 
-
-
-\begin{DoxyParams}[1]{Parameters}
-\mbox{\tt out}  & {\em dtimestr} & The current datetime. dtimestr must be pre-\/allocated by the caller. This will copy 19 characters. \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-Error code 
-\end{DoxyReturn}
-
-
-Definition at line 761 of file toolkit\+A\+P\+I.\+c.
 

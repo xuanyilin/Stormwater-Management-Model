@@ -3,6 +3,8 @@
 \subsection*{Functions}
 \begin{DoxyCompactItemize}
 \item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga1035b4f45546c1c90da4dafda7e3677d}{swmm\+\_\+get\+Current\+Date\+Time\+Str} (char $\ast$dtimestr)
+\begin{DoxyCompactList}\small\item\em Get the simulation current datetime as a string. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_gacef44d121a8f9a646f4e6f108b494373}{swmm\+\_\+get\+Node\+Result} (int index, int type, double $\ast$result)
 \begin{DoxyCompactList}\small\item\em Get a result value for specified node. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga578a49668d519c8b4cdcab2227f8119b}{swmm\+\_\+get\+Link\+Result} (int index, int type, double $\ast$result)
@@ -86,6 +88,28 @@ Error code
 
 
 Definition at line 1170 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group__tkfuncs_ga1035b4f45546c1c90da4dafda7e3677d}\label{group__tkfuncs_ga1035b4f45546c1c90da4dafda7e3677d}} 
+\index{Toolkit Functions@{Toolkit Functions}!swmm\+\_\+get\+Current\+Date\+Time\+Str@{swmm\+\_\+get\+Current\+Date\+Time\+Str}}
+\index{swmm\+\_\+get\+Current\+Date\+Time\+Str@{swmm\+\_\+get\+Current\+Date\+Time\+Str}!Toolkit Functions@{Toolkit Functions}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Current\+Date\+Time\+Str()}{swmm\_getCurrentDateTimeStr()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Current\+Date\+Time\+Str (\begin{DoxyParamCaption}\item[{char $\ast$}]{dtimestr }\end{DoxyParamCaption})}
+
+
+
+Get the simulation current datetime as a string. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt out}  & {\em dtimestr} & The current datetime. dtimestr must be pre-\/allocated by the caller. This will copy 19 characters. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 761 of file toolkit\+A\+P\+I.\+c.
 
 \mbox{\Hypertarget{group__tkfuncs_ga578a49668d519c8b4cdcab2227f8119b}\label{group__tkfuncs_ga578a49668d519c8b4cdcab2227f8119b}} 
 \index{Toolkit Functions@{Toolkit Functions}!swmm\+\_\+get\+Link\+Result@{swmm\+\_\+get\+Link\+Result}}
