@@ -1,0 +1,286 @@
+\hypertarget{swmm5_8h}{}\section{C\+:/\+P\+R\+O\+J\+E\+C\+T\+C\+O\+D\+E/\+Stormwater-\/\+Management-\/\+Model/include/swmm5.h File Reference}
+\label{swmm5_8h}\index{C\+:/\+P\+R\+O\+J\+E\+C\+T\+C\+O\+D\+E/\+Stormwater-\/\+Management-\/\+Model/include/swmm5.\+h@{C\+:/\+P\+R\+O\+J\+E\+C\+T\+C\+O\+D\+E/\+Stormwater-\/\+Management-\/\+Model/include/swmm5.\+h}}
+
+
+Prototypes for S\+W\+M\+M5 functions exported to swmm5.\+dll.  
+
+
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a2d6ad4e7730ec256fcf4e8b33ea03e37}{swmm\+\_\+run} (char $\ast$f1, char $\ast$f2, char $\ast$f3)
+\begin{DoxyCompactList}\small\item\em Opens S\+W\+MM input file, reads in network data, runs, and closes. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a2da4baa38e451ef2a978f1366898948e}{swmm\+\_\+open} (char $\ast$f1, char $\ast$f2, char $\ast$f3)
+\begin{DoxyCompactList}\small\item\em Opens S\+W\+MM input file \& reads in network data. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a06eb7b28597a24f892edfc303e12b2d7}{swmm\+\_\+start} (int save\+Flag)
+\begin{DoxyCompactList}\small\item\em Start S\+W\+MM simulation. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a20624449e77d94d71c0e61d7f58558b5}{swmm\+\_\+step} (double $\ast$elapsed\+Time)
+\begin{DoxyCompactList}\small\item\em Step S\+W\+MM simulation forward. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a8e69e10ab4948522041deb92fc4b43c0}{swmm\+\_\+end} (void)
+\begin{DoxyCompactList}\small\item\em End S\+W\+MM simulation. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_aa19010a1a938610a22ef3e256a1e8604}{swmm\+\_\+report} (void)
+\begin{DoxyCompactList}\small\item\em Write text report file. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a8b30cd53083305a4c245dafc998aac48}{swmm\+\_\+get\+Mass\+Bal\+Err} (float $\ast$runoff\+Err, float $\ast$flow\+Err, float $\ast$qual\+Err)
+\begin{DoxyCompactList}\small\item\em Get routing errors. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a76dac918844d9551a1b39432284b70ef}{swmm\+\_\+close} (void)
+\begin{DoxyCompactList}\small\item\em Frees all memory and files used by S\+W\+MM. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a11f0d88178bd8f033e77975af049c97e}{swmm\+\_\+get\+Version} (void)
+\begin{DoxyCompactList}\small\item\em Get Legacy S\+W\+MM version number. \end{DoxyCompactList}\item 
+void D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a378c08acfacfac155d523945145b4d9e}{swmm\+\_\+get\+Sem\+Version} (char $\ast$semver)
+\begin{DoxyCompactList}\small\item\em Get full semantic version number. \end{DoxyCompactList}\item 
+void D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{swmm5_8h_a14d79cbfe42eba57f2026768f1021aa2}{swmm\+\_\+get\+Version\+Info} (char $\ast$major, char $\ast$minor, char $\ast$patch)
+\begin{DoxyCompactList}\small\item\em Get full semantic version number info. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Prototypes for S\+W\+M\+M5 functions exported to swmm5.\+dll. 
+
+\begin{DoxySeeAlso}{See also}
+\href{http://github.com/openwateranalytics/stormwater-management-model}{\tt http\+://github.\+com/openwateranalytics/stormwater-\/management-\/model}
+\end{DoxySeeAlso}
+\hyperlink{swmm5_8h}{swmm5.\+h} \begin{DoxyDate}{Date}
+03/24/14 (Build 5.\+1.\+001) 
+
+08/01/16 (Build 5.\+1.\+011) 
+\end{DoxyDate}
+\begin{DoxyVersion}{Version}
+5.\+1 
+\end{DoxyVersion}
+\begin{DoxyAuthor}{Authors}
+L. Rossman, Open\+Water\+Analytics members\+: see \href{https://github.com/OpenWaterAnalytics/Stormwater-Management-Model/blob/develop/AUTHORS}{\tt A\+U\+T\+H\+O\+RS}. 
+\end{DoxyAuthor}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{swmm5_8h_a76dac918844d9551a1b39432284b70ef}\label{swmm5_8h_a76dac918844d9551a1b39432284b70ef}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+close@{swmm\+\_\+close}}
+\index{swmm\+\_\+close@{swmm\+\_\+close}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+close()}{swmm\_close()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+close (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Frees all memory and files used by S\+W\+MM. 
+
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 685 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a8e69e10ab4948522041deb92fc4b43c0}\label{swmm5_8h_a8e69e10ab4948522041deb92fc4b43c0}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+end@{swmm\+\_\+end}}
+\index{swmm\+\_\+end@{swmm\+\_\+end}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+end()}{swmm\_end()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+end (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+End S\+W\+MM simulation. 
+
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 626 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a8b30cd53083305a4c245dafc998aac48}\label{swmm5_8h_a8b30cd53083305a4c245dafc998aac48}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+get\+Mass\+Bal\+Err@{swmm\+\_\+get\+Mass\+Bal\+Err}}
+\index{swmm\+\_\+get\+Mass\+Bal\+Err@{swmm\+\_\+get\+Mass\+Bal\+Err}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Mass\+Bal\+Err()}{swmm\_getMassBalErr()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Mass\+Bal\+Err (\begin{DoxyParamCaption}\item[{float $\ast$}]{runoff\+Err,  }\item[{float $\ast$}]{flow\+Err,  }\item[{float $\ast$}]{qual\+Err }\end{DoxyParamCaption})}
+
+
+
+Get routing errors. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt out}  & {\em runoff\+Err} & Runoff routing error \\
+\hline
+\mbox{\tt out}  & {\em flow\+Err} & Flow routing error \\
+\hline
+\mbox{\tt out}  & {\em qual\+Err} & Quality routing error \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 709 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a378c08acfacfac155d523945145b4d9e}\label{swmm5_8h_a378c08acfacfac155d523945145b4d9e}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+get\+Sem\+Version@{swmm\+\_\+get\+Sem\+Version}}
+\index{swmm\+\_\+get\+Sem\+Version@{swmm\+\_\+get\+Sem\+Version}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Sem\+Version()}{swmm\_getSemVersion()}}
+{\footnotesize\ttfamily void D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Sem\+Version (\begin{DoxyParamCaption}\item[{char $\ast$}]{semver }\end{DoxyParamCaption})}
+
+
+
+Get full semantic version number. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt out}  & {\em semver} & sematic version (char array) \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 749 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a11f0d88178bd8f033e77975af049c97e}\label{swmm5_8h_a11f0d88178bd8f033e77975af049c97e}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+get\+Version@{swmm\+\_\+get\+Version}}
+\index{swmm\+\_\+get\+Version@{swmm\+\_\+get\+Version}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Version()}{swmm\_getVersion()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Version (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Get Legacy S\+W\+MM version number. 
+
+\begin{DoxyReturn}{Returns}
+Version 
+\end{DoxyReturn}
+
+
+Definition at line 735 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a14d79cbfe42eba57f2026768f1021aa2}\label{swmm5_8h_a14d79cbfe42eba57f2026768f1021aa2}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+get\+Version\+Info@{swmm\+\_\+get\+Version\+Info}}
+\index{swmm\+\_\+get\+Version\+Info@{swmm\+\_\+get\+Version\+Info}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Version\+Info()}{swmm\_getVersionInfo()}}
+{\footnotesize\ttfamily void D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Version\+Info (\begin{DoxyParamCaption}\item[{char $\ast$}]{major,  }\item[{char $\ast$}]{minor,  }\item[{char $\ast$}]{patch }\end{DoxyParamCaption})}
+
+
+
+Get full semantic version number info. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt out}  & {\em major} & sematic version major number \\
+\hline
+\mbox{\tt out}  & {\em minor} & sematic version minor number \\
+\hline
+\mbox{\tt out}  & {\em patch} & sematic version patch number \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 759 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a2da4baa38e451ef2a978f1366898948e}\label{swmm5_8h_a2da4baa38e451ef2a978f1366898948e}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+open@{swmm\+\_\+open}}
+\index{swmm\+\_\+open@{swmm\+\_\+open}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+open()}{swmm\_open()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+open (\begin{DoxyParamCaption}\item[{char $\ast$}]{f1,  }\item[{char $\ast$}]{f2,  }\item[{char $\ast$}]{f3 }\end{DoxyParamCaption})}
+
+
+
+Opens S\+W\+MM input file \& reads in network data. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em f1} & pointer to name of input file (must exist) \\
+\hline
+{\em f2} & pointer to name of report file (to be created) \\
+\hline
+{\em f3} & pointer to name of binary output file (to be created) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 348 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_aa19010a1a938610a22ef3e256a1e8604}\label{swmm5_8h_aa19010a1a938610a22ef3e256a1e8604}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+report@{swmm\+\_\+report}}
+\index{swmm\+\_\+report@{swmm\+\_\+report}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+report()}{swmm\_report()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+report (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+
+
+Write text report file. 
+
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 666 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a2d6ad4e7730ec256fcf4e8b33ea03e37}\label{swmm5_8h_a2d6ad4e7730ec256fcf4e8b33ea03e37}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+run@{swmm\+\_\+run}}
+\index{swmm\+\_\+run@{swmm\+\_\+run}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+run()}{swmm\_run()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+run (\begin{DoxyParamCaption}\item[{char $\ast$}]{f1,  }\item[{char $\ast$}]{f2,  }\item[{char $\ast$}]{f3 }\end{DoxyParamCaption})}
+
+
+
+Opens S\+W\+MM input file, reads in network data, runs, and closes. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em f1} & pointer to name of input file (must exist) \\
+\hline
+{\em f2} & pointer to name of report file (to be created) \\
+\hline
+{\em f3} & pointer to name of binary output file (to be created) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 287 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a06eb7b28597a24f892edfc303e12b2d7}\label{swmm5_8h_a06eb7b28597a24f892edfc303e12b2d7}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+start@{swmm\+\_\+start}}
+\index{swmm\+\_\+start@{swmm\+\_\+start}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+start()}{swmm\_start()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+start (\begin{DoxyParamCaption}\item[{int}]{save\+Flag }\end{DoxyParamCaption})}
+
+
+
+Start S\+W\+MM simulation. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em save\+Flag} & T\+R\+UE or F\+A\+L\+SE to save timeseries to report file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 410 of file swmm5.\+c.
+
+\mbox{\Hypertarget{swmm5_8h_a20624449e77d94d71c0e61d7f58558b5}\label{swmm5_8h_a20624449e77d94d71c0e61d7f58558b5}} 
+\index{swmm5.\+h@{swmm5.\+h}!swmm\+\_\+step@{swmm\+\_\+step}}
+\index{swmm\+\_\+step@{swmm\+\_\+step}!swmm5.\+h@{swmm5.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+step()}{swmm\_step()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+step (\begin{DoxyParamCaption}\item[{double $\ast$}]{elapsed\+Time }\end{DoxyParamCaption})}
+
+
+
+Step S\+W\+MM simulation forward. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt out}  & {\em elapsed\+Time} & elapsed simulation time \mbox{[}milliseconds\mbox{]} \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+error code 
+\end{DoxyReturn}
+
+
+Definition at line 500 of file swmm5.\+c.
+

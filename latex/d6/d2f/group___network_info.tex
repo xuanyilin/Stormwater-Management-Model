@@ -1,0 +1,367 @@
+\hypertarget{group___network_info}{}\section{Network Info}
+\label{group___network_info}\index{Network Info@{Network Info}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gae1abeab9f6ff81750c80460e48f5dd20}{swmm\+\_\+count\+Objects} (int type, int $\ast$count)
+\begin{DoxyCompactList}\small\item\em Gets Object Count. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_ga8bad91e436bc64458cf0958b722781a0}{swmm\+\_\+get\+Object\+Id} (int type, int index, char $\ast$id)
+\begin{DoxyCompactList}\small\item\em Gets Object ID. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gae66a64aee207928c902cb399222cf418}{swmm\+\_\+get\+Node\+Type} (int index, int $\ast$Ntype)
+\begin{DoxyCompactList}\small\item\em Get the type of node with specified index. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gacf4d0ca8a3ced3c1b8797f3f09fff1d0}{swmm\+\_\+get\+Link\+Type} (int index, int $\ast$Ltype)
+\begin{DoxyCompactList}\small\item\em Get the type of link with specified index. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gaebf8dfaeb171add70860fbdd99f768be}{swmm\+\_\+get\+Link\+Connections} (int index, int $\ast$Node1, int $\ast$Node2)
+\begin{DoxyCompactList}\small\item\em Get the link Connection Node Indeces. If the conduit has a negative slope, the dynamic wave solver will automatically reverse the nodes. To check the direction, call \hyperlink{group___network_info_gac390c83be7f7f0e2cd9c6f1126a226aa}{swmm\+\_\+get\+Link\+Direction()}. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gac390c83be7f7f0e2cd9c6f1126a226aa}{swmm\+\_\+get\+Link\+Direction} (int index, signed char $\ast$value)
+\begin{DoxyCompactList}\small\item\em Get the link flow direction (see \hyperlink{group___network_info_gacf4d0ca8a3ced3c1b8797f3f09fff1d0}{swmm\+\_\+get\+Link\+Type()} for notes. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_ga680f272c435f20efed35fd2725be4a08}{swmm\+\_\+get\+Subcatch\+Out\+Connection} (int index, int $\ast$type, int $\ast$Index)
+\begin{DoxyCompactList}\small\item\em Get the Subcatchment connection. Subcatchments can load to a node, another subcatchment, or itself. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_ga90d0d4c48e2cbeaea1bd43ba095a6672}{swmm\+\_\+get\+Node\+Param} (int index, int Param, double $\ast$value)
+\begin{DoxyCompactList}\small\item\em Get a property value for specified node. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gaab21d9f5a8789ab41c981a90e1240cc5}{swmm\+\_\+get\+Link\+Param} (int index, int Param, double $\ast$value)
+\begin{DoxyCompactList}\small\item\em Get a property value for specified link. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_ga20fcc911e1b6dbf4393a8e404d840963}{swmm\+\_\+get\+Subcatch\+Param} (int index, int Param, double $\ast$value)
+\begin{DoxyCompactList}\small\item\em Get a property value for specified subcatchment. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gaa0bc371349ae8f593722e0c3bb0abf31}{swmm\+\_\+set\+Node\+Param} (int index, int Param, double value)
+\begin{DoxyCompactList}\small\item\em Set a property value for specified node. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_gabc0f1352a99581c17d038597b99d17c5}{swmm\+\_\+set\+Link\+Param} (int index, int Param, double value)
+\begin{DoxyCompactList}\small\item\em Set a property value for specified link. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group___network_info_ga8bfeda2cf3547d526da6cb7926ee7519}{swmm\+\_\+set\+Subcatch\+Param} (int index, int Param, double value)
+\begin{DoxyCompactList}\small\item\em Set a property value for specified subcatchment. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{group___network_info_gae1abeab9f6ff81750c80460e48f5dd20}\label{group___network_info_gae1abeab9f6ff81750c80460e48f5dd20}} 
+\index{Network Info@{Network Info}!swmm\+\_\+count\+Objects@{swmm\+\_\+count\+Objects}}
+\index{swmm\+\_\+count\+Objects@{swmm\+\_\+count\+Objects}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+count\+Objects()}{swmm\_countObjects()}}
+{\footnotesize\ttfamily int swmm\+\_\+count\+Objects (\begin{DoxyParamCaption}\item[{int}]{type,  }\item[{int $\ast$}]{count }\end{DoxyParamCaption})}
+
+
+
+Gets Object Count. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em type} & Option code (see \hyperlink{toolkit_a_p_i_8h_a1c1a5cece690c3dbb5d743336b88e0e4}{S\+M\+\_\+\+Object\+Type}) \\
+\hline
+\mbox{\tt out}  & {\em count} & Option value \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 270 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gaebf8dfaeb171add70860fbdd99f768be}\label{group___network_info_gaebf8dfaeb171add70860fbdd99f768be}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Link\+Connections@{swmm\+\_\+get\+Link\+Connections}}
+\index{swmm\+\_\+get\+Link\+Connections@{swmm\+\_\+get\+Link\+Connections}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Link\+Connections()}{swmm\_getLinkConnections()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Link\+Connections (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int $\ast$}]{Node1,  }\item[{int $\ast$}]{Node2 }\end{DoxyParamCaption})}
+
+
+
+Get the link Connection Node Indeces. If the conduit has a negative slope, the dynamic wave solver will automatically reverse the nodes. To check the direction, call \hyperlink{group___network_info_gac390c83be7f7f0e2cd9c6f1126a226aa}{swmm\+\_\+get\+Link\+Direction()}. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a link \\
+\hline
+\mbox{\tt out}  & {\em Node1} & The upstream node index. \\
+\hline
+\mbox{\tt out}  & {\em Node2} & The downstream node index. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 392 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gac390c83be7f7f0e2cd9c6f1126a226aa}\label{group___network_info_gac390c83be7f7f0e2cd9c6f1126a226aa}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Link\+Direction@{swmm\+\_\+get\+Link\+Direction}}
+\index{swmm\+\_\+get\+Link\+Direction@{swmm\+\_\+get\+Link\+Direction}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Link\+Direction()}{swmm\_getLinkDirection()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Link\+Direction (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{signed char $\ast$}]{value }\end{DoxyParamCaption})}
+
+
+
+Get the link flow direction (see \hyperlink{group___network_info_gacf4d0ca8a3ced3c1b8797f3f09fff1d0}{swmm\+\_\+get\+Link\+Type()} for notes. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a link \\
+\hline
+\mbox{\tt out}  & {\em value} & The link flow direction. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 418 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gaab21d9f5a8789ab41c981a90e1240cc5}\label{group___network_info_gaab21d9f5a8789ab41c981a90e1240cc5}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Link\+Param@{swmm\+\_\+get\+Link\+Param}}
+\index{swmm\+\_\+get\+Link\+Param@{swmm\+\_\+get\+Link\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Link\+Param()}{swmm\_getLinkParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Link\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double $\ast$}]{value }\end{DoxyParamCaption})}
+
+
+
+Get a property value for specified link. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a link \\
+\hline
+ & {\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_a0bd558d9182b64e31019b799246d85e9}{S\+M\+\_\+\+Link\+Property}) \\
+\hline
+\mbox{\tt out}  & {\em value} & The value of the link\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 528 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gacf4d0ca8a3ced3c1b8797f3f09fff1d0}\label{group___network_info_gacf4d0ca8a3ced3c1b8797f3f09fff1d0}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Link\+Type@{swmm\+\_\+get\+Link\+Type}}
+\index{swmm\+\_\+get\+Link\+Type@{swmm\+\_\+get\+Link\+Type}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Link\+Type()}{swmm\_getLinkType()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Link\+Type (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int $\ast$}]{Ltype }\end{DoxyParamCaption})}
+
+
+
+Get the type of link with specified index. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a link \\
+\hline
+\mbox{\tt out}  & {\em Ltype} & The type code for the link (\hyperlink{toolkit_a_p_i_8h_a8b036322279a1e830f4c67a741f199f0}{S\+M\+\_\+\+Link\+Type}). \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 369 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_ga90d0d4c48e2cbeaea1bd43ba095a6672}\label{group___network_info_ga90d0d4c48e2cbeaea1bd43ba095a6672}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Node\+Param@{swmm\+\_\+get\+Node\+Param}}
+\index{swmm\+\_\+get\+Node\+Param@{swmm\+\_\+get\+Node\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Node\+Param()}{swmm\_getNodeParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Node\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double $\ast$}]{value }\end{DoxyParamCaption})}
+
+
+
+Get a property value for specified node. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a node \\
+\hline
+ & {\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_a122269e6da4f1f6d61e0e30299c41828}{S\+M\+\_\+\+Node\+Property}) \\
+\hline
+\mbox{\tt out}  & {\em value} & The value of the node\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 443 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gae66a64aee207928c902cb399222cf418}\label{group___network_info_gae66a64aee207928c902cb399222cf418}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Node\+Type@{swmm\+\_\+get\+Node\+Type}}
+\index{swmm\+\_\+get\+Node\+Type@{swmm\+\_\+get\+Node\+Type}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Node\+Type()}{swmm\_getNodeType()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Node\+Type (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int $\ast$}]{Ntype }\end{DoxyParamCaption})}
+
+
+
+Get the type of node with specified index. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a node \\
+\hline
+\mbox{\tt out}  & {\em Ntype} & The type code for the node (\hyperlink{toolkit_a_p_i_8h_a10b2a8f7c7f2a84ec03332d6cf963cf1}{S\+M\+\_\+\+Node\+Type}). id must be pre-\/allocated by the caller. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 346 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_ga8bad91e436bc64458cf0958b722781a0}\label{group___network_info_ga8bad91e436bc64458cf0958b722781a0}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Object\+Id@{swmm\+\_\+get\+Object\+Id}}
+\index{swmm\+\_\+get\+Object\+Id@{swmm\+\_\+get\+Object\+Id}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Object\+Id()}{swmm\_getObjectId()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Object\+Id (\begin{DoxyParamCaption}\item[{int}]{type,  }\item[{int}]{index,  }\item[{char $\ast$}]{id }\end{DoxyParamCaption})}
+
+
+
+Gets Object ID. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em type} & Option code (see \hyperlink{toolkit_a_p_i_8h_a1c1a5cece690c3dbb5d743336b88e0e4}{S\+M\+\_\+\+Object\+Type}) \\
+\hline
+ & {\em index} & of the Object \\
+\hline
+\mbox{\tt out}  & {\em id} & The string ID of object. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 282 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_ga680f272c435f20efed35fd2725be4a08}\label{group___network_info_ga680f272c435f20efed35fd2725be4a08}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Subcatch\+Out\+Connection@{swmm\+\_\+get\+Subcatch\+Out\+Connection}}
+\index{swmm\+\_\+get\+Subcatch\+Out\+Connection@{swmm\+\_\+get\+Subcatch\+Out\+Connection}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Subcatch\+Out\+Connection()}{swmm\_getSubcatchOutConnection()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Subcatch\+Out\+Connection (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int $\ast$}]{type,  }\item[{int $\ast$}]{Index }\end{DoxyParamCaption})}
+
+
+
+Get the Subcatchment connection. Subcatchments can load to a node, another subcatchment, or itself. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a Subcatchment \\
+\hline
+\mbox{\tt out}  & {\em type} & The type of object loading (See \hyperlink{toolkit_a_p_i_8h_a1c1a5cece690c3dbb5d743336b88e0e4}{S\+M\+\_\+\+Object\+Type}) \\
+\hline
+\mbox{\tt out}  & {\em Index} & The object index \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 715 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_ga20fcc911e1b6dbf4393a8e404d840963}\label{group___network_info_ga20fcc911e1b6dbf4393a8e404d840963}} 
+\index{Network Info@{Network Info}!swmm\+\_\+get\+Subcatch\+Param@{swmm\+\_\+get\+Subcatch\+Param}}
+\index{swmm\+\_\+get\+Subcatch\+Param@{swmm\+\_\+get\+Subcatch\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Subcatch\+Param()}{swmm\_getSubcatchParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+get\+Subcatch\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double $\ast$}]{value }\end{DoxyParamCaption})}
+
+
+
+Get a property value for specified subcatchment. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of a subcatchment \\
+\hline
+ & {\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_ae6c515161005c511d85505bd1df5eea1}{S\+M\+\_\+\+Subc\+Property}) \\
+\hline
+\mbox{\tt out}  & {\em value} & The value of the subcatchment\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 629 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gabc0f1352a99581c17d038597b99d17c5}\label{group___network_info_gabc0f1352a99581c17d038597b99d17c5}} 
+\index{Network Info@{Network Info}!swmm\+\_\+set\+Link\+Param@{swmm\+\_\+set\+Link\+Param}}
+\index{swmm\+\_\+set\+Link\+Param@{swmm\+\_\+set\+Link\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+set\+Link\+Param()}{swmm\_setLinkParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+set\+Link\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double}]{value }\end{DoxyParamCaption})}
+
+
+
+Set a property value for specified link. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & The index of a link \\
+\hline
+{\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_a0bd558d9182b64e31019b799246d85e9}{S\+M\+\_\+\+Link\+Property}) \\
+\hline
+{\em value} & The new value of the link\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 571 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_gaa0bc371349ae8f593722e0c3bb0abf31}\label{group___network_info_gaa0bc371349ae8f593722e0c3bb0abf31}} 
+\index{Network Info@{Network Info}!swmm\+\_\+set\+Node\+Param@{swmm\+\_\+set\+Node\+Param}}
+\index{swmm\+\_\+set\+Node\+Param@{swmm\+\_\+set\+Node\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+set\+Node\+Param()}{swmm\_setNodeParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+set\+Node\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double}]{value }\end{DoxyParamCaption})}
+
+
+
+Set a property value for specified node. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & The index of a node \\
+\hline
+{\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_a122269e6da4f1f6d61e0e30299c41828}{S\+M\+\_\+\+Node\+Property}) \\
+\hline
+{\em value} & The new value of the node\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 482 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{group___network_info_ga8bfeda2cf3547d526da6cb7926ee7519}\label{group___network_info_ga8bfeda2cf3547d526da6cb7926ee7519}} 
+\index{Network Info@{Network Info}!swmm\+\_\+set\+Subcatch\+Param@{swmm\+\_\+set\+Subcatch\+Param}}
+\index{swmm\+\_\+set\+Subcatch\+Param@{swmm\+\_\+set\+Subcatch\+Param}!Network Info@{Network Info}}
+\subsubsection{\texorpdfstring{swmm\+\_\+set\+Subcatch\+Param()}{swmm\_setSubcatchParam()}}
+{\footnotesize\ttfamily int swmm\+\_\+set\+Subcatch\+Param (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{int}]{Param,  }\item[{double}]{value }\end{DoxyParamCaption})}
+
+
+
+Set a property value for specified subcatchment. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & The index of a subcatchment \\
+\hline
+{\em Param} & The property type code (See \hyperlink{toolkit_a_p_i_8h_ae6c515161005c511d85505bd1df5eea1}{S\+M\+\_\+\+Subc\+Property}) \\
+\hline
+{\em value} & The new value of the subcatchment\textquotesingle{}s property \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 668 of file toolkit\+A\+P\+I.\+c.
+
