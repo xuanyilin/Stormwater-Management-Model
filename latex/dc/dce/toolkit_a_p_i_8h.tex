@@ -231,6 +231,8 @@ int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga4895dbf445e9abd6d7e9eb72
 \begin{DoxyCompactList}\small\item\em Get link statistics. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_gafb2a5a295fb4a038edb2a36eab8c576d}{swmm\+\_\+get\+Pump\+Stats} (int index, \hyperlink{struct_s_m___pump_stats}{S\+M\+\_\+\+Pump\+Stats} $\ast$pump\+Stats)
 \begin{DoxyCompactList}\small\item\em Get pump statistics. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{toolkit_a_p_i_8h_adc7dc3b45a313081743a5feb1d93367b}{swmm\+\_\+get\+Gage\+Precip} (int index, double $\ast$rainfall, double $\ast$snowfall, double $\ast$total)
+\begin{DoxyCompactList}\small\item\em Get rainfall rates for a gage. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga07cf0c633357b86bfcd0886fed0ae2fb}{swmm\+\_\+get\+Subcatch\+Stats} (int index, \hyperlink{struct_s_m___subcatch_stats}{S\+M\+\_\+\+Subcatch\+Stats} $\ast$subcatch\+Stats)
 \begin{DoxyCompactList}\small\item\em Get subcatchment statistics. \end{DoxyCompactList}\item 
 void D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_gaf24dfaf8bcd92298782f2449aa18a2f5}{swmm\+\_\+free\+Subcatch\+Stats} (\hyperlink{struct_s_m___subcatch_stats}{S\+M\+\_\+\+Subcatch\+Stats} $\ast$subcatch\+Stats)
@@ -244,7 +246,9 @@ int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_gab44d2b1c21a6f750b0ce4c48
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga6438a8a45d7712b8b02ba630cd8e1db3}{swmm\+\_\+set\+Node\+Inflow} (int index, double flowrate)
 \begin{DoxyCompactList}\small\item\em Set an inflow rate to a node. The inflow rate is held constant until the caller changes it. \end{DoxyCompactList}\item 
 int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{group__tkfuncs_ga80d902400625073d8ff2c392365fde9b}{swmm\+\_\+set\+Outfall\+Stage} (int index, double stage)
-\begin{DoxyCompactList}\small\item\em Set outfall stage. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em Set outfall stage. \end{DoxyCompactList}\item 
+int D\+L\+L\+E\+X\+P\+O\+RT \hyperlink{toolkit_a_p_i_8h_af133f1fbc074c6e328acc551c61476da}{swmm\+\_\+set\+Gage\+Precip} (int index, double value)
+\begin{DoxyCompactList}\small\item\em Set an rainfall intensity to the gage. \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
@@ -821,4 +825,59 @@ S\+M\+\_\+\+F\+L\+O\+W\+U\+N\+IT&Flow Units \\
 
 
 Definition at line 77 of file toolkit\+A\+P\+I.\+h.
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{toolkit_a_p_i_8h_adc7dc3b45a313081743a5feb1d93367b}\label{toolkit_a_p_i_8h_adc7dc3b45a313081743a5feb1d93367b}} 
+\index{toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}!swmm\+\_\+get\+Gage\+Precip@{swmm\+\_\+get\+Gage\+Precip}}
+\index{swmm\+\_\+get\+Gage\+Precip@{swmm\+\_\+get\+Gage\+Precip}!toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+get\+Gage\+Precip()}{swmm\_getGagePrecip()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+get\+Gage\+Precip (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{double $\ast$}]{rainfall,  }\item[{double $\ast$}]{snowfall,  }\item[{double $\ast$}]{total }\end{DoxyParamCaption})}
+
+
+
+Get rainfall rates for a gage. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+ & {\em index} & The index of gage \\
+\hline
+\mbox{\tt out}  & {\em rainfall} & rainfall rate \\
+\hline
+\mbox{\tt out}  & {\em snowfall} & snowfall rate \\
+\hline
+\mbox{\tt out}  & {\em total} & total precipitation rate \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 1251 of file toolkit\+A\+P\+I.\+c.
+
+\mbox{\Hypertarget{toolkit_a_p_i_8h_af133f1fbc074c6e328acc551c61476da}\label{toolkit_a_p_i_8h_af133f1fbc074c6e328acc551c61476da}} 
+\index{toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}!swmm\+\_\+set\+Gage\+Precip@{swmm\+\_\+set\+Gage\+Precip}}
+\index{swmm\+\_\+set\+Gage\+Precip@{swmm\+\_\+set\+Gage\+Precip}!toolkit\+A\+P\+I.\+h@{toolkit\+A\+P\+I.\+h}}
+\subsubsection{\texorpdfstring{swmm\+\_\+set\+Gage\+Precip()}{swmm\_setGagePrecip()}}
+{\footnotesize\ttfamily int D\+L\+L\+E\+X\+P\+O\+RT swmm\+\_\+set\+Gage\+Precip (\begin{DoxyParamCaption}\item[{int}]{index,  }\item[{double}]{value }\end{DoxyParamCaption})}
+
+
+
+Set an rainfall intensity to the gage. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em index} & The gage index. \\
+\hline
+{\em value} & The new rainfall intensity. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code 
+\end{DoxyReturn}
+
+
+Definition at line 1277 of file toolkit\+A\+P\+I.\+c.
 

@@ -361,6 +361,9 @@ Functions</h2></td></tr>
 <tr class="memitem:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#gafb2a5a295fb4a038edb2a36eab8c576d">swmm_getPumpStats</a> (int index, <a class="el" href="../../d5/dc1/struct_s_m___pump_stats.html">SM_PumpStats</a> *pumpStats)</td></tr>
 <tr class="memdesc:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pump statistics.  <a href="../../d2/da4/group__tkfuncs.html#gafb2a5a295fb4a038edb2a36eab8c576d">More...</a><br /></td></tr>
 <tr class="separator:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc7dc3b45a313081743a5feb1d93367b"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#adc7dc3b45a313081743a5feb1d93367b">swmm_getGagePrecip</a> (int index, double *rainfall, double *snowfall, double *total)</td></tr>
+<tr class="memdesc:adc7dc3b45a313081743a5feb1d93367b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get rainfall rates for a gage.  <a href="#adc7dc3b45a313081743a5feb1d93367b">More...</a><br /></td></tr>
+<tr class="separator:adc7dc3b45a313081743a5feb1d93367b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga07cf0c633357b86bfcd0886fed0ae2fb">swmm_getSubcatchStats</a> (int index, <a class="el" href="../../d8/d26/struct_s_m___subcatch_stats.html">SM_SubcatchStats</a> *subcatchStats)</td></tr>
 <tr class="memdesc:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get subcatchment statistics.  <a href="../../d2/da4/group__tkfuncs.html#ga07cf0c633357b86bfcd0886fed0ae2fb">More...</a><br /></td></tr>
 <tr class="separator:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -382,6 +385,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga80d902400625073d8ff2c392365fde9b"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga80d902400625073d8ff2c392365fde9b">swmm_setOutfallStage</a> (int index, double stage)</td></tr>
 <tr class="memdesc:ga80d902400625073d8ff2c392365fde9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set outfall stage.  <a href="../../d2/da4/group__tkfuncs.html#ga80d902400625073d8ff2c392365fde9b">More...</a><br /></td></tr>
 <tr class="separator:ga80d902400625073d8ff2c392365fde9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af133f1fbc074c6e328acc551c61476da"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#af133f1fbc074c6e328acc551c61476da">swmm_setGagePrecip</a> (int index, double value)</td></tr>
+<tr class="memdesc:af133f1fbc074c6e328acc551c61476da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an rainfall intensity to the gage.  <a href="#af133f1fbc074c6e328acc551c61476da">More...</a><br /></td></tr>
+<tr class="separator:af133f1fbc074c6e328acc551c61476da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Exportable Functions for Toolkit API. </p>
@@ -824,6 +830,101 @@ Functions</h2></td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00077">77</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="adc7dc3b45a313081743a5feb1d93367b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc7dc3b45a313081743a5feb1d93367b">&#9670;&nbsp;</a></span>swmm_getGagePrecip()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DLLEXPORT swmm_getGagePrecip </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&#160;</td>
+          <td class="paramname"><em>rainfall</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&#160;</td>
+          <td class="paramname"><em>snowfall</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double *&#160;</td>
+          <td class="paramname"><em>total</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get rainfall rates for a gage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir"></td><td class="paramname">index</td><td>The index of gage </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">rainfall</td><td>rainfall rate </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">snowfall</td><td>snowfall rate </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">total</td><td>total precipitation rate </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01251">1251</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
+
+</div>
+</div>
+<a id="af133f1fbc074c6e328acc551c61476da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af133f1fbc074c6e328acc551c61476da">&#9670;&nbsp;</a></span>swmm_setGagePrecip()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DLLEXPORT swmm_setGagePrecip </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set an rainfall intensity to the gage. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">index</td><td>The gage index. </td></tr>
+    <tr><td class="paramname">value</td><td>The new rainfall intensity. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01277">1277</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
 
 </div>
 </div>
