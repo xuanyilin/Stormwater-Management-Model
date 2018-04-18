@@ -25,6 +25,10 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef FUNCS_H
+#define FUNCS_H
+
+
 //-----------------------------------------------------------------------------
 //   Project Manager Methods
 //-----------------------------------------------------------------------------
@@ -552,3 +556,6 @@ DateTime getDateTime(double elapsedMsec);     // convert elapsed time to date
 void     getElapsedTime(DateTime aDate,       // convert elapsed date
          int* days, int* hrs, int* mins);
 void     getSemVersion(char* semver);         // get semantic version
+
+
+#endif //FUNCS_H

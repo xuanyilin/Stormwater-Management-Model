@@ -43,7 +43,7 @@
 //  Leave only one of the following 3 lines un-commented,
 //  depending on the choice of compilation target
 //**********************************************************
-//#define CLE     /* Compile as a command line executable */
+#define CLE     /* Compile as a command line executable */
 //#define SOL     /* Compile as a shared object library */
 //#define DLL     /* Compile as a Windows DLL */
 
@@ -120,10 +120,9 @@
 #include "funcs.h"                     // declaration of all global functions
 #include "text.h"                      // listing of all text strings 
 #define  EXTERN                        // defined as 'extern' in headers.h
-#include "globals.h"                   // declaration of all global variables
-
 #include "swmm5.h"                     // declaration of exportable functions
 #include "toolkitAPI.h"
+#include "globals.h"                   // declaration of all global variables
                                        //   callable from other programs
 #define  MAX_EXCEPTIONS 100            // max. number of exceptions handled
 

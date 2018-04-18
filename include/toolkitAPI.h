@@ -11,6 +11,7 @@
 #ifndef TOOLKITAPI_H
 #define TOOLKITAPI_H
 
+
 #ifdef WINDOWS
 #ifdef __MINGW32__
 // <- More wrapper friendly
@@ -660,4 +661,4 @@ int DLLEXPORT swmm_setGagePrecip(int index, double value);
 #endif
 
 
-#endif
+#endif //TOOLKITAPI_H

@@ -48,6 +48,10 @@
 //   - Added definition of a hydraulic event time period (TEvent).
 //-----------------------------------------------------------------------------
 
+#ifndef OBJECTS_H
+#define OBJECTS_H
+
+
 #include "mathexpr.h"
 #include "infil.h"
 #include "exfil.h"                                                             //(5.1.007)
@@ -1086,3 +1090,16 @@ typedef struct
    char          Enabled;         // TRUE if appears in report table
    int           Precision;       // number of decimal places when reported
 }  TRptField;
+
+
+
+struct SWMM_Project {
+
+   TFile
+                 Finp;                     // Input file
+
+};
+
+
+#endif //OBJECTS_H
+

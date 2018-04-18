@@ -19,6 +19,10 @@
 //   Text strings
 //-----------------------------------------------------------------------------
 
+#ifndef TEXT_H
+#define TEXT_H
+
+
 #define FMT01 \
  "\tswmm5 <input file> <report file> <output file>\n"
 
@@ -433,3 +437,6 @@
 #define  ws_GWF              "[GWF"                                            //(5.1.007)
 #define  ws_ADJUST           "[ADJUSTMENT"                                     //(5.1.007)
 #define  ws_EVENT            "[EVENT"                                          //(5.1.011)
+
+
+#endif //TEXT_H

@@ -43,6 +43,10 @@
 extern "C" { 
 #endif 
 
+
+typedef struct SWMM_Project SWMM_Project;
+
+
 /**
  @brief Opens SWMM input file, reads in network data, runs, and closes
  @param f1 pointer to name of input file (must exist)

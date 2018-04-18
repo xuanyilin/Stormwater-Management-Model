@@ -17,6 +17,7 @@
 #ifndef INFIL_H
 #define INFIL_H
 
+
 //---------------------
 // Enumerated Constants
 //---------------------
@@ -105,4 +106,5 @@ void    grnampt_initState(TGrnAmpt *infil);
 double  grnampt_getInfil(TGrnAmpt *infil, double tstep, double irate,
         double depth, int modelType);                                          //(5.1.010)
 
-#endif
+
+#endif //INFIL_H

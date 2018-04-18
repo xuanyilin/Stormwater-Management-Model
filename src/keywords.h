@@ -13,6 +13,10 @@
 //   - Keyword arrays listed in alphabetical order.
 //-----------------------------------------------------------------------------
 
+#ifndef KEYWORDS_H
+#define KEYWORDS_H
+
+
 extern char* BuildupTypeWords[];
 extern char* CurveTypeWords[];
 extern char* DividerTypeWords[];
@@ -60,3 +64,6 @@ extern char* VolUnitsWords2[];
 extern char* WashoffTypeWords[];
 extern char* WeirTypeWords[];
 extern char* XsectTypeWords[];
+
+
+#endif //KEYWORDS_H

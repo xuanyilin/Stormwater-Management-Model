@@ -33,6 +33,13 @@
 //   - InSteadyState variable made local to routing_execute in routing.c.
 //-----------------------------------------------------------------------------
 
+#ifndef GLOBALS_H
+#define GLOBALS_H
+
+
+EXTERN SWMM_Project *_defaultModel;
+
+
 EXTERN TFile
                   Finp,                     // Input file
                   Fout,                     // Output file
@@ -45,6 +52,7 @@ EXTERN TFile
                   Fhotstart2,               // Hot start output file
                   Finflows,                 // Inflows routing file
                   Foutflows;                // Outflows routing file
+
 
 EXTERN long
                   Nperiods,                 // Number of reporting periods
@@ -159,3 +167,6 @@ EXTERN TTable*    Tseries;                  // Array of time series tables
 EXTERN TTransect* Transect;                 // Array of transect data
 EXTERN TShape*    Shape;                    // Array of custom conduit shapes
 EXTERN TEvent*    Event;                    // Array of routing events         //(5.1.011)
+
+
+#endif //GLOBALS_H
