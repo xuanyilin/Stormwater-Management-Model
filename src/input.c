@@ -62,7 +62,7 @@ static int  readEvent(char* tok[], int ntoks);                                 /
 
 //=============================================================================
 
-int input_countObjects()
+int input_countObjects(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -86,7 +86,7 @@ int input_countObjects()
     for (i = 0; i < MAX_LINK_TYPES; i++) Nlinks[i] = 0;
 
     // --- make pass through data file counting number of each object
-    while ( fgets(line, MAXLINE, Finp.file) != NULL )
+    while ( fgets(line, MAXLINE, p->Finp.file) != NULL )
     {
         // --- skip blank lines & those beginning with a comment
         lineCount++;
@@ -133,7 +133,7 @@ int input_countObjects()
 
 //=============================================================================
 
-int input_readData()
+int input_readData(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -168,8 +168,8 @@ int input_readData()
     // --- read each line from input file
     sect = 0;
     errsum = 0;
-    rewind(Finp.file);
-    while ( fgets(line, MAXLINE, Finp.file) != NULL )
+    rewind(p->Finp.file);
+    while ( fgets(line, MAXLINE, p->Finp.file) != NULL )
     {
         // --- make copy of line and scan for tokens
         lineCount++;

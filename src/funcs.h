@@ -55,12 +55,13 @@
 	#define DLLEXPORT
 #endif
 
+#include "swmm5.h"
 #include "toolkitAPI.h"
 
-void     project_open(char *f1, char *f2, char *f3);
+void     project_open(SWMM_Project *p, char *f1, char *f2, char *f3);
 void     project_close(void);
 
-void     project_readInput(void);
+void     project_readInput(SWMM_Project *);
 int      project_readOption(char* s1, char* s2);
 void     project_validate(void);
 int      project_init(void);
@@ -83,8 +84,8 @@ void     project_freeMatrix(double** m);
 //-----------------------------------------------------------------------------
 //   Input Reader Methods
 //-----------------------------------------------------------------------------
-int     input_countObjects(void);
-int     input_readData(void);
+int     input_countObjects(SWMM_Project *p);
+int     input_readData(SWMM_Project *p);
 
 //-----------------------------------------------------------------------------
 //   Report Writer Methods

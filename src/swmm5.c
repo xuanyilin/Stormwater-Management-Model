@@ -283,7 +283,11 @@ int  main(int argc, char *argv[])
 
 //=============================================================================
 
-int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
+int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3) {
+    return swmm_run_project(_defaultProject, f1, f2, f3);
+}
+
+int DLLEXPORT  swmm_run_project(SWMM_Project *pr, char* f1, char* f2, char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -298,7 +302,7 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
 
     // --- open the files & read input data
     ErrorCode = 0;
-    swmm_open(f1, f2, f3);
+    swmm_open_project(pr, f1, f2, f3);
 
     // --- run the simulation if input data OK
     if ( !ErrorCode )
@@ -344,7 +348,11 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
 
 //=============================================================================
 
-int DLLEXPORT swmm_open(char* f1, char* f2, char* f3)
+int DLLEXPORT swmm_open(char* f1, char* f2, char* f3) {
+    return swmm_open_project(_defaultProject, f1, f2, f3);
+}
+
+int DLLEXPORT swmm_open_project(SWMM_Project *p, char* f1, char* f2, char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -376,14 +384,14 @@ int DLLEXPORT swmm_open(char* f1, char* f2, char* f3)
         ExceptionCount = 0;
 
         // --- open a SWMM project
-        project_open(f1, f2, f3);
+        project_open(p, f1, f2, f3);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
         IsOpenFlag = TRUE;
         report_writeLogo();
         writecon(FMT06);
 
         // --- retrieve project data from input file
-        project_readInput();
+        project_readInput(p);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
 
         // --- write project title to report file & validate data
@@ -405,8 +413,11 @@ int DLLEXPORT swmm_open(char* f1, char* f2, char* f3)
 }
 
 //=============================================================================
+int DLLEXPORT swmm_start(int saveResults) {
+    return swmm_start_project(_defaultProject, saveResults);
+}
 
-int DLLEXPORT swmm_start(int saveResults)
+int DLLEXPORT swmm_start_project(SWMM_Project *p, int saveResults)
 //
 //  Input:   saveResults = TRUE if simulation results saved to binary file 
 //  Output:  returns an error code
@@ -495,8 +506,11 @@ int DLLEXPORT swmm_start(int saveResults)
     return error_getCode(ErrorCode);                                           //(5.1.011)
 }
 //=============================================================================
+int DLLEXPORT swmm_step(double* elapsedTime) {
+    return swmm_step_project(_defaultProject, elapsedTime);
+}
 
-int DLLEXPORT swmm_step(double* elapsedTime)                                   //(5.1.011)
+int DLLEXPORT swmm_step_project(SWMM_Project *p, double* elapsedTime)                                   //(5.1.011)
 //
 //  Input:   elapsedTime = current elapsed time in decimal days
 //  Output:  updated value of elapsedTime,
@@ -621,8 +635,11 @@ void execRouting()                                                             /
 }
 
 //=============================================================================
+int DLLEXPORT swmm_end(void) {
+    return swmm_end_project(_defaultProject);
+}
 
-int DLLEXPORT swmm_end(void)
+int DLLEXPORT swmm_end_project(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  none
@@ -661,8 +678,11 @@ int DLLEXPORT swmm_end(void)
 }
 
 //=============================================================================
+int DLLEXPORT swmm_report(void) {
+    return swmm_report_project(_defaultProject);
+}
 
-int DLLEXPORT swmm_report()
+int DLLEXPORT swmm_report_project(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -681,7 +701,11 @@ int DLLEXPORT swmm_report()
 
 //=============================================================================
 
-int DLLEXPORT swmm_close()
+int DLLEXPORT swmm_close(void) {
+    return swmm_close_project(_defaultProject);
+}
+
+int DLLEXPORT swmm_close_project(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -691,7 +715,7 @@ int DLLEXPORT swmm_close()
     if ( Fout.file ) output_close();
     if ( IsOpenFlag ) project_close();
     report_writeSysTime();
-    if ( Finp.file != NULL ) fclose(Finp.file);
+    if ( p->Finp.file != NULL ) fclose(p->Finp.file);
     if ( Frpt.file != NULL ) fclose(Frpt.file);
     if ( Fout.file != NULL )
     {
@@ -704,9 +728,15 @@ int DLLEXPORT swmm_close()
 }
 
 //=============================================================================
-
 int  DLLEXPORT swmm_getMassBalErr(float* runoffErr, float* flowErr,
-                                  float* qualErr)
+        float* qualErr) {
+
+    return swmm_getMassBalErr_project(_defaultProject, runoffErr, flowErr,
+            qualErr);
+}
+
+int  DLLEXPORT swmm_getMassBalErr_project(SWMM_Project *p, float* runoffErr,
+        float* flowErr, float* qualErr)
 //
 //  Input:   none
 //  Output:  runoffErr = runoff mass balance error (percent)

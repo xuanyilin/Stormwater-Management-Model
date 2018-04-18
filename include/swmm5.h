@@ -55,6 +55,7 @@ typedef struct SWMM_Project SWMM_Project;
  @return error code
 */
 int  DLLEXPORT   swmm_run(char* f1, char* f2, char* f3);
+int  DLLEXPORT   swmm_run_project(SWMM_Project *p, char* f1, char* f2, char* f3);
 
 /**
  @brief Opens SWMM input file & reads in network data
@@ -64,6 +65,7 @@ int  DLLEXPORT   swmm_run(char* f1, char* f2, char* f3);
  @return error code
 */
 int  DLLEXPORT   swmm_open(char* f1, char* f2, char* f3);
+int  DLLEXPORT   swmm_open_project(SWMM_Project *p, char* f1, char*f2, char*f3);
 
 /**
  @brief Start SWMM simulation
@@ -71,6 +73,7 @@ int  DLLEXPORT   swmm_open(char* f1, char* f2, char* f3);
  @return error code
 */
 int  DLLEXPORT   swmm_start(int saveFlag);
+int  DLLEXPORT   swmm_start_project(SWMM_Project *p, int saveFlag);
 
 /**
  @brief Step SWMM simulation forward
@@ -78,18 +81,21 @@ int  DLLEXPORT   swmm_start(int saveFlag);
  @return error code
 */
 int  DLLEXPORT   swmm_step(double* elapsedTime);
+int  DLLEXPORT   swmm_step_project(SWMM_Project *p, double* elapsedTime);
 
 /**
  @brief End SWMM simulation
  @return error code
 */
 int  DLLEXPORT   swmm_end(void);
+int  DLLEXPORT   swmm_end_project(SWMM_Project *p);
 
 /**
  @brief Write text report file
  @return error code
 */
 int  DLLEXPORT   swmm_report(void);
+int  DLLEXPORT   swmm_report_project(SWMM_Project *p);
 
 /**
  @brief Get routing errors
@@ -100,12 +106,16 @@ int  DLLEXPORT   swmm_report(void);
 */
 int  DLLEXPORT   swmm_getMassBalErr(float* runoffErr, float* flowErr,
                  float* qualErr);
+int  DLLEXPORT   swmm_getMassBalErr_project(SWMM_Project *p, float* runoffErr,
+                 float* flowErr, float* qualErr);
 
 /**
  @brief Frees all memory and files used by SWMM
  @return Error code
 */
 int  DLLEXPORT   swmm_close(void);
+int  DLLEXPORT   swmm_close_project(SWMM_Project *);
+
 
 /**
  @brief Get Legacy SWMM version number
@@ -126,6 +136,7 @@ void DLLEXPORT   swmm_getSemVersion(char* semver);
  @param[out] patch sematic version patch number
 */
 void DLLEXPORT   swmm_getVersionInfo(char* major, char* minor, char* patch);
+
 
 int  DLLEXPORT   swmm_getError(char* errMsg, int msgLen);                      //(5.1.011)
 int  DLLEXPORT   swmm_getWarnings(void);                                       //(5.1.011)

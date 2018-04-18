@@ -96,7 +96,7 @@ static char     MemPoolAllocated;      // TRUE if memory pool allocated
 //-----------------------------------------------------------------------------
 static void initPointers(void);
 static void setDefaults(void);
-static void openFiles(char *f1, char *f2, char *f3);
+static void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3);
 static void createObjects(void);
 static void deleteObjects(void);
 static void createHashTables(void);
@@ -105,7 +105,7 @@ static void deleteHashTables(void);
 
 //=============================================================================
 
-void project_open(char *f1, char *f2, char *f3)
+void project_open(SWMM_Project *p, char *f1, char *f2, char *f3)
 //
 //  Input:   f1 = pointer to name of input file
 //           f2 = pointer to name of report file
@@ -116,12 +116,12 @@ void project_open(char *f1, char *f2, char *f3)
 {
     initPointers();
     setDefaults();
-    openFiles(f1, f2, f3);
+    openFiles(p, f1, f2, f3);
 }
 
 //=============================================================================
 
-void project_readInput()
+void project_readInput(SWMM_Project *p)
 //
 //  Input:   none
 //  Output:  none
@@ -132,11 +132,11 @@ void project_readInput()
     createHashTables();
 
     // --- count number of objects in input file and create them
-    input_countObjects();
+    input_countObjects(p);
     createObjects();
 
     // --- read project data from input file
-    input_readData();
+    input_readData(p);
     if ( ErrorCode ) return;
 
     // --- establish starting & ending date/time
@@ -901,7 +901,7 @@ void setDefaults()
 
 //=============================================================================
 
-void openFiles(char *f1, char *f2, char *f3)
+void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -911,12 +911,12 @@ void openFiles(char *f1, char *f2, char *f3)
 //
 {
     // --- initialize file pointers to NULL
-    Finp.file = NULL;
+    p->Finp.file = NULL;
     Frpt.file = NULL;
     Fout.file = NULL;
 
     // --- save file names
-    sstrncpy(Finp.name, f1, MAXFNAME);
+    sstrncpy(p->Finp.name, f1, MAXFNAME);
     sstrncpy(Frpt.name, f2, MAXFNAME);
     sstrncpy(Fout.name, f3, MAXFNAME);
 
@@ -929,7 +929,7 @@ void openFiles(char *f1, char *f2, char *f3)
     }
 
     // --- open input and report files
-    if ((Finp.file = fopen(f1,"rt")) == NULL)
+    if ((p->Finp.file = fopen(f1,"rt")) == NULL)
     {
         writecon(FMT12);
         writecon(f1);

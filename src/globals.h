@@ -37,11 +37,11 @@
 #define GLOBALS_H
 
 
-EXTERN SWMM_Project *_defaultModel;
+EXTERN SWMM_Project *_defaultProject;
 
 
 EXTERN TFile
-                  Finp,                     // Input file
+//                  Finp,                     // Input file
                   Fout,                     // Output file
                   Frpt,                     // Report file
                   Fclimate,                 // Climate file
