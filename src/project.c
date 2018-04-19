@@ -95,8 +95,8 @@ static char     MemPoolAllocated;      // TRUE if memory pool allocated
 //  Function declarations
 //-----------------------------------------------------------------------------
 static void initPointers(void);
-static void setDefaults(void);
-static void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3);
+static void setDefaults(SWMM_Project *sp);
+static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
 static void createObjects(void);
 static void deleteObjects(void);
 static void createHashTables(void);
@@ -105,7 +105,7 @@ static void deleteHashTables(void);
 
 //=============================================================================
 
-void project_open(SWMM_Project *p, char *f1, char *f2, char *f3)
+void project_open(SWMM_Project *sp, char *f1, char *f2, char *f3)
 //
 //  Input:   f1 = pointer to name of input file
 //           f2 = pointer to name of report file
@@ -115,13 +115,13 @@ void project_open(SWMM_Project *p, char *f1, char *f2, char *f3)
 //
 {
     initPointers();
-    setDefaults();
-    openFiles(p, f1, f2, f3);
+    setDefaults(sp);
+    openFiles(sp, f1, f2, f3);
 }
 
 //=============================================================================
 
-void project_readInput(SWMM_Project *p)
+void project_readInput(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -132,11 +132,11 @@ void project_readInput(SWMM_Project *p)
     createHashTables();
 
     // --- count number of objects in input file and create them
-    input_countObjects(p);
+    input_countObjects(sp);
     createObjects();
 
     // --- read project data from input file
-    input_readData(p);
+    input_readData(sp);
     if ( ErrorCode ) return;
 
     // --- establish starting & ending date/time
@@ -756,7 +756,7 @@ void initPointers()
 
 //=============================================================================
 
-void setDefaults()
+void setDefaults(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -764,6 +764,8 @@ void setDefaults()
 //
 {
    int i, j;
+
+   TFile fout = sp->Fout;
 
    // Project title & temp. file path
    for (i = 0; i < MAXTITLE; i++) strcpy(Title[i], "");
@@ -786,8 +788,9 @@ void setDefaults()
    Fhotstart2.file = NULL;
    Finflows.file   = NULL;
    Foutflows.file  = NULL;
-   Fout.file       = NULL;
-   Fout.mode       = NO_FILE;
+
+   fout.file       = NULL;
+   fout.mode       = NO_FILE;
 
    // Analysis options
    UnitSystem      = US;               // US unit system
@@ -901,7 +904,7 @@ void setDefaults()
 
 //=============================================================================
 
-void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3)
+void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -910,15 +913,18 @@ void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3)
 //  Purpose: opens a project's input and report files.
 //
 {
+    TFile finp = sp->Finp;
+    TFile fout = sp->Fout;
+
     // --- initialize file pointers to NULL
-    p->Finp.file = NULL;
+    finp.file = NULL;
     Frpt.file = NULL;
-    Fout.file = NULL;
+    fout.file = NULL;
 
     // --- save file names
-    sstrncpy(p->Finp.name, f1, MAXFNAME);
+    sstrncpy(finp.name, f1, MAXFNAME);
     sstrncpy(Frpt.name, f2, MAXFNAME);
-    sstrncpy(Fout.name, f3, MAXFNAME);
+    sstrncpy(fout.name, f3, MAXFNAME);
 
     // --- check that file names are not identical
     if (strcomp(f1, f2) || strcomp(f1, f3) || strcomp(f2, f3))
@@ -929,7 +935,7 @@ void openFiles(SWMM_Project *p, char *f1, char *f2, char *f3)
     }
 
     // --- open input and report files
-    if ((p->Finp.file = fopen(f1,"rt")) == NULL)
+    if ((finp.file = fopen(f1,"rt")) == NULL)
     {
         writecon(FMT12);
         writecon(f1);

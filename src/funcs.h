@@ -97,7 +97,7 @@ void    report_writeSysTime(void);
 void    report_writeLogo(void);
 void    report_writeTitle(void);
 void    report_writeOptions(void);
-void    report_writeReport(void);
+void    report_writeReport(SWMM_Project *sp);
 
 void    report_writeRainStats(int gage, TRainStats* rainStats);
 void    report_writeRdiiStats(double totalRain, double totalRdii);
@@ -181,15 +181,15 @@ void    routing_close(int routingModel);
 //-----------------------------------------------------------------------------
 //   Output Filer Methods
 //-----------------------------------------------------------------------------
-int     output_open(void);
-void    output_end(void);
+int     output_open(SWMM_Project *sp);
+void    output_end(SWMM_Project *sp);
 void    output_close(void);
 void    output_checkFileSize(void);
-void    output_saveResults(double reportTime);
-void    output_readDateTime(int period, DateTime *aDate);
-void    output_readSubcatchResults(int period, int area);
-void    output_readNodeResults(int period, int node);
-void    output_readLinkResults(int period, int link);
+void    output_saveResults(SWMM_Project *sp, double reportTime);
+void    output_readDateTime(SWMM_Project *sp, int period, DateTime *aDate);
+void    output_readSubcatchResults(SWMM_Project *sp, int period, int area);
+void    output_readNodeResults(SWMM_Project *sp, int period, int node);
+void    output_readLinkResults(SWMM_Project *sp, int period, int link);
 
 //-----------------------------------------------------------------------------
 //   Groundwater Methods

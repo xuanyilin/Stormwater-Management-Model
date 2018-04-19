@@ -287,7 +287,7 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3) {
     return swmm_run_project(_defaultProject, f1, f2, f3);
 }
 
-int DLLEXPORT  swmm_run_project(SWMM_Project *pr, char* f1, char* f2, char* f3)
+int DLLEXPORT  swmm_run_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -302,7 +302,7 @@ int DLLEXPORT  swmm_run_project(SWMM_Project *pr, char* f1, char* f2, char* f3)
 
     // --- open the files & read input data
     ErrorCode = 0;
-    swmm_open_project(pr, f1, f2, f3);
+    swmm_open_project(sp, f1, f2, f3);
 
     // --- run the simulation if input data OK
     if ( !ErrorCode )
@@ -339,7 +339,7 @@ int DLLEXPORT  swmm_run_project(SWMM_Project *pr, char* f1, char* f2, char* f3)
     }
 
     // --- report results
-    if ( Fout.mode == SCRATCH_FILE ) swmm_report();
+    if ( sp->Fout.mode == SCRATCH_FILE ) swmm_report();
 
     // --- close the system
     swmm_close();
@@ -352,7 +352,7 @@ int DLLEXPORT swmm_open(char* f1, char* f2, char* f3) {
     return swmm_open_project(_defaultProject, f1, f2, f3);
 }
 
-int DLLEXPORT swmm_open_project(SWMM_Project *p, char* f1, char* f2, char* f3)
+int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -384,14 +384,14 @@ int DLLEXPORT swmm_open_project(SWMM_Project *p, char* f1, char* f2, char* f3)
         ExceptionCount = 0;
 
         // --- open a SWMM project
-        project_open(p, f1, f2, f3);
+        project_open(sp, f1, f2, f3);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
         IsOpenFlag = TRUE;
         report_writeLogo();
         writecon(FMT06);
 
         // --- retrieve project data from input file
-        project_readInput(p);
+        project_readInput(sp);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
 
         // --- write project title to report file & validate data
@@ -417,7 +417,7 @@ int DLLEXPORT swmm_start(int saveResults) {
     return swmm_start_project(_defaultProject, saveResults);
 }
 
-int DLLEXPORT swmm_start_project(SWMM_Project *p, int saveResults)
+int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 //
 //  Input:   saveResults = TRUE if simulation results saved to binary file 
 //  Output:  returns an error code
@@ -475,7 +475,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *p, int saveResults)
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
 ////
         // --- open binary output file
-        output_open();
+        output_open(sp);
 
         // --- open runoff processor
         if ( DoRunoff ) runoff_open();
@@ -510,7 +510,7 @@ int DLLEXPORT swmm_step(double* elapsedTime) {
     return swmm_step_project(_defaultProject, elapsedTime);
 }
 
-int DLLEXPORT swmm_step_project(SWMM_Project *p, double* elapsedTime)                                   //(5.1.011)
+int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)                                   //(5.1.011)
 //
 //  Input:   elapsedTime = current elapsed time in decimal days
 //  Output:  updated value of elapsedTime,
@@ -543,7 +543,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *p, double* elapsedTime)           
         // --- save results at next reporting time
         if ( NewRoutingTime >= ReportTime )
         {
-            if ( SaveResultsFlag ) output_saveResults(ReportTime);
+            if ( SaveResultsFlag ) output_saveResults(sp, ReportTime);
             ReportTime = ReportTime + (double)(1000 * ReportStep);
         }
 
@@ -639,7 +639,7 @@ int DLLEXPORT swmm_end(void) {
     return swmm_end_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_end_project(SWMM_Project *p)
+int DLLEXPORT swmm_end_project(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -656,7 +656,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *p)
     if ( IsStartedFlag )
     {
         // --- write ending records to binary output file
-        if ( Fout.file ) output_end();
+        if ( sp->Fout.file ) output_end(sp);
 
         // --- report mass balance results and system statistics
         if ( !ErrorCode )
@@ -682,19 +682,19 @@ int DLLEXPORT swmm_report(void) {
     return swmm_report_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_report_project(SWMM_Project *p)
+int DLLEXPORT swmm_report_project(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
 //  Purpose: writes simulation results to report file.
 //
 {
-    if ( Fout.mode == SCRATCH_FILE ) output_checkFileSize();
+    if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize();
     if ( ErrorCode ) report_writeErrorCode();
     else
     {
         writecon(FMT07);
-        report_writeReport();
+        report_writeReport(sp);
     }
     return error_getCode(ErrorCode);                                           //(5.1.011)
 }
@@ -705,22 +705,22 @@ int DLLEXPORT swmm_close(void) {
     return swmm_close_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_close_project(SWMM_Project *p)
+int DLLEXPORT swmm_close_project(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
 //  Purpose: closes a SWMM project.
 //
 {
-    if ( Fout.file ) output_close();
+    if ( sp->Fout.file ) output_close();
     if ( IsOpenFlag ) project_close();
     report_writeSysTime();
-    if ( p->Finp.file != NULL ) fclose(p->Finp.file);
+    if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);
     if ( Frpt.file != NULL ) fclose(Frpt.file);
-    if ( Fout.file != NULL )
+    if ( sp->Fout.file != NULL )
     {
-        fclose(Fout.file);
-        if ( Fout.mode == SCRATCH_FILE ) remove(Fout.name);
+        fclose(sp->Fout.file);
+        if ( sp->Fout.mode == SCRATCH_FILE ) remove(sp->Fout.name);
     }
     IsOpenFlag = FALSE;
     IsStartedFlag = FALSE;
@@ -735,7 +735,7 @@ int  DLLEXPORT swmm_getMassBalErr(float* runoffErr, float* flowErr,
             qualErr);
 }
 
-int  DLLEXPORT swmm_getMassBalErr_project(SWMM_Project *p, float* runoffErr,
+int  DLLEXPORT swmm_getMassBalErr_project(SWMM_Project *sp, float* runoffErr,
         float* flowErr, float* qualErr)
 //
 //  Input:   none

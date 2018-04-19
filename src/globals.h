@@ -42,7 +42,7 @@ EXTERN SWMM_Project *_defaultProject;
 
 EXTERN TFile
 //                  Finp,                     // Input file
-                  Fout,                     // Output file
+//                  Fout,                     // Output file
                   Frpt,                     // Report file
                   Fclimate,                 // Climate file
                   Frain,                    // Rainfall file

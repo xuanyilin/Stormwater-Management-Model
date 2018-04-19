@@ -71,11 +71,11 @@ extern char   ErrString[81];           // defined in ERROR.C
 //-----------------------------------------------------------------------------
 static void report_LoadingErrors(int p1, int p2, TLoadingTotals* totals);
 static void report_QualErrors(int p1, int p2, TRoutingTotals* totals);
-static void report_Subcatchments(void);
+static void report_Subcatchments(SWMM_Project *sp);
 static void report_SubcatchHeader(char *id);
-static void report_Nodes(void);
+static void report_Nodes(SWMM_Project *sp);
 static void report_NodeHeader(char *id);
-static void report_Links(void);
+static void report_Links(SWMM_Project *sp);
 static void report_LinkHeader(char *id);
 
 
@@ -1052,7 +1052,7 @@ void report_writeSysStats(TSysStats* sysStats)
 //      SIMULATION RESULTS REPORTING
 //=============================================================================
 
-void report_writeReport()
+void report_writeReport(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1065,16 +1065,16 @@ void report_writeReport()
          && ( IgnoreRainfall == FALSE ||
               IgnoreSnowmelt == FALSE ||
               IgnoreGwater == FALSE)
-       ) report_Subcatchments();
+       ) report_Subcatchments(sp);
 
     if ( IgnoreRouting == TRUE && IgnoreQuality == TRUE ) return;
-    if ( RptFlags.nodes != NONE ) report_Nodes();
-    if ( RptFlags.links != NONE ) report_Links();
+    if ( RptFlags.nodes != NONE ) report_Nodes(sp);
+    if ( RptFlags.links != NONE ) report_Links(sp);
 }
 
 //=============================================================================
 
-void report_Subcatchments()
+void report_Subcatchments(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1103,10 +1103,10 @@ void report_Subcatchments()
             report_SubcatchHeader(Subcatch[j].ID);
             for ( period = 1; period <= Nperiods; period++ )
             {
-                output_readDateTime(period, &days);
+                output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);
                 datetime_timeToStr(days, theTime);
-                output_readSubcatchResults(period, k);
+                output_readSubcatchResults(sp, period, k);
                 fprintf(Frpt.file, "\n  %11s %8s %10.3f%10.3f%10.4f",
                     theDate, theTime, SubcatchResults[SUBCATCH_RAINFALL],
                     SubcatchResults[SUBCATCH_EVAP]/24.0 +
@@ -1201,7 +1201,7 @@ void  report_SubcatchHeader(char *id)
 
 //=============================================================================
 
-void report_Nodes()
+void report_Nodes(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1227,10 +1227,10 @@ void report_Nodes()
             report_NodeHeader(Node[j].ID);
             for ( period = 1; period <= Nperiods; period++ )
             {
-                output_readDateTime(period, &days);
+                output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);
                 datetime_timeToStr(days, theTime);
-                output_readNodeResults(period, k);
+                output_readNodeResults(sp, period, k);
                 fprintf(Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
                     theDate, theTime, NodeResults[NODE_INFLOW],
                     NodeResults[NODE_OVERFLOW], NodeResults[NODE_DEPTH],
@@ -1280,7 +1280,7 @@ void  report_NodeHeader(char *id)
 
 //=============================================================================
 
-void report_Links()
+void report_Links(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1306,10 +1306,10 @@ void report_Links()
             report_LinkHeader(Link[j].ID);
             for ( period = 1; period <= Nperiods; period++ )
             {
-                output_readDateTime(period, &days);
+                output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);
                 datetime_timeToStr(days, theTime);
-                output_readLinkResults(period, k);
+                output_readLinkResults(sp, period, k);
                 fprintf(Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
                     theDate, theTime, LinkResults[LINK_FLOW],
                     LinkResults[LINK_VELOCITY], LinkResults[LINK_DEPTH],

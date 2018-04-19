@@ -1096,8 +1096,8 @@ typedef struct
 struct SWMM_Project {
 
    TFile
-                 Finp;                     // Input file
-//                      Fout,                     // Output file
+                 Finp,                     // Input file
+                 Fout;                     // Output file
 //                      Frpt,                     // Report file
 //                      Fclimate,                 // Climate file
 //                      Frain,                    // Rainfall file
