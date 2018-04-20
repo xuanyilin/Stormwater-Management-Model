@@ -393,8 +393,6 @@ void evalLoop(SWMM_Project *sp, int startLink)
     int kount;                         // items per line counter
     int isCycle;                       // TRUE if loop forms a cycle
 
-    TFile frpt = sp->Frpt;
-
     // --- make startLink the first link in the loop
     LoopLinksLast = 0;
     LoopLinks[0] = startLink;
@@ -427,10 +425,10 @@ void evalLoop(SWMM_Project *sp, int startLink)
         kount = 0;
         for (i = 0; i <= LoopLinksLast; i++)
         {
-            if ( kount % 5 == 0 ) fprintf(frpt.file, "\n");
+            if ( kount % 5 == 0 ) fprintf(sp->Frpt.file, "\n");
             kount++;
-            fprintf(frpt.file, "  %s", Link[LoopLinks[i]].ID);
-            if ( i < LoopLinksLast ) fprintf(frpt.file, "  -->");
+            fprintf(sp->Frpt.file, "  %s", Link[LoopLinks[i]].ID);
+            if ( i < LoopLinksLast ) fprintf(sp->Frpt.file, "  -->");
         }
     }
 }

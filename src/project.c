@@ -765,8 +765,6 @@ void setDefaults(SWMM_Project *sp)
 {
    int i, j;
 
-   TFile fout = sp->Fout;
-
    // Project title & temp. file path
    for (i = 0; i < MAXTITLE; i++) strcpy(Title[i], "");
    strcpy(TempDir, "");
@@ -788,9 +786,8 @@ void setDefaults(SWMM_Project *sp)
    Fhotstart2.file = NULL;
    Finflows.file   = NULL;
    Foutflows.file  = NULL;
-
-   fout.file       = NULL;
-   fout.mode       = NO_FILE;
+   sp->Fout.file   = NULL;
+   sp->Fout.mode   = NO_FILE;
 
    // Analysis options
    UnitSystem      = US;               // US unit system
@@ -913,19 +910,15 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
 //  Purpose: opens a project's input and report files.
 //
 {
-    TFile finp = sp->Finp;
-    TFile fout = sp->Fout;
-    TFile frpt = sp->Frpt;
-
     // --- initialize file pointers to NULL
-    finp.file = NULL;
-    frpt.file = NULL;
-    fout.file = NULL;
+    sp->Finp.file = NULL;
+    sp->Frpt.file = NULL;
+    sp->Fout.file = NULL;
 
     // --- save file names
-    sstrncpy(finp.name, f1, MAXFNAME);
-    sstrncpy(frpt.name, f2, MAXFNAME);
-    sstrncpy(fout.name, f3, MAXFNAME);
+    sstrncpy(sp->Finp.name, f1, MAXFNAME);
+    sstrncpy(sp->Frpt.name, f2, MAXFNAME);
+    sstrncpy(sp->Fout.name, f3, MAXFNAME);
 
     // --- check that file names are not identical
     if (strcomp(f1, f2) || strcomp(f1, f3) || strcomp(f2, f3))
@@ -936,14 +929,14 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
     }
 
     // --- open input and report files
-    if ((finp.file = fopen(f1,"rt")) == NULL)
+    if ((sp->Finp.file = fopen(f1,"rt")) == NULL)
     {
         writecon(FMT12);
         writecon(f1);
         ErrorCode = ERR_INP_FILE;
         return;
     }
-    if ((frpt.file = fopen(f2,"wt")) == NULL)
+    if ((sp->Frpt.file = fopen(f2,"wt")) == NULL)
     {
        writecon(FMT13);
        ErrorCode = ERR_RPT_FILE;

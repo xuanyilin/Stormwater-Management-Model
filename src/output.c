@@ -96,8 +96,6 @@ int output_open(SWMM_Project *sp)
     REAL4 x;
     REAL8 z;
 
-    TFile fout = sp->Fout;
-
     // --- open binary output file
     output_openOutFile(sp);
     if ( ErrorCode ) return ErrorCode;
@@ -145,91 +143,91 @@ int output_open(SWMM_Project *sp)
         return ErrorCode;
     }
 
-    fseek(fout.file, 0, SEEK_SET);
+    fseek(sp->Fout.file, 0, SEEK_SET);
     k = MAGICNUMBER;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // Magic number
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Magic number
     k = VERSION;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // Version number
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Version number
     k = FlowUnits;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // Flow units
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Flow units
     k = NumSubcatch;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // # subcatchments
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # subcatchments
     k = NumNodes;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // # nodes
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # nodes
     k = NumLinks;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // # links
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # links
     k = NumPolluts;
-    fwrite(&k, sizeof(INT4), 1, fout.file);   // # pollutants
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # pollutants
 
     // --- save ID names of subcatchments, nodes, links, & pollutants 
-    IDStartPos = ftell(fout.file);
+    IDStartPos = ftell(sp->Fout.file);
     for (j=0; j<Nobjects[SUBCATCH]; j++)
     {
-        if ( Subcatch[j].rptFlag ) output_saveID(Subcatch[j].ID, fout.file);
+        if ( Subcatch[j].rptFlag ) output_saveID(Subcatch[j].ID, sp->Fout.file);
     }
     for (j=0; j<Nobjects[NODE];     j++)
     {
-        if ( Node[j].rptFlag ) output_saveID(Node[j].ID, fout.file);
+        if ( Node[j].rptFlag ) output_saveID(Node[j].ID, sp->Fout.file);
     }
     for (j=0; j<Nobjects[LINK];     j++)
     {
-        if ( Link[j].rptFlag ) output_saveID(Link[j].ID, fout.file);
+        if ( Link[j].rptFlag ) output_saveID(Link[j].ID, sp->Fout.file);
     }
-    for (j=0; j<NumPolluts; j++) output_saveID(Pollut[j].ID, fout.file);
+    for (j=0; j<NumPolluts; j++) output_saveID(Pollut[j].ID, sp->Fout.file);
 
     // --- save codes of pollutant concentration units
     for (j=0; j<NumPolluts; j++)
     {
         k = Pollut[j].units;
-        fwrite(&k, sizeof(INT4), 1, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
-    InputStartPos = ftell(fout.file);
+    InputStartPos = ftell(sp->Fout.file);
 
     // --- save subcatchment area
     k = 1;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_AREA;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<Nobjects[SUBCATCH]; j++)
     {
          if ( !Subcatch[j].rptFlag ) continue;
          SubcatchResults[0] = (REAL4)(Subcatch[j].area * UCF(LANDAREA));
-         fwrite(&SubcatchResults[0], sizeof(REAL4), 1, fout.file);
+         fwrite(&SubcatchResults[0], sizeof(REAL4), 1, sp->Fout.file);
     }
 
     // --- save node type, invert, & max. depth
     k = 3;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_TYPE_CODE;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_INVERT;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_MAX_DEPTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<Nobjects[NODE]; j++)
     {
         if ( !Node[j].rptFlag ) continue;
         k = Node[j].type;
         NodeResults[0] = (REAL4)(Node[j].invertElev * UCF(LENGTH));
         NodeResults[1] = (REAL4)(Node[j].fullDepth * UCF(LENGTH));
-        fwrite(&k, sizeof(INT4), 1, fout.file);
-        fwrite(NodeResults, sizeof(REAL4), 2, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
+        fwrite(NodeResults, sizeof(REAL4), 2, sp->Fout.file);
     }
 
     // --- save link type, offsets, max. depth, & length
     k = 5;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_TYPE_CODE;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_OFFSET;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_OFFSET;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_MAX_DEPTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_LENGTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
 
     for (j=0; j<Nobjects[LINK]; j++)
     {
@@ -258,80 +256,80 @@ int output_open(SWMM_Project *sp)
             }
             else LinkResults[3] = 0.0f;
         }
-        fwrite(&k, sizeof(INT4), 1, fout.file);
-        fwrite(LinkResults, sizeof(REAL4), 4, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
+        fwrite(LinkResults, sizeof(REAL4), 4, sp->Fout.file);
     }
 
     // --- save number & codes of subcatchment result variables
     k = NsubcatchResults;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_RAINFALL;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_SNOWDEPTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_EVAP;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_INFIL;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_RUNOFF;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_GW_FLOW;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_GW_ELEV;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_SOIL_MOIST;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
 
     for (j=0; j<NumPolluts; j++) 
     {
         k = SUBCATCH_WASHOFF + j;
-        fwrite(&k, sizeof(INT4), 1, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
     // --- save number & codes of node result variables
     k = NnodeResults;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_DEPTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_HEAD;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_VOLUME;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_LATFLOW;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_INFLOW;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_OVERFLOW;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<NumPolluts; j++)
     {
         k = NODE_QUAL + j;
-        fwrite(&k, sizeof(INT4), 1, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
     // --- save number & codes of link result variables
     k = NlinkResults;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_FLOW;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_DEPTH;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_VELOCITY;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_VOLUME;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_CAPACITY;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<NumPolluts; j++)
     {
         k = LINK_QUAL + j;
-        fwrite(&k, sizeof(INT4), 1, fout.file);
+        fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
     // --- save number & codes of system result variables
     k = MAX_SYS_RESULTS;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
-    for (k=0; k<MAX_SYS_RESULTS; k++) fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
+    for (k=0; k<MAX_SYS_RESULTS; k++) fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
 
     // --- save starting report date & report step
     //     (if reporting start date > simulation start date then
@@ -344,15 +342,15 @@ int output_open(SWMM_Project *sp)
         z = floor((ReportStart - StartDateTime)/z) - 1.0;
         z = StartDateTime + z*(double)ReportStep/86400.0;
     }
-    fwrite(&z, sizeof(REAL8), 1, fout.file);
+    fwrite(&z, sizeof(REAL8), 1, sp->Fout.file);
     k = ReportStep;
-    if ( fwrite(&k, sizeof(INT4), 1, fout.file) < 1)
+    if ( fwrite(&k, sizeof(INT4), 1, sp->Fout.file) < 1)
     {
         report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
         return ErrorCode;
     }
-    OutputStartPos = ftell(fout.file);
-    if ( fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
+    OutputStartPos = ftell(sp->Fout.file);
+    if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
     return ErrorCode;
 }
 
@@ -389,23 +387,21 @@ void output_openOutFile(SWMM_Project *sp)
 //
 {
 
-    TFile fout = sp->Fout;
-
     // --- close output file if already opened
-    if (fout.file != NULL) fclose(fout.file);
+    if (sp->Fout.file != NULL) fclose(sp->Fout.file);
 
     // --- else if file name supplied then set file mode to SAVE
-    else if (strlen(fout.name) != 0) fout.mode = SAVE_FILE;
+    else if (strlen(sp->Fout.name) != 0) sp->Fout.mode = SAVE_FILE;
 
     // --- otherwise set file mode to SCRATCH & generate a name
     else
     {
-        fout.mode = SCRATCH_FILE;
-        getTempFileName(fout.name);
+        sp->Fout.mode = SCRATCH_FILE;
+        getTempFileName(sp->Fout.name);
     }
 
     // --- try to open the file
-    if ( (fout.file = fopen(fout.name, "w+b")) == NULL)
+    if ( (sp->Fout.file = fopen(sp->Fout.name, "w+b")) == NULL)
     {
         writecon(FMT14);
         ErrorCode = ERR_OUT_FILE;
@@ -425,19 +421,17 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
     DateTime reportDate = getDateTime(reportTime);
     REAL8 date;
 
-    TFile fout = sp->Fout;
-
     if ( reportDate < ReportStart ) return;
     for (i=0; i<MAX_SYS_RESULTS; i++) SysResults[i] = 0.0f;
     date = reportDate;
-    fwrite(&date, sizeof(REAL8), 1, fout.file);
+    fwrite(&date, sizeof(REAL8), 1, sp->Fout.file);
     if (Nobjects[SUBCATCH] > 0)
-        output_saveSubcatchResults(reportTime, fout.file);
+        output_saveSubcatchResults(reportTime, sp->Fout.file);
     if (Nobjects[NODE] > 0)
-        output_saveNodeResults(reportTime, fout.file);
+        output_saveNodeResults(reportTime, sp->Fout.file);
     if (Nobjects[LINK] > 0)
-        output_saveLinkResults(reportTime, fout.file);
-    fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, fout.file);
+        output_saveLinkResults(reportTime, sp->Fout.file);
+    fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
     if ( Foutflows.mode == SAVE_FILE && !IgnoreRouting ) 
         iface_saveOutletResults(reportDate, Foutflows.file);
     Nperiods++;
@@ -453,17 +447,16 @@ void output_end(SWMM_Project *sp)
 //
 {
     INT4 k;
-    TFile fout = sp->Fout;
 
-    fwrite(&IDStartPos, sizeof(INT4), 1, fout.file);
-    fwrite(&InputStartPos, sizeof(INT4), 1, fout.file);
-    fwrite(&OutputStartPos, sizeof(INT4), 1, fout.file);
+    fwrite(&IDStartPos, sizeof(INT4), 1, sp->Fout.file);
+    fwrite(&InputStartPos, sizeof(INT4), 1, sp->Fout.file);
+    fwrite(&OutputStartPos, sizeof(INT4), 1, sp->Fout.file);
     k = Nperiods;
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = (INT4)error_getCode(ErrorCode);
-    fwrite(&k, sizeof(INT4), 1, fout.file);
+    fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = MAGICNUMBER;
-    if (fwrite(&k, sizeof(INT4), 1, fout.file) < 1)
+    if (fwrite(&k, sizeof(INT4), 1, sp->Fout.file) < 1)
     {
         report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
     }
@@ -649,12 +642,10 @@ void output_readDateTime(SWMM_Project *sp, int period, DateTime* days)
 //           from the binary output file.
 //
 {
-    TFile fout = sp->Fout;
-
     INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
-    fseek(fout.file, bytePos, SEEK_SET);
+    fseek(sp->Fout.file, bytePos, SEEK_SET);
     *days = NO_DATE;
-    fread(days, sizeof(REAL8), 1, fout.file);
+    fread(days, sizeof(REAL8), 1, sp->Fout.file);
 }
 
 //=============================================================================
@@ -668,12 +659,10 @@ void output_readSubcatchResults(SWMM_Project *sp, int period, int index)
 //           period.
 //
 {
-    TFile fout = sp->Fout;
-
     INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
     bytePos += sizeof(REAL8) + index*NsubcatchResults*sizeof(REAL4);
-    fseek(fout.file, bytePos, SEEK_SET);
-    fread(SubcatchResults, sizeof(REAL4), NsubcatchResults, fout.file);
+    fseek(sp->Fout.file, bytePos, SEEK_SET);
+    fread(SubcatchResults, sizeof(REAL4), NsubcatchResults, sp->Fout.file);
 }
 
 //=============================================================================
@@ -686,13 +675,11 @@ void output_readNodeResults(SWMM_Project *sp, int period, int index)
 //  Purpose: reads computed results for a node at a specific time period.
 //
 {
-    TFile fout = sp->Fout;
-
     INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
     bytePos += sizeof(REAL8) + NumSubcatch*NsubcatchResults*sizeof(REAL4);
     bytePos += index*NnodeResults*sizeof(REAL4);
-    fseek(fout.file, bytePos, SEEK_SET);
-    fread(NodeResults, sizeof(REAL4), NnodeResults, fout.file);
+    fseek(sp->Fout.file, bytePos, SEEK_SET);
+    fread(NodeResults, sizeof(REAL4), NnodeResults, sp->Fout.file);
 }
 
 //=============================================================================
@@ -705,15 +692,13 @@ void output_readLinkResults(SWMM_Project *sp, int period, int index)
 //  Purpose: reads computed results for a link at a specific time period.
 //
 {
-    TFile fout = sp->Fout;
-
     INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
     bytePos += sizeof(REAL8) + NumSubcatch*NsubcatchResults*sizeof(REAL4);
     bytePos += NumNodes*NnodeResults*sizeof(REAL4);
     bytePos += index*NlinkResults*sizeof(REAL4);
-    fseek(fout.file, bytePos, SEEK_SET);
-    fread(LinkResults, sizeof(REAL4), NlinkResults, fout.file);
-    fread(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, fout.file);
+    fseek(sp->Fout.file, bytePos, SEEK_SET);
+    fread(LinkResults, sizeof(REAL4), NlinkResults, sp->Fout.file);
+    fread(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
 }
 
 //=============================================================================

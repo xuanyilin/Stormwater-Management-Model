@@ -329,21 +329,18 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
     long newHour, oldHour = 0;
     long theDay, theHour;
     double elapsedTime = 0.0;                                                  //(5.1.011)
-    TFile fout;
 
     // --- open the files & read input data
     ErrorCode = 0;
 
     swmm_alloc_project(&_defaultProject);
-    fout = _defaultProject->Fout;
-
-    swmm_open(f1, f2, f3);
+    swmm_open_project(_defaultProject, f1, f2, f3);
 
     // --- run the simulation if input data OK
     if ( !ErrorCode )
     {
         // --- initialize values
-        swmm_start(TRUE);
+        swmm_start_project(_defaultProject, TRUE);
 
         // --- execute each time step until elapsed time is re-set to 0
         if ( !ErrorCode )
@@ -351,7 +348,7 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
             writecon("\n o  Simulating day: 0     hour:  0");
             do
             {
-                swmm_step(&elapsedTime);
+                swmm_step_project(_defaultProject, &elapsedTime);
                 newHour = (long)(elapsedTime * 24.0);
                 if ( newHour > oldHour )
                 {
@@ -370,14 +367,14 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
         }
 
         // --- clean up
-        swmm_end();
+        swmm_end_project(_defaultProject);
     }
 
     // --- report results
-    if ( fout.mode == SCRATCH_FILE ) swmm_report();
+    if ( _defaultProject->Fout.mode == SCRATCH_FILE ) swmm_report();
 
     // --- close the system
-    swmm_close();
+    swmm_close_project(_defaultProject);
 
     swmm_free_project(&_defaultProject);
 
@@ -750,19 +747,15 @@ int DLLEXPORT swmm_close_project(SWMM_Project *sp)
 //  Purpose: closes a SWMM project.
 //
 {
-    TFile finp = sp->Finp;
-    TFile fout = sp->Fout;
-    TFile frpt = sp->Frpt;
-
-    if ( fout.file ) output_close();
+    if ( sp->Fout.file ) output_close();
     if ( IsOpenFlag ) project_close();
     report_writeSysTime(sp);
-    if ( finp.file != NULL ) fclose(finp.file);
-    if ( frpt.file != NULL ) fclose(frpt.file);
-    if ( fout.file != NULL )
+    if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);
+    if ( sp->Frpt.file != NULL ) fclose(sp->Frpt.file);
+    if ( sp->Fout.file != NULL )
     {
-        fclose(fout.file);
-        if ( fout.mode == SCRATCH_FILE ) remove(fout.name);
+        fclose(sp->Fout.file);
+        if ( sp->Fout.mode == SCRATCH_FILE ) remove(sp->Fout.name);
     }
     IsOpenFlag = FALSE;
     IsStartedFlag = FALSE;

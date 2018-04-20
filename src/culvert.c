@@ -398,13 +398,11 @@ void report_CulvertControl(SWMM_Project *sp, int j, double q0, double q, int con
     char     theDate[12];
     char     theTime[9];
 
-    TFile frpt = sp->Frpt;
-
 	DateTime aDate = getDateTime(NewRoutingTime);
     datetime_dateToStr(aDate, theDate);
     datetime_timeToStr(aDate, theTime);
 
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
             "\n  %11s: %8s Culvert %s flow reduced from %.3f to %.3f cfs for %s flow (%.2f).",
             theDate, theTime, Link[j].ID, q0, q, conditionTxt[condition], yRatio);
 }

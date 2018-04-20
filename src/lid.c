@@ -773,19 +773,17 @@ void lid_writeSummary(SWMM_Project *sp)
     TLidUnit*  lidUnit;
     TLidList*  lidList;
     TLidGroup  lidGroup;
- 
-    TFile frpt = sp->Frpt;
 
-    fprintf(frpt.file, "\n");
-    fprintf(frpt.file, "\n");
-    fprintf(frpt.file, "\n  *******************");
-    fprintf(frpt.file, "\n  LID Control Summary");
-    fprintf(frpt.file, "\n  *******************");
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file, "\n");
+    fprintf(sp->Frpt.file, "\n");
+    fprintf(sp->Frpt.file, "\n  *******************");
+    fprintf(sp->Frpt.file, "\n  LID Control Summary");
+    fprintf(sp->Frpt.file, "\n  *******************");
+    fprintf(sp->Frpt.file,
 "\n                                   No. of        Unit        Unit      %% Area    %% Imperv");
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  Subcatchment     LID Control      Units        Area       Width     Covered     Treated");
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  ---------------------------------------------------------------------------------------");
     for (j = 0; j < GroupCount; j++)
     {
@@ -797,8 +795,8 @@ void lid_writeSummary(SWMM_Project *sp)
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
             pctArea = lidUnit->area * lidUnit->number / Subcatch[j].area * 100.0;
-            fprintf(frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
-            fprintf(frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
+            fprintf(sp->Frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
+            fprintf(sp->Frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
                 lidUnit->number, lidUnit->area * SQR(UCF(LENGTH)),
                 lidUnit->fullWidth * UCF(LENGTH), pctArea,
                 lidUnit->fromImperv*100.0);
@@ -1781,8 +1779,6 @@ void lid_writeWaterBalance(SWMM_Project *sp)
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
-    TFile frpt = sp->Frpt;
-
     //... check that project has LIDs
     for ( j = 0; j < GroupCount; j++ )
     {
@@ -1791,22 +1787,22 @@ void lid_writeWaterBalance(SWMM_Project *sp)
     if ( k == 0 ) return;
 
     //... write table header
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
     "\n"
     "\n  ***********************"
     "\n  LID Performance Summary"
     "\n  ***********************\n");
 
 ////  Headings modified for release 5.1.008.  ////                             //(5.1.008)
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------"
 "\n                                         Total      Evap     Infil   Surface    Drain    Initial     Final  Continuity"
 "\n                                        Inflow      Loss      Loss   Outflow   Outflow   Storage   Storage       Error");
-    if ( UnitSystem == US ) fprintf(frpt.file,
+    if ( UnitSystem == US ) fprintf(sp->Frpt.file,
 "\n  Subcatchment      LID Control             in        in        in        in        in        in        in           %%");
-    else fprintf(frpt.file,
+    else fprintf(sp->Frpt.file,
 "\n  Subcatchment      LID Control             mm        mm        mm        mm        mm        mm        mm           %%");
-    fprintf(frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------");
 
     //... examine each LID unit in each subcatchment
@@ -1820,9 +1816,9 @@ void lid_writeWaterBalance(SWMM_Project *sp)
             //... write water balance components to report file
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            fprintf(frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
+            fprintf(sp->Frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
                                                    LidProcs[k].ID);
-            fprintf(frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
+            fprintf(sp->Frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
                     lidUnit->waterBalance.inflow*ucf,
                     lidUnit->waterBalance.evap*ucf,
                     lidUnit->waterBalance.infil*ucf,
@@ -1841,7 +1837,7 @@ void lid_writeWaterBalance(SWMM_Project *sp)
                       lidUnit->waterBalance.drainFlow;
             if ( inflow > 0.0 ) err = (inflow - outflow) / inflow;
             else                err = 1.0;
-            fprintf(frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
+            fprintf(sp->Frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
             lidList = lidList->nextLidUnit;
         }
     }

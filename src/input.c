@@ -78,8 +78,6 @@ int input_countObjects(SWMM_Project *sp)
     int   i;
     long  lineCount = 0;
 
-    TFile finp = sp->Finp;
-
     // --- initialize number of objects & set default values
     if ( ErrorCode ) return ErrorCode;
     error_setInpError(0, "");
@@ -88,7 +86,7 @@ int input_countObjects(SWMM_Project *sp)
     for (i = 0; i < MAX_LINK_TYPES; i++) Nlinks[i] = 0;
 
     // --- make pass through data file counting number of each object
-    while ( fgets(line, MAXLINE, finp.file) != NULL )
+    while ( fgets(line, MAXLINE, sp->Finp.file) != NULL )
     {
         // --- skip blank lines & those beginning with a comment
         lineCount++;
@@ -151,8 +149,6 @@ int input_readData(SWMM_Project *sp)
     int   i;
     long  lineCount = 0;
 
-    TFile finp = sp->Finp;
-
     // --- initialize working item count arrays
     //     (final counts in Mobjects, Mnodes & Mlinks should
     //      match those in Nobjects, Nnodes and Nlinks).
@@ -172,8 +168,8 @@ int input_readData(SWMM_Project *sp)
     // --- read each line from input file
     sect = 0;
     errsum = 0;
-    rewind(finp.file);
-    while ( fgets(line, MAXLINE, finp.file) != NULL )
+    rewind(sp->Finp.file);
+    while ( fgets(line, MAXLINE, sp->Finp.file) != NULL )
     {
         // --- make copy of line and scan for tokens
         lineCount++;
