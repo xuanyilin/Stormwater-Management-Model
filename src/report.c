@@ -477,10 +477,11 @@ void report_writeControlAction(SWMM_Project *sp, DateTime aDate, char* linkID,
 {
     char     theDate[12];
     char     theTime[9];
-    datetime_dateToStr(aDate, theDate);
-    datetime_timeToStr(aDate, theTime);
 
     TFile frpt = sp->Frpt;
+
+    datetime_dateToStr(aDate, theDate);
+    datetime_timeToStr(aDate, theTime);
 
     fprintf(frpt.file,
             "  %11s: %8s Link %s setting changed to %6.2f by Control %s\n",

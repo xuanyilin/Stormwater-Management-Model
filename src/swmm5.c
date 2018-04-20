@@ -180,7 +180,7 @@ static void execRouting(SWMM_Project *sp);                                      
 
 // Exception filtering function
 #ifdef EXH                                                                     //(5.1.011)
-static int  xfilter(int xc, char* module, double elapsedTime, long step);      //(5.1.011)
+static int  xfilter(SWMM_Project *sp, int xc, char* module, double elapsedTime, long step);      //(5.1.011)
 #endif
 
 //-----------------------------------------------------------------------------
@@ -404,7 +404,7 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(GetExceptionCode(), "swmm_open", 0.0, 0))                 //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "swmm_open", 0.0, 0))             //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
     }
@@ -498,7 +498,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(GetExceptionCode(), "swmm_start", 0.0, 0))                //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "swmm_start", 0.0, 0))            //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
     }
@@ -560,7 +560,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(GetExceptionCode(), "swmm_step", ElapsedTime, StepCount)) //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "swmm_step", ElapsedTime, StepCount)) //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
     }
@@ -625,7 +625,7 @@ void execRouting(SWMM_Project *sp)                                              
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(GetExceptionCode(), "execRouting",                        //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "execRouting",                        //(5.1.011)
                      ElapsedTime, StepCount))                                  //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
@@ -994,7 +994,7 @@ void  writecon(char *s)
 //=============================================================================
 
 #ifdef EXH                                                                     //(5.1.011)
-int xfilter(int xc, char* module, double elapsedTime, long step)               //(5.1.011)
+int xfilter(SWMM_Project *sp, int xc, char* module, double elapsedTime, long step)               //(5.1.011)
 //
 //  Input:   xc          = exception code
 //           module      = name of code module where exception was handled     //(5.1.011)
@@ -1060,7 +1060,7 @@ int xfilter(int xc, char* module, double elapsedTime, long step)               /
         strcat(xmsg, " --- execution halted.");
         rc = EXCEPTION_EXECUTE_HANDLER;
     }
-    report_writeLine(xmsg);
+    report_writeLine(sp, xmsg);
     return rc;
 }
 #endif
