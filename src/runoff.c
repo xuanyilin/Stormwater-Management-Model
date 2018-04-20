@@ -73,7 +73,7 @@ extern float* SubcatchResults;         // Results vector defined in OUTPUT.C
 static double runoff_getTimeStep(DateTime currentDate);
 static void   runoff_initFile(SWMM_Project *sp);
 static void   runoff_readFromFile(SWMM_Project *sp);
-static void   runoff_saveToFile(float tStep);
+static void   runoff_saveToFile(SWMM_Project *sp, float tStep);
 static void   runoff_getOutfallRunon(double tStep);                            //(5.1.008)
 
 //=============================================================================
@@ -102,16 +102,16 @@ int runoff_open(SWMM_Project *sp)
     }
 
     // --- see if a runoff interface file should be opened
-    switch ( Frunoff.mode )
+    switch ( sp->Frunoff.mode )
     {
       case USE_FILE:
-        if ( (Frunoff.file = fopen(Frunoff.name, "r+b")) == NULL)
-            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, Frunoff.name);
+        if ( (sp->Frunoff.file = fopen(sp->Frunoff.name, "r+b")) == NULL)
+            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, sp->Frunoff.name);
         else runoff_initFile(sp);
         break;
       case SAVE_FILE:
-        if ( (Frunoff.file = fopen(Frunoff.name, "w+b")) == NULL)
-            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, Frunoff.name);
+        if ( (sp->Frunoff.file = fopen(sp->Frunoff.name, "w+b")) == NULL)
+            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, sp->Frunoff.name);
         else runoff_initFile(sp);
         break;
     }
@@ -136,15 +136,15 @@ void runoff_close(SWMM_Project *sp)
     FREE(OutflowLoad);
 
     // --- close runoff interface file if in use
-    if ( Frunoff.file )
+    if ( sp->Frunoff.file )
     {
         // --- write to file number of time steps simulated
-        if ( Frunoff.mode == SAVE_FILE )
+        if ( sp->Frunoff.mode == SAVE_FILE )
         {
-            fseek(Frunoff.file, MaxStepsPos, SEEK_SET);
-            fwrite(&Nsteps, sizeof(int), 1, Frunoff.file);
+            fseek(sp->Frunoff.file, MaxStepsPos, SEEK_SET);
+            fwrite(&Nsteps, sizeof(int), 1, sp->Frunoff.file);
         }
-        fclose(Frunoff.file);
+        fclose(sp->Frunoff.file);
     }
 
     // --- close climate file if in use
@@ -199,7 +199,7 @@ void runoff_execute(SWMM_Project *sp)
     }
 
     // --- read runoff results from interface file if applicable
-    if ( Frunoff.mode == USE_FILE )
+    if ( sp->Frunoff.mode == USE_FILE )
     {
         runoff_readFromFile(sp);
         return;
@@ -281,9 +281,9 @@ void runoff_execute(SWMM_Project *sp)
 
     // --- save runoff results to interface file if one is used
     Nsteps++;
-    if ( Frunoff.mode == SAVE_FILE )
+    if ( sp->Frunoff.mode == SAVE_FILE )
     {
-        runoff_saveToFile((float)runoffStep);
+        runoff_saveToFile(sp, (float)runoffStep);
     }
 
     // --- reset subcatchment runon to 0
@@ -344,24 +344,24 @@ void runoff_initFile(SWMM_Project *sp)
     char  fStamp[] = "SWMM5-RUNOFF";
 
     MaxSteps = 0;
-    if ( Frunoff.mode == SAVE_FILE )
+    if ( sp->Frunoff.mode == SAVE_FILE )
     {
         // --- write file stamp, # subcatchments & # pollutants to file
         nSubcatch = Nobjects[SUBCATCH];
         nPollut = Nobjects[POLLUT];
         flowUnits = FlowUnits;
-        fwrite(fileStamp, sizeof(char), strlen(fileStamp), Frunoff.file);
-        fwrite(&nSubcatch, sizeof(int), 1, Frunoff.file);
-        fwrite(&nPollut, sizeof(int), 1, Frunoff.file);
-        fwrite(&flowUnits, sizeof(int), 1, Frunoff.file);
-        MaxStepsPos = ftell(Frunoff.file); 
-        fwrite(&MaxSteps, sizeof(int), 1, Frunoff.file);
+        fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Frunoff.file);
+        fwrite(&nSubcatch, sizeof(int), 1, sp->Frunoff.file);
+        fwrite(&nPollut, sizeof(int), 1, sp->Frunoff.file);
+        fwrite(&flowUnits, sizeof(int), 1, sp->Frunoff.file);
+        MaxStepsPos = ftell(sp->Frunoff.file);
+        fwrite(&MaxSteps, sizeof(int), 1, sp->Frunoff.file);
     }
 
-    if ( Frunoff.mode == USE_FILE )
+    if ( sp->Frunoff.mode == USE_FILE )
     {
         // --- check that interface file contains proper header records
-        fread(fStamp, sizeof(char), strlen(fileStamp), Frunoff.file);
+        fread(fStamp, sizeof(char), strlen(fileStamp), sp->Frunoff.file);
         if ( strcmp(fStamp, fileStamp) != 0 )
         {
             report_writeErrorMsg(sp, ERR_RUNOFF_FILE_FORMAT, "");
@@ -370,10 +370,10 @@ void runoff_initFile(SWMM_Project *sp)
         nSubcatch = -1;
         nPollut = -1;
         flowUnits = -1;
-        fread(&nSubcatch, sizeof(int), 1, Frunoff.file);
-        fread(&nPollut, sizeof(int), 1, Frunoff.file);
-        fread(&flowUnits, sizeof(int), 1, Frunoff.file);
-        fread(&MaxSteps, sizeof(int), 1, Frunoff.file);
+        fread(&nSubcatch, sizeof(int), 1, sp->Frunoff.file);
+        fread(&nPollut, sizeof(int), 1, sp->Frunoff.file);
+        fread(&flowUnits, sizeof(int), 1, sp->Frunoff.file);
+        fread(&MaxSteps, sizeof(int), 1, sp->Frunoff.file);
         if ( nSubcatch != Nobjects[SUBCATCH]
         ||   nPollut   != Nobjects[POLLUT]
         ||   flowUnits != FlowUnits
@@ -386,7 +386,7 @@ void runoff_initFile(SWMM_Project *sp)
 
 //=============================================================================
 
-void  runoff_saveToFile(float tStep)
+void  runoff_saveToFile(SWMM_Project *sp, float tStep)
 //
 //  Input:   tStep = runoff time step (sec)
 //  Output:  none
@@ -397,11 +397,11 @@ void  runoff_saveToFile(float tStep)
     int n = MAX_SUBCATCH_RESULTS + Nobjects[POLLUT] - 1;
     
 
-    fwrite(&tStep, sizeof(float), 1, Frunoff.file);
+    fwrite(&tStep, sizeof(float), 1, sp->Frunoff.file);
     for (j=0; j<Nobjects[SUBCATCH]; j++)
     {
         subcatch_getResults(j, 1.0, SubcatchResults);
-        fwrite(SubcatchResults, sizeof(float), n, Frunoff.file);
+        fwrite(SubcatchResults, sizeof(float), n, sp->Frunoff.file);
     }
 }
 
@@ -432,7 +432,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
 
     // --- read runoff time step
     kount = 0;
-    kount += fread(&tStep, sizeof(float), 1, Frunoff.file);
+    kount += fread(&tStep, sizeof(float), 1, sp->Frunoff.file);
 
     // --- compute number of results saved for each subcatchment
     nResults = MAX_SUBCATCH_RESULTS + Nobjects[POLLUT] - 1;
@@ -441,7 +441,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
     for (j = 0; j < Nobjects[SUBCATCH]; j++)
     {
         // --- read vector of saved results
-        kount += fread(SubcatchResults, sizeof(float), nResults, Frunoff.file);
+        kount += fread(SubcatchResults, sizeof(float), nResults, sp->Frunoff.file);
 
         // --- extract hydrologic results, converting units where necessary
         //     (results were saved to file in user's units)

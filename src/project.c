@@ -772,7 +772,7 @@ void setDefaults(SWMM_Project *sp)
    // Interface files
    sp->Frain.mode      = SCRATCH_FILE;     // Use scratch rainfall file
    sp->Fclimate.mode   = NO_FILE;
-   Frunoff.mode    = NO_FILE;
+   sp->Frunoff.mode    = NO_FILE;
    Frdii.mode      = NO_FILE;
    Fhotstart1.mode = NO_FILE;
    Fhotstart2.mode = NO_FILE;
@@ -780,7 +780,7 @@ void setDefaults(SWMM_Project *sp)
    Foutflows.mode  = NO_FILE;
    sp->Frain.file      = NULL;
    sp->Fclimate.file   = NULL;
-   Frunoff.file    = NULL;
+   sp->Frunoff.file    = NULL;
    Frdii.file      = NULL;
    Fhotstart1.file = NULL;
    Fhotstart2.file = NULL;

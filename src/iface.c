@@ -97,8 +97,8 @@ int iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks)
         break;
 
       case RUNOFF_FILE:
-        Frunoff.mode = k;
-        sstrncpy(Frunoff.name, tok[2], MAXFNAME);
+        sp->Frunoff.mode = k;
+        sstrncpy(sp->Frunoff.name, tok[2], MAXFNAME);
         break;
 
       case HOTSTART_FILE:

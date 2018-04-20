@@ -490,14 +490,14 @@ void report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
 //
 {
 
-    if ( Frunoff.mode == USE_FILE )
+    if ( sp->Frunoff.mode == USE_FILE )
     {
         WRITE("");
         fprintf(sp->Frpt.file,
         "\n  **************************"
         "\n  Runoff Quantity Continuity"
         "\n  **************************"
-        "\n  Runoff supplied by interface file %s", Frunoff.name);
+        "\n  Runoff supplied by interface file %s", sp->Frunoff.name);
         WRITE("");
         return;
     }
