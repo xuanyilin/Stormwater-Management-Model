@@ -330,7 +330,7 @@ void writeNodeDepths(SWMM_Project *sp)
         fprintf(sp->Frpt.file, " %-9s ", NodeTypeWords[Node[j].type]);
         getElapsedTime(NodeStats[j].maxDepthDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "%7.2f  %7.2f  %7.2f  %4d  %02d:%02d  %10.2f",
-            NodeStats[j].avgDepth / StepCount * UCF(LENGTH),
+            NodeStats[j].avgDepth / sp->StepCount * UCF(LENGTH),
             NodeStats[j].maxDepth * UCF(LENGTH),
             (NodeStats[j].maxDepth + Node[j].invertElev) * UCF(LENGTH),
             days, hrs, mins, NodeStats[j].maxRptDepth);                        //(5.1.011)
@@ -531,7 +531,7 @@ void writeStorageVolumes(SWMM_Project *sp)
             if ( Node[j].type != STORAGE ) continue;
             k = Node[j].subIndex;
             fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
-            avgVol = StorageStats[k].avgVol / StepCount;
+            avgVol = StorageStats[k].avgVol / sp->StepCount;
             maxVol = StorageStats[k].maxVol;
             pctMaxVol = 0.0;
             pctAvgVol = 0.0;
@@ -627,7 +627,7 @@ void writeOutfallLoads(SWMM_Project *sp)
 
             // --- print node ID, flow freq., avg. flow, max. flow & flow vol.
             fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
-            x = 100.*flowCount/(double)StepCount;
+            x = 100.*flowCount/(double)sp->StepCount;
             fprintf(sp->Frpt.file, "%7.2f", x);
             freqSum += x;
             if ( flowCount > 0 )
@@ -797,7 +797,7 @@ void writeFlowClass(SWMM_Project *sp)
         for ( i=0; i<MAX_FLOW_CLASSES; i++ )
         {
             fprintf(sp->Frpt.file, "  %4.2f",
-                LinkStats[j].timeInFlowClass[i] /= StepCount);
+                LinkStats[j].timeInFlowClass[i] /= sp->StepCount);
         }
         fprintf(sp->Frpt.file, "  %4.2f", LinkStats[j].timeNormalFlow /
                                       (NewRoutingTime/1000.0));

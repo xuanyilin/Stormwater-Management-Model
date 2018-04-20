@@ -216,7 +216,7 @@ double dynwave_getRoutingStep(double fixedStep)
 
 //=============================================================================
 
-int dynwave_execute(double tStep)
+int dynwave_execute(SWMM_Project *sp, double tStep)
 //
 //  Input:   links = array of topo sorted links indexes
 //           tStep = time step (sec)
@@ -249,7 +249,7 @@ int dynwave_execute(double tStep)
             findBypassedLinks();
         }
     }
-    if ( !converged ) NonConvergeCount++;
+    if ( !converged ) sp->NonConvergeCount++;
 
     //  --- identify any capacity-limited conduits
     findLimitedLinks();

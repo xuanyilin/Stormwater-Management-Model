@@ -129,7 +129,7 @@ int output_open(SWMM_Project *sp)
         + NumNodes * NnodeResults * sizeof(REAL4)
         + NumLinks * NlinkResults * sizeof(REAL4)
         + MAX_SYS_RESULTS * sizeof(REAL4);
-    Nperiods = 0;
+    sp->Nperiods = 0;
 
     SubcatchResults = NULL;
     NodeResults = NULL;
@@ -434,7 +434,7 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
     fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
     if ( sp->Foutflows.mode == SAVE_FILE && !IgnoreRouting )
         iface_saveOutletResults(reportDate, sp->Foutflows.file);
-    Nperiods++;
+    sp->Nperiods++;
 }
 
 //=============================================================================
@@ -451,7 +451,7 @@ void output_end(SWMM_Project *sp)
     fwrite(&IDStartPos, sizeof(INT4), 1, sp->Fout.file);
     fwrite(&InputStartPos, sizeof(INT4), 1, sp->Fout.file);
     fwrite(&OutputStartPos, sizeof(INT4), 1, sp->Fout.file);
-    k = Nperiods;
+    k = sp->Nperiods;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = (INT4)error_getCode(ErrorCode);
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);

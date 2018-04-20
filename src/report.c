@@ -1030,9 +1030,9 @@ void report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats)
 //
 {
     double x;
-    double eventStepCount = (double)StepCount - sysStats->steadyStateCount;    //(5.1.012)
+    double eventStepCount = (double)sp->StepCount - sysStats->steadyStateCount;    //(5.1.012)
 
-    if ( Nobjects[LINK] == 0 || StepCount == 0
+    if ( Nobjects[LINK] == 0 || sp->StepCount == 0
 	                     || eventStepCount == 0.0 ) return;                //(5.1.012)   
     WRITE("");
     WRITE("*************************");
@@ -1055,7 +1055,7 @@ void report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats)
         sysStats->avgStepCount / eventStepCount);                              //(5.1.012)
     fprintf(sp->Frpt.file,
         "\n  Percent Not Converging      :  %7.2f",
-        100.0 * (double)NonConvergeCount / eventStepCount);                    //(5.1.012)
+        100.0 * (double)sp->NonConvergeCount / eventStepCount);                    //(5.1.012)
     WRITE("");
 }
 
@@ -1072,7 +1072,7 @@ void report_writeReport(SWMM_Project *sp)
 //
 {
     if ( ErrorCode ) return;
-    if ( Nperiods == 0 ) return;
+    if ( sp->Nperiods == 0 ) return;
     if ( RptFlags.subcatchments != NONE
          && ( IgnoreRainfall == FALSE ||
               IgnoreSnowmelt == FALSE ||
@@ -1113,7 +1113,7 @@ void report_Subcatchments(SWMM_Project *sp)
         if ( Subcatch[j].rptFlag == TRUE )
         {
             report_SubcatchHeader(sp, Subcatch[j].ID);
-            for ( period = 1; period <= Nperiods; period++ )
+            for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);
@@ -1237,7 +1237,7 @@ void report_Nodes(SWMM_Project *sp)
         if ( Node[j].rptFlag == TRUE )
         {
             report_NodeHeader(sp, Node[j].ID);
-            for ( period = 1; period <= Nperiods; period++ )
+            for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);
@@ -1317,7 +1317,7 @@ void report_Links(SWMM_Project *sp)
         if ( Link[j].rptFlag == TRUE )
         {
             report_LinkHeader(sp, Link[j].ID);
-            for ( period = 1; period <= Nperiods; period++ )
+            for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
                 datetime_dateToStr(days, theDate);

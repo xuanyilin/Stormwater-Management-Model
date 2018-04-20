@@ -519,6 +519,8 @@ int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats);
+int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
+        SM_NodeStats *nodeStats);
 
 /**
  @brief Get the cumulative inflow for a node.
@@ -536,7 +538,8 @@ int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats);
-
+int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
+        SM_StorageStats *storageStats);
 /**
  @brief Get outfall statistics.
  @param index The index of a outfall node

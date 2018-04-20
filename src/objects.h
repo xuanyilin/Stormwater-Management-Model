@@ -1107,12 +1107,12 @@ struct SWMM_Project {
                  Fhotstart2,               // Hot start output file
                  Finflows,                 // Inflows routing file
                  Foutflows;                // Outflows routing file
-//
-//
-//    EXTERN long
-//                      Nperiods,                 // Number of reporting periods
-//                      StepCount,                // Number of routing steps used
-//                      NonConvergeCount;         // Number of non-converging steps
+
+
+   long
+                 Nperiods,                 // Number of reporting periods
+                 StepCount,                // Number of routing steps used
+                 NonConvergeCount;         // Number of non-converging steps
 //
 //    EXTERN char
 //                      Msg[MAXMSG+1],            // Text of output message

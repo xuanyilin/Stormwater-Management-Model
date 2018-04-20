@@ -160,7 +160,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
     // --- execute dynamic wave routing if called for
     if ( routingModel == DW )
     {
-        return dynwave_execute(tStep);
+        return dynwave_execute(sp, tStep);
     }
 
     // --- otherwise examine each link, moving from upstream to downstream

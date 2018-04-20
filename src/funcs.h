@@ -261,7 +261,7 @@ void    dynwave_validate(void);                                                /
 void    dynwave_init(SWMM_Project *sp);
 void    dynwave_close(void);
 double  dynwave_getRoutingStep(double fixedStep);
-int     dynwave_execute(double tStep);
+int     dynwave_execute(SWMM_Project *sp, double tStep);
 void    dwflow_findConduitFlow(int j, int steps, double omega, double dt);
 
 void    qualrout_init(void);

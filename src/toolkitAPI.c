@@ -926,8 +926,11 @@ int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result)
     return(errcode);
 }
 
-
-int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats)
+int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats){
+    return swmm_getNodeStats_project(_defaultProject, index, nodeStats);
+}
+int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
+        SM_NodeStats *nodeStats)
 //
 // Output:  Node Stats Structure (SM_NodeStats)
 // Return:  API Error
@@ -938,7 +941,7 @@ int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats)
     if (errorcode == 0)
     {
         // Current Average Depth
-        nodeStats->avgDepth *= (UCF(LENGTH) / (double)StepCount);
+        nodeStats->avgDepth *= (UCF(LENGTH) / (double)sp->StepCount);
         // Current Maximum Depth
         nodeStats->maxDepth *= UCF(LENGTH);
         // Current Maximum Lateral Inflow
@@ -981,7 +984,11 @@ int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value)
     return(errorcode);
 }
 
-int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats)
+int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats){
+    return swmm_getStorageStats_project(_defaultProject, index, storageStats);
+}
+int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
+        SM_StorageStats *storageStats)
 //
 // Output:  Storage Node Stats Structure (SM_StorageStats)
 // Return:  API Error
@@ -994,7 +1001,7 @@ int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats)
         // Initial Volume
         storageStats->initVol *= UCF(VOLUME);
         // Current Average Volume
-        storageStats->avgVol *= (UCF(VOLUME) / (double)StepCount);
+        storageStats->avgVol *= (UCF(VOLUME) / (double)sp->StepCount);
         // Current Maximum Volume
         storageStats->maxVol *= UCF(VOLUME);
         // Current Maximum Flow

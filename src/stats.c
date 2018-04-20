@@ -87,7 +87,7 @@ extern double*         NodeOutflow;    // defined in massbal.c
 //-----------------------------------------------------------------------------
 static void stats_updateNodeStats(int node, double tStep, DateTime aDate);
 static void stats_updateLinkStats(int link, double tStep, DateTime aDate);
-static void stats_findMaxStats(void);
+static void stats_findMaxStats(SWMM_Project *sp);
 static void stats_updateMaxStats(TMaxStats maxStats[], int i, int j, double x);
 
 //=============================================================================
@@ -339,7 +339,7 @@ void  stats_report(SWMM_Project *sp)
     // --- report flow routing accuracy statistics
     if ( Nobjects[LINK] > 0 && RouteModel != NO_ROUTING )
     {
-        stats_findMaxStats();
+        stats_findMaxStats(sp);
         report_writeMaxStats(sp, MaxMassBalErrs, MaxCourantCrit, MAX_STATS);
         report_writeMaxFlowTurns(sp, MaxFlowTurns, MAX_STATS);
         report_writeSysStats(sp, &SysStats);
@@ -721,7 +721,7 @@ void  stats_updateLinkStats(int j, double tStep, DateTime aDate)
 
 //=============================================================================
 
-void  stats_findMaxStats()
+void  stats_findMaxStats(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -745,11 +745,11 @@ void  stats_findMaxStats()
     }
 
     // --- find links with most flow turns 
-    if ( StepCount > 2 )
+    if ( sp->StepCount > 2 )
     {
         for (j=0; j<Nobjects[LINK]; j++)
         {
-            x = 100.0 * LinkStats[j].flowTurns / (2./3.*(StepCount-2));
+            x = 100.0 * LinkStats[j].flowTurns / (2./3.*(sp->StepCount-2));
             stats_updateMaxStats(MaxFlowTurns, LINK, j, x);
         }
     }
@@ -775,17 +775,17 @@ void  stats_findMaxStats()
     if ( RouteModel != DW || CourantFactor == 0.0 ) return;
 
     // --- find nodes most frequently Courant critical
-    if ( StepCount == 0 ) return;                                              //(5.1.008)
+    if ( sp->StepCount == 0 ) return;                                              //(5.1.008)
     for (j=0; j<Nobjects[NODE]; j++)
     {
-        x = NodeStats[j].timeCourantCritical / StepCount;
+        x = NodeStats[j].timeCourantCritical / sp->StepCount;
         stats_updateMaxStats(MaxCourantCrit, NODE, j, 100.0*x);
     }
 
     // --- find links most frequently Courant critical
     for (j=0; j<Nobjects[LINK]; j++)
     {
-        x = LinkStats[j].timeCourantCritical / StepCount;
+        x = LinkStats[j].timeCourantCritical / sp->StepCount;
         stats_updateMaxStats(MaxCourantCrit, LINK, j, 100.0*x);
     }
 }

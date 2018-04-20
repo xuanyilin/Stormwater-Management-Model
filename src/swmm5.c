@@ -483,8 +483,8 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         NewRunoffTime = 0.0;
         NewRoutingTime = 0.0;
         ReportTime =   (double)(1000 * ReportStep);
-        StepCount = 0;
-        NonConvergeCount = 0;
+        sp->StepCount = 0;
+        sp->NonConvergeCount = 0;
         IsStartedFlag = TRUE;
 
         // --- initialize global continuity errors
@@ -595,7 +595,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(sp, GetExceptionCode(), "swmm_step", ElapsedTime, StepCount)) //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "swmm_step", ElapsedTime, sp->StepCount)) //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
     }
@@ -621,7 +621,7 @@ void execRouting(SWMM_Project *sp)                                              
 #endif
     {
         // --- determine when next routing time occurs
-        StepCount++;
+        sp->StepCount++;
         if ( !DoRouting ) routingStep = MIN(WetStep, ReportStep);
         else routingStep = routing_getRoutingStep(RouteModel, RouteStep);
         if ( routingStep <= 0.0 )
@@ -661,7 +661,7 @@ void execRouting(SWMM_Project *sp)                                              
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
     __except(xfilter(sp, GetExceptionCode(), "execRouting",                        //(5.1.011)
-                     ElapsedTime, StepCount))                                  //(5.1.011)
+                     ElapsedTime, sp->StepCount))                                  //(5.1.011)
     {
         ErrorCode = ERR_SYSTEM;
         return;
