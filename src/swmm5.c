@@ -283,11 +283,41 @@ int  main(int argc, char *argv[])
 
 //=============================================================================
 
-int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3) {
-    return swmm_run_project(_defaultProject, f1, f2, f3);
+int DLLEXPORT  swmm_alloc_project(SWMM_Project **sp) {
+
+    SWMM_Project *p_project;
+    int errorcode = 0;
+
+    p_project = (SWMM_Project*)calloc(1, sizeof(SWMM_Project));
+
+    if ( p_project != NULL ) {
+        *sp = p_project;
+    }
+    else
+        errorcode = -1;
+
+    return errorcode;
 }
 
-int DLLEXPORT  swmm_run_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
+int DLLEXPORT swmm_free_project(SWMM_Project **sp) {
+
+    SWMM_Project *p_project;
+    int errorcode = 0;
+
+    p_project = (SWMM_Project*)(*sp);
+
+    if ( p_project == NULL )
+        errorcode = -1;
+
+    else {
+        free(p_project);
+        *sp = NULL;
+    }
+
+    return errorcode;
+}
+
+int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -299,10 +329,15 @@ int DLLEXPORT  swmm_run_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
     long newHour, oldHour = 0;
     long theDay, theHour;
     double elapsedTime = 0.0;                                                  //(5.1.011)
+    TFile fout;
 
     // --- open the files & read input data
     ErrorCode = 0;
-    swmm_open_project(sp, f1, f2, f3);
+
+    swmm_alloc_project(&_defaultProject);
+    fout = _defaultProject->Fout;
+
+    swmm_open(f1, f2, f3);
 
     // --- run the simulation if input data OK
     if ( !ErrorCode )
@@ -339,10 +374,13 @@ int DLLEXPORT  swmm_run_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
     }
 
     // --- report results
-    if ( sp->Fout.mode == SCRATCH_FILE ) swmm_report();
+    if ( fout.mode == SCRATCH_FILE ) swmm_report();
 
     // --- close the system
     swmm_close();
+
+    swmm_free_project(&_defaultProject);
+
     return error_getCode(ErrorCode);                                           //(5.1.011)
 }
 

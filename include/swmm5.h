@@ -46,6 +46,19 @@ extern "C" {
 
 typedef struct SWMM_Project SWMM_Project;
 
+/**
+ @brief Allocates a project pointer
+ @param sp pointer to swmm project struct
+ @return error code
+*/
+int  DLLEXPORT   swmm_alloc_project(SWMM_Project **sp);
+
+/**
+ @brief Frees a project pointer.
+ @param sp pointer to swmm project struct
+ @return error code
+*/
+int  DLLEXPORT   swmm_free_project(SWMM_Project **sp);
 
 /**
  @brief Opens SWMM input file, reads in network data, runs, and closes
@@ -55,7 +68,6 @@ typedef struct SWMM_Project SWMM_Project;
  @return error code
 */
 int  DLLEXPORT   swmm_run(char* f1, char* f2, char* f3);
-int  DLLEXPORT   swmm_run_project(SWMM_Project *p, char* f1, char* f2, char* f3);
 
 /**
  @brief Opens SWMM input file & reads in network data
