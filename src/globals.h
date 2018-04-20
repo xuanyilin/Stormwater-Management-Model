@@ -40,7 +40,7 @@
 EXTERN SWMM_Project *_defaultProject;
 
 
-EXTERN TFile
+//EXTERN TFile
 //                  Finp,                     // Input file
 //                  Fout,                     // Output file
 //                  Frpt,                     // Report file
@@ -50,8 +50,8 @@ EXTERN TFile
 //                  Frdii,                    // RDII inflow file
 //                  Fhotstart1,               // Hot start input file
 //                  Fhotstart2,               // Hot start output file
-                  Finflows,                 // Inflows routing file
-                  Foutflows;                // Outflows routing file
+//                  Finflows,                 // Inflows routing file
+//                  Foutflows;                // Outflows routing file
 
 
 EXTERN long

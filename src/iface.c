@@ -57,10 +57,10 @@ static DateTime NewIfaceDate;          // next date of interface values
 //-----------------------------------------------------------------------------
 static void  openFileForOutput(SWMM_Project *sp);
 static void  openFileForInput(SWMM_Project *sp);
-static int   getIfaceFilePolluts(void);
-static int   getIfaceFileNodes(void);
+static int   getIfaceFilePolluts(SWMM_Project *sp);
+static int   getIfaceFileNodes(SWMM_Project *sp);
 static void  setOldIfaceValues(void);
-static void  readNewIfaceValues(void);
+static void  readNewIfaceValues(SWMM_Project *sp);
 static int   isOutletNode(int node);
 
 
@@ -121,14 +121,14 @@ int iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks)
 
       case INFLOWS_FILE:
         if ( k != USE_FILE ) return error_setInpError(ERR_ITEMS, "");
-        Finflows.mode = k;
-        sstrncpy(Finflows.name, tok[2], MAXFNAME);
+        sp->Finflows.mode = k;
+        sstrncpy(sp->Finflows.name, tok[2], MAXFNAME);
         break;
 
       case OUTFLOWS_FILE:
         if ( k != SAVE_FILE ) return error_setInpError(ERR_ITEMS, "");
-        Foutflows.mode = k;
-        sstrncpy(Foutflows.name, tok[2], MAXFNAME);
+        sp->Foutflows.mode = k;
+        sstrncpy(sp->Foutflows.name, tok[2], MAXFNAME);
         break;
     }
     return 0;
@@ -152,9 +152,9 @@ void iface_openRoutingFiles(SWMM_Project *sp)
     NewIfaceValues = NULL;
 
     // --- check that inflows & outflows files are not the same
-    if ( Foutflows.mode != NO_FILE && Finflows.mode != NO_FILE )
+    if ( sp->Foutflows.mode != NO_FILE && sp->Finflows.mode != NO_FILE )
     {
-        if ( strcomp(Foutflows.name, Finflows.name) )
+        if ( strcomp(sp->Foutflows.name, sp->Finflows.name) )
         {
             report_writeErrorMsg(sp, ERR_ROUTING_FILE_NAMES, "");
             return;
@@ -162,13 +162,13 @@ void iface_openRoutingFiles(SWMM_Project *sp)
     }
 
     // --- open the file for reading or writing
-    if ( Foutflows.mode == SAVE_FILE ) openFileForOutput(sp);
-    if ( Finflows.mode == USE_FILE ) openFileForInput(sp);
+    if ( sp->Foutflows.mode == SAVE_FILE ) openFileForOutput(sp);
+    if ( sp->Finflows.mode == USE_FILE ) openFileForInput(sp);
 }
 
 //=============================================================================
 
-void iface_closeRoutingFiles()
+void iface_closeRoutingFiles(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -179,13 +179,13 @@ void iface_closeRoutingFiles()
     FREE(IfaceNodes);
     if ( OldIfaceValues != NULL ) project_freeMatrix(OldIfaceValues);
     if ( NewIfaceValues != NULL ) project_freeMatrix(NewIfaceValues);
-    if ( Finflows.file )  fclose(Finflows.file);
-    if ( Foutflows.file ) fclose(Foutflows.file);
+    if ( sp->Finflows.file )  fclose(sp->Finflows.file);
+    if ( sp->Foutflows.file ) fclose(sp->Foutflows.file);
 }
 
 //=============================================================================
 
-int iface_getNumIfaceNodes(DateTime currentDate)
+int iface_getNumIfaceNodes(SWMM_Project *sp, DateTime currentDate)
 //
 //  Input:   currentDate = current date/time
 //  Output:  returns number of interface nodes if data exists or
@@ -200,7 +200,7 @@ int iface_getNumIfaceNodes(DateTime currentDate)
     while ( NewIfaceDate < currentDate && NewIfaceDate != NO_DATE )
     {
         setOldIfaceValues();
-        readNewIfaceValues();
+        readNewIfaceValues(sp);
     }
 
     // --- return 0 if no data available
@@ -321,25 +321,25 @@ void openFileForOutput(SWMM_Project *sp)
     int i, n;
 
     // --- open the routing file for writing text
-    Foutflows.file = fopen(Foutflows.name, "wt");
-    if ( Foutflows.file == NULL )
+    sp->Foutflows.file = fopen(sp->Foutflows.name, "wt");
+    if ( sp->Foutflows.file == NULL )
     {
-        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, Foutflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, sp->Foutflows.name);
         return;
     }
 
     // --- write title & reporting time step to file
-    fprintf(Foutflows.file, "SWMM5 Interface File");
-    fprintf(Foutflows.file, "\n%s", Title[0]);
-    fprintf(Foutflows.file, "\n%-4d - reporting time step in sec", ReportStep);
+    fprintf(sp->Foutflows.file, "SWMM5 Interface File");
+    fprintf(sp->Foutflows.file, "\n%s", Title[0]);
+    fprintf(sp->Foutflows.file, "\n%-4d - reporting time step in sec", ReportStep);
 
     // --- write number & names of each constituent (including flow) to file
-    fprintf(Foutflows.file, "\n%-4d - number of constituents as listed below:",
+    fprintf(sp->Foutflows.file, "\n%-4d - number of constituents as listed below:",
             Nobjects[POLLUT] + 1);
-    fprintf(Foutflows.file, "\nFLOW %s", FlowUnitWords[FlowUnits]);
+    fprintf(sp->Foutflows.file, "\nFLOW %s", FlowUnitWords[FlowUnits]);
     for (i=0; i<Nobjects[POLLUT]; i++)
     {
-        fprintf(Foutflows.file, "\n%s %s", Pollut[i].ID,
+        fprintf(sp->Foutflows.file, "\n%s %s", Pollut[i].ID,
             QualUnitsWords[Pollut[i].units]);
     }
 
@@ -351,25 +351,25 @@ void openFileForOutput(SWMM_Project *sp)
     }
 
     // --- write number and names of outlet nodes to file
-    fprintf(Foutflows.file, "\n%-4d - number of nodes as listed below:", n);
+    fprintf(sp->Foutflows.file, "\n%-4d - number of nodes as listed below:", n);
     for (i=0; i<Nobjects[NODE]; i++)
     {
           if ( isOutletNode(i) )
-            fprintf(Foutflows.file, "\n%s", Node[i].ID);
+            fprintf(sp->Foutflows.file, "\n%s", Node[i].ID);
     }
 
     // --- write column headings
-    fprintf(Foutflows.file,
+    fprintf(sp->Foutflows.file,
         "\nNode             Year Mon Day Hr  Min Sec FLOW      ");
     for (i=0; i<Nobjects[POLLUT]; i++)
     {
-        fprintf(Foutflows.file, " %-10s", Pollut[i].ID);
+        fprintf(sp->Foutflows.file, " %-10s", Pollut[i].ID);
     }
 
     // --- if reporting starts immediately, save initial outlet values
     if ( ReportStart == StartDateTime )
     {
-        iface_saveOutletResults(ReportStart, Foutflows.file);
+        iface_saveOutletResults(ReportStart, sp->Foutflows.file);
     }
 }
 
@@ -387,48 +387,48 @@ void openFileForInput(SWMM_Project *sp)
     char  s[MAXLINE+1];                // general string variable
 
     // --- open the routing interface file for reading text
-    Finflows.file = fopen(Finflows.name, "rt");
-    if ( Finflows.file == NULL )
+    sp->Finflows.file = fopen(sp->Finflows.name, "rt");
+    if ( sp->Finflows.file == NULL )
     {
-        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, sp->Finflows.name);
         return;
     }
 
     // --- check for correct file type
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
     sscanf(line, "%s", s);
     if ( !strcomp(s, "SWMM5") )
     {
-        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, sp->Finflows.name);
         return;
     }
 
     // --- skip title line
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
 
     // --- read reporting time step (sec)
     IfaceStep = 0;
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
     sscanf(line, "%d", &IfaceStep);
     if ( IfaceStep <= 0 )
     {
-        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, sp->Finflows.name);
         return;
     }
 
     // --- match constituents in file with those in project
-    err = getIfaceFilePolluts();
+    err = getIfaceFilePolluts(sp);
     if ( err > 0 )
     {
-        report_writeErrorMsg(sp, err, Finflows.name);
+        report_writeErrorMsg(sp, err, sp->Finflows.name);
         return;
     }
 
     // --- match nodes in file with those in project
-    err = getIfaceFileNodes();
+    err = getIfaceFileNodes(sp);
     if ( err > 0 )
     {
-        report_writeErrorMsg(sp, err, Finflows.name);
+        report_writeErrorMsg(sp, err, sp->Finflows.name);
         return;
     }
 
@@ -444,13 +444,13 @@ void openFileForInput(SWMM_Project *sp)
     }
 
     // --- read in new interface flows & WQ values
-    readNewIfaceValues();
+    readNewIfaceValues(sp);
     OldIfaceDate = NewIfaceDate;
 }
 
 //=============================================================================
 
-int  getIfaceFilePolluts()
+int  getIfaceFilePolluts(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -463,13 +463,13 @@ int  getIfaceFilePolluts()
     char  s2[MAXLINE+1];         
 
     // --- read number of pollutants (minus FLOW)
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
     sscanf(line, "%d", &NumIfacePolluts);
     NumIfacePolluts--;
     if ( NumIfacePolluts < 0 ) return ERR_ROUTING_FILE_FORMAT;
 
     // --- read flow units
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
     sscanf(line, "%s %s", s1, s2);
     if ( !strcomp(s1, "FLOW") )  return ERR_ROUTING_FILE_FORMAT;
     IfaceFlowUnits = findmatch(s2, FlowUnitWords);
@@ -489,8 +489,8 @@ int  getIfaceFilePolluts()
         // --- check each pollutant name on file with project's pollutants
         for (i=0; i<NumIfacePolluts; i++)
         {
-            if ( feof(Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
-            fgets(line, MAXLINE, Finflows.file);
+            if ( feof(sp->Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
+            fgets(line, MAXLINE, sp->Finflows.file);
             sscanf(line, "%s %s", s1, s2);
             if ( Nobjects[POLLUT] > 0 )
             {
@@ -507,7 +507,7 @@ int  getIfaceFilePolluts()
 
 //=============================================================================
 
-int getIfaceFileNodes()
+int getIfaceFileNodes(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -519,7 +519,7 @@ int getIfaceFileNodes()
     char  s[MAXLINE+1];                // general string variable
 
     // --- read number of interface nodes
-    fgets(line, MAXLINE, Finflows.file);
+    fgets(line, MAXLINE, sp->Finflows.file);
     sscanf(line, "%d", &NumIfaceNodes);
     if ( NumIfaceNodes <= 0 ) return ERR_ROUTING_FILE_FORMAT;
 
@@ -530,21 +530,21 @@ int getIfaceFileNodes()
     // --- read names of interface nodes from file & save their indexes
     for ( i=0; i<NumIfaceNodes; i++ )
     {
-        if ( feof(Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
-        fgets(line, MAXLINE, Finflows.file);
+        if ( feof(sp->Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
+        fgets(line, MAXLINE, sp->Finflows.file);
         sscanf(line, "%s", s);
         IfaceNodes[i] = project_findObject(NODE, s);
     }
 
     // --- skip over column headings line
-    if ( feof(Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
-    fgets(line, MAXLINE, Finflows.file);
+    if ( feof(sp->Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
+    fgets(line, MAXLINE, sp->Finflows.file);
     return 0;
 }
 
 //=============================================================================
 
-void readNewIfaceValues()
+void readNewIfaceValues(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -561,8 +561,8 @@ void readNewIfaceValues()
     NewIfaceDate = NO_DATE;
     for (i=0; i<NumIfaceNodes; i++)
     {
-        if ( feof(Finflows.file) ) return;
-        fgets(line, MAXLINE, Finflows.file);
+        if ( feof(sp->Finflows.file) ) return;
+        fgets(line, MAXLINE, sp->Finflows.file);
 
         // --- parse date & time from line
         if ( strtok(line, SEPSTR) == NULL ) return;

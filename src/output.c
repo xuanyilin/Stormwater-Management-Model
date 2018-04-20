@@ -432,8 +432,8 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
     if (Nobjects[LINK] > 0)
         output_saveLinkResults(reportTime, sp->Fout.file);
     fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
-    if ( Foutflows.mode == SAVE_FILE && !IgnoreRouting ) 
-        iface_saveOutletResults(reportDate, Foutflows.file);
+    if ( sp->Foutflows.mode == SAVE_FILE && !IgnoreRouting )
+        iface_saveOutletResults(reportDate, sp->Foutflows.file);
     Nperiods++;
 }
 

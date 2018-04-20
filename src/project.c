@@ -776,16 +776,16 @@ void setDefaults(SWMM_Project *sp)
    sp->Frdii.mode      = NO_FILE;
    sp->Fhotstart1.mode = NO_FILE;
    sp->Fhotstart2.mode = NO_FILE;
-   Finflows.mode   = NO_FILE;
-   Foutflows.mode  = NO_FILE;
+   sp->Finflows.mode   = NO_FILE;
+   sp->Foutflows.mode  = NO_FILE;
    sp->Frain.file      = NULL;
    sp->Fclimate.file   = NULL;
    sp->Frunoff.file    = NULL;
    sp->Frdii.file      = NULL;
    sp->Fhotstart1.file = NULL;
    sp->Fhotstart2.file = NULL;
-   Finflows.file   = NULL;
-   Foutflows.file  = NULL;
+   sp->Finflows.file   = NULL;
+   sp->Foutflows.file  = NULL;
    sp->Fout.file   = NULL;
    sp->Fout.mode   = NO_FILE;
 

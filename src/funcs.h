@@ -180,7 +180,7 @@ void    runoff_close(SWMM_Project *sp);
 int     routing_open(SWMM_Project *sp);
 double  routing_getRoutingStep(int routingModel, double fixedStep);
 void    routing_execute(SWMM_Project *sp, int routingModel, double routingStep);
-void    routing_close(int routingModel);
+void    routing_close(SWMM_Project *sp, int routingModel);
 
 //-----------------------------------------------------------------------------
 //   Output Filer Methods
@@ -421,8 +421,8 @@ void    inflow_deleteDwfInflows(int node);
 //-----------------------------------------------------------------------------
 int     iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    iface_openRoutingFiles(SWMM_Project *sp);
-void    iface_closeRoutingFiles(void);
-int     iface_getNumIfaceNodes(DateTime aDate);
+void    iface_closeRoutingFiles(SWMM_Project *sp);
+int     iface_getNumIfaceNodes(SWMM_Project *sp, DateTime aDate);
 int     iface_getIfaceNode(int index);
 double  iface_getIfaceFlow(int index);
 double  iface_getIfaceQual(int index, int pollut);

@@ -705,7 +705,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         massbal_close();
         if ( !IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
-        if ( DoRouting ) routing_close(RouteModel);
+        if ( DoRouting ) routing_close(sp, RouteModel);
         hotstart_close(sp);
         IsStartedFlag = FALSE;
     }

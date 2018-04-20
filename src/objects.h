@@ -1104,9 +1104,9 @@ struct SWMM_Project {
                  Frunoff,                  // Runoff file
                  Frdii,                    // RDII inflow file
                  Fhotstart1,               // Hot start input file
-                 Fhotstart2;               // Hot start output file
-//                      Finflows,                 // Inflows routing file
-//                      Foutflows;                // Outflows routing file
+                 Fhotstart2,               // Hot start output file
+                 Finflows,                 // Inflows routing file
+                 Foutflows;                // Outflows routing file
 //
 //
 //    EXTERN long

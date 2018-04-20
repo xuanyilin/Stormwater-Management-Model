@@ -70,7 +70,7 @@ static void addDryWeatherInflows(DateTime currentDate);
 static void addWetWeatherInflows(double routingTime);
 static void addGroundwaterInflows(double routingTime);
 static void addRdiiInflows(SWMM_Project *sp, DateTime currentDate);
-static void addIfaceInflows(DateTime currentDate);
+static void addIfaceInflows(SWMM_Project *sp, DateTime currentDate);
 static void addLidDrainInflows(double routingTime);                            //(5.1.008)
 static void removeStorageLosses(double tStep);
 static void removeConduitLosses(void);
@@ -121,7 +121,7 @@ int routing_open(SWMM_Project *sp)
 
 //=============================================================================
 
-void routing_close(int routingModel)
+void routing_close(SWMM_Project *sp, int routingModel)
 //
 //  Input:   routingModel = routing method code
 //  Output:  none
@@ -129,7 +129,7 @@ void routing_close(int routingModel)
 //
 {
     // --- close any routing interface files
-    iface_closeRoutingFiles();
+    iface_closeRoutingFiles(sp);
 
     // --- free allocated memory
     flowrout_close(routingModel);
@@ -274,7 +274,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         addGroundwaterInflows(OldRoutingTime);
         addLidDrainInflows(OldRoutingTime);
         addRdiiInflows(sp, currentDate);
-        addIfaceInflows(currentDate);
+        addIfaceInflows(sp, currentDate);
 
         // --- check if can skip steady state periods based on flows
         if ( SkipSteadyState )
@@ -630,7 +630,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
 
 //=============================================================================
 
-void addIfaceInflows(DateTime currentDate)
+void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
 //
 //  Input:   currentDate = current date/time
 //  Output:  none
@@ -642,8 +642,8 @@ void addIfaceInflows(DateTime currentDate)
     int    numIfaceNodes;
 
     // --- see if any nodes have interface inflows at current date
-    if ( Finflows.mode != USE_FILE ) return;
-    numIfaceNodes = iface_getNumIfaceNodes(currentDate);
+    if ( sp->Finflows.mode != USE_FILE ) return;
+    numIfaceNodes = iface_getNumIfaceNodes(sp, currentDate);
 
     // --- add interface flow to each node's lateral inflow
     for (i=0; i<numIfaceNodes; i++)
