@@ -16,7 +16,7 @@
 #include "headers.h"
 #include "lid.h"
 
-#define WRITE(sp,x) (report_writeLine((sp),(x)))
+#define WRITE(x) (report_writeLine(sp,(x)))
 
 //=============================================================================
 
@@ -35,10 +35,10 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( ErrorCode ) return;
 
-    WRITE(sp,"");
-    WRITE(sp,"*************");
-    WRITE(sp,"Element Count");
-    WRITE(sp,"*************");
+    WRITE("");
+    WRITE("*************");
+    WRITE("Element Count");
+    WRITE("*************");
     fprintf(frpt.file, "\n  Number of rain gages ...... %d", Nobjects[GAGE]);
     fprintf(frpt.file, "\n  Number of subcatchments ... %d", Nobjects[SUBCATCH]);
     fprintf(frpt.file, "\n  Number of nodes ........... %d", Nobjects[NODE]);
@@ -48,11 +48,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[POLLUT] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"*****************");
-        WRITE(sp,"Pollutant Summary");
-        WRITE(sp,"*****************");
+        WRITE("");
+        WRITE("");
+        WRITE("*****************");
+        WRITE("Pollutant Summary");
+        WRITE("*****************");
         fprintf(frpt.file,
     "\n                               Ppt.      GW         Kdecay");
         fprintf(frpt.file,
@@ -72,11 +72,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[LANDUSE] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"***************");
-        WRITE(sp,"Landuse Summary");
-        WRITE(sp,"***************");
+        WRITE("");
+        WRITE("");
+        WRITE("***************");
+        WRITE("Landuse Summary");
+        WRITE("***************");
         fprintf(frpt.file,
     "\n                         Sweeping   Maximum      Last");
         fprintf(frpt.file,
@@ -93,11 +93,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[GAGE] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"****************");
-        WRITE(sp,"Raingage Summary");
-        WRITE(sp,"****************");
+        WRITE("");
+        WRITE("");
+        WRITE("****************");
+        WRITE("Raingage Summary");
+        WRITE("****************");
     fprintf(frpt.file,
 "\n                                                      Data       Recording");
     fprintf(frpt.file,
@@ -121,11 +121,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[SUBCATCH] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"********************");
-        WRITE(sp,"Subcatchment Summary");
-        WRITE(sp,"********************");
+        WRITE("");
+        WRITE("");
+        WRITE("********************");
+        WRITE("Subcatchment Summary");
+        WRITE("********************");
         fprintf(frpt.file,
 "\n  Name                       Area     Width   %%Imperv    %%Slope Rain Gage            Outlet              ");
         fprintf(frpt.file,
@@ -151,11 +151,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[NODE] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"************");
-        WRITE(sp,"Node Summary");
-        WRITE(sp,"************");
+        WRITE("");
+        WRITE("");
+        WRITE("************");
+        WRITE("Node Summary");
+        WRITE("************");
         fprintf(frpt.file,
 "\n                                           Invert      Max.    Ponded    External");
         fprintf(frpt.file,
@@ -178,11 +178,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if ( Nobjects[LINK] > 0 )
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"************");
-        WRITE(sp,"Link Summary");
-        WRITE(sp,"************");
+        WRITE("");
+        WRITE("");
+        WRITE("************");
+        WRITE("Link Summary");
+        WRITE("************");
         fprintf(frpt.file,
 "\n  Name             From Node        To Node          Type            Length    %%Slope Roughness");
         fprintf(frpt.file,
@@ -218,11 +218,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
             }
         }
 
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"*********************");
-        WRITE(sp,"Cross Section Summary");
-        WRITE(sp,"*********************");
+        WRITE("");
+        WRITE("");
+        WRITE("*********************");
+        WRITE("Cross Section Summary");
+        WRITE("*********************");
         fprintf(frpt.file,
 "\n                                        Full     Full     Hyd.     Max.   No. of     Full");
         fprintf(frpt.file,
@@ -255,11 +255,11 @@ void inputrpt_writeInput(SWMM_Project *sp)
 
     if (Nobjects[SHAPE] > 0)
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"*************");
-        WRITE(sp,"Shape Summary");
-        WRITE(sp,"*************");
+        WRITE("");
+        WRITE("");
+        WRITE("*************");
+        WRITE("Shape Summary");
+        WRITE("*************");
         for (i = 0; i < Nobjects[SHAPE]; i++)
         {
             k = Shape[i].curve;
@@ -284,15 +284,15 @@ void inputrpt_writeInput(SWMM_Project *sp)
             }
         }
     }
-    WRITE(sp,"");
+    WRITE("");
 
     if (Nobjects[TRANSECT] > 0)
     {
-        WRITE(sp,"");
-        WRITE(sp,"");
-        WRITE(sp,"****************");
-        WRITE(sp,"Transect Summary");
-        WRITE(sp,"****************");
+        WRITE("");
+        WRITE("");
+        WRITE("****************");
+        WRITE("Transect Summary");
+        WRITE("****************");
         for (i = 0; i < Nobjects[TRANSECT]; i++)
         {
             fprintf(frpt.file, "\n\n  Transect %s", Transect[i].ID);
@@ -316,5 +316,5 @@ void inputrpt_writeInput(SWMM_Project *sp)
             }
         }
     }
-    WRITE(sp,"");
+    WRITE("");
 }

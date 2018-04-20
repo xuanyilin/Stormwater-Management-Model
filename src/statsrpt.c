@@ -64,7 +64,7 @@ void    writeLinkSurcharge(SWMM_Project *sp);
 void    writePumpFlows(SWMM_Project *sp);
 void    writeLinkLoads(SWMM_Project *sp);
 
-#define WRITE(sp, x) (report_writeLine((sp),(x)))
+#define WRITE(x) (report_writeLine(sp,(x)))
 
 static char   FlowFmt[6];
 static double Vcf;
@@ -127,11 +127,11 @@ void writeSubcatchRunoff(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[SUBCATCH] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "***************************");
-    WRITE(sp, "Subcatchment Runoff Summary");
-    WRITE(sp, "***************************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("***************************");
+    WRITE("Subcatchment Runoff Summary");
+    WRITE("***************************");
+    WRITE("");
     fprintf(frpt.file,
 
 "\n  --------------------------------------------------------------------------------------------------------"
@@ -169,7 +169,7 @@ void writeSubcatchRunoff(SWMM_Project *sp)
         if ( r > 0.0 ) r = SubcatchStats[j].runoff / r;
         fprintf(frpt.file, "%8.3f", r);
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -192,11 +192,11 @@ void    writeGroundwater(SWMM_Project *sp)
     }
     if ( count == 0 ) return;
 
-    WRITE(sp, "");
-    WRITE(sp, "*******************");
-    WRITE(sp, "Groundwater Summary");
-    WRITE(sp, "*******************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("*******************");
+    WRITE("Groundwater Summary");
+    WRITE("*******************");
+    WRITE("");
     fprintf(frpt.file,
 
 "\n  -----------------------------------------------------------------------------------------------------"
@@ -228,7 +228,7 @@ void    writeGroundwater(SWMM_Project *sp)
         x[8] = Subcatch[j].groundwater->stats.finalWaterTable * UCF(LENGTH);
         for (i = 0; i < 9; i++) fprintf(frpt.file, " %8.2f", x[i]);
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -249,11 +249,11 @@ void writeSubcatchLoads(SWMM_Project *sp)
     if ( totals )
     {
         // --- print the table headings 
-        WRITE(sp, "");
-        WRITE(sp, "****************************");
-        WRITE(sp, "Subcatchment Washoff Summary");
-        WRITE(sp, "****************************");
-        WRITE(sp, "");
+        WRITE("");
+        WRITE("****************************");
+        WRITE("Subcatchment Washoff Summary");
+        WRITE("****************************");
+        WRITE("");
         fprintf(frpt.file, "\n  %s", subcatchLine);
         for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(frpt.file, "%s", pollutLine);
         fprintf(frpt.file, "\n                      ");
@@ -294,7 +294,7 @@ void writeSubcatchLoads(SWMM_Project *sp)
 			fprintf(frpt.file, "%14.3f", x);
         }
         free(totals);
-        WRITE(sp, "");
+        WRITE("");
     }
 }
 
@@ -315,11 +315,11 @@ void writeNodeDepths(SWMM_Project *sp)
 
     if ( Nobjects[LINK] == 0 ) return;
 
-    WRITE(sp, "");
-    WRITE(sp, "******************");
-    WRITE(sp, "Node Depth Summary");
-    WRITE(sp, "******************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("******************");
+    WRITE("Node Depth Summary");
+    WRITE("******************");
+    WRITE("");
 
     fprintf(frpt.file,
 "\n  ---------------------------------------------------------------------------------"
@@ -343,7 +343,7 @@ void writeNodeDepths(SWMM_Project *sp)
             (NodeStats[j].maxDepth + Node[j].invertElev) * UCF(LENGTH),
             days, hrs, mins, NodeStats[j].maxRptDepth);                        //(5.1.011)
     }
-    WRITE(sp,"");
+    WRITE("");
 }
 
 //=============================================================================
@@ -360,11 +360,11 @@ void writeNodeFlows(SWMM_Project *sp)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "*******************");
-    WRITE(sp, "Node Inflow Summary");
-    WRITE(sp, "*******************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("*******************");
+    WRITE("Node Inflow Summary");
+    WRITE("*******************");
+    WRITE("");
 
     fprintf(frpt.file,
 "\n  -------------------------------------------------------------------------------------------------"
@@ -395,7 +395,7 @@ void writeNodeFlows(SWMM_Project *sp)
             fprintf(frpt.file, "%12.3f", (NodeInflow[j]-NodeOutflow[j]) /
                                           NodeOutflow[j]*100.); 
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -407,11 +407,11 @@ void writeNodeSurcharge(SWMM_Project *sp)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "**********************");
-    WRITE(sp, "Node Surcharge Summary");
-    WRITE(sp, "**********************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("**********************");
+    WRITE("Node Surcharge Summary");
+    WRITE("**********************");
+    WRITE("");
 
     for ( j = 0; j < Nobjects[NODE]; j++ )
     {
@@ -420,7 +420,7 @@ void writeNodeSurcharge(SWMM_Project *sp)
         t = MAX(0.01, (NodeStats[j].timeSurcharged / 3600.0));
         if ( n == 0 )
         {
-            WRITE(sp, "Surcharging occurs when water rises above the top of the highest conduit.");
+            WRITE("Surcharging occurs when water rises above the top of the highest conduit.");
             fprintf(frpt.file,
 "\n  ---------------------------------------------------------------------"
 "\n                                               Max. Height   Min. Depth"
@@ -442,8 +442,8 @@ void writeNodeSurcharge(SWMM_Project *sp)
         fprintf(frpt.file, "  %9.2f      %9.3f    %9.3f",
                 t, d1*UCF(LENGTH), d2*UCF(LENGTH));
     }
-    if ( n == 0 ) WRITE(sp, "No nodes were surcharged.");
-    WRITE(sp, "");
+    if ( n == 0 ) WRITE("No nodes were surcharged.");
+    WRITE("");
 }
 
 //=============================================================================
@@ -456,11 +456,11 @@ void writeNodeFlooding(SWMM_Project *sp)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "*********************");
-    WRITE(sp, "Node Flooding Summary");
-    WRITE(sp, "*********************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("*********************");
+    WRITE("Node Flooding Summary");
+    WRITE("*********************");
+    WRITE("");
 
     for ( j = 0; j < Nobjects[NODE]; j++ )
     {
@@ -470,7 +470,7 @@ void writeNodeFlooding(SWMM_Project *sp)
 
         if ( n == 0 )
         {
-            WRITE(sp, "Flooding refers to all water that overflows a node, whether it ponds or not.");
+            WRITE("Flooding refers to all water that overflows a node, whether it ponds or not.");
             fprintf(frpt.file,
 "\n  --------------------------------------------------------------------------"
 "\n                                                             Total   Maximum"
@@ -503,8 +503,8 @@ void writeNodeFlooding(SWMM_Project *sp)
                                          1000.0 * UCF(VOLUME));
     }
 
-    if ( n == 0 ) WRITE(sp, "No nodes were flooded.");
-    WRITE(sp, "");
+    if ( n == 0 ) WRITE("No nodes were flooded.");
+    WRITE("");
 }
 
 //=============================================================================
@@ -524,11 +524,11 @@ void writeStorageVolumes(SWMM_Project *sp)
 
     if ( Nnodes[STORAGE] > 0 )
     {
-        WRITE(sp, "");
-        WRITE(sp, "**********************");
-        WRITE(sp, "Storage Volume Summary");
-        WRITE(sp, "**********************");
-        WRITE(sp, "");
+        WRITE("");
+        WRITE("**********************");
+        WRITE("Storage Volume Summary");
+        WRITE("**********************");
+        WRITE("");
 
         fprintf(frpt.file,
 "\n  --------------------------------------------------------------------------------------------------"
@@ -573,7 +573,7 @@ void writeStorageVolumes(SWMM_Project *sp)
             fprintf(frpt.file, "    %4d  %02d:%02d  ", days, hrs, mins);
             fprintf(frpt.file, FlowFmt, StorageStats[k].maxFlow*UCF(FLOW));
         }
-        WRITE(sp, "");
+        WRITE("");
     }
 }
 
@@ -605,11 +605,11 @@ void writeOutfallLoads(SWMM_Project *sp)
 		volSum  = 0.0;
 
         // --- print table title
-        WRITE(sp, "");
-        WRITE(sp, "***********************");
-        WRITE(sp, "Outfall Loading Summary");
-        WRITE(sp, "***********************");
-        WRITE(sp, "");
+        WRITE("");
+        WRITE("***********************");
+        WRITE("Outfall Loading Summary");
+        WRITE("***********************");
+        WRITE("");
 
         // --- print table column headers
         fprintf(frpt.file,
@@ -690,7 +690,7 @@ void writeOutfallLoads(SWMM_Project *sp)
             if ( Pollut[p].units == COUNT ) x = LOG10(x);
             fprintf(frpt.file, "%14.3f", x);
         }
-        WRITE(sp, "");
+        WRITE("");
         free(totals);
     } 
 }
@@ -710,11 +710,11 @@ void writeLinkFlows(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[LINK] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "********************");
-    WRITE(sp, "Link Flow Summary");
-    WRITE(sp, "********************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("********************");
+    WRITE("Link Flow Summary");
+    WRITE("********************");
+    WRITE("");
 
     fprintf(frpt.file,
 "\n  -----------------------------------------------------------------------------"
@@ -781,7 +781,7 @@ void writeLinkFlows(SWMM_Project *sp)
         }
         else fprintf(frpt.file, "        ");
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -798,11 +798,11 @@ void writeFlowClass(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( RouteModel != DW ) return;
-    WRITE(sp, "");
-    WRITE(sp, "***************************");
-    WRITE(sp, "Flow Classification Summary");
-    WRITE(sp, "***************************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("***************************");
+    WRITE("Flow Classification Summary");
+    WRITE("***************************");
+    WRITE("");
     fprintf(frpt.file,
 "\n  -------------------------------------------------------------------------------------"
 "\n                      Adjusted    ---------- Fraction of Time in Flow Class ---------- "
@@ -826,7 +826,7 @@ void writeFlowClass(SWMM_Project *sp)
         fprintf(frpt.file, "  %4.2f", LinkStats[j].timeInletControl /
                                       (NewRoutingTime/1000.0)); 
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -838,11 +838,11 @@ void writeLinkSurcharge(SWMM_Project *sp)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "*************************");
-    WRITE(sp, "Conduit Surcharge Summary");
-    WRITE(sp, "*************************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("*************************");
+    WRITE("Conduit Surcharge Summary");
+    WRITE("*************************");
+    WRITE("");
     for ( j = 0; j < Nobjects[LINK]; j++ )
     {
         if ( Link[j].type != CONDUIT ||
@@ -868,8 +868,8 @@ void writeLinkSurcharge(SWMM_Project *sp)
         fprintf(frpt.file, "    %8.2f  %8.2f  %8.2f  %8.2f     %8.2f",
                 t[0], t[1], t[2], t[3], t[4]);
     }
-    if ( n == 0 ) WRITE(sp, "No conduits were surcharged.");
-    WRITE(sp, "");
+    if ( n == 0 ) WRITE("No conduits were surcharged.");
+    WRITE("");
 }
 
 //=============================================================================
@@ -888,11 +888,11 @@ void writePumpFlows(SWMM_Project *sp)
 
     if ( Nlinks[PUMP] == 0 ) return;
 
-    WRITE(sp, "");
-    WRITE(sp, "***************");
-    WRITE(sp, "Pumping Summary");
-    WRITE(sp, "***************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("***************");
+    WRITE("Pumping Summary");
+    WRITE("***************");
+    WRITE("");
 
     fprintf(frpt.file,
 "\n  ---------------------------------------------------------------------------------------------------------"
@@ -925,7 +925,7 @@ void writePumpFlows(SWMM_Project *sp)
         }
         fprintf(frpt.file, " %6.1f %6.1f", pctOffCurve1, pctOffCurve2);
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -941,11 +941,11 @@ void writeLinkLoads(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     // --- print the table headings 
-    WRITE(sp, "");
-    WRITE(sp, "***************************");
-    WRITE(sp, "Link Pollutant Load Summary");
-    WRITE(sp, "***************************");
-    WRITE(sp, "");
+    WRITE("");
+    WRITE("***************************");
+    WRITE("Link Pollutant Load Summary");
+    WRITE("***************************");
+    WRITE("");
     fprintf(frpt.file, "\n  %s", linkLine);
     for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(frpt.file, "%s", pollutLine);
     fprintf(frpt.file, "\n                      ");
@@ -973,5 +973,5 @@ void writeLinkLoads(SWMM_Project *sp)
             else fprintf(frpt.file, "%14.3e", x);
         }
     }
-    WRITE(sp, "");
+    WRITE("");
 }

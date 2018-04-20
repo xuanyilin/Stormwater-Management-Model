@@ -43,7 +43,7 @@
 #include <time.h>
 #include "headers.h"
 
-#define WRITE(sp,x) (report_writeLine((sp),(x)))
+#define WRITE(x) (report_writeLine(sp,(x)))
 #define LINE_10 "----------"
 #define LINE_12 "------------"
 #define LINE_51 \
@@ -254,10 +254,10 @@ void report_writeTitle(SWMM_Project *sp)
     if ( ErrorCode ) return;
     for (i=0; i<MAXTITLE; i++) if ( strlen(Title[i]) > 0 )
     {
-        WRITE(sp,Title[i]);
+        WRITE(Title[i]);
         lineCount++;                                                           //(5.1.011)
     }
-    if ( lineCount > 0 ) WRITE(sp,"");                                            //(5.1.011)
+    if ( lineCount > 0 ) WRITE("");                                            //(5.1.011)
 }
 
 //=============================================================================
@@ -272,16 +272,16 @@ void report_writeOptions(SWMM_Project *sp)
     char str[80];
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "*********************************************************");
-    WRITE(sp, "NOTE: The summary statistics displayed in this report are");
-    WRITE(sp, "based on results found at every computational time step,  ");
-    WRITE(sp, "not just on results from each reporting time step.");
-    WRITE(sp, "*********************************************************");
-    WRITE(sp, "");
-    WRITE(sp, "****************");
-    WRITE(sp, "Analysis Options");
-    WRITE(sp, "****************");
+    WRITE("");
+    WRITE("*********************************************************");
+    WRITE("NOTE: The summary statistics displayed in this report are");
+    WRITE("based on results found at every computational time step,  ");
+    WRITE("not just on results from each reporting time step.");
+    WRITE("*********************************************************");
+    WRITE("");
+    WRITE("****************");
+    WRITE("Analysis Options");
+    WRITE("****************");
     fprintf(frpt.file, "\n  Flow Units ............... %s",
         FlowUnitWords[FlowUnits]);
     fprintf(frpt.file, "\n  Process Models:");
@@ -358,7 +358,7 @@ void report_writeOptions(SWMM_Project *sp)
 		else                    fprintf(frpt.file, "m");
 		}
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 
@@ -381,10 +381,10 @@ void report_writeRainStats(SWMM_Project *sp, int i, TRainStats* r)
 
     if ( i < 0 )
     {
-        WRITE(sp, "");
-        WRITE(sp, "*********************");
-        WRITE(sp, "Rainfall File Summary");
-        WRITE(sp, "*********************");
+        WRITE("");
+        WRITE("*********************");
+        WRITE("Rainfall File Summary");
+        WRITE("*********************");
         fprintf(frpt.file,
 "\n  Station    First        Last         Recording   Periods    Periods    Periods");
         fprintf(frpt.file,
@@ -424,7 +424,7 @@ void report_writeRdiiStats(SWMM_Project *sp, double rainVol, double rdiiVol)
     if ( UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
     else                   ucf2 = MLDperCFS / SECperDAY;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,
     "\n  **********************           Volume        Volume");
     if ( UnitSystem == US) fprintf(frpt.file,
@@ -443,7 +443,7 @@ void report_writeRdiiStats(SWMM_Project *sp, double rainVol, double rdiiVol)
     if ( rainVol == 0.0 ) ratio = 0.0;
     else ratio = rdiiVol / rainVol;
     fprintf(frpt.file, "\n  RDII Ratio ..............%14.3f", ratio);
-    WRITE(sp, "");
+    WRITE("");
 }
 
 
@@ -455,10 +455,10 @@ void   report_writeControlActionsHeading(SWMM_Project *sp)
 {
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
-    WRITE(sp, "*********************");
-    WRITE(sp, "Control Actions Taken");
-    WRITE(sp, "*********************");
+    WRITE("");
+    WRITE("*********************");
+    WRITE("Control Actions Taken");
+    WRITE("*********************");
     fprintf(frpt.file, "\n");
 }
 
@@ -507,18 +507,18 @@ void report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
 
     if ( Frunoff.mode == USE_FILE )
     {
-        WRITE(sp, "");
+        WRITE("");
         fprintf(frpt.file,
         "\n  **************************"
         "\n  Runoff Quantity Continuity"
         "\n  **************************"
         "\n  Runoff supplied by interface file %s", Frunoff.name);
-        WRITE(sp, "");
+        WRITE("");
         return;
     }
 
     if ( totalArea == 0.0 ) return;
-    WRITE(sp, "");
+    WRITE("");
 
     fprintf(frpt.file,
     "\n  **************************        Volume         Depth");
@@ -592,7 +592,7 @@ void report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
 
     fprintf(frpt.file, "\n  Continuity Error (%%) .....%14.3f",
             totals->pctError);
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -637,7 +637,7 @@ void report_LoadingErrors(SWMM_Project *sp, int p1, int p2, TLoadingTotals* tota
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file, "\n  **************************");
     for (p = p1; p <= p2; p++)
     {
@@ -702,7 +702,7 @@ void report_LoadingErrors(SWMM_Project *sp, int p1, int p2, TLoadingTotals* tota
     {
         fprintf(frpt.file, "%14.3f", totals[p].pctError);
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -718,7 +718,7 @@ void report_writeGwaterError(SWMM_Project *sp, TGwaterTotals* totals,
 {
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,
     "\n  **************************        Volume         Depth");
     if ( UnitSystem == US) fprintf(frpt.file,
@@ -757,7 +757,7 @@ void report_writeGwaterError(SWMM_Project *sp, TGwaterTotals* totals,
 
     fprintf(frpt.file, "\n  Continuity Error (%%) .....%14.3f",
             totals->pctError);
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -777,7 +777,7 @@ void report_writeFlowError(SWMM_Project *sp, TRoutingTotals *totals)
     if ( UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
     else                   ucf2 = MLDperCFS / SECperDAY;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,
     "\n  **************************        Volume        Volume");
     if ( UnitSystem == US) fprintf(frpt.file,
@@ -822,7 +822,7 @@ void report_writeFlowError(SWMM_Project *sp, TRoutingTotals *totals)
 
     fprintf(frpt.file, "\n  Continuity Error (%%) .....%14.3f",
             totals->pctError);
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -857,7 +857,7 @@ void report_QualErrors(SWMM_Project *sp, int p1, int p2,
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file, "\n  **************************");
     for (p = p1; p <= p2; p++)
     {
@@ -951,7 +951,7 @@ void report_QualErrors(SWMM_Project *sp, int p1, int p2,
     {
         fprintf(frpt.file, "%14.3f", QualTotals[p].pctError);
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -976,10 +976,10 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
     if ( nMaxStats <= 0 ) return;
     if ( maxMassBalErrs[0].index >= 0 )
     {
-        WRITE(sp, "");
-        WRITE(sp, "*************************");
-        WRITE(sp, "Highest Continuity Errors");
-        WRITE(sp, "*************************");
+        WRITE("");
+        WRITE("*************************");
+        WRITE("Highest Continuity Errors");
+        WRITE("*************************");
         for (i=0; i<nMaxStats; i++)
         {
             j = maxMassBalErrs[i].index;
@@ -987,14 +987,14 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
             fprintf(frpt.file, "\n  Node %s (%.2f%%)",
                 Node[j].ID, maxMassBalErrs[i].value);
         }
-        WRITE(sp, "");
+        WRITE("");
     }
 
     if ( CourantFactor == 0.0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "***************************");
-    WRITE(sp, "Time-Step Critical Elements");
-    WRITE(sp, "***************************");
+    WRITE("");
+    WRITE("***************************");
+    WRITE("Time-Step Critical Elements");
+    WRITE("***************************");
     k = 0;
     for (i=0; i<nMaxStats; i++)
     {
@@ -1007,7 +1007,7 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
         fprintf(frpt.file, " (%.2f%%)", maxCourantCrit[i].value);
     }
     if ( k == 0 ) fprintf(frpt.file, "\n  None");
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -1028,10 +1028,10 @@ void report_writeMaxFlowTurns(SWMM_Project *sp, TMaxStats flowTurns[],
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[LINK] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "********************************");
-    WRITE(sp, "Highest Flow Instability Indexes");
-    WRITE(sp, "********************************");
+    WRITE("");
+    WRITE("********************************");
+    WRITE("Highest Flow Instability Indexes");
+    WRITE("********************************");
     if ( nMaxStats <= 0 || flowTurns[0].index <= 0 )
         fprintf(frpt.file, "\n  All links are stable.");
     else
@@ -1044,7 +1044,7 @@ void report_writeMaxFlowTurns(SWMM_Project *sp, TMaxStats flowTurns[],
                 Link[j].ID, flowTurns[i].value);
         }
     }
-    WRITE(sp, "");
+    WRITE("");
 }
 
 //=============================================================================
@@ -1063,10 +1063,10 @@ void report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats)
 
     if ( Nobjects[LINK] == 0 || StepCount == 0
 	                     || eventStepCount == 0.0 ) return;                //(5.1.012)   
-    WRITE(sp, "");
-    WRITE(sp, "*************************");
-    WRITE(sp, "Routing Time Step Summary");
-    WRITE(sp, "*************************");
+    WRITE("");
+    WRITE("*************************");
+    WRITE("Routing Time Step Summary");
+    WRITE("*************************");
     fprintf(frpt.file,
         "\n  Minimum Time Step           :  %7.2f sec",
         sysStats->minTimeStep);
@@ -1085,7 +1085,7 @@ void report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats)
     fprintf(frpt.file,
         "\n  Percent Not Converging      :  %7.2f",
         100.0 * (double)NonConvergeCount / eventStepCount);                    //(5.1.012)
-    WRITE(sp, "");
+    WRITE("");
 }
 
 
@@ -1134,10 +1134,10 @@ void report_Subcatchments(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[SUBCATCH] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "********************");
-    WRITE(sp, "Subcatchment Results");
-    WRITE(sp, "********************");
+    WRITE("");
+    WRITE("********************");
+    WRITE("Subcatchment Results");
+    WRITE("********************");
     k = 0;
     for (j = 0; j < Nobjects[SUBCATCH]; j++)
     {
@@ -1167,7 +1167,7 @@ void report_Subcatchments(SWMM_Project *sp)
                         fprintf(frpt.file, "%10.3f",
                             SubcatchResults[SUBCATCH_WASHOFF+p]);
             }
-            WRITE(sp, "");
+            WRITE("");
             k++;
         }
     }
@@ -1190,9 +1190,9 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
     TFile frpt = sp->Frpt;
 
     // --- print top border of header
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,"\n  <<< Subcatchment %s >>>", id);
-    WRITE(sp, LINE_51);
+    WRITE(LINE_51);
     if ( hasSnowmelt  > 0 ) fprintf(frpt.file, LINE_12);
     if ( hasGwater )
     {
@@ -1233,7 +1233,7 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
         fprintf(frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
 
     // --- print lower border of header
-    WRITE(sp, LINE_51);
+    WRITE(LINE_51);
     if ( hasSnowmelt ) fprintf(frpt.file, LINE_12);
     if ( hasGwater )
     {
@@ -1262,10 +1262,10 @@ void report_Nodes(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[NODE] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "************");
-    WRITE(sp, "Node Results");
-    WRITE(sp, "************");
+    WRITE("");
+    WRITE("************");
+    WRITE("Node Results");
+    WRITE("************");
     k = 0;
     for (j = 0; j < Nobjects[NODE]; j++)
     {
@@ -1285,7 +1285,7 @@ void report_Nodes(SWMM_Project *sp)
                 if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
                     fprintf(frpt.file, " %9.3f", NodeResults[NODE_QUAL + p]);
             }
-            WRITE(sp, "");
+            WRITE("");
             k++;
         }
     }
@@ -1305,9 +1305,9 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,"\n  <<< Node %s >>>", id);
-    WRITE(sp, LINE_64);
+    WRITE(LINE_64);
     for (i = 0; i < Nobjects[POLLUT]; i++) fprintf(frpt.file, LINE_10);
 
     fprintf(frpt.file,
@@ -1323,7 +1323,7 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
     if ( !IgnoreQuality ) for (i = 0; i < Nobjects[POLLUT]; i++)
         fprintf(frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
 
-    WRITE(sp, LINE_64);
+    WRITE(LINE_64);
     if ( !IgnoreQuality )
         for (i = 0; i < Nobjects[POLLUT]; i++) fprintf(frpt.file, LINE_10);
 }
@@ -1346,10 +1346,10 @@ void report_Links(SWMM_Project *sp)
     TFile frpt = sp->Frpt;
 
     if ( Nobjects[LINK] == 0 ) return;
-    WRITE(sp, "");
-    WRITE(sp, "************");
-    WRITE(sp, "Link Results");
-    WRITE(sp, "************");
+    WRITE("");
+    WRITE("************");
+    WRITE("Link Results");
+    WRITE("************");
     k = 0;
     for (j = 0; j < Nobjects[LINK]; j++)
     {
@@ -1369,7 +1369,7 @@ void report_Links(SWMM_Project *sp)
                 if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
                     fprintf(frpt.file, " %9.3f", LinkResults[LINK_QUAL + p]);
             }
-            WRITE(sp, "");
+            WRITE("");
             k++;
         }
     }
@@ -1388,9 +1388,9 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
 
     TFile frpt = sp->Frpt;
 
-    WRITE(sp, "");
+    WRITE("");
     fprintf(frpt.file,"\n  <<< Link %s >>>", id);
-    WRITE(sp, LINE_64);
+    WRITE(LINE_64);
     for (i = 0; i < Nobjects[POLLUT]; i++) fprintf(frpt.file, LINE_10);
 
     fprintf(frpt.file,
@@ -1409,7 +1409,7 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
     if ( !IgnoreQuality ) for (i = 0; i < Nobjects[POLLUT]; i++)
         fprintf(frpt.file, " %9s", QualUnitsWords[Pollut[i].units]);
 
-    WRITE(sp, LINE_64);
+    WRITE(LINE_64);
     if ( !IgnoreQuality )
         for (i = 0; i < Nobjects[POLLUT]; i++) fprintf(frpt.file, LINE_10);
 }
@@ -1431,7 +1431,7 @@ void report_writeErrorMsg(SWMM_Project *sp, int code, char* s)
 
     if ( frpt.file )
     {
-        WRITE(sp, "");
+        WRITE("");
         fprintf(frpt.file, error_getMsg(code), s);
     }
     ErrorCode = code;
