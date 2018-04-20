@@ -104,13 +104,13 @@ int iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks)
       case HOTSTART_FILE:
         if ( k == USE_FILE )
         {
-            Fhotstart1.mode = k;
-            sstrncpy(Fhotstart1.name, tok[2], MAXFNAME);
+            sp->Fhotstart1.mode = k;
+            sstrncpy(sp->Fhotstart1.name, tok[2], MAXFNAME);
         }
         else if ( k == SAVE_FILE )
         {
-            Fhotstart2.mode = k;
-            sstrncpy(Fhotstart2.name, tok[2], MAXFNAME);
+            sp->Fhotstart2.mode = k;
+            sstrncpy(sp->Fhotstart2.name, tok[2], MAXFNAME);
         }
         break;
 

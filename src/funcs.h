@@ -432,7 +432,7 @@ void    iface_saveOutletResults(DateTime reportDate, FILE* file);
 //   Hot Start File Methods
 //-----------------------------------------------------------------------------
 int     hotstart_open(SWMM_Project *sp);
-void    hotstart_close(void);
+void    hotstart_close(SWMM_Project *sp);
 
 //-----------------------------------------------------------------------------
 //   Conveyance System Link Methods

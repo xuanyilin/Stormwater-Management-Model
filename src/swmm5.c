@@ -706,7 +706,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         if ( !IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
         if ( DoRouting ) routing_close(RouteModel);
-        hotstart_close();
+        hotstart_close(sp);
         IsStartedFlag = FALSE;
     }
     return error_getCode(ErrorCode);                                           //(5.1.011)

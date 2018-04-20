@@ -63,9 +63,9 @@ static int fileVersion;
 static int  openHotstartFile1(SWMM_Project *sp);
 static int  openHotstartFile2(SWMM_Project *sp);
 static void readRunoff(SWMM_Project *sp);
-static void saveRunoff(void);
+static void saveRunoff(SWMM_Project *sp);
 static void readRouting(SWMM_Project *sp);
-static void saveRouting(void);
+static void saveRouting(SWMM_Project *sp);
 static int  readFloat(SWMM_Project *sp, float *x, FILE* f);
 static int  readDouble(SWMM_Project *sp, double* x, FILE* f);
 
@@ -90,13 +90,13 @@ int hotstart_open(SWMM_Project *sp)
 
 //=============================================================================
 
-void hotstart_close()
+void hotstart_close(SWMM_Project *sp)
 {
-    if ( Fhotstart2.file )
+    if ( sp->Fhotstart2.file )
     {
-        saveRunoff();
-        saveRouting();
-        fclose(Fhotstart2.file);
+        saveRunoff(sp);
+        saveRouting(sp);
+        fclose(sp->Fhotstart2.file);
     }
 }
 
@@ -123,22 +123,22 @@ int openHotstartFile1(SWMM_Project *sp)
     char  fileStamp4[] = "SWMM5-HOTSTART4";                                    //(5.1.008)
 
     // --- try to open the file
-    if ( Fhotstart1.mode != USE_FILE ) return TRUE;
-    if ( (Fhotstart1.file = fopen(Fhotstart1.name, "r+b")) == NULL)
+    if ( sp->Fhotstart1.mode != USE_FILE ) return TRUE;
+    if ( (sp->Fhotstart1.file = fopen(sp->Fhotstart1.name, "r+b")) == NULL)
     {
-        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, Fhotstart1.name);
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, sp->Fhotstart1.name);
         return FALSE;
     }
 
     // --- check that file contains proper header records
-    fread(fStampx, sizeof(char), strlen(fileStamp2), Fhotstart1.file);
+    fread(fStampx, sizeof(char), strlen(fileStamp2), sp->Fhotstart1.file);
     if      ( strcmp(fStampx, fileStamp4) == 0 ) fileVersion = 4;              //(5.1.008)
     else if ( strcmp(fStampx, fileStamp3) == 0 ) fileVersion = 3;
     else if ( strcmp(fStampx, fileStamp2) == 0 ) fileVersion = 2;
     else
     {
-        rewind(Fhotstart1.file);
-        fread(fStamp, sizeof(char), strlen(fileStamp), Fhotstart1.file);
+        rewind(sp->Fhotstart1.file);
+        fread(fStamp, sizeof(char), strlen(fileStamp), sp->Fhotstart1.file);
         if ( strcmp(fStamp, fileStamp) != 0 )
         {
             report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
@@ -155,18 +155,18 @@ int openHotstartFile1(SWMM_Project *sp)
     flowUnits = -1;
     if ( fileVersion >= 2 )                                                    //(5.1.002)
     {    
-        fread(&nSubcatch, sizeof(int), 1, Fhotstart1.file);
+        fread(&nSubcatch, sizeof(int), 1, sp->Fhotstart1.file);
     }
     else nSubcatch = Nobjects[SUBCATCH];
     if ( fileVersion >= 3 )                                                    //(5.1.008)
     {
-        fread(&nLandUses, sizeof(int), 1, Fhotstart1.file);
+        fread(&nLandUses, sizeof(int), 1, sp->Fhotstart1.file);
     }
     else nLandUses = Nobjects[LANDUSE];
-    fread(&nNodes, sizeof(int), 1, Fhotstart1.file);
-    fread(&nLinks, sizeof(int), 1, Fhotstart1.file);
-    fread(&nPollut, sizeof(int), 1, Fhotstart1.file);
-    fread(&flowUnits, sizeof(int), 1, Fhotstart1.file);
+    fread(&nNodes, sizeof(int), 1, sp->Fhotstart1.file);
+    fread(&nLinks, sizeof(int), 1, sp->Fhotstart1.file);
+    fread(&nPollut, sizeof(int), 1, sp->Fhotstart1.file);
+    fread(&flowUnits, sizeof(int), 1, sp->Fhotstart1.file);
     if ( nSubcatch != Nobjects[SUBCATCH] 
     ||   nLandUses != Nobjects[LANDUSE]
     ||   nNodes    != Nobjects[NODE]
@@ -181,7 +181,7 @@ int openHotstartFile1(SWMM_Project *sp)
     // --- read contents of the file and close it
     if ( fileVersion >= 3 ) readRunoff(sp);                                      //(5.1.008)
     readRouting(sp);
-    fclose(Fhotstart1.file);
+    fclose(sp->Fhotstart1.file);
     if ( ErrorCode ) return FALSE;
     else return TRUE;
 }
@@ -204,10 +204,10 @@ int openHotstartFile2(SWMM_Project *sp)
     char  fileStamp[] = "SWMM5-HOTSTART4";                                     //(5.1.008)
 
     // --- try to open file
-    if ( Fhotstart2.mode != SAVE_FILE ) return TRUE;
-    if ( (Fhotstart2.file = fopen(Fhotstart2.name, "w+b")) == NULL)
+    if ( sp->Fhotstart2.mode != SAVE_FILE ) return TRUE;
+    if ( (sp->Fhotstart2.file = fopen(sp->Fhotstart2.name, "w+b")) == NULL)
     {
-        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, Fhotstart2.name);
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, sp->Fhotstart2.name);
         return FALSE;
     }
 
@@ -218,19 +218,19 @@ int openHotstartFile2(SWMM_Project *sp)
     nLinks = Nobjects[LINK];
     nPollut = Nobjects[POLLUT];
     flowUnits = FlowUnits;
-    fwrite(fileStamp, sizeof(char), strlen(fileStamp), Fhotstart2.file);
-    fwrite(&nSubcatch, sizeof(int), 1, Fhotstart2.file);
-    fwrite(&nLandUses, sizeof(int), 1, Fhotstart2.file);
-    fwrite(&nNodes, sizeof(int), 1, Fhotstart2.file);
-    fwrite(&nLinks, sizeof(int), 1, Fhotstart2.file);
-    fwrite(&nPollut, sizeof(int), 1, Fhotstart2.file);
-    fwrite(&flowUnits, sizeof(int), 1, Fhotstart2.file);
+    fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Fhotstart2.file);
+    fwrite(&nSubcatch, sizeof(int), 1, sp->Fhotstart2.file);
+    fwrite(&nLandUses, sizeof(int), 1, sp->Fhotstart2.file);
+    fwrite(&nNodes, sizeof(int), 1, sp->Fhotstart2.file);
+    fwrite(&nLinks, sizeof(int), 1, sp->Fhotstart2.file);
+    fwrite(&nPollut, sizeof(int), 1, sp->Fhotstart2.file);
+    fwrite(&flowUnits, sizeof(int), 1, sp->Fhotstart2.file);
     return TRUE;
 }
 
 //=============================================================================
 
-void  saveRouting()
+void  saveRouting(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -244,21 +244,21 @@ void  saveRouting()
     {
         x[0] = (float)Node[i].newDepth;
         x[1] = (float)Node[i].newLatFlow;
-        fwrite(x, sizeof(float), 2, Fhotstart2.file);
+        fwrite(x, sizeof(float), 2, sp->Fhotstart2.file);
 
 ////  New code added to release 5.1.008.  ////                                 //(5.1.008)
         if ( Node[i].type == STORAGE )
         {
             j = Node[i].subIndex;
             x[0] = (float)Storage[j].hrt;
-            fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
+            fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
 ////
 
         for (j = 0; j < Nobjects[POLLUT]; j++)
         {
             x[0] = (float)Node[i].newQual[j];
-            fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
+            fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
     }
     for (i = 0; i < Nobjects[LINK]; i++)
@@ -266,11 +266,11 @@ void  saveRouting()
         x[0] = (float)Link[i].newFlow;
         x[1] = (float)Link[i].newDepth;
         x[2] = (float)Link[i].setting;
-        fwrite(x, sizeof(float), 3, Fhotstart2.file);
+        fwrite(x, sizeof(float), 3, sp->Fhotstart2.file);
         for (j = 0; j < Nobjects[POLLUT]; j++)
         {
             x[0] = (float)Link[i].newQual[j];
-            fwrite(&x[0], sizeof(float), 1, Fhotstart2.file);
+            fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
     }
 }
@@ -288,7 +288,7 @@ void readRouting(SWMM_Project *sp)
     int   i, j;
     float x;
     double xgw[4];
-    FILE* f = Fhotstart1.file;
+    FILE* f = sp->Fhotstart1.file;
 
     // --- for file format 2, assign GW moisture content and lower depth
     if ( fileVersion == 2 )
@@ -369,7 +369,7 @@ void readRouting(SWMM_Project *sp)
 
 //=============================================================================
 
-void  saveRunoff(void)
+void  saveRunoff(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -378,7 +378,7 @@ void  saveRunoff(void)
 {
     int   i, j, k, sizeX;
     double* x;
-    FILE*  f = Fhotstart2.file;
+    FILE*  f = sp->Fhotstart2.file;
 
     sizeX = MAX(6, Nobjects[POLLUT]+1);
     x = (double *) calloc(sizeX, sizeof(double));
@@ -448,7 +448,7 @@ void  readRunoff(SWMM_Project *sp)
 {
     int    i, j, k;
     double x[6];
-    FILE*  f = Fhotstart1.file;
+    FILE*  f = sp->Fhotstart1.file;
 
     for (i = 0; i < Nobjects[SUBCATCH]; i++)
     {

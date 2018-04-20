@@ -83,7 +83,7 @@ void flowrout_init(SWMM_Project *sp, int routingModel)
         dynwave_init(sp);
 
         // --- initialize node & link depths if not using a hotstart file
-        if ( Fhotstart1.mode == NO_FILE )
+        if ( sp->Fhotstart1.mode == NO_FILE )
         {
             initNodeDepths();
             initLinkDepths();

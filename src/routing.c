@@ -109,7 +109,7 @@ int routing_open(SWMM_Project *sp)
 
     // --- initialize flow and quality routing systems                         //(5.1.008)
     flowrout_init(sp, RouteModel);                                             //(5.1.008)
-    if ( Fhotstart1.mode == NO_FILE ) qualrout_init();                         //(5.1.008)
+    if ( sp->Fhotstart1.mode == NO_FILE ) qualrout_init();                         //(5.1.008)
 
     // --- initialize routing events                                           //(5.1.011)
     if ( NumEvents > 0 ) sortEvents();                                         //(5.1.011)
