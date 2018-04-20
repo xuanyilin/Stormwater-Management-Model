@@ -90,21 +90,23 @@ int        hasStationName;             // true if data contains station name
 static void createRainFile(SWMM_Project *sp, int count);
 static int  rainFileConflict(SWMM_Project *sp, int i);
 static void initRainFile(SWMM_Project *sp);
-static int  findGageInFile(int i, int kount);
+static int  findGageInFile(SWMM_Project *sp, int i, int kount);
 static int  addGageToRainFile(SWMM_Project *sp, int i);
 static int  findFileFormat(FILE *f, int i, int *hdrLines);
 static int  findNWSOnlineFormat(FILE *f, char *line);
 static void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines,
         DateTime day1, DateTime day2);
-static int  readNWSLine(char *line, int fileFormat, DateTime day1,
+static int  readNWSLine(SWMM_Project *sp, char *line, int fileFormat, DateTime day1,
             DateTime day2);
 static int  readNwsOnlineValue(char* s, long* v, char* flag);                  //(5.1.011)
-static int  readCMCLine(char *line, int fileFormat, DateTime day1,
-            DateTime day2);
+static int  readCMCLine(SWMM_Project *sp, char *line, int fileFormat,
+        DateTime day1, DateTime day2);
 static int  readStdLine(SWMM_Project *sp, char *line, DateTime day1,
         DateTime day2);
-static void saveAccumRainfall(DateTime date1, int hour, int minute, long v);
-static void saveRainfall(DateTime date1, int hour, int minute, float x,
+static void saveAccumRainfall(SWMM_Project *sp, DateTime date1, int hour,
+        int minute, long v);
+static void saveRainfall(SWMM_Project *sp, DateTime date1, int hour,
+        int minute, float x,
             char isMissing);
 static void setCondition(char flag);
 static int  getNWSInterval(char *elemType);
@@ -129,18 +131,18 @@ void  rain_open(SWMM_Project *sp)
     {
         if ( Gage[i].dataSource == RAIN_FILE ) count++;
     }
-    Frain.file = NULL;
+    sp->Frain.file = NULL;
     if ( count == 0 )
     {
-        Frain.mode = NO_FILE;
+        sp->Frain.mode = NO_FILE;
     }
 
     // --- see what kind of rain interface file to open
-    else switch ( Frain.mode )
+    else switch ( sp->Frain.mode )
     {
       case SCRATCH_FILE:
-        getTempFileName(Frain.name);
-        if ( (Frain.file = fopen(Frain.name, "w+b")) == NULL)
+        getTempFileName(sp->Frain.name);
+        if ( (sp->Frain.file = fopen(sp->Frain.name, "w+b")) == NULL)
         {
             report_writeErrorMsg(sp, ERR_RAIN_FILE_SCRATCH, "");
             return;
@@ -148,30 +150,30 @@ void  rain_open(SWMM_Project *sp)
         break;
 
       case USE_FILE:
-        if ( (Frain.file = fopen(Frain.name, "r+b")) == NULL)
+        if ( (sp->Frain.file = fopen(sp->Frain.name, "r+b")) == NULL)
         {
-            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, Frain.name);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, sp->Frain.name);
             return;
         }
         break;
 
       case SAVE_FILE:
-        if ( (Frain.file = fopen(Frain.name, "w+b")) == NULL)
+        if ( (sp->Frain.file = fopen(sp->Frain.name, "w+b")) == NULL)
         {
-            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, Frain.name);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, sp->Frain.name);
             return;
         }
         break;
     }
 
     // --- create new rain file if required
-    if ( Frain.mode == SCRATCH_FILE || Frain.mode == SAVE_FILE )
+    if ( sp->Frain.mode == SCRATCH_FILE || sp->Frain.mode == SAVE_FILE )
     {
         createRainFile(sp, count);
     }
 
     // --- initialize rain file
-    if ( Frain.mode != NO_FILE ) initRainFile(sp);
+    if ( sp->Frain.mode != NO_FILE ) initRainFile(sp);
 
     // --- open RDII processor (creates/opens a RDII interface file)
     rdii_openRdii(sp);
@@ -179,19 +181,19 @@ void  rain_open(SWMM_Project *sp)
 
 //=============================================================================
 
-void rain_close(void)
+void rain_close(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: closes rain interface file and RDII processor.
 //
 {
-    if ( Frain.file )
+    if ( sp->Frain.file )
     {
-        fclose(Frain.file);
-        if ( Frain.mode == SCRATCH_FILE ) remove(Frain.name);
+        fclose(sp->Frain.file);
+        if ( sp->Frain.mode == SCRATCH_FILE ) remove(sp->Frain.name);
     }
-    Frain.file = NULL;
+    sp->Frain.file = NULL;
     rdii_closeRdii();
 }
 
@@ -215,23 +217,23 @@ void createRainFile(SWMM_Project *sp, int count)
     char  fileStamp[] = "SWMM5-RAIN";
 
     // --- make sure interface file is open and no error condition
-    if ( ErrorCode || !Frain.file ) return;
+    if ( ErrorCode || !sp->Frain.file ) return;
 
     // --- write file stamp & # gages to file
-    fwrite(fileStamp, sizeof(char), strlen(fileStamp), Frain.file);
-    fwrite(&kount, sizeof(int), 1, Frain.file);
-    filePos1 = ftell(Frain.file);
+    fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Frain.file);
+    fwrite(&kount, sizeof(int), 1, sp->Frain.file);
+    filePos1 = ftell(sp->Frain.file);
 
     // --- write default fill-in header records to file for each gage
     //     (will be replaced later with actual records)
     if ( count > 0 ) report_writeRainStats(sp, -1, &RainStats);
     for ( i = 0;  i < count; i++ )
     {
-        fwrite(staID, sizeof(char), MAXMSG+1, Frain.file);
+        fwrite(staID, sizeof(char), MAXMSG+1, sp->Frain.file);
         for ( k = 1; k <= 3; k++ )
-            fwrite(&dummy, sizeof(int), 1, Frain.file);
+            fwrite(&dummy, sizeof(int), 1, sp->Frain.file);
     }
-    filePos2 = ftell(Frain.file);
+    filePos2 = ftell(sp->Frain.file);
 
     // --- loop through project's  rain gages,
     //     looking for ones using rain files
@@ -241,21 +243,21 @@ void createRainFile(SWMM_Project *sp, int count)
         if ( rainFileConflict(sp, i) ) break;
 
         // --- position rain file to where data for gage will begin
-        fseek(Frain.file, filePos2, SEEK_SET);
+        fseek(sp->Frain.file, filePos2, SEEK_SET);
 
         // --- add gage's data to rain file
         if ( addGageToRainFile(sp, i) )
         {
             // --- write header records for gage to beginning of rain file
-            filePos3 = ftell(Frain.file);
-            fseek(Frain.file, filePos1, SEEK_SET);
+            filePos3 = ftell(sp->Frain.file);
+            fseek(sp->Frain.file, filePos1, SEEK_SET);
             sstrncpy(staID, Gage[i].staID, MAXMSG);
             interval = Interval;
-            fwrite(staID,      sizeof(char), MAXMSG+1, Frain.file);
-            fwrite(&interval,  sizeof(int), 1, Frain.file);
-            fwrite(&filePos2,  sizeof(int), 1, Frain.file);
-            fwrite(&filePos3,  sizeof(int), 1, Frain.file);
-            filePos1 = ftell(Frain.file);
+            fwrite(staID,      sizeof(char), MAXMSG+1, sp->Frain.file);
+            fwrite(&interval,  sizeof(int), 1, sp->Frain.file);
+            fwrite(&filePos2,  sizeof(int), 1, sp->Frain.file);
+            fwrite(&filePos3,  sizeof(int), 1, sp->Frain.file);
+            filePos1 = ftell(sp->Frain.file);
             filePos2 = filePos3;
             report_writeRainStats(sp, i, &RainStats);
         }
@@ -264,9 +266,9 @@ void createRainFile(SWMM_Project *sp, int count)
     // --- if there was an error condition, then delete newly created file
     if ( ErrorCode )
     {
-        fclose(Frain.file);
-        Frain.file = NULL;
-        remove(Frain.name);
+        fclose(sp->Frain.file);
+        sp->Frain.file = NULL;
+        remove(sp->Frain.name);
     }
 }
 
@@ -349,18 +351,18 @@ void initRainFile(SWMM_Project *sp)
     long  filePos;
 
     // --- make sure interface file is open and no error condition
-    if ( ErrorCode || !Frain.file ) return;
+    if ( ErrorCode || !sp->Frain.file ) return;
 
     // --- check that interface file contains proper file stamp
-    rewind(Frain.file);
-    fread(fStamp, sizeof(char), strlen(fileStamp), Frain.file);
+    rewind(sp->Frain.file);
+    fread(fStamp, sizeof(char), strlen(fileStamp), sp->Frain.file);
     if ( strcmp(fStamp, fileStamp) != 0 )
     {
         report_writeErrorMsg(sp, ERR_RAIN_IFACE_FORMAT, "");
         return;
     }
-    fread(&kount, sizeof(int), 1, Frain.file);
-    filePos = ftell(Frain.file);
+    fread(&kount, sizeof(int), 1, sp->Frain.file);
+    filePos = ftell(sp->Frain.file);
 
     // --- locate information for each raingage in interface file
     for ( i = 0; i < Nobjects[GAGE]; i++ )
@@ -368,8 +370,8 @@ void initRainFile(SWMM_Project *sp)
         if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
 
         // --- match station ID for gage with one in file
-        fseek(Frain.file, filePos, SEEK_SET);
-        if ( !findGageInFile(i, (int)kount) ||
+        fseek(sp->Frain.file, filePos, SEEK_SET);
+        if ( !findGageInFile(sp, i, (int)kount) ||
              Gage[i].startFilePos == Gage[i].endFilePos )
         {
             report_writeErrorMsg(sp, ERR_RAIN_FILE_GAGE, Gage[i].ID);
@@ -379,7 +381,7 @@ void initRainFile(SWMM_Project *sp)
 
 //=============================================================================
 
-int findGageInFile(int i, int kount)
+int findGageInFile(SWMM_Project *sp, int i, int kount)
 //
 //  Input:   i     = rain gage index
 //           kount = number of rain gages stored on interface file
@@ -394,10 +396,10 @@ int findGageInFile(int i, int kount)
 
     for ( k = 1; k <= kount; k++ )
     {
-        fread(staID,      sizeof(char), MAXMSG+1, Frain.file);
-        fread(&interval,  sizeof(int), 1, Frain.file);
-        fread(&filePos1,  sizeof(int), 1, Frain.file);
-        fread(&filePos2,  sizeof(int), 1, Frain.file);
+        fread(staID,      sizeof(char), MAXMSG+1, sp->Frain.file);
+        fread(&interval,  sizeof(int), 1, sp->Frain.file);
+        fread(&filePos1,  sizeof(int), 1, sp->Frain.file);
+        fread(&filePos2,  sizeof(int), 1, sp->Frain.file);
         if ( strcmp(staID, Gage[i].staID) == 0 )
         {
             // --- match found; save file parameters
@@ -692,13 +694,13 @@ void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines, DateTime 
          case NWS_COMMA_DELIMITED:
          case NWS_ONLINE_60:
          case NWS_ONLINE_15:
-           n = readNWSLine(line, fileFormat, day1, day2);
+           n = readNWSLine(sp, line, fileFormat, day1, day2);
            break;
 
          case AES_HLY:
          case CMC_FIF:
          case CMC_HLY:
-           n = readCMCLine(line, fileFormat, day1, day2);
+           n = readCMCLine(sp, line, fileFormat, day1, day2);
            break;
 
          default:
@@ -711,7 +713,8 @@ void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines, DateTime 
 
 //=============================================================================
 
-int readNWSLine(char *line, int fileFormat, DateTime day1, DateTime day2)
+int readNWSLine(SWMM_Project *sp, char *line, int fileFormat, DateTime day1,
+        DateTime day2)
 //
 //  Input:   line       = line of data from rainfall data file
 //           fileFormat = code of data file's format
@@ -836,7 +839,7 @@ int readNWSLine(char *line, int fileFormat, DateTime day1, DateTime day2)
         }
         else if ( flag1 == 'A' )
         {
-            saveAccumRainfall(date1, hour, minute, v);
+            saveAccumRainfall(sp, date1, hour, minute, v);
         }
 
         // --- handle all other conditions
@@ -845,7 +848,7 @@ int readNWSLine(char *line, int fileFormat, DateTime day1, DateTime day2)
             // --- convert rain measurement to inches & save it
             x = (float)v / 100.0f;
             if ( x > 0 || isMissing )
-                saveRainfall(date1, hour, minute, x, isMissing);
+                saveRainfall(sp, date1, hour, minute, x, isMissing);
         }
 
         // --- reset condition code if special condition period ended
@@ -910,7 +913,8 @@ void  setCondition(char flag)
 
 //=============================================================================
 
-int readCMCLine(char *line, int fileFormat, DateTime day1, DateTime day2)
+int readCMCLine(SWMM_Project *sp, char *line, int fileFormat, DateTime day1,
+        DateTime day2)
 //
 //  Input:   line = line of data from rainfall data file
 //           fileFormat = code of data file's format
@@ -970,7 +974,7 @@ int readCMCLine(char *line, int fileFormat, DateTime day1, DateTime day2)
         x = (float)( (double)v / 10.0 / MMperINCH);
         if ( x > 0 || isMissing)
         {
-            saveRainfall(date1, hour, minute, x, isMissing);
+            saveRainfall(sp, date1, hour, minute, x, isMissing);
         }
 
         // --- update hour & minute for next interval
@@ -1042,7 +1046,7 @@ int readStdLine(SWMM_Project *sp, char *line, DateTime day1, DateTime day2)
     x *= (float)UnitsFactor;
 
     // --- save rainfall to binary interface file
-    saveRainfall(date1, hour, minute, x, FALSE);
+    saveRainfall(sp, date1, hour, minute, x, FALSE);
     return 1;
 }
 
@@ -1074,7 +1078,7 @@ int parseStdLine(char *line, int *year, int *month, int *day, int *hour,
 
 //=============================================================================
 
-void saveAccumRainfall(DateTime date1, int hour, int minute, long v)
+void saveAccumRainfall(SWMM_Project *sp, DateTime date1, int hour, int minute, long v)
 //
 //  Input:   date1 = date of latest rainfall reading (in DateTime format)
 //           hour = hour of day of latest rain reading
@@ -1115,8 +1119,8 @@ void saveAccumRainfall(DateTime date1, int hour, int minute, long v)
         if ( RainStats.startDate == NO_DATE ) RainStats.startDate = date2;
         for (j = 0; j < n; j++)
         {
-            fwrite(&date2, sizeof(DateTime), 1, Frain.file);
-            fwrite(&x, sizeof(float), 1, Frain.file);
+            fwrite(&date2, sizeof(DateTime), 1, sp->Frain.file);
+            fwrite(&x, sizeof(float), 1, sp->Frain.file);
             date2 = datetime_addSeconds(date2, Interval);
             RainStats.endDate = date2;
         }
@@ -1129,7 +1133,8 @@ void saveAccumRainfall(DateTime date1, int hour, int minute, long v)
 
 //=============================================================================
 
-void saveRainfall(DateTime date1, int hour, int minute, float x, char isMissing)
+void saveRainfall(SWMM_Project *sp, DateTime date1, int hour, int minute,
+        float x, char isMissing)
 //
 //  Input:   date1 = date of rainfall reading (in DateTime format)
 //           hour = hour of day of current rain reading
@@ -1154,8 +1159,8 @@ void saveRainfall(DateTime date1, int hour, int minute, float x, char isMissing)
         date2 = datetime_addSeconds(date1, seconds);
 
         // --- write date & value (in inches) to interface file
-        fwrite(&date2, sizeof(DateTime), 1, Frain.file);
-        fwrite(&x, sizeof(float), 1, Frain.file);
+        fwrite(&date2, sizeof(DateTime), 1, sp->Frain.file);
+        fwrite(&x, sizeof(float), 1, sp->Frain.file);
 
         // --- update actual start & end of record dates
         if ( RainStats.startDate == NO_DATE ) RainStats.startDate = date2;

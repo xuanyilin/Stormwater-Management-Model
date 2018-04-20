@@ -194,7 +194,7 @@ void runoff_execute(SWMM_Project *sp)
     IsRaining = FALSE;
     for (j = 0; j < Nobjects[GAGE]; j++)
     {
-        gage_setState(j, currentDate);
+        gage_setState(sp, j, currentDate);
         if ( Gage[j].rainfall > 0.0 ) IsRaining = TRUE;
     }
 

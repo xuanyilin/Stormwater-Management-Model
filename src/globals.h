@@ -45,7 +45,7 @@ EXTERN TFile
 //                  Fout,                     // Output file
 //                  Frpt,                     // Report file
 //                  Fclimate,                 // Climate file
-                  Frain,                    // Rainfall file
+//                  Frain,                    // Rainfall file
                   Frunoff,                  // Runoff file
                   Frdii,                    // RDII inflow file
                   Fhotstart1,               // Hot start input file

@@ -66,7 +66,7 @@ static int   isOutletNode(int node);
 
 //=============================================================================
 
-int iface_readFileParams(char* tok[], int ntoks)
+int iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -92,8 +92,8 @@ int iface_readFileParams(char* tok[], int ntoks)
     switch ( j )
     {
       case RAINFALL_FILE:
-        Frain.mode = k;
-        sstrncpy(Frain.name, tok[2], MAXFNAME);
+        sp->Frain.mode = k;
+        sstrncpy(sp->Frain.name, tok[2], MAXFNAME);
         break;
 
       case RUNOFF_FILE:

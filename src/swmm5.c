@@ -499,7 +499,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
 
         // --- initialize state of each major system component
-        project_init();
+        project_init(sp);
 
         // --- see if runoff & routing needs to be computed
         if ( Nobjects[SUBCATCH] > 0 ) DoRunoff = TRUE;
@@ -703,7 +703,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         // --- close all computing systems
         stats_close();
         massbal_close();
-        if ( !IgnoreRainfall ) rain_close();
+        if ( !IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
         if ( DoRouting ) routing_close(RouteModel);
         hotstart_close();

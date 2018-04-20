@@ -120,10 +120,10 @@ static void   openRdiiProcessor(SWMM_Project *sp);
 static int    allocRdiiMemory(void);
 static int    getRainInterval(int i);
 static int    getMaxPeriods(int i, int k);
-static void   initGageData(void);
+static void   initGageData(SWMM_Project *sp);
 static void   initUnitHydData(void);
 static int    openNewRdiiFile(void);
-static void   getRainfall(DateTime currentDate);
+static void   getRainfall(SWMM_Project *sp, DateTime currentDate);
 
 static double applyIA(int j, int k, DateTime aDate, double dt,
               double rainDepth);
@@ -740,7 +740,7 @@ void createRdiiFile(SWMM_Project *sp)
 
     // --- validate RDII data
     validateRdii(sp);
-    initGageData();
+    initGageData(sp);
     if ( ErrorCode ) return;
 
     // --- open RDII processing system
@@ -761,7 +761,7 @@ void createRdiiFile(SWMM_Project *sp)
             currentDate = StartDateTime + elapsedTime / SECperDAY;
 
             // --- update rainfall at all rain gages
-            getRainfall(currentDate);
+            getRainfall(sp, currentDate);
 
             // --- compute convolutions of past rainfall with UH's
             getUnitHydRdii(currentDate);
@@ -1024,7 +1024,7 @@ int  getMaxPeriods(int i, int k)
 
 //=============================================================================
 
-void initGageData()
+void initGageData(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1041,7 +1041,7 @@ void initGageData()
         {
             table_tseriesInit(&Tseries[Gage[g].tSeries]);
         }
-        gage_initState(g);
+        gage_initState(sp, g);
     }
 
     // --- then flag each gage that is used by a Unit Hydrograph set
@@ -1156,7 +1156,7 @@ int openNewRdiiFile()
 
 //=============================================================================
 
-void getRainfall(DateTime currentDate)
+void getRainfall(SWMM_Project *sp, DateTime currentDate)
 //
 //  Input:   currentDate = current calendar date/time
 //  Output:  none
@@ -1190,7 +1190,7 @@ void getRainfall(DateTime currentDate)
             Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(gageDate)-1]; //(5.1.007)
             if (!Gage[g].isCurrent)
             {
-                gage_setState(g, gageDate);
+                gage_setState(sp, g, gageDate);
                 Gage[g].isCurrent = TRUE;
             }
             rainDepth = Gage[g].rainfall * (double)rainInterval / 3600.0;

@@ -64,7 +64,7 @@ void     project_close(void);
 void     project_readInput(SWMM_Project *);
 int      project_readOption(char* s1, char* s2);
 void     project_validate(SWMM_Project *sp);
-int      project_init(void);
+int      project_init(SWMM_Project *sp);
 
 int      project_addObject(int type, char* id, int n);
 
@@ -146,7 +146,7 @@ DateTime climate_getNextEvapDate(void);                                        /
 //   Rainfall Processing Methods
 //-----------------------------------------------------------------------------
 void    rain_open(SWMM_Project *sp);
-void    rain_close(void);
+void    rain_close(SWMM_Project *sp);
 
 //-----------------------------------------------------------------------------
 //   Snowmelt Processing Methods
@@ -328,8 +328,8 @@ void    stats_updateMaxNodeDepth(int node, double depth);                      /
 //-----------------------------------------------------------------------------
 int      gage_readParams(int gage, char* tok[], int ntoks);
 void     gage_validate(SWMM_Project *sp, int gage);
-void     gage_initState(int gage);
-void     gage_setState(int gage, DateTime aDate);
+void     gage_initState(SWMM_Project *sp, int gage);
+void     gage_setState(SWMM_Project *sp, int gage, DateTime aDate);
 double   gage_getPrecip(int gage, double *rainfall, double *snowfall);
 void     gage_setReportRainfall(int gage, DateTime aDate);
 DateTime gage_getNextRainDate(int gage, DateTime aDate);
@@ -419,7 +419,7 @@ void    inflow_deleteDwfInflows(int node);
 //-----------------------------------------------------------------------------
 //   Routing Interface File Methods
 //-----------------------------------------------------------------------------
-int     iface_readFileParams(char* tok[], int ntoks);
+int     iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    iface_openRoutingFiles(SWMM_Project *sp);
 void    iface_closeRoutingFiles(void);
 int     iface_getNumIfaceNodes(DateTime aDate);

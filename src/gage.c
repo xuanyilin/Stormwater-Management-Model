@@ -39,8 +39,8 @@ const double OneSecond = 1.1574074e-5;
 //-----------------------------------------------------------------------------
 static int    readGageSeriesFormat(char* tok[], int ntoks, double x[]);
 static int    readGageFileFormat(char* tok[], int ntoks, double x[]);
-static int    getFirstRainfall(int gage);
-static int    getNextRainfall(int gage);
+static int    getFirstRainfall(SWMM_Project *sp, int gage);
+static int    getNextRainfall(SWMM_Project *sp, int gage);
 static double convertRainfall(int gage, double rain);
 
 
@@ -254,7 +254,7 @@ void  gage_validate(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void  gage_initState(int j)
+void  gage_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  none
@@ -282,7 +282,7 @@ void  gage_initState(int j)
     }
 
     // --- get first & next rainfall values
-    if ( getFirstRainfall(j) )
+    if ( getFirstRainfall(sp, j) )
     {
         // --- find date at end of starting rain interval
         Gage[j].endDate = datetime_addSeconds(
@@ -302,14 +302,14 @@ void  gage_initState(int j)
         }
 
         // --- otherwise find next recorded rainfall
-        else if ( !getNextRainfall(j) ) Gage[j].nextDate = NO_DATE;
+        else if ( !getNextRainfall(sp, j) ) Gage[j].nextDate = NO_DATE;
     }
     else Gage[j].startDate = NO_DATE;
 }
 
 //=============================================================================
 
-void gage_setState(int j, DateTime t)
+void gage_setState(SWMM_Project *sp, int j, DateTime t)
 //
 //  Input:   j = rain gage index
 //           t = a calendar date/time
@@ -379,7 +379,7 @@ void gage_setState(int j, DateTime t)
 			  Gage[j].rainInterval);
 	Gage[j].rainfall = Gage[j].nextRainfall;
 
-	if ( !getNextRainfall(j) ) Gage[j].nextDate = NO_DATE;
+	if ( !getNextRainfall(sp, j) ) Gage[j].nextDate = NO_DATE;
     }
 }
 
@@ -459,7 +459,7 @@ void gage_setReportRainfall(int j, DateTime reportDate)
 
 //=============================================================================
 
-int getFirstRainfall(int j)
+int getFirstRainfall(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  returns TRUE if successful
@@ -480,13 +480,13 @@ int getFirstRainfall(int j)
     // --- use rain interface file if applicable
     if ( Gage[j].dataSource == RAIN_FILE )
     {
-        if ( Frain.file && Gage[j].endFilePos > Gage[j].startFilePos )
+        if ( sp->Frain.file && Gage[j].endFilePos > Gage[j].startFilePos )
         {
             // --- retrieve 1st date & rainfall volume from file
-            fseek(Frain.file, Gage[j].startFilePos, SEEK_SET);
-            fread(&Gage[j].startDate, sizeof(DateTime), 1, Frain.file);
-            fread(&vFirst, sizeof(float), 1, Frain.file);
-            Gage[j].currentFilePos = ftell(Frain.file);
+            fseek(sp->Frain.file, Gage[j].startFilePos, SEEK_SET);
+            fread(&Gage[j].startDate, sizeof(DateTime), 1, sp->Frain.file);
+            fread(&vFirst, sizeof(float), 1, sp->Frain.file);
+            Gage[j].currentFilePos = ftell(sp->Frain.file);
 
             // --- convert rainfall to intensity
             Gage[j].rainfall = convertRainfall(j, (double)vFirst);
@@ -516,7 +516,7 @@ int getFirstRainfall(int j)
 
 //=============================================================================
 
-int getNextRainfall(int j)
+int getNextRainfall(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  returns 1 if successful; 0 if not
@@ -543,12 +543,12 @@ int getNextRainfall(int j)
 	    {
 		if ( Gage[j].dataSource == RAIN_FILE )
 		{
-		    if ( Frain.file && Gage[j].currentFilePos < Gage[j].endFilePos )
+		    if ( sp->Frain.file && Gage[j].currentFilePos < Gage[j].endFilePos )
 		    {
-			fseek(Frain.file, Gage[j].currentFilePos, SEEK_SET);
-			fread(&Gage[j].nextDate, sizeof(DateTime), 1, Frain.file);
-			fread(&vNext, sizeof(float), 1, Frain.file);
-			Gage[j].currentFilePos = ftell(Frain.file);
+			fseek(sp->Frain.file, Gage[j].currentFilePos, SEEK_SET);
+			fread(&Gage[j].nextDate, sizeof(DateTime), 1, sp->Frain.file);
+			fread(&vNext, sizeof(float), 1, sp->Frain.file);
+			Gage[j].currentFilePos = ftell(sp->Frain.file);
 			rNext = convertRainfall(j, (double)vNext);
 		    }
 		    else return 0;

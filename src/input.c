@@ -586,7 +586,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return report_readOptions(Tok, Ntokens);
 
       case s_FILE:
-        return iface_readFileParams(Tok, Ntokens);
+        return iface_readFileParams(sp, Tok, Ntokens);
 
       case s_LID_CONTROL:
         return lid_readProcParams(Tok, Ntokens);

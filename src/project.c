@@ -282,7 +282,7 @@ void project_close()
 
 //=============================================================================
 
-int  project_init(void)
+int  project_init(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -293,7 +293,7 @@ int  project_init(void)
     climate_initState();
     lid_initState();
     for (j=0; j<Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
-    for (j=0; j<Nobjects[GAGE]; j++)     gage_initState(j);
+    for (j=0; j<Nobjects[GAGE]; j++)     gage_initState(sp, j);
     for (j=0; j<Nobjects[SUBCATCH]; j++) subcatch_initState(j);
     for (j=0; j<Nobjects[NODE]; j++)     node_initState(j);
     for (j=0; j<Nobjects[LINK]; j++)     link_initState(j);
@@ -770,7 +770,7 @@ void setDefaults(SWMM_Project *sp)
    strcpy(TempDir, "");
 
    // Interface files
-   Frain.mode      = SCRATCH_FILE;     // Use scratch rainfall file
+   sp->Frain.mode      = SCRATCH_FILE;     // Use scratch rainfall file
    sp->Fclimate.mode   = NO_FILE;
    Frunoff.mode    = NO_FILE;
    Frdii.mode      = NO_FILE;
@@ -778,7 +778,7 @@ void setDefaults(SWMM_Project *sp)
    Fhotstart2.mode = NO_FILE;
    Finflows.mode   = NO_FILE;
    Foutflows.mode  = NO_FILE;
-   Frain.file      = NULL;
+   sp->Frain.file      = NULL;
    sp->Fclimate.file   = NULL;
    Frunoff.file    = NULL;
    Frdii.file      = NULL;
