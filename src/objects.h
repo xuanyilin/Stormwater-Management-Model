@@ -1098,8 +1098,8 @@ struct SWMM_Project {
    TFile
                  Finp,                     // Input file
                  Fout,                     // Output file
-                 Frpt;                     // Report file
-//                      Fclimate,                 // Climate file
+                 Frpt,                     // Report file
+                 Fclimate;                 // Climate file
 //                      Frain,                    // Rainfall file
 //                      Frunoff,                  // Runoff file
 //                      Frdii,                    // RDII inflow file

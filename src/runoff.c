@@ -122,7 +122,7 @@ int runoff_open(SWMM_Project *sp)
 
 //=============================================================================
 
-void runoff_close()
+void runoff_close(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -148,7 +148,7 @@ void runoff_close()
     }
 
     // --- close climate file if in use
-    if ( Fclimate.file ) fclose(Fclimate.file);
+    if ( sp->Fclimate.file ) fclose(sp->Fclimate.file);
 }
 
 //=============================================================================

@@ -460,7 +460,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return err;
 
       case s_TEMP:
-        return climate_readParams(Tok, Ntokens);
+        return climate_readParams(sp, Tok, Ntokens);
 
       case s_EVAP:
         return climate_readEvapParams(Tok, Ntokens);

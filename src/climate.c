@@ -119,7 +119,7 @@ static int      FileWindType;          // wind speed type;                     /
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int  getFileFormat(void);
+static int  getFileFormat(SWMM_Project *sp);
 static void readFileLine(SWMM_Project *sp, int *year, int *month);
 static void readUserFileLine(SWMM_Project *sp, int *year, int *month);
 static void readTD3200FileLine(SWMM_Project *sp, int *year, int *month);
@@ -146,7 +146,7 @@ static void parseGhcndFileLine(void);                                          /
 
 //=============================================================================
 
-int  climate_readParams(char* tok[], int ntoks)
+int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -189,8 +189,8 @@ int  climate_readParams(char* tok[], int ntoks)
         Temp.dataSource = FILE_TEMP;
 
         // --- save name and usage mode of external climate file
-        Fclimate.mode = USE_FILE;
-        sstrncpy(Fclimate.name, tok[1], MAXFNAME);
+        sp->Fclimate.mode = USE_FILE;
+        sstrncpy(sp->Fclimate.name, tok[1], MAXFNAME);
 
         // --- save starting date to read from file if one is provided
         Temp.fileStartDate = NO_DATE;
@@ -441,14 +441,14 @@ void climate_validate(SWMM_Project *sp)
     if ( Wind.type == FILE_WIND || Evap.type == FILE_EVAP ||
          Evap.type == TEMPERATURE_EVAP )
     {
-        if ( Fclimate.mode == NO_FILE )
+        if ( sp->Fclimate.mode == NO_FILE )
         {
             report_writeErrorMsg(sp, ERR_NO_CLIMATE_FILE, "");
         }
     }
 
     // --- open the climate data file                                          //(5.1.007)
-    if ( Fclimate.mode == USE_FILE ) climate_openFile(sp);                       //(5.1.007)
+    if ( sp->Fclimate.mode == USE_FILE ) climate_openFile(sp);                       //(5.1.007)
 
     // --- snow melt parameters tipm & rnm must be fractions
     if ( Snow.tipm < 0.0 ||
@@ -488,9 +488,9 @@ void climate_openFile(SWMM_Project *sp)
     int i, m, y;
 
     // --- open the file
-    if ( (Fclimate.file = fopen(Fclimate.name, "rt")) == NULL )
+    if ( (sp->Fclimate.file = fopen(sp->Fclimate.name, "rt")) == NULL )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_OPEN, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_OPEN, sp->Fclimate.name);
         return;
     }
 
@@ -502,30 +502,30 @@ void climate_openFile(SWMM_Project *sp)
     FileValue[WIND] = 0.0;
 
     // --- find climate file's format
-    FileFormat = getFileFormat();
+    FileFormat = getFileFormat(sp);
     if ( FileFormat == UNKNOWN_FORMAT )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
         return;
     }
 
     // --- position file to begin reading climate file at either user-specified
     //     month/year or at start of simulation period.
-    rewind(Fclimate.file);
+    rewind(sp->Fclimate.file);
     strcpy(FileLine, "");
     if ( Temp.fileStartDate == NO_DATE )
         datetime_decodeDate(StartDate, &FileYear, &FileMonth, &FileDay);
     else
         datetime_decodeDate(Temp.fileStartDate, &FileYear, &FileMonth, &FileDay);
-    while ( !feof(Fclimate.file) )
+    while ( !feof(sp->Fclimate.file) )
     {
         strcpy(FileLine, "");
         readFileLine(sp, &y, &m);
         if ( y == FileYear && m == FileMonth ) break;
     }
-    if ( feof(Fclimate.file) )
+    if ( feof(sp->Fclimate.file) )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_END_OF_FILE, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_END_OF_FILE, sp->Fclimate.name);
         return;
     }
 
@@ -599,7 +599,7 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
 //  Purpose: sets climate variables for current date.
 //
 {
-    if ( Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
+    if ( sp->Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
     if ( Temp.dataSource != NO_TEMP ) setTemp(theDate);
     setEvap(theDate);
     setWind(theDate);
@@ -967,7 +967,7 @@ double getTempEvap(int day, double tave, double trng)
 
 //=============================================================================
 
-int  getFileFormat()
+int  getFileFormat(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns code number of climate file's format
@@ -984,7 +984,7 @@ int  getFileFormat()
     int  y, m, d, n;
 
     // --- read first line of file
-    if ( fgets(line, MAXLINE, Fclimate.file) == NULL ) return UNKNOWN_FORMAT;
+    if ( fgets(line, MAXLINE, sp->Fclimate.file) == NULL ) return UNKNOWN_FORMAT;
 
     // --- check for TD3200 format
     sstrncpy(recdType, line, 3);
@@ -1023,7 +1023,7 @@ void readFileLine(SWMM_Project *sp, int *y, int *m)
     // --- read next line from climate data file
     while ( strlen(FileLine) == 0 )
     {
-        if ( fgets(FileLine, MAXLINE, Fclimate.file) == NULL ) return;
+        if ( fgets(FileLine, MAXLINE, sp->Fclimate.file) == NULL ) return;
      	if ( FileLine[0] == '\n' ) FileLine[0] = '\0';
     }
 
@@ -1052,7 +1052,7 @@ void readUserFileLine(SWMM_Project *sp, int* y, int* m)
     n = sscanf(FileLine, "%s %d %d", staID, y, m);
     if ( n < 3 )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
     }
 }
 
@@ -1075,7 +1075,7 @@ void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
     len = strlen(FileLine);
     if ( len < 30 )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
         return;
     }
 
@@ -1083,7 +1083,7 @@ void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
     sstrncpy(recdType, FileLine, 3);
     if ( strcmp(recdType, "DLY") != 0 )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
         return;
     }
 
@@ -1112,7 +1112,7 @@ void readDLY0204FileLine(SWMM_Project *sp, int* y, int* m)
     len = strlen(FileLine);
     if ( len < 16 )
     {
-        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
         return;
     }
 
@@ -1144,7 +1144,7 @@ void readFileValues(SWMM_Project *sp)
     while ( !ErrorCode )
     {
         // --- return when date on line is after current file date
-        if ( feof(Fclimate.file) ) return;
+        if ( feof(sp->Fclimate.file) ) return;
         readFileLine(sp, &y, &m);
         if ( y > FileYear || m > FileMonth ) return;
 
