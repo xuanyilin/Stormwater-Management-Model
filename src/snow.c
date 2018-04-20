@@ -214,7 +214,7 @@ void  snow_initSnowmelt(int j)
 
 //=============================================================================
 
-void snow_validateSnowmelt(int j)
+void snow_validateSnowmelt(SWMM_Project *sp, int j)
 //
 //  Input:   j = snowmelt parameter set index
 //  Output:  none
@@ -241,7 +241,7 @@ void snow_validateSnowmelt(int j)
     // --- check that removal fractions sum <= 1.0
     for ( k=0; k<5; k++ ) sum += Snowmelt[j].sfrac[k];
     if ( sum > 1.01 ) err = TRUE;
-    if ( err ) report_writeErrorMsg(ERR_SNOWPACK_PARAMS, Snowmelt[j].ID);
+    if ( err ) report_writeErrorMsg(sp, ERR_SNOWPACK_PARAMS, Snowmelt[j].ID);
 }
 
 //=============================================================================

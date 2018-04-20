@@ -446,6 +446,8 @@ int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value);
+int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
+        int Param, double value);
 
 /**
  @brief Get the current simulation datetime information.
@@ -630,6 +632,8 @@ int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot);
  @return Error code
 */
 int DLLEXPORT swmm_setLinkSetting(int index, double setting);
+int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
+        double setting);
 
 /**
  @brief Set an inflow rate to a node. The inflow rate is held constant 

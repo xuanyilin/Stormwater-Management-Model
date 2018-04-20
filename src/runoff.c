@@ -71,14 +71,14 @@ extern float* SubcatchResults;         // Results vector defined in OUTPUT.C
 // Local functions
 //-----------------------------------------------------------------------------
 static double runoff_getTimeStep(DateTime currentDate);
-static void   runoff_initFile(void);
-static void   runoff_readFromFile(void);
+static void   runoff_initFile(SWMM_Project *sp);
+static void   runoff_readFromFile(SWMM_Project *sp);
 static void   runoff_saveToFile(float tStep);
 static void   runoff_getOutfallRunon(double tStep);                            //(5.1.008)
 
 //=============================================================================
 
-int runoff_open()
+int runoff_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns the global error code
@@ -91,14 +91,14 @@ int runoff_open()
     Nsteps = 0;
 
     // --- open the Ordinary Differential Equation solver
-    if ( !odesolve_open(MAXODES) ) report_writeErrorMsg(ERR_ODE_SOLVER, "");
+    if ( !odesolve_open(MAXODES) ) report_writeErrorMsg(sp, ERR_ODE_SOLVER, "");
 
     // --- allocate memory for pollutant runoff loads                          //(5.1.008)
     OutflowLoad = NULL;
     if ( Nobjects[POLLUT] > 0 )
     {
         OutflowLoad = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        if ( !OutflowLoad ) report_writeErrorMsg(ERR_MEMORY, "");
+        if ( !OutflowLoad ) report_writeErrorMsg(sp, ERR_MEMORY, "");
     }
 
     // --- see if a runoff interface file should be opened
@@ -106,13 +106,13 @@ int runoff_open()
     {
       case USE_FILE:
         if ( (Frunoff.file = fopen(Frunoff.name, "r+b")) == NULL)
-            report_writeErrorMsg(ERR_RUNOFF_FILE_OPEN, Frunoff.name);
-        else runoff_initFile();
+            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, Frunoff.name);
+        else runoff_initFile(sp);
         break;
       case SAVE_FILE:
         if ( (Frunoff.file = fopen(Frunoff.name, "w+b")) == NULL)
-            report_writeErrorMsg(ERR_RUNOFF_FILE_OPEN, Frunoff.name);
-        else runoff_initFile();
+            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_OPEN, Frunoff.name);
+        else runoff_initFile(sp);
         break;
     }
 
@@ -153,7 +153,7 @@ void runoff_close()
 
 //=============================================================================
 
-void runoff_execute()
+void runoff_execute(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -177,7 +177,7 @@ void runoff_execute()
     currentDate = getDateTime(NewRunoffTime);
 
     // --- update climatological conditions
-    climate_setState(currentDate);
+    climate_setState(sp, currentDate);
 
     // --- if no subcatchments then simply update runoff elapsed time
     if ( Nobjects[SUBCATCH] == 0 )
@@ -201,7 +201,7 @@ void runoff_execute()
     // --- read runoff results from interface file if applicable
     if ( Frunoff.mode == USE_FILE )
     {
-        runoff_readFromFile();
+        runoff_readFromFile(sp);
         return;
     }
 
@@ -330,7 +330,7 @@ double runoff_getTimeStep(DateTime currentDate)
 
 //=============================================================================
 
-void runoff_initFile(void)
+void runoff_initFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -364,7 +364,7 @@ void runoff_initFile(void)
         fread(fStamp, sizeof(char), strlen(fileStamp), Frunoff.file);
         if ( strcmp(fStamp, fileStamp) != 0 )
         {
-            report_writeErrorMsg(ERR_RUNOFF_FILE_FORMAT, "");
+            report_writeErrorMsg(sp, ERR_RUNOFF_FILE_FORMAT, "");
             return;
         }
         nSubcatch = -1;
@@ -379,7 +379,7 @@ void runoff_initFile(void)
         ||   flowUnits != FlowUnits
         ||   MaxSteps  <= 0 )
         {
-             report_writeErrorMsg(ERR_RUNOFF_FILE_FORMAT, "");
+             report_writeErrorMsg(sp, ERR_RUNOFF_FILE_FORMAT, "");
         }
     }
 }
@@ -407,7 +407,7 @@ void  runoff_saveToFile(float tStep)
 
 //=============================================================================
 
-void  runoff_readFromFile(void)
+void  runoff_readFromFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -423,7 +423,7 @@ void  runoff_readFromFile(void)
     // --- make sure not past end of file
     if ( Nsteps > MaxSteps )
     {
-         report_writeErrorMsg(ERR_RUNOFF_FILE_END, "");
+         report_writeErrorMsg(sp, ERR_RUNOFF_FILE_END, "");
          return;
     }
 
@@ -472,7 +472,7 @@ void  runoff_readFromFile(void)
     // --- report error if not enough values were read
     if ( kount < 1 + Nobjects[SUBCATCH] * nResults )
     {
-         report_writeErrorMsg(ERR_RUNOFF_FILE_READ, "");
+         report_writeErrorMsg(sp, ERR_RUNOFF_FILE_READ, "");
          return;
     }
 

@@ -63,7 +63,7 @@ void     project_close(void);
 
 void     project_readInput(SWMM_Project *);
 int      project_readOption(char* s1, char* s2);
-void     project_validate(void);
+void     project_validate(SWMM_Project *sp);
 int      project_init(void);
 
 int      project_addObject(int type, char* id, int n);
@@ -92,39 +92,43 @@ int     input_readData(SWMM_Project *p);
 //-----------------------------------------------------------------------------
 int     report_readOptions(char* tok[], int ntoks);
 
-void    report_writeLine(char* line);
-void    report_writeSysTime(void);
-void    report_writeLogo(void);
-void    report_writeTitle(void);
-void    report_writeOptions(void);
+void    report_writeLine(SWMM_Project *sp, char* line);
+void    report_writeSysTime(SWMM_Project *sp);
+void    report_writeLogo(SWMM_Project *sp);
+void    report_writeTitle(SWMM_Project *sp);
+void    report_writeOptions(SWMM_Project *sp);
 void    report_writeReport(SWMM_Project *sp);
 
-void    report_writeRainStats(int gage, TRainStats* rainStats);
-void    report_writeRdiiStats(double totalRain, double totalRdii);
+void    report_writeRainStats(SWMM_Project *sp, int gage, TRainStats* rainStats);
+void    report_writeRdiiStats(SWMM_Project *sp, double totalRain, double totalRdii);
 
-void    report_writeControlActionsHeading(void);
-void    report_writeControlAction(DateTime aDate, char* linkID, double value,
+void    report_writeControlActionsHeading(SWMM_Project *sp);
+void    report_writeControlAction(SWMM_Project *sp, DateTime aDate, char* linkID, double value,
         char* ruleID);
 
-void    report_writeRunoffError(TRunoffTotals* totals, double area);
-void    report_writeLoadingError(TLoadingTotals* totals);
-void    report_writeGwaterError(TGwaterTotals* totals, double area);
-void    report_writeFlowError(TRoutingTotals* totals);
-void    report_writeQualError(TRoutingTotals* totals);
+void    report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
+        double area);
+void    report_writeLoadingError(SWMM_Project *sp, TLoadingTotals* totals);
+void    report_writeGwaterError(SWMM_Project *sp, TGwaterTotals* totals,
+        double area);
+void    report_writeFlowError(SWMM_Project *sp, TRoutingTotals* totals);
+void    report_writeQualError(SWMM_Project *sp, TRoutingTotals* totals);
 
-void    report_writeMaxStats(TMaxStats massBalErrs[], TMaxStats CourantCrit[],
+void    report_writeMaxStats(SWMM_Project *sp, TMaxStats massBalErrs[],
+        TMaxStats CourantCrit[], int nMaxStats);
+void    report_writeMaxFlowTurns(SWMM_Project *sp, TMaxStats flowTurns[],
         int nMaxStats);
-void    report_writeMaxFlowTurns(TMaxStats flowTurns[], int nMaxStats);
-void    report_writeSysStats(TSysStats* sysStats);
+void    report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats);
 
-void    report_writeErrorMsg(int code, char* msg);
-void    report_writeErrorCode(void);
-void    report_writeInputErrorMsg(int k, int sect, char* line, long lineCount);
-void    report_writeWarningMsg(char* msg, char* id); 
-void    report_writeTseriesErrorMsg(int code, TTable *tseries);
+void    report_writeErrorMsg(SWMM_Project *sp, int code, char* msg);
+void    report_writeErrorCode(SWMM_Project *sp);
+void    report_writeInputErrorMsg(SWMM_Project *sp, int k, int sect,
+        char* line, long lineCount);
+void    report_writeWarningMsg(SWMM_Project *sp, char* msg, char* id);
+void    report_writeTseriesErrorMsg(SWMM_Project *sp, int code, TTable *tseries);
 
-void    inputrpt_writeInput(void);
-void    statsrpt_writeReport(void);
+void    inputrpt_writeInput(SWMM_Project *sp);
+void    statsrpt_writeReport(SWMM_Project *sp);
 
 //-----------------------------------------------------------------------------
 //   Temperature/Evaporation Methods
@@ -132,16 +136,16 @@ void    statsrpt_writeReport(void);
 int      climate_readParams(char* tok[], int ntoks);
 int      climate_readEvapParams(char* tok[], int ntoks);
 int      climate_readAdjustments(char* tok[], int ntoks);                      //(5.1.007)
-void     climate_validate(void);
-void     climate_openFile(void);
+void     climate_validate(SWMM_Project *sp);
+void     climate_openFile(SWMM_Project *sp);
 void     climate_initState(void);
-void     climate_setState(DateTime aDate);
+void     climate_setState(SWMM_Project *sp, DateTime aDate);
 DateTime climate_getNextEvapDate(void);                                        //(5.1.008)
 
 //-----------------------------------------------------------------------------
 //   Rainfall Processing Methods
 //-----------------------------------------------------------------------------
-void    rain_open(void);
+void    rain_open(SWMM_Project *sp);
 void    rain_close(void);
 
 //-----------------------------------------------------------------------------
@@ -150,7 +154,7 @@ void    rain_close(void);
 int     snow_readMeltParams(char* tok[], int ntoks);
 int     snow_createSnowpack(int subcacth, int snowIndex);
 
-void    snow_validateSnowmelt(int snowIndex);
+void    snow_validateSnowmelt(SWMM_Project *sp, int snowIndex);
 void    snow_initSnowpack(int subcatch);
 void    snow_initSnowmelt(int snowIndex);
 
@@ -166,16 +170,16 @@ double  snow_getSnowCover(int subcatch);
 //-----------------------------------------------------------------------------
 //   Runoff Analyzer Methods
 //-----------------------------------------------------------------------------
-int     runoff_open(void);
-void    runoff_execute(void);
+int     runoff_open(SWMM_Project *sp);
+void    runoff_execute(SWMM_Project *sp);
 void    runoff_close(void);
 
 //-----------------------------------------------------------------------------
 //   Conveyance System Routing Methods
 //-----------------------------------------------------------------------------
-int     routing_open(void);
+int     routing_open(SWMM_Project *sp);
 double  routing_getRoutingStep(int routingModel, double fixedStep);
-void    routing_execute(int routingModel, double routingStep);
+void    routing_execute(SWMM_Project *sp, int routingModel, double routingStep);
 void    routing_close(int routingModel);
 
 //-----------------------------------------------------------------------------
@@ -184,7 +188,7 @@ void    routing_close(int routingModel);
 int     output_open(SWMM_Project *sp);
 void    output_end(SWMM_Project *sp);
 void    output_close(void);
-void    output_checkFileSize(void);
+void    output_checkFileSize(SWMM_Project *sp);
 void    output_saveResults(SWMM_Project *sp, double reportTime);
 void    output_readDateTime(SWMM_Project *sp, int period, DateTime *aDate);
 void    output_readSubcatchResults(SWMM_Project *sp, int period, int area);
@@ -199,8 +203,8 @@ int     gwater_readGroundwaterParams(char* tok[], int ntoks);
 int     gwater_readFlowExpression(char* tok[], int ntoks);
 void    gwater_deleteFlowExpression(int subcatch);
 
-void    gwater_validateAquifer(int aquifer);
-void    gwater_validate(int subcatch);
+void    gwater_validateAquifer(SWMM_Project *sp, int aquifer);
+void    gwater_validate(SWMM_Project *sp, int subcatch);
 
 void    gwater_initState(int subcatch);
 void    gwater_getState(int subcatch, double x[]);
@@ -217,7 +221,7 @@ int     rdii_readRdiiInflow(char* tok[], int ntoks);
 void    rdii_deleteRdiiInflow(int node);
 void    rdii_initUnitHyd(int unitHyd);
 int     rdii_readUnitHydParams(char* tok[], int ntoks);
-void    rdii_openRdii(void);
+void    rdii_openRdii(SWMM_Project *sp);
 void    rdii_closeRdii(void);
 int     rdii_getNumRdiiFlows(DateTime aDate);
 void    rdii_getRdiiFlow(int index, int* node, double* q);
@@ -243,40 +247,43 @@ double  landuse_getCoPollutLoad(int p, double washoff[]);
 //-----------------------------------------------------------------------------
 //   Flow/Quality Routing Methods
 //-----------------------------------------------------------------------------
-void    flowrout_init(int routingModel);
+void    flowrout_init(SWMM_Project *sp, int routingModel);
 void    flowrout_close(int routingModel);
 double  flowrout_getRoutingStep(int routingModel, double fixedStep);
-int     flowrout_execute(int links[], int routingModel, double tStep);
+int     flowrout_execute(SWMM_Project *sp, int links[], int routingModel,
+        double tStep);
 
-void    toposort_sortLinks(int links[]);
-int     kinwave_execute(int link, double* qin, double* qout, double tStep);
+void    toposort_sortLinks(SWMM_Project *sp, int links[]);
+int     kinwave_execute(SWMM_Project *sp, int link, double* qin, double* qout,
+        double tStep);
 
 void    dynwave_validate(void);                                                //(5.1.008)
-void    dynwave_init(void);
+void    dynwave_init(SWMM_Project *sp);
 void    dynwave_close(void);
 double  dynwave_getRoutingStep(double fixedStep);
 int     dynwave_execute(double tStep);
 void    dwflow_findConduitFlow(int j, int steps, double omega, double dt);
 
 void    qualrout_init(void);
-void    qualrout_execute(double tStep);
+void    qualrout_execute(SWMM_Project *sp, double tStep);
 
 //-----------------------------------------------------------------------------
 //   Treatment Methods
 //-----------------------------------------------------------------------------
-int     treatmnt_open(void);
+int     treatmnt_open(SWMM_Project *sp);
 void    treatmnt_close(void);
 int     treatmnt_readExpression(char* tok[], int ntoks);
 void    treatmnt_delete(int node);
-void    treatmnt_treat(int node, double q, double v, double tStep);
+void    treatmnt_treat(SWMM_Project *sp, int node, double q, double v,
+        double tStep);
 void    treatmnt_setInflow(double qIn, double wIn[]);
 
 //-----------------------------------------------------------------------------
 //   Mass Balance Methods
 //-----------------------------------------------------------------------------
-int     massbal_open(void);
+int     massbal_open(SWMM_Project *sp);
 void    massbal_close(void);
-void    massbal_report(void);
+void    massbal_report(SWMM_Project *sp);
 
 void    massbal_updateRunoffTotals(int type, double v);                        //(5.1.008)
 void    massbal_updateLoadingTotals(int type, int pollut, double w);
@@ -301,9 +308,9 @@ double  massbal_getFlowError(void);
 //-----------------------------------------------------------------------------
 //   Simulation Statistics Methods
 //-----------------------------------------------------------------------------
-int     stats_open(void);
+int     stats_open(SWMM_Project *sp);
 void    stats_close(void);
-void    stats_report(void);
+void    stats_report(SWMM_Project *sp);
 
 void    stats_updateCriticalTimeCount(int node, int link);
 void    stats_updateFlowStats(double tStep, DateTime aDate, int stepCount,
@@ -320,7 +327,7 @@ void    stats_updateMaxNodeDepth(int node, double depth);                      /
 //   Raingage Methods
 //-----------------------------------------------------------------------------
 int      gage_readParams(int gage, char* tok[], int ntoks);
-void     gage_validate(int gage);
+void     gage_validate(SWMM_Project *sp, int gage);
 void     gage_initState(int gage);
 void     gage_setState(int gage, DateTime aDate);
 double   gage_getPrecip(int gage, double *rainfall, double *snowfall);
@@ -335,7 +342,7 @@ int     subcatch_readSubareaParams(char* tok[], int ntoks);
 int     subcatch_readLanduseParams(char* tok[], int ntoks);
 int     subcatch_readInitBuildup(char* tok[], int ntoks);
 
-void    subcatch_validate(int subcatch);
+void    subcatch_validate(SWMM_Project *sp, int subcatch);
 void    subcatch_initState(int subcatch);
 void    subcatch_setOldState(int subcatch);
 
@@ -365,7 +372,7 @@ double  surfqual_getWtdWashoff(int subcatch, int pollut, double wt);
 //   Conveyance System Node Methods
 //-----------------------------------------------------------------------------
 int     node_readParams(int node, int type, int subIndex, char* tok[], int ntoks);
-void    node_validate(int node);
+void    node_validate(SWMM_Project *sp, int node);
 
 void    node_initState(int node);
 void    node_initInflow(int node, double tStep);
@@ -413,7 +420,7 @@ void    inflow_deleteDwfInflows(int node);
 //   Routing Interface File Methods
 //-----------------------------------------------------------------------------
 int     iface_readFileParams(char* tok[], int ntoks);
-void    iface_openRoutingFiles(void);
+void    iface_openRoutingFiles(SWMM_Project *sp);
 void    iface_closeRoutingFiles(void);
 int     iface_getNumIfaceNodes(DateTime aDate);
 int     iface_getIfaceNode(int index);
@@ -424,7 +431,7 @@ void    iface_saveOutletResults(DateTime reportDate, FILE* file);
 //-----------------------------------------------------------------------------
 //   Hot Start File Methods
 //-----------------------------------------------------------------------------
-int     hotstart_open(void);
+int     hotstart_open(SWMM_Project *sp);
 void    hotstart_close(void);
 
 //-----------------------------------------------------------------------------
@@ -434,7 +441,7 @@ int     link_readParams(int link, int type, int subIndex, char* tok[], int ntoks
 int     link_readXsectParams(char* tok[], int ntoks);
 int     link_readLossParams(char* tok[], int ntoks);
 
-void    link_validate(int link);
+void    link_validate(SWMM_Project *sp, int link);
 void    link_initState(int link);
 void    link_setOldHydState(int link);
 void    link_setOldQualState(int link);
@@ -494,8 +501,8 @@ double  forcemain_getFricSlope(int j, double v, double hrad);
 //-----------------------------------------------------------------------------
 int     transect_create(int n);
 void    transect_delete(void);
-int     transect_readParams(int* count, char* tok[], int ntoks);
-void    transect_validate(int j);
+int     transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks);
+void    transect_validate(SWMM_Project *sp, int j);
 
 //-----------------------------------------------------------------------------
 //   Custom Shape Cross-Section Methods
@@ -507,9 +514,10 @@ int     shape_validate(TShape *shape, TTable *curve);
 //-----------------------------------------------------------------------------
 int     controls_create(int n);
 void    controls_delete(void);
-int     controls_addRuleClause(int rule, int keyword, char* Tok[], int nTokens);
-int     controls_evaluate(DateTime currentTime, DateTime elapsedTime, 
-        double tStep);
+int     controls_addRuleClause(SWMM_Project *sp, int rule, int keyword,
+        char* Tok[], int nTokens);
+int     controls_evaluate(SWMM_Project *sp, DateTime currentTime,
+        DateTime elapsedTime, double tStep);
 
 //-----------------------------------------------------------------------------
 //   Table & Time Series Methods

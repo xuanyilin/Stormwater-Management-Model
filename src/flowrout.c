@@ -54,8 +54,8 @@ static void   initLinkDepths(void);
 static void   initNodeDepths(void);
 static void   initNodes(void);
 static void   initLinks(int routingModel);                                     //(5.1.008)
-static void   validateTreeLayout(void);      
-static void   validateGeneralLayout(void);
+static void   validateTreeLayout(SWMM_Project *sp);
+static void   validateGeneralLayout(SWMM_Project *sp);
 static void   updateStorageState(int i, int j, int links[], double dt);
 static double getStorageOutflow(int node, int j, int links[], double dt);
 static double getLinkInflow(int link, double dt);
@@ -68,7 +68,7 @@ static int    steadyflow_execute(int link, double* qin, double* qout,
 
 //=============================================================================
 
-void flowrout_init(int routingModel)
+void flowrout_init(SWMM_Project *sp, int routingModel)
 //
 //  Input:   routingModel = routing model code
 //  Output:  none
@@ -79,8 +79,8 @@ void flowrout_init(int routingModel)
     if ( routingModel == DW )
     {
         // --- check for valid conveyance network layout
-        validateGeneralLayout();
-        dynwave_init();
+        validateGeneralLayout(sp);
+        dynwave_init(sp);
 
         // --- initialize node & link depths if not using a hotstart file
         if ( Fhotstart1.mode == NO_FILE )
@@ -91,7 +91,7 @@ void flowrout_init(int routingModel)
     }
 
     // --- validate network layout for kinematic wave routing
-    else validateTreeLayout();
+    else validateTreeLayout(sp);
 
     // --- initialize node & link volumes
     initNodes();
@@ -129,7 +129,7 @@ double flowrout_getRoutingStep(int routingModel, double fixedStep)
 
 //=============================================================================
 
-int flowrout_execute(int links[], int routingModel, double tStep)
+int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tStep)
 //
 //  Input:   links = array of link indexes in topo-sorted order
 //           routingModel = type of routing method used
@@ -178,7 +178,7 @@ int flowrout_execute(int links[], int routingModel, double tStep)
         // route flow through link
         if ( routingModel == SF )
             steps += steadyflow_execute(j, &qin, &qout, tStep);
-        else steps += kinwave_execute(j, &qin, &qout, tStep);
+        else steps += kinwave_execute(sp, j, &qin, &qout, tStep);
         Link[j].newFlow = qout;
 
         // adjust outflow at upstream node and inflow at downstream node
@@ -195,7 +195,7 @@ int flowrout_execute(int links[], int routingModel, double tStep)
 
 //=============================================================================
 
-void validateTreeLayout()
+void validateTreeLayout(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -214,7 +214,7 @@ void validateTreeLayout()
           case DIVIDER:
             if ( Node[j].degree > 2 )
             {
-                report_writeErrorMsg(ERR_DIVIDER, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_DIVIDER, Node[j].ID);
             }
             break;
 
@@ -222,7 +222,7 @@ void validateTreeLayout()
           case OUTFALL:
             if ( Node[j].degree > 0 )
             {
-                report_writeErrorMsg(ERR_OUTFALL, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_OUTFALL, Node[j].ID);
             }
             break;
 
@@ -233,7 +233,7 @@ void validateTreeLayout()
           default:
             if ( Node[j].degree > 1 )
             {
-                report_writeErrorMsg(ERR_MULTI_OUTLET, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_MULTI_OUTLET, Node[j].ID);
             }
         }
     }
@@ -248,7 +248,7 @@ void validateTreeLayout()
               if ( Conduit[Link[j].subIndex].slope < 0.0 &&
                    Link[j].xsect.type != DUMMY )
               {
-                  report_writeErrorMsg(ERR_SLOPE, Link[j].ID);
+                  report_writeErrorMsg(sp, ERR_SLOPE, Link[j].ID);
               }
               break;
 
@@ -258,7 +258,7 @@ void validateTreeLayout()
           case OUTLET:
             if ( Node[Link[j].node1].type != STORAGE )
             {
-                report_writeErrorMsg(ERR_REGULATOR, Link[j].ID);
+                report_writeErrorMsg(sp, ERR_REGULATOR, Link[j].ID);
             }
         }
     }
@@ -266,7 +266,7 @@ void validateTreeLayout()
 
 //=============================================================================
 
-void validateGeneralLayout()
+void validateGeneralLayout(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  nonw
@@ -297,7 +297,7 @@ void validateGeneralLayout()
             if ( Link[j].direction < 0 ) i = Link[j].node2;
             if ( Node[i].degree > 1 )
             {
-                report_writeErrorMsg(ERR_DUMMY_LINK, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[i].ID);
             }
         }
     }
@@ -312,12 +312,12 @@ void validateGeneralLayout()
         {
             if ( Node[i].degree + (int)Node[i].inflow > 1 )
             {
-                report_writeErrorMsg(ERR_OUTFALL, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_OUTFALL, Node[i].ID);
             }
             else outletCount++;
         }
     }
-    if ( outletCount == 0 ) report_writeErrorMsg(ERR_NO_OUTLETS, "");
+    if ( outletCount == 0 ) report_writeErrorMsg(sp, ERR_NO_OUTLETS, "");
 
     // --- reset node inflows back to zero
     for ( i = 0; i < Nobjects[NODE]; i++ )

@@ -80,7 +80,7 @@ static void sortEvents(void);                                                  /
 
 //=============================================================================
 
-int routing_open()
+int routing_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -88,7 +88,7 @@ int routing_open()
 //
 {
     // --- open treatment system
-    if ( !treatmnt_open() ) return ErrorCode;
+    if ( !treatmnt_open(sp) ) return ErrorCode;
 
     // --- topologically sort the links
     SortedLinks = NULL;
@@ -97,18 +97,18 @@ int routing_open()
         SortedLinks = (int *) calloc(Nobjects[LINK], sizeof(int));
         if ( !SortedLinks )
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
-        toposort_sortLinks(SortedLinks);
+        toposort_sortLinks(sp, SortedLinks);
         if ( ErrorCode ) return ErrorCode;
     }
 
     // --- open any routing interface files
-    iface_openRoutingFiles();
+    iface_openRoutingFiles(sp);
 
     // --- initialize flow and quality routing systems                         //(5.1.008)
-    flowrout_init(RouteModel);                                                 //(5.1.008)
+    flowrout_init(sp, RouteModel);                                             //(5.1.008)
     if ( Fhotstart1.mode == NO_FILE ) qualrout_init();                         //(5.1.008)
 
     // --- initialize routing events                                           //(5.1.011)
@@ -178,7 +178,7 @@ double routing_getRoutingStep(int routingModel, double fixedStep)
 
 ////  This function was re-written for release 5.1.012.  ////                  //(5.1.012)
 
-void routing_execute(int routingModel, double routingStep)
+void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
 //
 //  Input:   routingModel = routing method code
 //           routingStep = routing time step (sec)
@@ -204,7 +204,7 @@ void routing_execute(int routingModel, double routingStep)
 
     // --- find new target settings due to control rules
     currentDate = getDateTime(NewRoutingTime);
-    controls_evaluate(currentDate, currentDate - StartDateTime,
+    controls_evaluate(sp, currentDate, currentDate - StartDateTime,
                       routingStep/SECperDAY);
 
     // --- change each link's actual setting if it differs from its target
@@ -300,14 +300,14 @@ void routing_execute(int routingModel, double routingStep)
             // --- route flow through the drainage network
             if ( Nobjects[LINK] > 0 )
             {
-                stepCount = flowrout_execute(SortedLinks, routingModel, routingStep);
+                stepCount = flowrout_execute(sp, SortedLinks, routingModel, routingStep);
             }
         }
 
         // --- route quality through the drainage network
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality ) 
         {
-            qualrout_execute(routingStep);
+            qualrout_execute(sp, routingStep);
         }
 
         // --- remove evaporation, infiltration & outflows from system

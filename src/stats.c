@@ -92,7 +92,7 @@ static void stats_updateMaxStats(TMaxStats maxStats[], int i, int j, double x);
 
 //=============================================================================
 
-int  stats_open()
+int  stats_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -116,7 +116,7 @@ int  stats_open()
                                                sizeof(TSubcatchStats));
         if ( !SubcatchStats )
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
         for (j=0; j<Nobjects[SUBCATCH]; j++)
@@ -134,7 +134,7 @@ int  stats_open()
                     (double *) calloc(Nobjects[POLLUT], sizeof(double));
                 if ( !SubcatchStats[j].surfaceBuildup )
                 {
-                    report_writeErrorMsg(ERR_MEMORY, "");
+                    report_writeErrorMsg(sp, ERR_MEMORY, "");
                     return ErrorCode;
                 }
                 for ( p = 0; p < Nobjects[POLLUT]; p++ )
@@ -166,7 +166,7 @@ int  stats_open()
         LinkStats = (TLinkStats *) calloc(Nobjects[LINK], sizeof(TLinkStats));
         if ( !NodeStats || !LinkStats )
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
     }
@@ -216,7 +216,7 @@ int  stats_open()
                            sizeof(TStorageStats));
         if ( !StorageStats )
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
         else for ( k = 0; k < Nobjects[NODE]; k++ )
@@ -240,7 +240,7 @@ int  stats_open()
                            sizeof(TOutfallStats));
         if ( !OutfallStats )
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
         else for ( j = 0; j < Nnodes[OUTFALL]; j++ )
@@ -254,7 +254,7 @@ int  stats_open()
                     (double *) calloc(Nobjects[POLLUT], sizeof(double));
                 if ( !OutfallStats[j].totalLoad )
                 {
-                    report_writeErrorMsg(ERR_MEMORY, "");
+                    report_writeErrorMsg(sp, ERR_MEMORY, "");
                     return ErrorCode;
                 }
                 for (k=0; k<Nobjects[POLLUT]; k++)
@@ -270,7 +270,7 @@ int  stats_open()
         PumpStats = (TPumpStats *) calloc(Nlinks[PUMP], sizeof(TPumpStats));
         if ( !PumpStats ) 
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
         else for ( j = 0; j < Nlinks[PUMP]; j++ )
@@ -329,7 +329,7 @@ void  stats_close()
 
 //=============================================================================
 
-void  stats_report()
+void  stats_report(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -340,13 +340,13 @@ void  stats_report()
     if ( Nobjects[LINK] > 0 && RouteModel != NO_ROUTING )
     {
         stats_findMaxStats();
-        report_writeMaxStats(MaxMassBalErrs, MaxCourantCrit, MAX_STATS);
-        report_writeMaxFlowTurns(MaxFlowTurns, MAX_STATS);
-        report_writeSysStats(&SysStats);
+        report_writeMaxStats(sp, MaxMassBalErrs, MaxCourantCrit, MAX_STATS);
+        report_writeMaxFlowTurns(sp, MaxFlowTurns, MAX_STATS);
+        report_writeSysStats(sp, &SysStats);
     }
 
     // --- report summary statistics
-    statsrpt_writeReport();
+    statsrpt_writeReport(sp);
 }
 
 //=============================================================================

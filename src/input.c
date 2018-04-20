@@ -52,17 +52,17 @@ static int  Mevents;                   // Working number of event periods      /
 //-----------------------------------------------------------------------------
 static int  addObject(int objType, char* id);
 static int  getTokens(char *s);
-static int  parseLine(int sect, char* line);
+static int  parseLine(SWMM_Project *sp, int sect, char* line);
 static int  readOption(char* line);
 static int  readTitle(char* line);
-static int  readControl(char* tok[], int ntoks);
+static int  readControl(SWMM_Project *sp, char* tok[], int ntoks);
 static int  readNode(int type);
 static int  readLink(int type);
 static int  readEvent(char* tok[], int ntoks);                                 //(5.1.011)
 
 //=============================================================================
 
-int input_countObjects(SWMM_Project *p)
+int input_countObjects(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -78,6 +78,8 @@ int input_countObjects(SWMM_Project *p)
     int   i;
     long  lineCount = 0;
 
+    TFile finp = sp->Finp;
+
     // --- initialize number of objects & set default values
     if ( ErrorCode ) return ErrorCode;
     error_setInpError(0, "");
@@ -86,7 +88,7 @@ int input_countObjects(SWMM_Project *p)
     for (i = 0; i < MAX_LINK_TYPES; i++) Nlinks[i] = 0;
 
     // --- make pass through data file counting number of each object
-    while ( fgets(line, MAXLINE, p->Finp.file) != NULL )
+    while ( fgets(line, MAXLINE, finp.file) != NULL )
     {
         // --- skip blank lines & those beginning with a comment
         lineCount++;
@@ -120,7 +122,7 @@ int input_countObjects(SWMM_Project *p)
         // --- report any error found
         if ( errcode )
         {
-            report_writeInputErrorMsg(errcode, sect, line, lineCount);
+            report_writeInputErrorMsg(sp, errcode, sect, line, lineCount);
             errsum++;
             if (errsum >= MAXERRS ) break;
         }
@@ -133,7 +135,7 @@ int input_countObjects(SWMM_Project *p)
 
 //=============================================================================
 
-int input_readData(SWMM_Project *p)
+int input_readData(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -148,6 +150,8 @@ int input_readData(SWMM_Project *p)
     int   lineLength;             // number of characters in input line
     int   i;
     long  lineCount = 0;
+
+    TFile finp = sp->Finp;
 
     // --- initialize working item count arrays
     //     (final counts in Mobjects, Mnodes & Mlinks should
@@ -168,8 +172,8 @@ int input_readData(SWMM_Project *p)
     // --- read each line from input file
     sect = 0;
     errsum = 0;
-    rewind(p->Finp.file);
-    while ( fgets(line, MAXLINE, p->Finp.file) != NULL )
+    rewind(finp.file);
+    while ( fgets(line, MAXLINE, finp.file) != NULL )
     {
         // --- make copy of line and scan for tokens
         lineCount++;
@@ -190,7 +194,7 @@ int input_readData(SWMM_Project *p)
             if ( lineLength >= MAXLINE )
             {
                 inperr = ERR_LINE_LENGTH;
-                report_writeInputErrorMsg(inperr, sect, line, lineCount);
+                report_writeInputErrorMsg(sp, inperr, sect, line, lineCount);
                 errsum++;
             }
         }
@@ -205,7 +209,7 @@ int input_readData(SWMM_Project *p)
                 // --- SPECIAL CASE FOR TRANSECTS
                 //     finish processing the last set of transect data
                 if ( sect == s_TRANSECT )
-                    transect_validate(Nobjects[TRANSECT]-1);
+                    transect_validate(sp, Nobjects[TRANSECT]-1);
 
                 // --- begin a new input section
                 sect = newsect;
@@ -214,7 +218,7 @@ int input_readData(SWMM_Project *p)
             else
             {
                 inperr = error_setInpError(ERR_KEYWORD, Tok[0]);
-                report_writeInputErrorMsg(inperr, sect, line, lineCount);
+                report_writeInputErrorMsg(sp, inperr, sect, line, lineCount);
                 errsum++;
                 break;
             }
@@ -223,12 +227,12 @@ int input_readData(SWMM_Project *p)
         // --- otherwise parse tokens from input line
         else
         {
-            inperr = parseLine(sect, line);
+            inperr = parseLine(sp, sect, line);
             if ( inperr > 0 )
             {
                 errsum++;
-                if ( errsum > MAXERRS ) report_writeLine(FMT19);
-                else report_writeInputErrorMsg(inperr, sect, line, lineCount);
+                if ( errsum > MAXERRS ) report_writeLine(sp, FMT19);
+                else report_writeInputErrorMsg(sp, inperr, sect, line, lineCount);
             }
         }
 
@@ -439,7 +443,7 @@ int  addObject(int objType, char* id)
 
 //=============================================================================
 
-int  parseLine(int sect, char *line)
+int  parseLine(SWMM_Project *sp, int sect, char *line)
 //
 //  Input:   sect  = current section of input file
 //           *line = line of text read from input file
@@ -526,7 +530,7 @@ int  parseLine(int sect, char *line)
         return link_readXsectParams(Tok, Ntokens);
 
       case s_TRANSECT:
-        return transect_readParams(&Mobjects[TRANSECT], Tok, Ntokens);
+        return transect_readParams(sp, &Mobjects[TRANSECT], Tok, Ntokens);
 
       case s_LOSSES:
         return link_readLossParams(Tok, Ntokens);
@@ -580,7 +584,7 @@ int  parseLine(int sect, char *line)
         return table_readTimeseries(Tok, Ntokens);
 
       case s_CONTROL:
-        return readControl(Tok, Ntokens);
+        return readControl(sp, Tok, Ntokens);
 
       case s_REPORT:
         return report_readOptions(Tok, Ntokens);
@@ -603,7 +607,7 @@ int  parseLine(int sect, char *line)
 
 //=============================================================================
 
-int readControl(char* tok[], int ntoks)
+int readControl(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -636,7 +640,7 @@ int readControl(char* tok[], int ntoks)
     if ( index < 0 ) return error_setInpError(ERR_RULE, "");
 
     // --- add current line as a new clause to the control rule
-    return controls_addRuleClause(index, keyword, Tok, Ntokens);
+    return controls_addRuleClause(sp, index, keyword, Tok, Ntokens);
 }
 
 //=============================================================================

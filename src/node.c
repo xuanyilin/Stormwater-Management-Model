@@ -80,7 +80,7 @@ static double storage_getOutflow(int j, int i);
 static double storage_getLosses(int j, double tStep);
 
 static int    divider_readParams(int j, int k, char* tok[], int ntoks);
-static void   divider_validate(int j);
+static void   divider_validate(SWMM_Project *sp, int j);
 static double divider_getOutflow(int j, int link);
 
 
@@ -186,7 +186,7 @@ void  node_setParams(int j, int type, int k, double x[])
 
 //=============================================================================
 
-void  node_validate(int j)
+void  node_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -198,14 +198,14 @@ void  node_validate(int j)
     // --- see if full depth was increased to accommodate conduit crown
     if ( Node[j].fullDepth > Node[j].oldDepth && Node[j].oldDepth > 0.0 )
     {
-        report_writeWarningMsg(WARN02, Node[j].ID);
+        report_writeWarningMsg(sp, WARN02, Node[j].ID);
     }
 
     // --- check that initial depth does not exceed max. depth
     if ( Node[j].initDepth > Node[j].fullDepth + Node[j].surDepth )
-        report_writeErrorMsg(ERR_NODE_DEPTH, Node[j].ID);
+        report_writeErrorMsg(sp, ERR_NODE_DEPTH, Node[j].ID);
 
-    if ( Node[j].type == DIVIDER ) divider_validate(j);
+    if ( Node[j].type == DIVIDER ) divider_validate(sp, j);
 
     // --- initialize dry weather inflows
     inflow = Node[j].dwfInflow;
@@ -1075,7 +1075,7 @@ int divider_readParams(int j, int k, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  divider_validate(int j)
+void  divider_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -1089,21 +1089,21 @@ void  divider_validate(int j)
     i = Divider[k].link;
     if ( i < 0 || ( Link[i].node1 != j && Link[i].node2 != j) )
     {
-        report_writeErrorMsg(ERR_DIVIDER_LINK, Node[j].ID);
+        report_writeErrorMsg(sp, ERR_DIVIDER_LINK, Node[j].ID);
     }
 
     // --- validate parameters supplied for weir-type divider
     if ( Divider[k].type == WEIR_DIVIDER )
     {
         if ( Divider[k].dhMax <= 0.0 || Divider[k].cWeir <= 0.0 )
-            report_writeErrorMsg(ERR_WEIR_DIVIDER, Node[j].ID);
+            report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, Node[j].ID);
         else
         {
             // --- find flow when weir is full
             Divider[k].qMax = Divider[k].cWeir * pow(Divider[k].dhMax, 1.5)
                               / UCF(FLOW);
             if ( Divider[k].qMin > Divider[k].qMax )
-                report_writeErrorMsg(ERR_WEIR_DIVIDER, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, Node[j].ID);
         }
     }
 }

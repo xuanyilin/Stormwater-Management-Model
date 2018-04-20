@@ -176,7 +176,7 @@ static int  DoRouting;            // TRUE if flow routing is computed
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void execRouting(void);                                                 //(5.1.011)
+static void execRouting(SWMM_Project *sp);                                                 //(5.1.011)
 
 // Exception filtering function
 #ifdef EXH                                                                     //(5.1.011)
@@ -387,7 +387,7 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
         project_open(sp, f1, f2, f3);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
         IsOpenFlag = TRUE;
-        report_writeLogo();
+        report_writeLogo(sp);
         writecon(FMT06);
 
         // --- retrieve project data from input file
@@ -395,11 +395,11 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
 
         // --- write project title to report file & validate data
-        report_writeTitle();
-        project_validate();
+        report_writeTitle(sp);
+        project_validate(sp);
 
         // --- write input summary to report file if requested
-        if ( RptFlags.input ) inputrpt_writeInput();
+        if ( RptFlags.input ) inputrpt_writeInput(sp);
     }
 
 #ifdef EXH                                                                     //(5.1.011)
@@ -428,7 +428,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
     if ( ErrorCode ) return error_getCode(ErrorCode);                          //(5.1.011)
     if ( !IsOpenFlag || IsStartedFlag )
     {
-        report_writeErrorMsg(ERR_NOT_OPEN, "");
+        report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(ErrorCode);                                       //(5.1.011)
     }
 
@@ -460,7 +460,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 
         // --- open rainfall processor (creates/opens a rainfall
         //     interface file and generates any RDII flows)
-        if ( !IgnoreRainfall ) rain_open();
+        if ( !IgnoreRainfall ) rain_open(sp);
         if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
 
         // --- initialize state of each major system component
@@ -478,21 +478,21 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         output_open(sp);
 
         // --- open runoff processor
-        if ( DoRunoff ) runoff_open();
+        if ( DoRunoff ) runoff_open(sp);
 
         // --- open & read hot start file if present
-        if ( !hotstart_open() ) return ErrorCode;
+        if ( !hotstart_open(sp) ) return ErrorCode;
 
         // --- open routing processor
-        if ( DoRouting ) routing_open();
+        if ( DoRouting ) routing_open(sp);
 
         // --- open mass balance and statistics processors
-        massbal_open();
-        stats_open();
+        massbal_open(sp);
+        stats_open(sp);
 
         // --- write project options to report file 
-	    report_writeOptions();
-        if ( RptFlags.controls ) report_writeControlActionsHeading();
+	    report_writeOptions(sp);
+        if ( RptFlags.controls ) report_writeControlActionsHeading(sp);
 ////
     }
 
@@ -522,7 +522,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
     if ( ErrorCode ) return error_getCode(ErrorCode);                          //(5.1.011)
     if ( !IsOpenFlag || !IsStartedFlag  )
     {
-        report_writeErrorMsg(ERR_NOT_OPEN, "");
+        report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(ErrorCode);                                       //(5.1.011)
     }
 
@@ -537,7 +537,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
             // --- route flow & WQ through drainage system
             //     (runoff will be calculated as needed)
             //     (NewRoutingTime is updated)
-            execRouting();                                                     //(5.1.011)
+            execRouting(sp);                                                     //(5.1.011)
         }
 
         // --- save results at next reporting time
@@ -570,7 +570,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
 
 //=============================================================================
 
-void execRouting()                                                             //(5.1.011)
+void execRouting(SWMM_Project *sp)                                                             //(5.1.011)
 //
 //  Input:   none                                                              //(5.1.011)
 //  Output:  none
@@ -610,16 +610,16 @@ void execRouting()                                                             /
         // --- compute runoff until next routing time reached or exceeded
         if ( DoRunoff ) while ( NewRunoffTime < nextRoutingTime )
         {
-            runoff_execute();
+            runoff_execute(sp);
             if ( ErrorCode ) return;
         }
 
         // --- if no runoff analysis, update climate state (for evaporation)
-        else climate_setState(getDateTime(NewRoutingTime));
+        else climate_setState(sp, getDateTime(NewRoutingTime));
   
         // --- route flows & pollutants through drainage system                //(5.1.008)
         //     (while updating NewRoutingTime)                                 //(5.1.008)
-        if ( DoRouting ) routing_execute(RouteModel, routingStep);
+        if ( DoRouting ) routing_execute(sp, RouteModel, routingStep);
         else NewRoutingTime = nextRoutingTime;
     }
 
@@ -649,7 +649,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
     // --- check that project opened and run started
     if ( !IsOpenFlag )
     {
-        report_writeErrorMsg(ERR_NOT_OPEN, "");
+        report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(ErrorCode);                                       //(5.1.011)
     }
 
@@ -661,8 +661,8 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         // --- report mass balance results and system statistics
         if ( !ErrorCode )
         {
-            massbal_report();
-            stats_report();
+            massbal_report(sp);
+            stats_report(sp);
         }
 
         // --- close all computing systems
@@ -689,8 +689,8 @@ int DLLEXPORT swmm_report_project(SWMM_Project *sp)
 //  Purpose: writes simulation results to report file.
 //
 {
-    if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize();
-    if ( ErrorCode ) report_writeErrorCode();
+    if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
+    if ( ErrorCode ) report_writeErrorCode(sp);
     else
     {
         writecon(FMT07);
@@ -712,15 +712,19 @@ int DLLEXPORT swmm_close_project(SWMM_Project *sp)
 //  Purpose: closes a SWMM project.
 //
 {
-    if ( sp->Fout.file ) output_close();
+    TFile finp = sp->Finp;
+    TFile fout = sp->Fout;
+    TFile frpt = sp->Frpt;
+
+    if ( fout.file ) output_close();
     if ( IsOpenFlag ) project_close();
-    report_writeSysTime();
-    if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);
-    if ( Frpt.file != NULL ) fclose(Frpt.file);
-    if ( sp->Fout.file != NULL )
+    report_writeSysTime(sp);
+    if ( finp.file != NULL ) fclose(finp.file);
+    if ( frpt.file != NULL ) fclose(frpt.file);
+    if ( fout.file != NULL )
     {
-        fclose(sp->Fout.file);
-        if ( sp->Fout.mode == SCRATCH_FILE ) remove(sp->Fout.name);
+        fclose(fout.file);
+        if ( fout.mode == SCRATCH_FILE ) remove(fout.name);
     }
     IsOpenFlag = FALSE;
     IsStartedFlag = FALSE;

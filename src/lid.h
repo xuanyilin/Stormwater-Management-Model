@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "infil.h"
+#include "swmm5.h"
 
 //-----------------------------------------------------------------------------
 //  Enumerations
@@ -189,7 +190,7 @@ void     lid_delete(void);
 int      lid_readProcParams(char* tok[], int ntoks);
 int      lid_readGroupParams(char* tok[], int ntoks);
 
-void     lid_validate(void);
+void     lid_validate(SWMM_Project *sp);
 void     lid_initState(void);
 void     lid_setOldGroupState(int subcatch);                                   //(5.1.008)
 
@@ -207,8 +208,8 @@ void     lid_addDrainInflow(int subcatch, double f);                           /
 
 void     lid_getRunoff(int subcatch, double tStep);                            //(5.1.008)
 
-void     lid_writeSummary(void);
-void     lid_writeWaterBalance(void);
+void     lid_writeSummary(SWMM_Project *sp);
+void     lid_writeWaterBalance(SWMM_Project *sp);
 
 //-----------------------------------------------------------------------------
 

@@ -163,7 +163,7 @@ DateTime CurrentTime;                  // current time of day (decimal)
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-int    addPremise(int r, int type, char* Tok[], int nToks);
+int    addPremise(SWMM_Project *sp, int r, int type, char* Tok[], int nToks);
 int    getPremiseVariable(char* tok[], int* k, struct TVariable* v);
 int    getPremiseValue(char* token, int attrib, double* value);
 int    addAction(int r, char* Tok[], int nToks);
@@ -175,7 +175,7 @@ int    compareTimes(double lhsValue, int relation, double rhsValue,
 int    compareValues(double lhsValue, int relation, double rhsValue);
 
 void   updateActionList(struct TAction* a);
-int    executeActionList(DateTime currentTime);
+int    executeActionList(SWMM_Project *sp, DateTime currentTime);
 void   clearActionList(void);
 void   deleteActionList(void);
 void   deleteRules(void);
@@ -230,7 +230,8 @@ void controls_delete(void)
 
 //=============================================================================
 
-int  controls_addRuleClause(int r, int keyword, char* tok[], int nToks)
+int  controls_addRuleClause(SWMM_Project *sp, int r, int keyword, char* tok[],
+        int nToks)
 //
 //  Input:   r = rule index
 //           keyword = the clause's keyword code (IF, THEN, etc.)
@@ -252,17 +253,17 @@ int  controls_addRuleClause(int r, int keyword, char* tok[], int nToks)
       case r_IF:
         if ( InputState != r_RULE ) return ERR_RULE;
         InputState = r_IF;
-        return addPremise(r, r_AND, tok, nToks);
+        return addPremise(sp, r, r_AND, tok, nToks);
 
       case r_AND:
-        if ( InputState == r_IF ) return addPremise(r, r_AND, tok, nToks);
+        if ( InputState == r_IF ) return addPremise(sp, r, r_AND, tok, nToks);
         else if ( InputState == r_THEN || InputState == r_ELSE )
             return addAction(r, tok, nToks);
         else return ERR_RULE;
 
       case r_OR:
         if ( InputState != r_IF ) return ERR_RULE;
-        return addPremise(r, r_OR, tok, nToks);
+        return addPremise(sp, r, r_OR, tok, nToks);
 
       case r_THEN:
         if ( InputState != r_IF ) return ERR_RULE;
@@ -286,7 +287,8 @@ int  controls_addRuleClause(int r, int keyword, char* tok[], int nToks)
 
 //=============================================================================
 
-int controls_evaluate(DateTime currentTime, DateTime elapsedTime, double tStep)
+int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
+        DateTime elapsedTime, double tStep)
 //
 //  Input:   currentTime = current simulation date/time
 //           elapsedTime = decimal days since start of simulation
@@ -341,7 +343,7 @@ int controls_evaluate(DateTime currentTime, DateTime elapsedTime, double tStep)
     }
 
     // --- execute actions on action list
-    if ( ActionList ) return executeActionList(currentTime);
+    if ( ActionList ) return executeActionList(sp, currentTime);
     else return 0;
 }
 
@@ -349,7 +351,7 @@ int controls_evaluate(DateTime currentTime, DateTime elapsedTime, double tStep)
 
 //  This function was revised to add support for r.h.s. premise variables. //  //(5.1.008)
 
-int  addPremise(int r, int type, char* tok[], int nToks)
+int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
 //
 //  Input:   r = control rule index
 //           type = type of premise (IF, AND, OR)
@@ -393,7 +395,7 @@ int  addPremise(int r, int type, char* tok[], int nToks)
         err = getPremiseVariable(tok, &n, &v2);
         if ( err > 0 ) return ERR_RULE;                                        //(5.1.009)
         if ( v1.attribute != v2.attribute)                                     //(5.1.009)
-            report_writeWarningMsg(WARN11, Rules[r].ID);                       //(5.1.009)
+            report_writeWarningMsg(sp, WARN11, Rules[r].ID);                   //(5.1.009)
     }
 
     // --- otherwise get value to which LHS variable is compared to
@@ -920,7 +922,7 @@ void updateActionList(struct TAction* a)
 
 //=============================================================================
 
-int executeActionList(DateTime currentTime)
+int executeActionList(SWMM_Project *sp, DateTime currentTime)
 //
 //  Input:   currentTime = current date/time of the simulation
 //  Output:  returns number of new actions taken
@@ -944,7 +946,7 @@ int executeActionList(DateTime currentTime)
                 Link[a1->link].targetSetting = a1->value;
                 if ( RptFlags.controls && a1->curve < 0                        //(5.1.011)
                      && a1->tseries < 0 && a1->attribute != r_PID )            //(5.1.011)
-                    report_writeControlAction(currentTime, Link[a1->link].ID,
+                    report_writeControlAction(sp, currentTime, Link[a1->link].ID,
                                               a1->value, Rules[a1->rule].ID);
                 count++;
             }

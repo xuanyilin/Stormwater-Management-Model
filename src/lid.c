@@ -212,8 +212,8 @@ static int    addLidUnit(int j, int k, int n, double x[], char* fname,
 static int    createLidRptFile(TLidUnit* lidUnit, char* fname);
 static void   initLidRptFile(char* title, char* lidID, char* subcatchID,
               TLidUnit* lidUnit);
-static void   validateLidProc(int j);
-static void   validateLidGroup(int j);
+static void   validateLidProc(SWMM_Project *sp, int j);
+static void   validateLidGroup(SWMM_Project *sp, int j);
 
 static int    isLidPervious(int k);
 static double getImpervAreaRunoff(int j);                                      //(5.1.008)
@@ -761,7 +761,7 @@ int readDrainMatData(int j, char* toks[], int ntoks)
 
 //=============================================================================
 
-void lid_writeSummary()
+void lid_writeSummary(SWMM_Project *sp)
 //
 //  Purpose: writes summary of LID processes used to report file.
 //  Input:   none
@@ -774,16 +774,18 @@ void lid_writeSummary()
     TLidList*  lidList;
     TLidGroup  lidGroup;
  
-    fprintf(Frpt.file, "\n");
-    fprintf(Frpt.file, "\n");
-    fprintf(Frpt.file, "\n  *******************");
-    fprintf(Frpt.file, "\n  LID Control Summary");
-    fprintf(Frpt.file, "\n  *******************");
-    fprintf(Frpt.file,
+    TFile frpt = sp->Frpt;
+
+    fprintf(frpt.file, "\n");
+    fprintf(frpt.file, "\n");
+    fprintf(frpt.file, "\n  *******************");
+    fprintf(frpt.file, "\n  LID Control Summary");
+    fprintf(frpt.file, "\n  *******************");
+    fprintf(frpt.file,
 "\n                                   No. of        Unit        Unit      %% Area    %% Imperv");
-    fprintf(Frpt.file,
+    fprintf(frpt.file,
 "\n  Subcatchment     LID Control      Units        Area       Width     Covered     Treated");
-    fprintf(Frpt.file,
+    fprintf(frpt.file,
 "\n  ---------------------------------------------------------------------------------------");
     for (j = 0; j < GroupCount; j++)
     {
@@ -795,8 +797,8 @@ void lid_writeSummary()
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
             pctArea = lidUnit->area * lidUnit->number / Subcatch[j].area * 100.0;
-            fprintf(Frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
-            fprintf(Frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
+            fprintf(frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
+            fprintf(frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
                 lidUnit->number, lidUnit->area * SQR(UCF(LENGTH)),
                 lidUnit->fullWidth * UCF(LENGTH), pctArea,
                 lidUnit->fromImperv*100.0);
@@ -807,7 +809,7 @@ void lid_writeSummary()
 
 //=============================================================================
 
-void lid_validate()
+void lid_validate(SWMM_Project *sp)
 //
 //  Purpose: validates LID process and group parameters.
 //  Input:   none 
@@ -815,13 +817,13 @@ void lid_validate()
 //
 {
     int j;
-    for (j = 0; j < LidCount; j++) validateLidProc(j);
-    for (j = 0; j < GroupCount; j++) validateLidGroup(j);
+    for (j = 0; j < LidCount; j++) validateLidProc(sp, j);
+    for (j = 0; j < GroupCount; j++) validateLidGroup(sp, j);
 }
 
 //=============================================================================
 
-void validateLidProc(int j)
+void validateLidProc(SWMM_Project *sp, int j)
 //
 //  Purpose: validates LID process parameters.
 //  Input:   j = LID process index 
@@ -833,7 +835,7 @@ void validateLidProc(int j)
     //... check that LID type was supplied
     if ( LidProcs[j].lidType < 0 )
     {
-        report_writeErrorMsg(ERR_LID_TYPE, LidProcs[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_TYPE, LidProcs[j].ID);
         return;
     }
 
@@ -857,7 +859,7 @@ void validateLidProc(int j)
     }
     if ( layerMissing )
     {
-        report_writeErrorMsg(ERR_LID_LAYER, LidProcs[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_LAYER, LidProcs[j].ID);
         return;
     }
 
@@ -874,7 +876,7 @@ void validateLidProc(int j)
         {
             strcpy(Msg, LidProcs[j].ID);
             strcat(Msg, ERR_PAVE_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
         }
 ////
     }
@@ -892,7 +894,7 @@ void validateLidProc(int j)
         {
             strcpy(Msg, LidProcs[j].ID);
             strcat(Msg, ERR_SOIL_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
         }
 ////
     }
@@ -907,7 +909,7 @@ void validateLidProc(int j)
         {
             strcpy(Msg, LidProcs[j].ID);
             strcat(Msg, ERR_STOR_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
         }
 ////
     }
@@ -946,7 +948,7 @@ void validateLidProc(int j)
         {
             strcpy(Msg, LidProcs[j].ID);
             strcat(Msg, ERR_SWALE_SURF);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
         }
 ////
         else LidProcs[j].surface.alpha = 
@@ -1019,7 +1021,7 @@ void validateLidProc(int j)
 
 //=============================================================================
 
-void validateLidGroup(int j)
+void validateLidGroup(SWMM_Project *sp, int j)
 //
 //  Purpose: validates properties of LID units grouped in a subcatchment.
 //  Input:   j = subcatchment index 
@@ -1060,7 +1062,7 @@ void validateLidGroup(int j)
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
                 strcpy(Msg, LidProcs[k].ID);
                 strcat(Msg, ERR_SOIL_LAYER);
-                report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
 ////
             }
         }
@@ -1078,7 +1080,7 @@ void validateLidGroup(int j)
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
                     strcpy(Msg, LidProcs[k].ID);
                     strcat(Msg, ERR_GREEN_AMPT);
-                    report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                    report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
 ////
                 }
             }
@@ -1087,7 +1089,7 @@ void validateLidGroup(int j)
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
                 strcpy(Msg, LidProcs[k].ID);
                 strcat(Msg, ERR_SWALE_WIDTH);
-                report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
 ////
             }
         }
@@ -1111,11 +1113,11 @@ void validateLidGroup(int j)
     //... check contributing area fractions
     if ( totalLidArea > 1.001 * totalArea )
     {
-        report_writeErrorMsg(ERR_LID_AREAS, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_AREAS, Subcatch[j].ID);
     }
     if ( fromImperv > 1.001 )
     {
-        report_writeErrorMsg(ERR_LID_CAPTURE_AREA, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_CAPTURE_AREA, Subcatch[j].ID);
     }
 
     //... Make subcatchment LID area equal total area if the two are close
@@ -1762,7 +1764,7 @@ void evalLidUnit(int j, TLidUnit* lidUnit, double lidArea, double lidInflow,
 
 //=============================================================================
 
-void lid_writeWaterBalance()
+void lid_writeWaterBalance(SWMM_Project *sp)
 //
 //  Purpose: writes a LID performance summary table to the project's report file.
 //  Input:   none
@@ -1779,6 +1781,8 @@ void lid_writeWaterBalance()
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
+    TFile frpt = sp->Frpt;
+
     //... check that project has LIDs
     for ( j = 0; j < GroupCount; j++ )
     {
@@ -1787,22 +1791,22 @@ void lid_writeWaterBalance()
     if ( k == 0 ) return;
 
     //... write table header
-    fprintf(Frpt.file,
+    fprintf(frpt.file,
     "\n"
     "\n  ***********************"
     "\n  LID Performance Summary"
     "\n  ***********************\n");
 
 ////  Headings modified for release 5.1.008.  ////                             //(5.1.008)
-    fprintf(Frpt.file,
+    fprintf(frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------"
 "\n                                         Total      Evap     Infil   Surface    Drain    Initial     Final  Continuity"
 "\n                                        Inflow      Loss      Loss   Outflow   Outflow   Storage   Storage       Error");
-    if ( UnitSystem == US ) fprintf(Frpt.file, 
+    if ( UnitSystem == US ) fprintf(frpt.file,
 "\n  Subcatchment      LID Control             in        in        in        in        in        in        in           %%");
-    else fprintf(Frpt.file,
+    else fprintf(frpt.file,
 "\n  Subcatchment      LID Control             mm        mm        mm        mm        mm        mm        mm           %%");
-    fprintf(Frpt.file,
+    fprintf(frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------");
 
     //... examine each LID unit in each subcatchment
@@ -1816,9 +1820,9 @@ void lid_writeWaterBalance()
             //... write water balance components to report file
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            fprintf(Frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
+            fprintf(frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
                                                    LidProcs[k].ID);
-            fprintf(Frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
+            fprintf(frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
                     lidUnit->waterBalance.inflow*ucf,
                     lidUnit->waterBalance.evap*ucf,
                     lidUnit->waterBalance.infil*ucf,
@@ -1837,7 +1841,7 @@ void lid_writeWaterBalance()
                       lidUnit->waterBalance.drainFlow;
             if ( inflow > 0.0 ) err = (inflow - outflow) / inflow;
             else                err = 1.0;
-            fprintf(Frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
+            fprintf(frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
             lidList = lidList->nextLidUnit;
         }
     }

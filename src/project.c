@@ -99,7 +99,7 @@ static void setDefaults(SWMM_Project *sp);
 static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
 static void createObjects(void);
 static void deleteObjects(void);
-static void createHashTables(void);
+static void createHashTables(SWMM_Project *sp);
 static void deleteHashTables(void);
 
 
@@ -129,7 +129,7 @@ void project_readInput(SWMM_Project *sp)
 //
 {
     // --- create hash tables for fast retrieval of objects by ID names
-    createHashTables();
+    createHashTables(sp);
 
     // --- count number of objects in input file and create them
     input_countObjects(sp);
@@ -148,11 +148,11 @@ void project_readInput(SWMM_Project *sp)
     // --- check for valid starting & ending date/times
     if ( EndDateTime <= StartDateTime )
     {
-        report_writeErrorMsg(ERR_START_DATE, "");
+        report_writeErrorMsg(sp, ERR_START_DATE, "");
     }
     else if ( EndDateTime <= ReportStart )
     {
-        report_writeErrorMsg(ERR_REPORT_DATE, "");
+        report_writeErrorMsg(sp, ERR_REPORT_DATE, "");
     }
     else
     {
@@ -170,7 +170,7 @@ void project_readInput(SWMM_Project *sp)
         // --- reporting step can't be < routing step
         if ( (double)ReportStep < RouteStep )
         {
-            report_writeErrorMsg(ERR_REPORT_STEP, "");
+            report_writeErrorMsg(sp, ERR_REPORT_STEP, "");
         }
 
         // --- convert total duration to milliseconds
@@ -181,7 +181,7 @@ void project_readInput(SWMM_Project *sp)
 
 //=============================================================================
 
-void project_validate()
+void project_validate(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -196,24 +196,24 @@ void project_validate()
     for ( i=0; i<Nobjects[CURVE]; i++ )
     {
          err = table_validate(&Curve[i]);
-         if ( err ) report_writeErrorMsg(ERR_CURVE_SEQUENCE, Curve[i].ID);
+         if ( err ) report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, Curve[i].ID);
     }
     for ( i=0; i<Nobjects[TSERIES]; i++ )
     {
         err = table_validate(&Tseries[i]);
-        if ( err ) report_writeTseriesErrorMsg(err, &Tseries[i]);
+        if ( err ) report_writeTseriesErrorMsg(sp, err, &Tseries[i]);
     }
 
     // --- validate hydrology objects
     //     (NOTE: order is important !!!!)
-    climate_validate();
-    lid_validate();
+    climate_validate(sp);
+    lid_validate(sp);
     if ( Nobjects[SNOWMELT] == 0 ) IgnoreSnowmelt = TRUE;
     if ( Nobjects[AQUIFER]  == 0 ) IgnoreGwater   = TRUE;
-    for ( i=0; i<Nobjects[GAGE]; i++ )     gage_validate(i);
-    for ( i=0; i<Nobjects[AQUIFER]; i++ )  gwater_validateAquifer(i);
-    for ( i=0; i<Nobjects[SUBCATCH]; i++ ) subcatch_validate(i);
-    for ( i=0; i<Nobjects[SNOWMELT]; i++ ) snow_validateSnowmelt(i);
+    for ( i=0; i<Nobjects[GAGE]; i++ )     gage_validate(sp, i);
+    for ( i=0; i<Nobjects[AQUIFER]; i++ )  gwater_validateAquifer(sp, i);
+    for ( i=0; i<Nobjects[SUBCATCH]; i++ ) subcatch_validate(sp, i);
+    for ( i=0; i<Nobjects[SNOWMELT]; i++ ) snow_validateSnowmelt(sp, i);
 
     // --- compute geometry tables for each shape curve
     j = 0;
@@ -224,7 +224,7 @@ void project_validate()
             Curve[i].refersTo = j;
             Shape[j].curve = i;
             if ( !shape_validate(&Shape[j], &Curve[i]) )
-                report_writeErrorMsg(ERR_CURVE_SEQUENCE, Curve[i].ID);
+                report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, Curve[i].ID);
             j++;
         }
     }
@@ -232,18 +232,18 @@ void project_validate()
     // --- validate links before nodes, since the latter can
     //     result in adjustment of node depths
     for ( i=0; i<Nobjects[NODE]; i++) Node[i].oldDepth = Node[i].fullDepth;
-    for ( i=0; i<Nobjects[LINK]; i++) link_validate(i);
-    for ( i=0; i<Nobjects[NODE]; i++) node_validate(i);
+    for ( i=0; i<Nobjects[LINK]; i++) link_validate(sp, i);
+    for ( i=0; i<Nobjects[NODE]; i++) node_validate(sp, i);
 
     // --- adjust time steps if necessary
     if ( DryStep < WetStep )
     {
-        report_writeWarningMsg(WARN06, "");
+        report_writeWarningMsg(sp, WARN06, "");
         DryStep = WetStep;
     }
     if ( RouteStep > (double)WetStep )
     {
-        report_writeWarningMsg(WARN07, "");
+        report_writeWarningMsg(sp, WARN07, "");
         RouteStep = WetStep;
     }
 
@@ -915,15 +915,16 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
 {
     TFile finp = sp->Finp;
     TFile fout = sp->Fout;
+    TFile frpt = sp->Frpt;
 
     // --- initialize file pointers to NULL
     finp.file = NULL;
-    Frpt.file = NULL;
+    frpt.file = NULL;
     fout.file = NULL;
 
     // --- save file names
     sstrncpy(finp.name, f1, MAXFNAME);
-    sstrncpy(Frpt.name, f2, MAXFNAME);
+    sstrncpy(frpt.name, f2, MAXFNAME);
     sstrncpy(fout.name, f3, MAXFNAME);
 
     // --- check that file names are not identical
@@ -942,7 +943,7 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
         ErrorCode = ERR_INP_FILE;
         return;
     }
-    if ((Frpt.file = fopen(f2,"wt")) == NULL)
+    if ((frpt.file = fopen(f2,"wt")) == NULL)
     {
        writecon(FMT13);
        ErrorCode = ERR_RPT_FILE;
@@ -1250,7 +1251,7 @@ void deleteObjects()
 
 //=============================================================================
 
-void createHashTables()
+void createHashTables(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -1261,11 +1262,11 @@ void createHashTables()
     for (j = 0; j < MAX_OBJ_TYPES ; j++)
     {
         Htable[j] = HTcreate();
-        if ( Htable[j] == NULL ) report_writeErrorMsg(ERR_MEMORY, "");
+        if ( Htable[j] == NULL ) report_writeErrorMsg(sp, ERR_MEMORY, "");
     }
 
     // --- initialize memory pool used to store object ID's
-    if ( AllocInit() == NULL ) report_writeErrorMsg(ERR_MEMORY, "");
+    if ( AllocInit() == NULL ) report_writeErrorMsg(sp, ERR_MEMORY, "");
     else MemPoolAllocated = TRUE;
 }
 

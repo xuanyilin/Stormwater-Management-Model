@@ -120,11 +120,11 @@ static int      FileWindType;          // wind speed type;                     /
 //  Local functions
 //-----------------------------------------------------------------------------
 static int  getFileFormat(void);
-static void readFileLine(int *year, int *month);
-static void readUserFileLine(int *year, int *month);
-static void readTD3200FileLine(int *year, int *month);
-static void readDLY0204FileLine(int *year, int *month);
-static void readFileValues(void);
+static void readFileLine(SWMM_Project *sp, int *year, int *month);
+static void readUserFileLine(SWMM_Project *sp, int *year, int *month);
+static void readTD3200FileLine(SWMM_Project *sp, int *year, int *month);
+static void readDLY0204FileLine(SWMM_Project *sp, int *year, int *month);
+static void readFileValues(SWMM_Project *sp);
 
 static void setNextEvapDate(DateTime thedate);                                 //(5.1.008)
 static void setEvap(DateTime theDate);
@@ -134,7 +134,7 @@ static void updateTempTimes(int day);
 static void updateTempMoveAve(double tmin, double tmax);                       //(5.1.010)
 static double getTempEvap(int day, double ta, double tr);                      //(5.1.010)
 
-static void updateFileValues(DateTime theDate);
+static void updateFileValues(SWMM_Project *sp, DateTime theDate);
 static void parseUserFileLine(void);
 static void parseTD3200FileLine(void);
 static void parseDLY0204FileLine(void);
@@ -427,7 +427,7 @@ int climate_readAdjustments(char* tok[], int ntoks)
 
 //=============================================================================
 
-void climate_validate()
+void climate_validate(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -443,23 +443,23 @@ void climate_validate()
     {
         if ( Fclimate.mode == NO_FILE )
         {
-            report_writeErrorMsg(ERR_NO_CLIMATE_FILE, "");
+            report_writeErrorMsg(sp, ERR_NO_CLIMATE_FILE, "");
         }
     }
 
     // --- open the climate data file                                          //(5.1.007)
-    if ( Fclimate.mode == USE_FILE ) climate_openFile();                       //(5.1.007)
+    if ( Fclimate.mode == USE_FILE ) climate_openFile(sp);                       //(5.1.007)
 
     // --- snow melt parameters tipm & rnm must be fractions
     if ( Snow.tipm < 0.0 ||
          Snow.tipm > 1.0 ||
          Snow.rnm  < 0.0 ||
-         Snow.rnm  > 1.0 ) report_writeErrorMsg(ERR_SNOWMELT_PARAMS, "");
+         Snow.rnm  > 1.0 ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
 
     // --- latitude should be between -90 & 90 degrees
     a = Temp.anglat;
     if ( a <= -89.99 ||
-         a >= 89.99  ) report_writeErrorMsg(ERR_SNOWMELT_PARAMS, "");
+         a >= 89.99  ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
     else Temp.tanAnglat = tan(a * PI / 180.0);
 
     // --- compute psychrometric constant
@@ -478,7 +478,7 @@ void climate_validate()
 
 //=============================================================================
 
-void climate_openFile()
+void climate_openFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -490,7 +490,7 @@ void climate_openFile()
     // --- open the file
     if ( (Fclimate.file = fopen(Fclimate.name, "rt")) == NULL )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_OPEN, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_OPEN, Fclimate.name);
         return;
     }
 
@@ -505,7 +505,7 @@ void climate_openFile()
     FileFormat = getFileFormat();
     if ( FileFormat == UNKNOWN_FORMAT )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
         return;
     }
 
@@ -520,12 +520,12 @@ void climate_openFile()
     while ( !feof(Fclimate.file) )
     {
         strcpy(FileLine, "");
-        readFileLine(&y, &m);
+        readFileLine(sp, &y, &m);
         if ( y == FileYear && m == FileMonth ) break;
     }
     if ( feof(Fclimate.file) )
     {
-        report_writeErrorMsg(ERR_CLIMATE_END_OF_FILE, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_END_OF_FILE, Fclimate.name);
         return;
     }
 
@@ -534,7 +534,7 @@ void climate_openFile()
     {
         FileElapsedDays = 0;
         FileLastDay = datetime_daysPerMonth(FileYear, FileMonth);
-        readFileValues();
+        readFileValues(sp);
         for (i=TMIN; i<=WIND; i++)
         {
             if ( FileData[i][FileDay] == MISSING ) continue;
@@ -592,14 +592,14 @@ void climate_initState()
 
 //=============================================================================
 
-void climate_setState(DateTime theDate)
+void climate_setState(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = simulation date
 //  Output:  none
 //  Purpose: sets climate variables for current date.
 //
 {
-    if ( Fclimate.mode == USE_FILE ) updateFileValues(theDate);
+    if ( Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
     if ( Temp.dataSource != NO_TEMP ) setTemp(theDate);
     setEvap(theDate);
     setWind(theDate);
@@ -689,7 +689,7 @@ void setNextEvapDate(DateTime theDate)
 
 //=============================================================================
 
-void updateFileValues(DateTime theDate)
+void updateFileValues(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = current simulation date
 //  Output:  none
@@ -720,7 +720,7 @@ void updateFileValues(DateTime theDate)
                 FileMonth = 1;
                 FileYear++;
             }
-            readFileValues();
+            readFileValues(sp);
             FileDay = 1;
             FileLastDay = datetime_daysPerMonth(FileYear, FileMonth);
         }
@@ -1012,7 +1012,7 @@ int  getFileFormat()
 
 //=============================================================================
 
-void readFileLine(int *y, int *m)
+void readFileLine(SWMM_Project *sp, int *y, int *m)
 //
 //  Input:   none
 //  Output:  y = year
@@ -1030,16 +1030,16 @@ void readFileLine(int *y, int *m)
     // --- parse year & month from line
     switch (FileFormat)
     {
-    case  USER_PREPARED: readUserFileLine(y, m);   break;
-    case  TD3200:        readTD3200FileLine(y,m);  break;
-    case  DLY0204:       readDLY0204FileLine(y,m); break;
-    case  GHCND:         readGhcndFileLine(y,m);   break;                      //(5.1.007)
+    case  USER_PREPARED: readUserFileLine(sp, y, m);   break;
+    case  TD3200:        readTD3200FileLine(sp, y, m);  break;
+    case  DLY0204:       readDLY0204FileLine(sp, y, m); break;
+    case  GHCND:         readGhcndFileLine(y, m);   break;                      //(5.1.007)
     }
 }
 
 //=============================================================================
 
-void readUserFileLine(int* y, int* m)
+void readUserFileLine(SWMM_Project *sp, int* y, int* m)
 //
 //  Input:   none
 //  Output:  y = year
@@ -1052,13 +1052,13 @@ void readUserFileLine(int* y, int* m)
     n = sscanf(FileLine, "%s %d %d", staID, y, m);
     if ( n < 3 )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
     }
 }
 
 //=============================================================================
 
-void readTD3200FileLine(int* y, int* m)
+void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
 //
 //  Input:   none
 //  Output:  y = year
@@ -1075,7 +1075,7 @@ void readTD3200FileLine(int* y, int* m)
     len = strlen(FileLine);
     if ( len < 30 )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
         return;
     }
 
@@ -1083,7 +1083,7 @@ void readTD3200FileLine(int* y, int* m)
     sstrncpy(recdType, FileLine, 3);
     if ( strcmp(recdType, "DLY") != 0 )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
         return;
     }
 
@@ -1096,7 +1096,7 @@ void readTD3200FileLine(int* y, int* m)
 
 //=============================================================================
 
-void readDLY0204FileLine(int* y, int* m)
+void readDLY0204FileLine(SWMM_Project *sp, int* y, int* m)
 //
 //  Input:   none
 //  Output:  y = year
@@ -1112,7 +1112,7 @@ void readDLY0204FileLine(int* y, int* m)
     len = strlen(FileLine);
     if ( len < 16 )
     {
-        report_writeErrorMsg(ERR_CLIMATE_FILE_READ, Fclimate.name);
+        report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, Fclimate.name);
         return;
     }
 
@@ -1125,7 +1125,7 @@ void readDLY0204FileLine(int* y, int* m)
 
 //=============================================================================
 
-void readFileValues()
+void readFileValues(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1145,7 +1145,7 @@ void readFileValues()
     {
         // --- return when date on line is after current file date
         if ( feof(Fclimate.file) ) return;
-        readFileLine(&y, &m);
+        readFileLine(sp, &y, &m);
         if ( y > FileYear || m > FileMonth ) return;
 
         // --- parse climate values from file line

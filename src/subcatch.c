@@ -355,7 +355,7 @@ int subcatch_readInitBuildup(char* tok[], int ntoks)
 
 //=============================================================================
 
-void  subcatch_validate(int j)
+void  subcatch_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  none
@@ -368,10 +368,10 @@ void  subcatch_validate(int j)
 
     // --- check for ambiguous outlet name
     if ( Subcatch[j].outNode >= 0 && Subcatch[j].outSubcatch >= 0 )
-        report_writeErrorMsg(ERR_SUBCATCH_OUTLET, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_SUBCATCH_OUTLET, Subcatch[j].ID);
 
     // --- validate subcatchment's groundwater component 
-    gwater_validate(j);
+    gwater_validate(sp, j);
 
     // --- validate placement of LIDs in the subcatchment
     nonLidArea -= Subcatch[j].lidArea;

@@ -665,7 +665,12 @@ int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value)
     return(errcode);
 }
 
-int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value)
+int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value) {
+    return swmm_setSubcatchParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
+        int Param, double value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_SubcProperty)
@@ -707,7 +712,7 @@ int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value)
         }
     }
     //re-validate subcatchment
-    subcatch_validate(index); // incorprate callback here
+    subcatch_validate(sp, index); // incorprate callback here
 
     return(errcode);
 }
@@ -1308,8 +1313,12 @@ int DLLEXPORT swmm_setGagePrecip(int index, double value)
 //-------------------------------
 // Setters API
 //-------------------------------
+int DLLEXPORT swmm_setLinkSetting(int index, double targetSetting) {
+    return swmm_setLinkSetting_project(_defaultProject, index, targetSetting);
+}
 
-int DLLEXPORT swmm_setLinkSetting(int index, double targetSetting)
+int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
+        double targetSetting)
 //
 // Input:   index = Index of desired ID
 //          value = New Target Setting
@@ -1345,7 +1354,8 @@ int DLLEXPORT swmm_setLinkSetting(int index, double targetSetting)
         if (RptFlags.controls)
         {
             currentTime = getDateTime(NewRoutingTime);
-            report_writeControlAction(currentTime, Link[index].ID, targetSetting, _rule_);
+            report_writeControlAction(sp, currentTime, Link[index].ID,
+                    targetSetting, _rule_);
         }
     }
     return(errcode);

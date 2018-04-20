@@ -50,7 +50,7 @@ static void  evalContinuity(double a, double* f, double* df, void* p);
 
 //=============================================================================
 
-int kinwave_execute(int j, double* qinflow, double* qoutflow, double tStep)
+int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, double tStep)
 //
 //  Input:   j = link index
 //           qinflow = inflow at current time (cfs)
@@ -139,7 +139,7 @@ int kinwave_execute(int j, double* qinflow, double* qoutflow, double tStep)
         // --- report error if continuity eqn. not solved
         if ( result == -1 )
         {
-            report_writeErrorMsg(ERR_KINWAVE, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_KINWAVE, Link[j].ID);
             return 1;
         }
         if ( result <= 0 ) result = 1;

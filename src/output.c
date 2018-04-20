@@ -141,7 +141,7 @@ int output_open(SWMM_Project *sp)
     LinkResults = (REAL4 *) calloc(NlinkResults, sizeof(REAL4));
     if ( !SubcatchResults || !NodeResults || !LinkResults )
     {
-        report_writeErrorMsg(ERR_MEMORY, "");
+        report_writeErrorMsg(sp, ERR_MEMORY, "");
         return ErrorCode;
     }
 
@@ -348,17 +348,17 @@ int output_open(SWMM_Project *sp)
     k = ReportStep;
     if ( fwrite(&k, sizeof(INT4), 1, fout.file) < 1)
     {
-        report_writeErrorMsg(ERR_OUT_WRITE, "");
+        report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
         return ErrorCode;
     }
     OutputStartPos = ftell(fout.file);
-    if ( fout.mode == SCRATCH_FILE ) output_checkFileSize();
+    if ( fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
     return ErrorCode;
 }
 
 //=============================================================================
 
-void  output_checkFileSize()
+void  output_checkFileSize(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -373,7 +373,7 @@ void  output_checkFileSize()
         if ( (double)OutputStartPos + (double)BytesPerPeriod * TotalDuration
              / 1000.0 / (double)ReportStep >= (double)MAXFILESIZE )
         {
-            report_writeErrorMsg(ERR_FILE_SIZE, "");
+            report_writeErrorMsg(sp, ERR_FILE_SIZE, "");
         }
     }
 }
@@ -465,7 +465,7 @@ void output_end(SWMM_Project *sp)
     k = MAGICNUMBER;
     if (fwrite(&k, sizeof(INT4), 1, fout.file) < 1)
     {
-        report_writeErrorMsg(ERR_OUT_WRITE, "");
+        report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
     }
 }
 

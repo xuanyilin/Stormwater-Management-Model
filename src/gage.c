@@ -197,7 +197,7 @@ int readGageFileFormat(char* tok[], int ntoks, double x[])
 
 //=============================================================================
 
-void  gage_validate(int j)
+void  gage_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  none
@@ -217,20 +217,20 @@ void  gage_validate(int j)
         k = Gage[j].tSeries;
         if ( Tseries[k].refersTo >= 0 )
         {
-            report_writeErrorMsg(ERR_RAIN_GAGE_TSERIES, Gage[j].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_GAGE_TSERIES, Gage[j].ID);
         }
         gageInterval = (int)(floor(Tseries[k].dxMin*SECperDAY + 0.5));
         if ( gageInterval > 0 && Gage[j].rainInterval > gageInterval )
         {
-            report_writeErrorMsg(ERR_RAIN_GAGE_INTERVAL, Gage[j].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_GAGE_INTERVAL, Gage[j].ID);
         } 
         if ( Gage[j].rainInterval < gageInterval )
         {
-            report_writeWarningMsg(WARN09, Gage[j].ID);
+            report_writeWarningMsg(sp, WARN09, Gage[j].ID);
         }
         if ( Gage[j].rainInterval < WetStep )
         {
-            report_writeWarningMsg(WARN01, Gage[j].ID);
+            report_writeWarningMsg(sp, WARN01, Gage[j].ID);
             WetStep = Gage[j].rainInterval;
         }
 
@@ -244,7 +244,7 @@ void  gage_validate(int j)
                 // --- check that both gages record same type of data
                 if ( Gage[j].rainType != Gage[i].rainType )
                 {
-                    report_writeErrorMsg(ERR_RAIN_GAGE_FORMAT, Gage[j].ID);
+                    report_writeErrorMsg(sp, ERR_RAIN_GAGE_FORMAT, Gage[j].ID);
                 }
                 return;
             }

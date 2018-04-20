@@ -92,7 +92,7 @@ void transect_delete(void)
 
 //=============================================================================
 
-int transect_readParams(int* count, char* tok[], int ntoks)
+int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
 //
 //  Input:   count = transect index
 //           tok[] = array of string tokens
@@ -124,7 +124,7 @@ int transect_readParams(int* count, char* tok[], int ntoks)
       case 0:
 
         // --- finish processing the previous transect
-        transect_validate(index - 1);
+        transect_validate(sp, index - 1);
 
         // --- read Manning's n values
         if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
@@ -182,7 +182,7 @@ int transect_readParams(int* count, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  transect_validate(int j)
+void  transect_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = transect index
 //  Output:  none
@@ -197,22 +197,22 @@ void  transect_validate(int j)
     if ( j < 0 || j >= Ntransects ) return;
     if ( Nstations < 2 ) 
     {
-        report_writeErrorMsg(ERR_TRANSECT_TOO_FEW, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_FEW, Transect[j].ID);
         return;
     }
     if ( Nstations >= MAXSTATION )
     {
-        report_writeErrorMsg(ERR_TRANSECT_TOO_MANY, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_MANY, Transect[j].ID);
         return;
     }
     if ( Nchannel <= 0.0 )
     {
-        report_writeErrorMsg(ERR_TRANSECT_MANNING, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_MANNING, Transect[j].ID);
         return;
     }
     if ( Xleftbank > Xrightbank )
     {
-        report_writeErrorMsg(ERR_TRANSECT_OVERBANK, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_OVERBANK, Transect[j].ID);
         return;
     }
 
@@ -231,7 +231,7 @@ void  transect_validate(int j)
     }
     if ( ymin >= ymax )
     {
-        report_writeErrorMsg(ERR_TRANSECT_NO_DEPTH, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_NO_DEPTH, Transect[j].ID);
         return;
     }
     Transect[j].yFull = ymax - ymin;

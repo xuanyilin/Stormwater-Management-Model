@@ -47,14 +47,14 @@ static int   LoopLinksLast;            // number of links in a loop
 static void createAdjList(int listType);
 static void adjustAdjList(void);
 static int  topoSort(int sortedLinks[]);
-static void findCycles(void);
-static void findSpanningTree(int startNode);
-static void evalLoop(int startLink);
+static void findCycles(SWMM_Project *sp);
+static void findSpanningTree(SWMM_Project *sp, int startNode);
+static void evalLoop(SWMM_Project *sp, int startLink);
 static int  traceLoop(int i1, int i2, int k);
-static void checkDummyLinks(void);
+static void checkDummyLinks(SWMM_Project *sp);
 //=============================================================================
 
-void toposort_sortLinks(int sortedLinks[])
+void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
 //
 //  Input:   none
 //  Output:  sortedLinks = array of link indexes in sorted order
@@ -70,7 +70,7 @@ void toposort_sortLinks(int sortedLinks[])
 
         // --- check for nodes with both incoming and outgoing
         //     dummy links (creates ambiguous ordering)
-        checkDummyLinks();
+        checkDummyLinks(sp);
         if ( ErrorCode ) return;
 
         // --- find number of outflow links for each node
@@ -102,7 +102,7 @@ void toposort_sortLinks(int sortedLinks[])
     if ( InDegree == NULL || StartPos == NULL ||
          AdjList == NULL || Stack == NULL )
     {
-        report_writeErrorMsg(ERR_MEMORY, "");
+        report_writeErrorMsg(sp, ERR_MEMORY, "");
     }
     else
     {
@@ -129,8 +129,8 @@ void toposort_sortLinks(int sortedLinks[])
     // --- check that all links are included in SortedLinks
     if ( !ErrorCode &&  n != Nobjects[LINK] )
     {
-        report_writeErrorMsg(ERR_LOOP, "");
-        findCycles();
+        report_writeErrorMsg(sp, ERR_LOOP, "");
+        findCycles(sp);
     }
 }
 
@@ -279,7 +279,7 @@ int topoSort(int sortedLinks[])
 
 //=============================================================================
 
-void  findCycles()
+void  findCycles(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -312,7 +312,7 @@ void  findCycles()
         {
             if ( Examined[i] ) continue;
             Last = -1;
-            findSpanningTree(i);
+            findSpanningTree(sp, i);
         }
     }
     FREE(StartPos);
@@ -325,7 +325,7 @@ void  findCycles()
 
 //=============================================================================
 
-void  findSpanningTree(int startNode)
+void  findSpanningTree(SWMM_Project *sp, int startNode)
 //
 //  Input:   i = index of starting node of tree
 //  Output:  none
@@ -352,7 +352,7 @@ void  findSpanningTree(int startNode)
             if ( Examined[j] )
             {
                 InTree[k] = 2;
-                evalLoop(k);
+                evalLoop(sp, k);
             }
 
             // --- otherwise mark connected node as being examined,
@@ -374,13 +374,13 @@ void  findSpanningTree(int startNode)
     {
         nextNode = Stack[Last];
         Last--;
-        findSpanningTree(nextNode);
+        findSpanningTree(sp, nextNode);
     }
 }
 
 //=============================================================================
 
-void evalLoop(int startLink)
+void evalLoop(SWMM_Project *sp, int startLink)
 //
 //  Input:   startLink = index of starting link of a loop
 //  Output:  none
@@ -392,6 +392,8 @@ void evalLoop(int startLink)
     int j;                             // index of link in loop
     int kount;                         // items per line counter
     int isCycle;                       // TRUE if loop forms a cycle
+
+    TFile frpt = sp->Frpt;
 
     // --- make startLink the first link in the loop
     LoopLinksLast = 0;
@@ -425,10 +427,10 @@ void evalLoop(int startLink)
         kount = 0;
         for (i = 0; i <= LoopLinksLast; i++)
         {
-            if ( kount % 5 == 0 ) fprintf(Frpt.file, "\n");
+            if ( kount % 5 == 0 ) fprintf(frpt.file, "\n");
             kount++;
-            fprintf(Frpt.file, "  %s", Link[LoopLinks[i]].ID);
-            if ( i < LoopLinksLast ) fprintf(Frpt.file, "  -->");
+            fprintf(frpt.file, "  %s", Link[LoopLinks[i]].ID);
+            if ( i < LoopLinksLast ) fprintf(frpt.file, "  -->");
         }
     }
 }
@@ -477,7 +479,7 @@ int traceLoop(int i1, int i2, int k1)
 
 //=============================================================================
 
-void checkDummyLinks()
+void checkDummyLinks(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -492,7 +494,7 @@ void checkDummyLinks()
     marked = (int *) calloc(Nobjects[NODE], sizeof(int));
     if ( marked == NULL )
     {
-        report_writeErrorMsg(ERR_MEMORY, "");
+        report_writeErrorMsg(sp, ERR_MEMORY, "");
         return;
     }
 
@@ -521,7 +523,7 @@ void checkDummyLinks()
             j = Link[i].node1;
             if ( marked[j] > 0 )
             {
-                report_writeErrorMsg(ERR_DUMMY_LINK, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[j].ID);
             }
         }
     }

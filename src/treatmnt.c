@@ -62,7 +62,7 @@ static double getVariableValue(int varCode);
 
 //=============================================================================
 
-int  treatmnt_open(void)
+int  treatmnt_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns TRUE if successful, FALSE if not
@@ -77,7 +77,7 @@ int  treatmnt_open(void)
         Cin = (double *) calloc(Nobjects[POLLUT], sizeof(double));
         if ( R == NULL || Cin == NULL)
         {
-            report_writeErrorMsg(ERR_MEMORY, "");
+            report_writeErrorMsg(sp, ERR_MEMORY, "");
             return FALSE;
         }
     }
@@ -195,7 +195,7 @@ void  treatmnt_setInflow(double qIn, double wIn[])
 
 //=============================================================================
 
-void  treatmnt_treat(int j, double q, double v, double tStep)
+void  treatmnt_treat(SWMM_Project *sp, int j, double q, double v, double tStep)
 //
 //  Input:   j     = node index
 //           q     = inflow to node (cfs)
@@ -238,7 +238,7 @@ void  treatmnt_treat(int j, double q, double v, double tStep)
     // --- check for error condition
     if ( ErrCode == ERR_CYCLIC_TREATMENT )
     {
-         report_writeErrorMsg(ERR_CYCLIC_TREATMENT, Node[J].ID);
+         report_writeErrorMsg(sp, ERR_CYCLIC_TREATMENT, Node[J].ID);
     }
 
     // --- update nodal concentrations and mass balances

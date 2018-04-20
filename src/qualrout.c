@@ -92,7 +92,7 @@ void    qualrout_init()
 
 //=============================================================================
 
-void qualrout_execute(double tStep)
+void qualrout_execute(SWMM_Project *sp, double tStep)
 //
 //  Input:   tStep = routing time step (sec)
 //  Output:  none
@@ -128,7 +128,7 @@ void qualrout_execute(double tStep)
         else findNodeQual(j);
 
         // --- apply treatment to new quality values
-        if ( Node[j].treatment ) treatmnt_treat(j, qIn, vAvg, tStep);
+        if ( Node[j].treatment ) treatmnt_treat(sp, j, qIn, vAvg, tStep);
     }
 
     // --- find new water quality in each link

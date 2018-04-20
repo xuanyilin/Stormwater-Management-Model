@@ -103,7 +103,7 @@ double massbal_getQualError(void);
 
 //=============================================================================
 
-int massbal_open()
+int massbal_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -193,7 +193,7 @@ int massbal_open()
         LoadingTotals = (TLoadingTotals *) calloc(n, sizeof(TLoadingTotals));
         if ( LoadingTotals == NULL )
         {
-             report_writeErrorMsg(ERR_MEMORY, "");
+             report_writeErrorMsg(sp, ERR_MEMORY, "");
              return ErrorCode;
         }
         for (j = 0; j < n; j++)
@@ -216,7 +216,7 @@ int massbal_open()
          StepQualTotals = (TRoutingTotals *) calloc(n, sizeof(TRoutingTotals));
          if ( QualTotals == NULL || StepQualTotals == NULL )
          {
-             report_writeErrorMsg(ERR_MEMORY, "");
+             report_writeErrorMsg(sp, ERR_MEMORY, "");
              return ErrorCode;
          }
      }
@@ -245,13 +245,13 @@ int massbal_open()
         NodeInflow = (double *) calloc(Nobjects[NODE], sizeof(double));
         if ( NodeInflow == NULL )
         {
-             report_writeErrorMsg(ERR_MEMORY, "");
+             report_writeErrorMsg(sp, ERR_MEMORY, "");
              return ErrorCode;
         }
         NodeOutflow = (double *) calloc(Nobjects[NODE], sizeof(double));
         if ( NodeOutflow == NULL )
         {
-             report_writeErrorMsg(ERR_MEMORY, "");
+             report_writeErrorMsg(sp, ERR_MEMORY, "");
              return ErrorCode;
         }
         for (j = 0; j < Nobjects[NODE]; j++) NodeInflow[j] = Node[j].newVolume;
@@ -277,7 +277,7 @@ void massbal_close()
 
 //=============================================================================
 
-void massbal_report()
+void massbal_report(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -291,13 +291,13 @@ void massbal_report()
     {
         if ( massbal_getRunoffError() > MAX_RUNOFF_BALANCE_ERR ||
              RptFlags.continuity == TRUE
-           ) report_writeRunoffError(&RunoffTotals, TotalArea);
+           ) report_writeRunoffError(sp, &RunoffTotals, TotalArea);
 
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality )
         {
             if ( massbal_getLoadingError() > MAX_RUNOFF_BALANCE_ERR ||
                  RptFlags.continuity == TRUE
-               ) report_writeLoadingError(LoadingTotals);
+               ) report_writeLoadingError(sp, LoadingTotals);
         }
     }
 
@@ -310,7 +310,7 @@ void massbal_report()
             {
                 if ( Subcatch[j].groundwater ) gwArea += Subcatch[j].area;
             }
-            if ( gwArea > 0.0 ) report_writeGwaterError(&GwaterTotals, gwArea);
+            if ( gwArea > 0.0 ) report_writeGwaterError(sp, &GwaterTotals, gwArea);
        }
     }
 
@@ -318,13 +318,13 @@ void massbal_report()
     {
         if ( massbal_getFlowError() > MAX_FLOW_BALANCE_ERR ||
              RptFlags.continuity == TRUE
-           ) report_writeFlowError(&FlowTotals);
+           ) report_writeFlowError(sp, &FlowTotals);
     
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality )
         {
             if ( massbal_getQualError() > MAX_FLOW_BALANCE_ERR ||
                  RptFlags.continuity == TRUE
-               ) report_writeQualError(QualTotals);
+               ) report_writeQualError(sp, QualTotals);
         }
     }
 }

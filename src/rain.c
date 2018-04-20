@@ -87,21 +87,22 @@ int        hasStationName;             // true if data contains station name
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void createRainFile(int count);
-static int  rainFileConflict(int i);
-static void initRainFile(void);
+static void createRainFile(SWMM_Project *sp, int count);
+static int  rainFileConflict(SWMM_Project *sp, int i);
+static void initRainFile(SWMM_Project *sp);
 static int  findGageInFile(int i, int kount);
-static int  addGageToRainFile(int i);
+static int  addGageToRainFile(SWMM_Project *sp, int i);
 static int  findFileFormat(FILE *f, int i, int *hdrLines);
 static int  findNWSOnlineFormat(FILE *f, char *line);
-static void readFile(FILE *f, int fileFormat, int hdrLines, DateTime day1,
-            DateTime day2);
+static void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines,
+        DateTime day1, DateTime day2);
 static int  readNWSLine(char *line, int fileFormat, DateTime day1,
             DateTime day2);
 static int  readNwsOnlineValue(char* s, long* v, char* flag);                  //(5.1.011)
 static int  readCMCLine(char *line, int fileFormat, DateTime day1,
             DateTime day2);
-static int  readStdLine(char *line, DateTime day1, DateTime day2);
+static int  readStdLine(SWMM_Project *sp, char *line, DateTime day1,
+        DateTime day2);
 static void saveAccumRainfall(DateTime date1, int hour, int minute, long v);
 static void saveRainfall(DateTime date1, int hour, int minute, float x,
             char isMissing);
@@ -112,7 +113,7 @@ static int  parseStdLine(char *line, int *year, int *month, int *day,
 
 //=============================================================================
 
-void  rain_open(void)
+void  rain_open(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -141,7 +142,7 @@ void  rain_open(void)
         getTempFileName(Frain.name);
         if ( (Frain.file = fopen(Frain.name, "w+b")) == NULL)
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_SCRATCH, "");
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_SCRATCH, "");
             return;
         }
         break;
@@ -149,7 +150,7 @@ void  rain_open(void)
       case USE_FILE:
         if ( (Frain.file = fopen(Frain.name, "r+b")) == NULL)
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_OPEN, Frain.name);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, Frain.name);
             return;
         }
         break;
@@ -157,7 +158,7 @@ void  rain_open(void)
       case SAVE_FILE:
         if ( (Frain.file = fopen(Frain.name, "w+b")) == NULL)
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_OPEN, Frain.name);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_OPEN, Frain.name);
             return;
         }
         break;
@@ -166,14 +167,14 @@ void  rain_open(void)
     // --- create new rain file if required
     if ( Frain.mode == SCRATCH_FILE || Frain.mode == SAVE_FILE )
     {
-        createRainFile(count);
+        createRainFile(sp, count);
     }
 
     // --- initialize rain file
-    if ( Frain.mode != NO_FILE ) initRainFile();
+    if ( Frain.mode != NO_FILE ) initRainFile(sp);
 
     // --- open RDII processor (creates/opens a RDII interface file)
-    rdii_openRdii();
+    rdii_openRdii(sp);
 }
 
 //=============================================================================
@@ -196,7 +197,7 @@ void rain_close(void)
 
 //=============================================================================
 
-void createRainFile(int count)
+void createRainFile(SWMM_Project *sp, int count)
 //
 //  Input:   count = number of files to include in rain interface file
 //  Output:  none
@@ -223,7 +224,7 @@ void createRainFile(int count)
 
     // --- write default fill-in header records to file for each gage
     //     (will be replaced later with actual records)
-    if ( count > 0 ) report_writeRainStats(-1, &RainStats);
+    if ( count > 0 ) report_writeRainStats(sp, -1, &RainStats);
     for ( i = 0;  i < count; i++ )
     {
         fwrite(staID, sizeof(char), MAXMSG+1, Frain.file);
@@ -237,13 +238,13 @@ void createRainFile(int count)
     for ( i = 0; i < Nobjects[GAGE]; i++ )
     {
         if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
-        if ( rainFileConflict(i) ) break;
+        if ( rainFileConflict(sp, i) ) break;
 
         // --- position rain file to where data for gage will begin
         fseek(Frain.file, filePos2, SEEK_SET);
 
         // --- add gage's data to rain file
-        if ( addGageToRainFile(i) )
+        if ( addGageToRainFile(sp, i) )
         {
             // --- write header records for gage to beginning of rain file
             filePos3 = ftell(Frain.file);
@@ -256,7 +257,7 @@ void createRainFile(int count)
             fwrite(&filePos3,  sizeof(int), 1, Frain.file);
             filePos1 = ftell(Frain.file);
             filePos2 = filePos3;
-            report_writeRainStats(i, &RainStats);
+            report_writeRainStats(sp, i, &RainStats);
         }
     }
 
@@ -271,7 +272,7 @@ void createRainFile(int count)
 
 //=============================================================================
 
-int rainFileConflict(int i)
+int rainFileConflict(SWMM_Project *sp, int i)
 //
 //  Input:   i = rain gage index
 //  Output:  returns 1 if file conflict found, 0 if not
@@ -286,7 +287,7 @@ int rainFileConflict(int i)
     {
         if ( strcomp(Gage[j].staID, staID) && !strcomp(Gage[j].fname, fname) )
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_CONFLICT, Gage[i].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_CONFLICT, Gage[i].ID);
             return 1;
         }
     }
@@ -295,7 +296,7 @@ int rainFileConflict(int i)
 
 //=============================================================================
 
-int addGageToRainFile(int i)
+int addGageToRainFile(SWMM_Project *sp, int i)
 //
 //  Input:   i = rain gage index
 //  Output:  returns 1 if successful, 0 if not
@@ -311,18 +312,18 @@ int addGageToRainFile(int i)
 
     // --- check that rain file exists
     if ( (f = fopen(Gage[i].fname, "rt")) == NULL )
-        report_writeErrorMsg(ERR_RAIN_FILE_DATA, Gage[i].fname);
+        report_writeErrorMsg(sp, ERR_RAIN_FILE_DATA, Gage[i].fname);
     else
     {
         fileFormat = findFileFormat(f, i, &hdrLines);
         if ( fileFormat == UNKNOWN_FORMAT )
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_FORMAT, Gage[i].fname);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_FORMAT, Gage[i].fname);
         }
         else
         {
             GageIndex = i;
-            readFile(f, fileFormat, hdrLines, Gage[i].startFileDate,
+            readFile(sp, f, fileFormat, hdrLines, Gage[i].startFileDate,
                      Gage[i].endFileDate);
         }
         fclose(f);
@@ -334,7 +335,7 @@ int addGageToRainFile(int i)
 
 //=============================================================================
 
-void initRainFile(void)
+void initRainFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -355,7 +356,7 @@ void initRainFile(void)
     fread(fStamp, sizeof(char), strlen(fileStamp), Frain.file);
     if ( strcmp(fStamp, fileStamp) != 0 )
     {
-        report_writeErrorMsg(ERR_RAIN_IFACE_FORMAT, "");
+        report_writeErrorMsg(sp, ERR_RAIN_IFACE_FORMAT, "");
         return;
     }
     fread(&kount, sizeof(int), 1, Frain.file);
@@ -371,7 +372,7 @@ void initRainFile(void)
         if ( !findGageInFile(i, (int)kount) ||
              Gage[i].startFilePos == Gage[i].endFilePos )
         {
-            report_writeErrorMsg(ERR_RAIN_FILE_GAGE, Gage[i].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_GAGE, Gage[i].ID);
         }
     }
 }
@@ -649,7 +650,7 @@ int getNWSInterval(char *elemType)
 
 //=============================================================================
 
-void readFile(FILE *f, int fileFormat, int hdrLines, DateTime day1,
+void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines, DateTime day1,
               DateTime day2)
 //
 //  Input:   f          = ptr. to gage's rainfall data file
@@ -683,7 +684,7 @@ void readFile(FILE *f, int fileFormat, int hdrLines, DateTime day1,
        switch (fileFormat)
        {
          case STD_SPACE_DELIMITED:
-          n = readStdLine(line, day1, day2);
+          n = readStdLine(sp, line, day1, day2);
           break;
 
          case NWS_TAPE:
@@ -989,7 +990,7 @@ int readCMCLine(char *line, int fileFormat, DateTime day1, DateTime day2)
 
 //=============================================================================
 
-int readStdLine(char *line, DateTime day1, DateTime day2)
+int readStdLine(SWMM_Project *sp, char *line, DateTime day1, DateTime day2)
 //
 //  Input:   line = line of data from a standard rainfall data file
 //           day1 = starting day of record of interest
@@ -1017,8 +1018,8 @@ int readStdLine(char *line, DateTime day1, DateTime day2)
     date2 = date1 + datetime_encodeTime(hour, minute, 0);
     if ( date2 <= PreviousDate )
     {
-        report_writeErrorMsg(ERR_RAIN_FILE_SEQUENCE, Gage[GageIndex].fname);   //(5.1.010)
-        report_writeLine(line);
+        report_writeErrorMsg(sp, ERR_RAIN_FILE_SEQUENCE, Gage[GageIndex].fname);   //(5.1.010)
+        report_writeLine(sp, line);
         return -1;
     }
     PreviousDate = date2;

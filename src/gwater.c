@@ -331,7 +331,7 @@ void gwater_deleteFlowExpression(int j)
 
 //=============================================================================
 
-void  gwater_validateAquifer(int j)
+void  gwater_validateAquifer(SWMM_Project *sp, int j)
 //
 //  Input:   j = aquifer index
 //  Output:  none
@@ -351,18 +351,18 @@ void  gwater_validateAquifer(int j)
     ||   Aquifer[j].waterTableElev    <  Aquifer[j].bottomElev
     ||   Aquifer[j].upperMoisture     >  Aquifer[j].porosity 
     ||   Aquifer[j].upperMoisture     <  Aquifer[j].wiltingPoint )
-        report_writeErrorMsg(ERR_AQUIFER_PARAMS, Aquifer[j].ID);
+        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, Aquifer[j].ID);
 
     p = Aquifer[j].upperEvapPat;
     if ( p >= 0 && Pattern[p].type != MONTHLY_PATTERN )
     {
-        report_writeErrorMsg(ERR_AQUIFER_PARAMS, Aquifer[j].ID);
+        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, Aquifer[j].ID);
     }
 }
 
 //=============================================================================
 
-void  gwater_validate(int j)
+void  gwater_validate(SWMM_Project *sp, int j)
 {
     TAquifer a;         // Aquifer data structure
     TGroundwater* gw;   // Groundwater data structure
@@ -379,7 +379,7 @@ void  gwater_validate(int j)
 
         // ... ground elevation can't be below water table elevation
         if ( gw->surfElev < gw->waterTableElev )
-            report_writeErrorMsg(ERR_GROUND_ELEV, Subcatch[j].ID);
+            report_writeErrorMsg(sp, ERR_GROUND_ELEV, Subcatch[j].ID);
     }
 }
 

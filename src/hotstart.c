@@ -60,22 +60,22 @@ static int fileVersion;
 //-----------------------------------------------------------------------------
 // Function declarations
 //-----------------------------------------------------------------------------
-static int  openHotstartFile1(void); 
-static int  openHotstartFile2(void);       
-static void readRunoff(void);
+static int  openHotstartFile1(SWMM_Project *sp);
+static int  openHotstartFile2(SWMM_Project *sp);
+static void readRunoff(SWMM_Project *sp);
 static void saveRunoff(void);
-static void readRouting(void);
+static void readRouting(SWMM_Project *sp);
 static void saveRouting(void);
-static int  readFloat(float *x, FILE* f);
-static int  readDouble(double* x, FILE* f);
+static int  readFloat(SWMM_Project *sp, float *x, FILE* f);
+static int  readDouble(SWMM_Project *sp, double* x, FILE* f);
 
 //=============================================================================
 
-int hotstart_open()
+int hotstart_open(SWMM_Project *sp)
 {
     // --- open hot start files
-    if ( !openHotstartFile1() ) return FALSE;       //input hot start file
-    if ( !openHotstartFile2() ) return FALSE;       //output hot start file
+    if ( !openHotstartFile1(sp) ) return FALSE;       //input hot start file
+    if ( !openHotstartFile2(sp) ) return FALSE;       //output hot start file
 
     ////  Following lines removed. ////                                            //(5.1.005)
     //if ( Fhotstart1.file )
@@ -102,7 +102,7 @@ void hotstart_close()
 
 //=============================================================================
 
-int openHotstartFile1()
+int openHotstartFile1(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -126,7 +126,7 @@ int openHotstartFile1()
     if ( Fhotstart1.mode != USE_FILE ) return TRUE;
     if ( (Fhotstart1.file = fopen(Fhotstart1.name, "r+b")) == NULL)
     {
-        report_writeErrorMsg(ERR_HOTSTART_FILE_OPEN, Fhotstart1.name);
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, Fhotstart1.name);
         return FALSE;
     }
 
@@ -141,7 +141,7 @@ int openHotstartFile1()
         fread(fStamp, sizeof(char), strlen(fileStamp), Fhotstart1.file);
         if ( strcmp(fStamp, fileStamp) != 0 )
         {
-            report_writeErrorMsg(ERR_HOTSTART_FILE_FORMAT, "");
+            report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
             return FALSE;
         }
         fileVersion = 1;
@@ -174,13 +174,13 @@ int openHotstartFile1()
     ||   nPollut   != Nobjects[POLLUT]
     ||   flowUnits != FlowUnits )
     {
-         report_writeErrorMsg(ERR_HOTSTART_FILE_FORMAT, "");
+         report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
          return FALSE;
     }
 
     // --- read contents of the file and close it
-    if ( fileVersion >= 3 ) readRunoff();                                      //(5.1.008)
-    readRouting();
+    if ( fileVersion >= 3 ) readRunoff(sp);                                      //(5.1.008)
+    readRouting(sp);
     fclose(Fhotstart1.file);
     if ( ErrorCode ) return FALSE;
     else return TRUE;
@@ -188,7 +188,7 @@ int openHotstartFile1()
 
 //=============================================================================
 
-int openHotstartFile2()
+int openHotstartFile2(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -207,7 +207,7 @@ int openHotstartFile2()
     if ( Fhotstart2.mode != SAVE_FILE ) return TRUE;
     if ( (Fhotstart2.file = fopen(Fhotstart2.name, "w+b")) == NULL)
     {
-        report_writeErrorMsg(ERR_HOTSTART_FILE_OPEN, Fhotstart2.name);
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_OPEN, Fhotstart2.name);
         return FALSE;
     }
 
@@ -277,7 +277,7 @@ void  saveRouting()
 
 //=============================================================================
 
-void readRouting()
+void readRouting(SWMM_Project *sp)
 //
 //  Input:   none 
 //  Output:  none
@@ -299,9 +299,9 @@ void readRouting()
         for (i = 0; i < Nobjects[SUBCATCH]; i++)
         {
             // --- read moisture content and water table elevation as floats
-            if ( !readFloat(&x, f) ) return;
+            if ( !readFloat(sp, &x, f) ) return;
             xgw[0] = x;
-            if ( !readFloat(&x, f) ) return;
+            if ( !readFloat(sp, &x, f) ) return;
             xgw[1] = x;
 
             // --- set GW state
@@ -312,15 +312,15 @@ void readRouting()
     // --- read node states
     for (i = 0; i < Nobjects[NODE]; i++)
     {
-        if ( !readFloat(&x, f) ) return;
+        if ( !readFloat(sp, &x, f) ) return;
         Node[i].newDepth = x;
-        if ( !readFloat(&x, f) ) return;
+        if ( !readFloat(sp, &x, f) ) return;
         Node[i].newLatFlow = x;
 
 ////  New code added to release 5.1.008.  ////                                 //(5.1.008)
         if ( fileVersion >= 4 &&  Node[i].type == STORAGE )
         {
-            if ( !readFloat(&x, f) ) return;
+            if ( !readFloat(sp, &x, f) ) return;
             j = Node[i].subIndex;
             Storage[j].hrt = x;
         }
@@ -328,7 +328,7 @@ void readRouting()
 
         for (j = 0; j < Nobjects[POLLUT]; j++)
         {
-            if ( !readFloat(&x, f) ) return;
+            if ( !readFloat(sp, &x, f) ) return;
             Node[i].newQual[j] = x;
         }
 
@@ -337,7 +337,7 @@ void readRouting()
         {
             for (j = 0; j < Nobjects[POLLUT]; j++)
             {
-                if ( !readFloat(&x, f) ) return;
+                if ( !readFloat(sp, &x, f) ) return;
             }
         }
     }
@@ -345,11 +345,11 @@ void readRouting()
     // --- read link states
     for (i = 0; i < Nobjects[LINK]; i++)
     {
-        if ( !readFloat(&x, f) ) return;
+        if ( !readFloat(sp, &x, f) ) return;
         Link[i].newFlow = x;
-        if ( !readFloat(&x, f) ) return;
+        if ( !readFloat(sp, &x, f) ) return;
         Link[i].newDepth = x;
-        if ( !readFloat(&x, f) ) return;
+        if ( !readFloat(sp, &x, f) ) return;
         Link[i].setting = x;
 
 ////  Following code section moved to here.  ////                              //(5.1.011)
@@ -360,7 +360,7 @@ void readRouting()
 ////
         for (j = 0; j < Nobjects[POLLUT]; j++)
         {
-            if ( !readFloat(&x, f) ) return;
+            if ( !readFloat(sp, &x, f) ) return;
             Link[i].newQual[j] = x;
         }
 
@@ -439,7 +439,7 @@ void  saveRunoff(void)
 
 //=============================================================================
 
-void  readRunoff()
+void  readRunoff(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -455,18 +455,18 @@ void  readRunoff()
         // Ponded depths & runoff (4 elements)
         for (j = 0; j < 3; j++)
         {
-            if ( !readDouble(&Subcatch[i].subArea[j].depth, f) ) return;
+            if ( !readDouble(sp, &Subcatch[i].subArea[j].depth, f) ) return;
         }
-        if ( !readDouble(&Subcatch[i].newRunoff, f) ) return;                  //(5.1.008)
+        if ( !readDouble(sp, &Subcatch[i].newRunoff, f) ) return;                  //(5.1.008)
 
         // Infiltration state (max. of 6 elements)
-        for (j=0; j<6; j++) if ( !readDouble(&x[j], f) ) return;
+        for (j=0; j<6; j++) if ( !readDouble(sp, &x[j], f) ) return;
         infil_setState(i, InfilModel, x);
 
         // Groundwater state (4 elements)
         if ( Subcatch[i].groundwater != NULL )
         {
-            for (j=0; j<4; j++) if ( !readDouble(&x[j], f) ) return;
+            for (j=0; j<4; j++) if ( !readDouble(sp, &x[j], f) ) return;
             gwater_setState(i, x);
         }
 
@@ -475,7 +475,7 @@ void  readRunoff()
         {
             for (j=0; j<3; j++) 
             {
-                for (k=0; k<5; k++) if ( !readDouble(&x[k], f) ) return;       //(5.1.008)
+                for (k=0; k<5; k++) if ( !readDouble(sp, &x[k], f) ) return;       //(5.1.008)
                 snow_setState(i, j, x);
             }
         }
@@ -485,21 +485,21 @@ void  readRunoff()
         {
             // Runoff quality
             for (j=0; j<Nobjects[POLLUT]; j++)
-                if ( ! readDouble(&Subcatch[i].newQual[j], f) ) return;        //(5.1.008)
+                if ( ! readDouble(sp, &Subcatch[i].newQual[j], f) ) return;        //(5.1.008)
 
             // Ponded quality
             for (j=0; j<Nobjects[POLLUT]; j++)
-                if ( !readDouble(&Subcatch[i].pondedQual[j], f) ) return;
+                if ( !readDouble(sp, &Subcatch[i].pondedQual[j], f) ) return;
             
             // Buildup and when streets were last swept
             for (k=0; k<Nobjects[LANDUSE]; k++)
             {
                 for (j=0; j<Nobjects[POLLUT]; j++)
                 {
-                    if ( !readDouble(
+                    if ( !readDouble(sp,
                         &Subcatch[i].landFactor[k].buildup[j], f) ) return;
                 }
-                if ( !readDouble(&Subcatch[i].landFactor[k].lastSwept, f) )
+                if ( !readDouble(sp, &Subcatch[i].landFactor[k].lastSwept, f) )
                     return;
             }
         }
@@ -508,7 +508,7 @@ void  readRunoff()
 
 //=============================================================================
 
-int  readFloat(float *x, FILE* f)
+int  readFloat(SWMM_Project *sp, float *x, FILE* f)
 //
 //  Input:   none
 //  Output:  x  = pointer to a float variable
@@ -521,7 +521,7 @@ int  readFloat(float *x, FILE* f)
     // --- test if the value is NaN (not a number)
     if ( *(x) != *(x) )
     {
-        report_writeErrorMsg(ERR_HOTSTART_FILE_READ, "");
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_READ, "");
         *(x) = 0.0;
         return FALSE;
     }
@@ -530,7 +530,7 @@ int  readFloat(float *x, FILE* f)
 
 //=============================================================================
 
-int  readDouble(double* x, FILE* f)
+int  readDouble(SWMM_Project *sp, double* x, FILE* f)
 //
 //  Input:   none
 //  Output:  x  = pointer to a double variable
@@ -541,7 +541,7 @@ int  readDouble(double* x, FILE* f)
     if ( feof(f) )
     {    
         *(x) = 0.0;
-        report_writeErrorMsg(ERR_HOTSTART_FILE_READ, "");
+        report_writeErrorMsg(sp, ERR_HOTSTART_FILE_READ, "");
         return FALSE;
     }
     fread(x, sizeof(double), 1, f);

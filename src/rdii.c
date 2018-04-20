@@ -112,11 +112,11 @@ extern double Qcf[];                   // flow units conversion factors
 // --- functions used to create a RDII file
 static int    readOldUHFormat(int j, int m, char* tok[], int ntoks);
 static void   setUnitHydParams(int j, int i, int m, double x[]);
-static void   createRdiiFile(void);
+static void   createRdiiFile(SWMM_Project *sp);
 static int    getNumRdiiNodes(void);
-static void   validateRdii(void);
+static void   validateRdii(SWMM_Project *sp);
 
-static void   openRdiiProcessor(void);
+static void   openRdiiProcessor(SWMM_Project *sp);
 static int    allocRdiiMemory(void);
 static int    getRainInterval(int i);
 static int    getMaxPeriods(int i, int k);
@@ -134,14 +134,14 @@ static double getUnitHydOrd(int j, int m, int k, double t);
 
 static int    getNodeRdii(void);
 static void   saveRdiiFlows(DateTime currentDate);
-static void   closeRdiiProcessor(void);
+static void   closeRdiiProcessor(SWMM_Project *sp);
 static void   freeRdiiMemory(void);
 
 // --- functions used to read an existing RDII file
 static int   readRdiiFileHeader(void);
 static void  readRdiiFlows(void);
 
-static void  openRdiiTextFile(void);
+static void  openRdiiTextFile(SWMM_Project *sp);
 static int   readRdiiTextFileHeader(void);
 static void  readRdiiTextFlows(void);
 
@@ -404,7 +404,7 @@ void rdii_deleteRdiiInflow(int j)
 //                 Reading Inflow Data From a RDII File
 //=============================================================================
 
-void rdii_openRdii()
+void rdii_openRdii(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -420,7 +420,7 @@ void rdii_openRdii()
 
     // --- create the RDII file if existing file not being used
     if ( IgnoreRDII ) return;                                                  //(5.1.004)
-    if ( Frdii.mode != USE_FILE ) createRdiiFile();
+    if ( Frdii.mode != USE_FILE ) createRdiiFile(sp);
     if ( Frdii.mode == NO_FILE || ErrorCode ) return;
 
     // --- try to open the RDII file in binary mode
@@ -429,11 +429,11 @@ void rdii_openRdii()
     {
         if ( Frdii.mode == SCRATCH_FILE )
         {
-            report_writeErrorMsg(ERR_RDII_FILE_SCRATCH, "");
+            report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         }
         else
         {
-            report_writeErrorMsg(ERR_RDII_FILE_OPEN, Frdii.name);
+            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, Frdii.name);
         }
         return;
     }
@@ -451,13 +451,13 @@ void rdii_openRdii()
     {
         fclose(Frdii.file);
         RdiiFileType = TEXT;
-        openRdiiTextFile();
+        openRdiiTextFile(sp);
     }
 
     // --- catch any error
     if ( ErrorCode )
     {
-        report_writeErrorMsg(ErrorCode, Frdii.name);
+        report_writeErrorMsg(sp, ErrorCode, Frdii.name);
     }
 
     // --- read the first set of RDII flows form the file
@@ -466,7 +466,7 @@ void rdii_openRdii()
 
 //=============================================================================
 
-void openRdiiTextFile()
+void openRdiiTextFile(SWMM_Project *sp)
 {
     // --- try to open the RDII file in text mode
     Frdii.file = fopen(Frdii.name, "rt");
@@ -474,11 +474,11 @@ void openRdiiTextFile()
     {
         if ( Frdii.mode == SCRATCH_FILE )
         {
-            report_writeErrorMsg(ERR_RDII_FILE_SCRATCH, "");
+            report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         }
         else
         {
-            report_writeErrorMsg(ERR_RDII_FILE_OPEN, Frdii.name);
+            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, Frdii.name);
         }
         return;
     }
@@ -487,7 +487,7 @@ void openRdiiTextFile()
     ErrorCode = readRdiiTextFileHeader();
     if ( ErrorCode )
     {
-        report_writeErrorMsg(ErrorCode, Frdii.name);
+        report_writeErrorMsg(sp, ErrorCode, Frdii.name);
     }
 }
 
@@ -710,7 +710,7 @@ void readRdiiTextFlows()
 //                   Creation of a RDII Interface File
 //=============================================================================
 
-void createRdiiFile()
+void createRdiiFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -739,12 +739,12 @@ void createRdiiFile()
     else if ( Frdii.mode == NO_FILE ) Frdii.mode = SCRATCH_FILE;
 
     // --- validate RDII data
-    validateRdii();
+    validateRdii(sp);
     initGageData();
     if ( ErrorCode ) return;
 
     // --- open RDII processing system
-    openRdiiProcessor();
+    openRdiiProcessor(sp);
     if ( !ErrorCode )
     {
         // --- initialize rain gage & UH processing data
@@ -778,7 +778,7 @@ void createRdiiFile()
     }
 
     // --- close RDII processing system
-    closeRdiiProcessor();
+    closeRdiiProcessor(sp);
 }
 
 //=============================================================================
@@ -803,7 +803,7 @@ int  getNumRdiiNodes()
 
 //=============================================================================
 
-void validateRdii()
+void validateRdii(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -834,19 +834,19 @@ void validateRdii()
                 // --- can't have negative UH parameters
                 if ( UnitHyd[j].tPeak[m][k] < 0.0 )
                 {
-                    report_writeErrorMsg(ERR_UNITHYD_TIMES, UnitHyd[j].ID);
+                    report_writeErrorMsg(sp, ERR_UNITHYD_TIMES, UnitHyd[j].ID);
                 }
 
                 // --- can't have negative UH response ratio
                 if ( UnitHyd[j].r[m][k] < 0.0 )
                 {
-                    report_writeErrorMsg(ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
+                    report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
                 }
                 else rsum += UnitHyd[j].r[m][k];
             }
             if ( rsum > 1.01 )
             {
-                report_writeErrorMsg(ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
+                report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
             }
         }
     }
@@ -859,7 +859,7 @@ void validateRdii()
             // --- check that sewer area is non-negative
             if ( Node[i].rdiiInflow->area < 0.0 )
             {
-                report_writeErrorMsg(ERR_RDII_AREA, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_RDII_AREA, Node[i].ID);
             }
         }
     }
@@ -867,7 +867,7 @@ void validateRdii()
 
 //=============================================================================
 
-void openRdiiProcessor()
+void openRdiiProcessor(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -887,14 +887,14 @@ void openRdiiProcessor()
     // --- allocate memory used for RDII processing
     if ( !allocRdiiMemory() )
     {
-        report_writeErrorMsg(ERR_MEMORY, "");
+        report_writeErrorMsg(sp, ERR_MEMORY, "");
         return;
     }
 
     // --- open & initialize RDII file
     if ( !openNewRdiiFile() )
     {
-        report_writeErrorMsg(ERR_RDII_FILE_SCRATCH, "");
+        report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         return;
     }
 
@@ -1489,7 +1489,7 @@ void saveRdiiFlows(DateTime currentDate)
 
 //=============================================================================
 
-void  closeRdiiProcessor()
+void  closeRdiiProcessor(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1499,7 +1499,7 @@ void  closeRdiiProcessor()
     // --- write rainfall & RDII totals to report file
     if ( !ErrorCode )
     {
-        report_writeRdiiStats(TotalRainVol, TotalRdiiVol);
+        report_writeRdiiStats(sp, TotalRainVol, TotalRdiiVol);
     }
 
     // --- free allocated memory and close RDII file

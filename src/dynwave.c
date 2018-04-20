@@ -109,7 +109,7 @@ static double getNodeStep(double tMin, int *minNode);
 
 ////  This function was modified for release 5.1.008.  ////                    //(5.1.008)
 
-void dynwave_init()
+void dynwave_init(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -125,7 +125,7 @@ void dynwave_init()
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
     if ( Xnode == NULL )
     {
-        report_writeErrorMsg(ERR_MEMORY,
+        report_writeErrorMsg(sp, ERR_MEMORY,
             " Not enough memory for dynamic wave routing.");
         return;
     }

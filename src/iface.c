@@ -55,8 +55,8 @@ static DateTime NewIfaceDate;          // next date of interface values
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void  openFileForOutput(void);
-static void  openFileForInput(void);
+static void  openFileForOutput(SWMM_Project *sp);
+static void  openFileForInput(SWMM_Project *sp);
 static int   getIfaceFilePolluts(void);
 static int   getIfaceFileNodes(void);
 static void  setOldIfaceValues(void);
@@ -136,7 +136,7 @@ int iface_readFileParams(char* tok[], int ntoks)
 
 //=============================================================================
 
-void iface_openRoutingFiles()
+void iface_openRoutingFiles(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -156,14 +156,14 @@ void iface_openRoutingFiles()
     {
         if ( strcomp(Foutflows.name, Finflows.name) )
         {
-            report_writeErrorMsg(ERR_ROUTING_FILE_NAMES, "");
+            report_writeErrorMsg(sp, ERR_ROUTING_FILE_NAMES, "");
             return;
         }
     }
 
     // --- open the file for reading or writing
-    if ( Foutflows.mode == SAVE_FILE ) openFileForOutput();
-    if ( Finflows.mode == USE_FILE ) openFileForInput();
+    if ( Foutflows.mode == SAVE_FILE ) openFileForOutput(sp);
+    if ( Finflows.mode == USE_FILE ) openFileForInput(sp);
 }
 
 //=============================================================================
@@ -311,7 +311,7 @@ void iface_saveOutletResults(DateTime reportDate, FILE* file)
 
 //=============================================================================
 
-void openFileForOutput()
+void openFileForOutput(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -324,7 +324,7 @@ void openFileForOutput()
     Foutflows.file = fopen(Foutflows.name, "wt");
     if ( Foutflows.file == NULL )
     {
-        report_writeErrorMsg(ERR_ROUTING_FILE_OPEN, Foutflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, Foutflows.name);
         return;
     }
 
@@ -375,7 +375,7 @@ void openFileForOutput()
 
 //=============================================================================
 
-void openFileForInput()
+void openFileForInput(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -390,7 +390,7 @@ void openFileForInput()
     Finflows.file = fopen(Finflows.name, "rt");
     if ( Finflows.file == NULL )
     {
-        report_writeErrorMsg(ERR_ROUTING_FILE_OPEN, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_OPEN, Finflows.name);
         return;
     }
 
@@ -399,7 +399,7 @@ void openFileForInput()
     sscanf(line, "%s", s);
     if ( !strcomp(s, "SWMM5") )
     {
-        report_writeErrorMsg(ERR_ROUTING_FILE_FORMAT, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, Finflows.name);
         return;
     }
 
@@ -412,7 +412,7 @@ void openFileForInput()
     sscanf(line, "%d", &IfaceStep);
     if ( IfaceStep <= 0 )
     {
-        report_writeErrorMsg(ERR_ROUTING_FILE_FORMAT, Finflows.name);
+        report_writeErrorMsg(sp, ERR_ROUTING_FILE_FORMAT, Finflows.name);
         return;
     }
 
@@ -420,7 +420,7 @@ void openFileForInput()
     err = getIfaceFilePolluts();
     if ( err > 0 )
     {
-        report_writeErrorMsg(err, Finflows.name);
+        report_writeErrorMsg(sp, err, Finflows.name);
         return;
     }
 
@@ -428,7 +428,7 @@ void openFileForInput()
     err = getIfaceFileNodes();
     if ( err > 0 )
     {
-        report_writeErrorMsg(err, Finflows.name);
+        report_writeErrorMsg(sp, err, Finflows.name);
         return;
     }
 
@@ -439,7 +439,7 @@ void openFileForInput()
                                          1+NumIfacePolluts);
     if ( OldIfaceValues == NULL || NewIfaceValues == NULL )
     {
-        report_writeErrorMsg(ERR_MEMORY, "");
+        report_writeErrorMsg(sp, ERR_MEMORY, "");
         return;
     }
 

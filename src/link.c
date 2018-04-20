@@ -79,26 +79,27 @@ static const double MIN_DELTA_Z = 0.001; // minimum elevation change for conduit
 //  Local functions
 //-----------------------------------------------------------------------------
 static void   link_setParams(int j, int type, int n1, int n2, int k, double x[]);
-static void   link_convertOffsets(int j);
-static double link_getOffsetHeight(int j, double offset, double elev);
+static void   link_convertOffsets(SWMM_Project *sp, int j);
+static double link_getOffsetHeight(SWMM_Project *sp, int j, double offset,
+        double elev);
 
 static int    conduit_readParams(int j, int k, char* tok[], int ntoks);
-static void   conduit_validate(int j, int k);
+static void   conduit_validate(SWMM_Project *sp, int j, int k);
 static void   conduit_initState(int j, int k);
 static void   conduit_reverse(int j, int k);
 static double conduit_getLength(int j);
 static double conduit_getLengthFactor(int j, int k, double roughness);
-static double conduit_getSlope(int j);
+static double conduit_getSlope(SWMM_Project *sp, int j);
 static double conduit_getInflow(int j);
 static double conduit_getLossRate(int j, double q, double tstep);              //(5.1.008)
 
 static int    pump_readParams(int j, int k, char* tok[], int ntoks);
-static void   pump_validate(int j, int k);
+static void   pump_validate(SWMM_Project *sp, int j, int k);
 static void   pump_initState(int j, int k);
 static double pump_getInflow(int j);
 
 static int    orifice_readParams(int j, int k, char* tok[], int ntoks);
-static void   orifice_validate(int j, int k);
+static void   orifice_validate(SWMM_Project *sp, int j, int k);
 static void   orifice_setSetting(int j, double tstep);
 static double orifice_getWeirCoeff(int j, int k, double h);
 static double orifice_getInflow(int j);
@@ -106,7 +107,7 @@ static double orifice_getFlow(int j, int k, double head, double f,
               int hasFlapGate);
 
 static int    weir_readParams(int j, int k, char* tok[], int ntoks);
-static void   weir_validate(int j, int k);
+static void   weir_validate(SWMM_Project *sp, int j, int k);
 static void   weir_setSetting(int j);                                          //(5.1.007)
 static double weir_getInflow(int j);
 static double weir_getOpenArea(int j, double y);
@@ -370,7 +371,7 @@ void  link_setParams(int j, int type, int n1, int n2, int k, double x[])
 
 //=============================================================================
 
-void  link_validate(int j)
+void  link_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -379,13 +380,13 @@ void  link_validate(int j)
 {
     int   n;
 
-    if ( LinkOffsets == ELEV_OFFSET ) link_convertOffsets(j);
+    if ( LinkOffsets == ELEV_OFFSET ) link_convertOffsets(sp, j);
     switch ( Link[j].type )
     {
-      case CONDUIT: conduit_validate(j, Link[j].subIndex); break;
-      case PUMP:    pump_validate(j, Link[j].subIndex);    break;
-      case ORIFICE: orifice_validate(j, Link[j].subIndex); break;
-      case WEIR:    weir_validate(j, Link[j].subIndex);    break;
+      case CONDUIT: conduit_validate(sp, j, Link[j].subIndex); break;
+      case PUMP:    pump_validate(sp, j, Link[j].subIndex);    break;
+      case ORIFICE: orifice_validate(sp, j, Link[j].subIndex); break;
+      case WEIR:    weir_validate(sp, j, Link[j].subIndex);    break;
     }
 
     // --- check if crest of regulator opening < invert of downstream node
@@ -399,7 +400,7 @@ void  link_validate(int j)
           {
               Link[j].offset1 = Node[Link[j].node2].invertElev -               //(5.1.011)
                                 Node[Link[j].node1].invertElev;                //(5.1.011)
-              report_writeWarningMsg(WARN10, Link[j].ID);
+              report_writeWarningMsg(sp, WARN10, Link[j].ID);
           }
     }    
 
@@ -430,7 +431,7 @@ void  link_validate(int j)
 
 //=============================================================================
 
-void link_convertOffsets(int j)
+void link_convertOffsets(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -440,18 +441,18 @@ void link_convertOffsets(int j)
     double elev;
 
     elev = Node[Link[j].node1].invertElev;
-    Link[j].offset1 = link_getOffsetHeight(j, Link[j].offset1, elev);
+    Link[j].offset1 = link_getOffsetHeight(sp, j, Link[j].offset1, elev);
     if ( Link[j].type == CONDUIT )
     {
         elev = Node[Link[j].node2].invertElev;
-        Link[j].offset2 = link_getOffsetHeight(j, Link[j].offset2, elev);
+        Link[j].offset2 = link_getOffsetHeight(sp, j, Link[j].offset2, elev);
     }
     else Link[j].offset2 = Link[j].offset1;
 }
 
 //=============================================================================
 
-double link_getOffsetHeight(int j, double offset, double elev)
+double link_getOffsetHeight(SWMM_Project *sp, int j, double offset, double elev)
 //
 //  Input:   j = link index
 //           offset = link elevation offset (ft)
@@ -464,7 +465,7 @@ double link_getOffsetHeight(int j, double offset, double elev)
     offset -= elev;
     if ( offset >= 0.0 ) return offset;
     if ( offset >= -MIN_DELTA_Z ) return 0.0;
-    report_writeWarningMsg(WARN03, Link[j].ID);
+    report_writeWarningMsg(sp, WARN03, Link[j].ID);
     return 0.0;
 }
 
@@ -956,7 +957,7 @@ int  conduit_readParams(int j, int k, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  conduit_validate(int j, int k)
+void  conduit_validate(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = conduit index
@@ -972,7 +973,7 @@ void  conduit_validate(int j, int k)
     {
         if ( Node[Link[j].node1].type == STORAGE )
         {
-            report_writeErrorMsg(ERR_DUMMY_LINK, Node[Link[j].node1].ID);
+            report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[Link[j].node1].ID);
             return;
         }
     }
@@ -993,36 +994,36 @@ void  conduit_validate(int j, int k)
     {
         if ( ForceMainEqn == D_W ) Link[j].xsect.rBot /= UCF(RAINDEPTH);
         if ( Link[j].xsect.rBot <= 0.0 )
-            report_writeErrorMsg(ERR_XSECT, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_XSECT, Link[j].ID);
     }
 
     // --- check for valid length & roughness
     if ( Conduit[k].length <= 0.0 )
-        report_writeErrorMsg(ERR_LENGTH, Link[j].ID);
+        report_writeErrorMsg(sp, ERR_LENGTH, Link[j].ID);
     if ( Conduit[k].roughness <= 0.0 )
-        report_writeErrorMsg(ERR_ROUGHNESS, Link[j].ID);
+        report_writeErrorMsg(sp, ERR_ROUGHNESS, Link[j].ID);
     if ( Conduit[k].barrels <= 0 )
-        report_writeErrorMsg(ERR_BARRELS, Link[j].ID);
+        report_writeErrorMsg(sp, ERR_BARRELS, Link[j].ID);
 
     // --- check for valid xsection
     if ( Link[j].xsect.type != DUMMY )
     {
         if ( Link[j].xsect.type < 0 )
-            report_writeErrorMsg(ERR_NO_XSECT, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_NO_XSECT, Link[j].ID);
         else if ( Link[j].xsect.aFull <= 0.0 )
-            report_writeErrorMsg(ERR_XSECT, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_XSECT, Link[j].ID);
     }
     if ( ErrorCode ) return;
 
     // --- check for negative offsets
     if ( Link[j].offset1 < 0.0 )
     {
-        report_writeWarningMsg(WARN03, Link[j].ID);
+        report_writeWarningMsg(sp, WARN03, Link[j].ID);
         Link[j].offset1 = 0.0;
     }
 	if ( Link[j].offset2 < 0.0 )
     {
-        report_writeWarningMsg(WARN03, Link[j].ID);
+        report_writeWarningMsg(sp, WARN03, Link[j].ID);
         Link[j].offset2 = 0.0;
     }
 
@@ -1034,7 +1035,7 @@ void  conduit_validate(int j, int k)
     }
 
     // --- compute conduit slope
-    slope = conduit_getSlope(j);
+    slope = conduit_getSlope(sp, j);
     Conduit[k].slope = slope;
 
     // --- reverse orientation of conduit if using dynamic wave routing
@@ -1215,7 +1216,7 @@ double conduit_getLengthFactor(int j, int k, double roughness)
 
 //=============================================================================
 
-double conduit_getSlope(int j)
+double conduit_getSlope(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns conduit slope
@@ -1231,14 +1232,14 @@ double conduit_getSlope(int j)
     delta = fabs(elev1 - elev2);
     if ( delta < MIN_DELTA_Z )
     {
-        report_writeWarningMsg(WARN04, Link[j].ID);
+        report_writeWarningMsg(sp, WARN04, Link[j].ID);
         delta = MIN_DELTA_Z;
     }
 
     // --- elevation drop cannot exceed conduit length
     if ( delta >= length )
     {
-        report_writeWarningMsg(WARN08, Link[j].ID);
+        report_writeWarningMsg(sp, WARN08, Link[j].ID);
         slope = delta / length;
     }
 
@@ -1248,7 +1249,7 @@ double conduit_getSlope(int j)
     // -- check that slope exceeds minimum allowable slope
     if ( MinSlope > 0.0 && slope < MinSlope )
     {
-        report_writeWarningMsg(WARN05, Link[j].ID);
+        report_writeWarningMsg(sp, WARN05, Link[j].ID);
         slope = MinSlope;
         // keep min. slope positive for SF or KW routing
         if (RouteModel == SF || RouteModel == KW) return slope;
@@ -1435,7 +1436,7 @@ int  pump_readParams(int j, int k, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  pump_validate(int j, int k)
+void  pump_validate(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = pump index
@@ -1458,7 +1459,7 @@ void  pump_validate(int j, int k)
     {
         if ( Curve[m].curveType < PUMP1_CURVE ||
              Curve[m].curveType > PUMP4_CURVE )
-            report_writeErrorMsg(ERR_NO_CURVE, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_NO_CURVE, Link[j].ID);
 
         // --- store pump curve type with pump's parameters
         else
@@ -1481,7 +1482,7 @@ void  pump_validate(int j, int k)
 
     // --- check that shutoff depth < startup depth
     if ( Pump[k].yOn > 0.0 && Pump[k].yOn <= Pump[k].yOff )
-        report_writeErrorMsg(ERR_PUMP_LIMITS, Link[j].ID);
+        report_writeErrorMsg(sp, ERR_PUMP_LIMITS, Link[j].ID);
 
     // --- assign wet well volume to inlet node of Type 1 pump
     if ( Pump[k].type == TYPE1_PUMP )
@@ -1658,7 +1659,7 @@ int  orifice_readParams(int j, int k, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  orifice_validate(int j, int k)
+void  orifice_validate(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = orifice index
@@ -1673,7 +1674,7 @@ void  orifice_validate(int j, int k)
     &&   Link[j].xsect.type != CIRCULAR ) err = ERR_REGULATOR_SHAPE;
     if ( err > 0 )
     {
-        report_writeErrorMsg(err, Link[j].ID);
+        report_writeErrorMsg(sp, err, Link[j].ID);
         return;
     }
 
@@ -2061,7 +2062,7 @@ int   weir_readParams(int j, int k, char* tok[], int ntoks)
 
 //=============================================================================
 
-void  weir_validate(int j, int k)
+void  weir_validate(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = weir index
@@ -2100,7 +2101,7 @@ void  weir_validate(int j, int k)
     }
     if ( err > 0 )
     {
-        report_writeErrorMsg(err, Link[j].ID);
+        report_writeErrorMsg(sp, err, Link[j].ID);
         return;
     }
 
