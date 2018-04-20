@@ -122,7 +122,7 @@ static int    getRainInterval(int i);
 static int    getMaxPeriods(int i, int k);
 static void   initGageData(SWMM_Project *sp);
 static void   initUnitHydData(void);
-static int    openNewRdiiFile(void);
+static int    openNewRdiiFile(SWMM_Project *sp);
 static void   getRainfall(SWMM_Project *sp, DateTime currentDate);
 
 static double applyIA(int j, int k, DateTime aDate, double dt,
@@ -133,17 +133,17 @@ static double getUnitHydConvol(int j, int k, int gageInterval);
 static double getUnitHydOrd(int j, int m, int k, double t);
 
 static int    getNodeRdii(void);
-static void   saveRdiiFlows(DateTime currentDate);
+static void   saveRdiiFlows(SWMM_Project *sp, DateTime currentDate);
 static void   closeRdiiProcessor(SWMM_Project *sp);
 static void   freeRdiiMemory(void);
 
 // --- functions used to read an existing RDII file
-static int   readRdiiFileHeader(void);
-static void  readRdiiFlows(void);
+static int   readRdiiFileHeader(SWMM_Project *sp);
+static void  readRdiiFlows(SWMM_Project *sp);
 
 static void  openRdiiTextFile(SWMM_Project *sp);
-static int   readRdiiTextFileHeader(void);
-static void  readRdiiTextFlows(void);
+static int   readRdiiTextFileHeader(SWMM_Project *sp);
+static void  readRdiiTextFlows(SWMM_Project *sp);
 
 //=============================================================================
 //                   Management of RDII-Related Data
@@ -420,36 +420,36 @@ void rdii_openRdii(SWMM_Project *sp)
 
     // --- create the RDII file if existing file not being used
     if ( IgnoreRDII ) return;                                                  //(5.1.004)
-    if ( Frdii.mode != USE_FILE ) createRdiiFile(sp);
-    if ( Frdii.mode == NO_FILE || ErrorCode ) return;
+    if ( sp->Frdii.mode != USE_FILE ) createRdiiFile(sp);
+    if ( sp->Frdii.mode == NO_FILE || ErrorCode ) return;
 
     // --- try to open the RDII file in binary mode
-    Frdii.file = fopen(Frdii.name, "rb");
-    if ( Frdii.file == NULL)
+    sp->Frdii.file = fopen(sp->Frdii.name, "rb");
+    if ( sp->Frdii.file == NULL)
     {
-        if ( Frdii.mode == SCRATCH_FILE )
+        if ( sp->Frdii.mode == SCRATCH_FILE )
         {
             report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         }
         else
         {
-            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, Frdii.name);
+            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, sp->Frdii.name);
         }
         return;
     }
 
     // --- check for valid file stamp
-    fread(fStamp, sizeof(char), strlen(FileStamp), Frdii.file);
+    fread(fStamp, sizeof(char), strlen(FileStamp), sp->Frdii.file);
     if ( strcmp(fStamp, FileStamp) == 0 )
     {
         RdiiFileType = BINARY;
-        ErrorCode = readRdiiFileHeader();
+        ErrorCode = readRdiiFileHeader(sp);
     }
 
     // --- if stamp invalid try to open the file in text mode
     else
     {
-        fclose(Frdii.file);
+        fclose(sp->Frdii.file);
         RdiiFileType = TEXT;
         openRdiiTextFile(sp);
     }
@@ -457,11 +457,11 @@ void rdii_openRdii(SWMM_Project *sp)
     // --- catch any error
     if ( ErrorCode )
     {
-        report_writeErrorMsg(sp, ErrorCode, Frdii.name);
+        report_writeErrorMsg(sp, ErrorCode, sp->Frdii.name);
     }
 
     // --- read the first set of RDII flows form the file
-    else readRdiiFlows();
+    else readRdiiFlows(sp);
 }
 
 //=============================================================================
@@ -469,46 +469,46 @@ void rdii_openRdii(SWMM_Project *sp)
 void openRdiiTextFile(SWMM_Project *sp)
 {
     // --- try to open the RDII file in text mode
-    Frdii.file = fopen(Frdii.name, "rt");
-    if ( Frdii.file == NULL)
+    sp->Frdii.file = fopen(sp->Frdii.name, "rt");
+    if ( sp->Frdii.file == NULL)
     {
-        if ( Frdii.mode == SCRATCH_FILE )
+        if ( sp->Frdii.mode == SCRATCH_FILE )
         {
             report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         }
         else
         {
-            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, Frdii.name);
+            report_writeErrorMsg(sp, ERR_RDII_FILE_OPEN, sp->Frdii.name);
         }
         return;
     }
 
     // --- read header records from file
-    ErrorCode = readRdiiTextFileHeader();
+    ErrorCode = readRdiiTextFileHeader(sp);
     if ( ErrorCode )
     {
-        report_writeErrorMsg(sp, ErrorCode, Frdii.name);
+        report_writeErrorMsg(sp, ErrorCode, sp->Frdii.name);
     }
 }
 
 //=============================================================================
 
-void rdii_closeRdii()
+void rdii_closeRdii(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: closes the RDII interface file.
 //
 {
-    if ( Frdii.file ) fclose(Frdii.file);
-    if ( Frdii.mode == SCRATCH_FILE ) remove(Frdii.name);
+    if ( sp->Frdii.file ) fclose(sp->Frdii.file);
+    if ( sp->Frdii.mode == SCRATCH_FILE ) remove(sp->Frdii.name);
     FREE(RdiiNodeIndex);
     FREE(RdiiNodeFlow);
 }
 
 //=============================================================================
 
-int rdii_getNumRdiiFlows(DateTime aDate)
+int rdii_getNumRdiiFlows(SWMM_Project *sp, DateTime aDate)
 //
 //  Input:   aDate = current date/time
 //  Output:  returns 0 if no RDII flow or number of nodes with RDII inflows
@@ -517,10 +517,10 @@ int rdii_getNumRdiiFlows(DateTime aDate)
 {
     // --- default result is 0 indicating no RDII inflow at specified date
     if ( NumRdiiNodes == 0 ) return 0;
-    if ( !Frdii.file ) return 0;
+    if ( !sp->Frdii.file ) return 0;
 
     // --- keep reading RDII file as need be
-    while ( !feof(Frdii.file) )
+    while ( !feof(sp->Frdii.file) )
     {
         // --- return if date of current RDII inflow not reached yet
         if ( RdiiStartDate == NO_DATE ) return 0;
@@ -531,7 +531,7 @@ int rdii_getNumRdiiFlows(DateTime aDate)
         if ( aDate < RdiiEndDate ) return NumRdiiNodes;
 
         // --- otherwise get next date and RDII flow values from file
-        else readRdiiFlows();
+        else readRdiiFlows(sp);
     }
     return 0;
 }
@@ -556,7 +556,7 @@ void rdii_getRdiiFlow(int i, int* j, double* q)
 
 //=============================================================================
 
-int readRdiiFileHeader()
+int readRdiiFileHeader(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -566,9 +566,9 @@ int readRdiiFileHeader()
     int i, j;
 
     // --- extract time step and number of RDII nodes
-    fread(&RdiiStep, sizeof(INT4), 1, Frdii.file);
+    fread(&RdiiStep, sizeof(INT4), 1, sp->Frdii.file);
     if ( RdiiStep <= 0 ) return ERR_RDII_FILE_FORMAT;
-    fread(&NumRdiiNodes, sizeof(INT4), 1, Frdii.file);
+    fread(&NumRdiiNodes, sizeof(INT4), 1, sp->Frdii.file);
     if ( NumRdiiNodes <= 0 ) return ERR_RDII_FILE_FORMAT;
 
     // --- allocate memory for RdiiNodeIndex & RdiiNodeFlow arrays
@@ -578,20 +578,20 @@ int readRdiiFileHeader()
     if ( !RdiiNodeFlow ) return ERR_MEMORY;
 
     // --- read indexes of RDII nodes
-    if ( feof(Frdii.file) ) return ERR_RDII_FILE_FORMAT;
-    fread(RdiiNodeIndex, sizeof(INT4), NumRdiiNodes, Frdii.file);
+    if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
+    fread(RdiiNodeIndex, sizeof(INT4), NumRdiiNodes, sp->Frdii.file);
     for ( i=0; i<NumRdiiNodes; i++ )
     {
         j = RdiiNodeIndex[i];
         if ( Node[j].rdiiInflow == NULL ) return ERR_RDII_FILE_FORMAT;
     }
-    if ( feof(Frdii.file) ) return ERR_RDII_FILE_FORMAT;
+    if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
     return 0;
 }
 
 //=============================================================================
 
-int readRdiiTextFileHeader()
+int readRdiiTextFileHeader(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns error code
@@ -604,30 +604,30 @@ int readRdiiTextFileHeader()
     char  s2[MAXLINE+1];
 
     // --- check for correct file type
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
     sscanf(line, "%s", s1);
     if ( strcmp(s1, "SWMM5") != 0 ) return ERR_RDII_FILE_FORMAT;
 
     // --- skip title line
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
 
     // --- read RDII UH time step interval (sec)
     RdiiStep = 0;
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
     sscanf(line, "%d", &RdiiStep);
     if ( RdiiStep <= 0 ) return ERR_RDII_FILE_FORMAT;
 
     // --- skip over line with number of constituents (= 1 for RDII)
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
 
     // --- read flow units
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
     sscanf(line, "%s %s", s1, s2);
     RdiiFlowUnits = findmatch(s2, FlowUnitWords);
     if ( RdiiFlowUnits < 0 ) return ERR_RDII_FILE_FORMAT;
 
     // --- read number of RDII nodes
-    fgets(line, MAXLINE, Frdii.file);
+    fgets(line, MAXLINE, sp->Frdii.file);
     if ( sscanf(line, "%d", &NumRdiiNodes) < 1 ) return ERR_RDII_FILE_FORMAT;
 
     // --- allocate memory for RdiiNodeIndex & RdiiNodeFlow arrays
@@ -639,36 +639,36 @@ int readRdiiTextFileHeader()
     // --- read names of RDII nodes from file & save their indexes
     for ( i=0; i<NumRdiiNodes; i++ )
     {
-        if ( feof(Frdii.file) ) return ERR_RDII_FILE_FORMAT;
-        fgets(line, MAXLINE, Frdii.file);
+        if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
+        fgets(line, MAXLINE, sp->Frdii.file);
         sscanf(line, "%s", s1);
         RdiiNodeIndex[i] = project_findObject(NODE, s1);
     }
 
     // --- skip column heading line
-    if ( feof(Frdii.file) ) return ERR_RDII_FILE_FORMAT;
-    fgets(line, MAXLINE, Frdii.file);
+    if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
+    fgets(line, MAXLINE, sp->Frdii.file);
     return 0;
 }
 
 //=============================================================================
 
-void readRdiiFlows()
+void readRdiiFlows(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: reads date and flow values of next RDII inflows from RDII file.
 //
 {
-    if ( RdiiFileType == TEXT ) readRdiiTextFlows();
+    if ( RdiiFileType == TEXT ) readRdiiTextFlows(sp);
     else
     {
         RdiiStartDate = NO_DATE;
         RdiiEndDate = NO_DATE;
-        if ( feof(Frdii.file) ) return;
-        fread(&RdiiStartDate, sizeof(DateTime), 1, Frdii.file);
+        if ( feof(sp->Frdii.file) ) return;
+        fread(&RdiiStartDate, sizeof(DateTime), 1, sp->Frdii.file);
         if ( RdiiStartDate == NO_DATE ) return;
-        if ( fread(RdiiNodeFlow, sizeof(REAL4), NumRdiiNodes, Frdii.file)      //(5.1.003)
+        if ( fread(RdiiNodeFlow, sizeof(REAL4), NumRdiiNodes, sp->Frdii.file)      //(5.1.003)
             < (size_t)NumRdiiNodes ) RdiiStartDate = NO_DATE;
         else RdiiEndDate = datetime_addSeconds(RdiiStartDate, RdiiStep);
     }
@@ -676,7 +676,7 @@ void readRdiiFlows()
 
 //=============================================================================
 
-void readRdiiTextFlows()
+void readRdiiTextFlows(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -693,8 +693,8 @@ void readRdiiTextFlows()
     RdiiStartDate = NO_DATE;
     for (i=0; i<NumRdiiNodes; i++)
     {
-        if ( feof(Frdii.file) ) return;
-        fgets(line, MAXLINE, Frdii.file);
+        if ( feof(sp->Frdii.file) ) return;
+        fgets(line, MAXLINE, sp->Frdii.file);
         n = sscanf(line, "%s %d %d %d %d %d %d %f",
             s, &yr, &mon, &day, &hr, &min, &sec, &x);
         if ( n < 8 ) return;
@@ -731,12 +731,12 @@ void createRdiiFile(SWMM_Project *sp)
     // --- if no RDII nodes then re-set RDII file usage to NO_FILE
     if ( NumRdiiNodes == 0 )
     {
-        Frdii.mode = NO_FILE;
+        sp->Frdii.mode = NO_FILE;
         return;
     }
 
     // --- otherwise set file usage to SCRATCH if originally set to NO_FILE
-    else if ( Frdii.mode == NO_FILE ) Frdii.mode = SCRATCH_FILE;
+    else if ( sp->Frdii.mode == NO_FILE ) sp->Frdii.mode = SCRATCH_FILE;
 
     // --- validate RDII data
     validateRdii(sp);
@@ -770,7 +770,7 @@ void createRdiiFile(SWMM_Project *sp)
             hasRdii = getNodeRdii();
 
             // --- save RDII at all nodes to file for current date
-            if ( hasRdii ) saveRdiiFlows(currentDate);
+            if ( hasRdii ) saveRdiiFlows(sp, currentDate);
 
             // --- advance one time step
             elapsedTime += RdiiStep;
@@ -892,7 +892,7 @@ void openRdiiProcessor(SWMM_Project *sp)
     }
 
     // --- open & initialize RDII file
-    if ( !openNewRdiiFile() )
+    if ( !openNewRdiiFile(sp) )
     {
         report_writeErrorMsg(sp, ERR_RDII_FILE_SCRATCH, "");
         return;
@@ -1121,7 +1121,7 @@ void initUnitHydData()
 
 //=============================================================================
 
-int openNewRdiiFile()
+int openNewRdiiFile(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns TRUE if successful, FALSE if not
@@ -1131,25 +1131,25 @@ int openNewRdiiFile()
     int j;                             // node index
 
     // --- create a temporary file name if scratch file being used
-    if ( Frdii.mode == SCRATCH_FILE ) getTempFileName(Frdii.name);
+    if ( sp->Frdii.mode == SCRATCH_FILE ) getTempFileName(sp->Frdii.name);
 
     // --- open the RDII file as a formatted text file
-    Frdii.file = fopen(Frdii.name, "w+b");
-    if ( Frdii.file == NULL )
+    sp->Frdii.file = fopen(sp->Frdii.name, "w+b");
+    if ( sp->Frdii.file == NULL )
     {
         return FALSE;
     }
 
     // --- write file stamp to RDII file
-    fwrite(FileStamp, sizeof(char), strlen(FileStamp), Frdii.file);
+    fwrite(FileStamp, sizeof(char), strlen(FileStamp), sp->Frdii.file);
 
     // --- initialize the contents of the file with RDII time step (sec),
     //     number of RDII nodes, and index of each node
-    fwrite(&RdiiStep, sizeof(INT4), 1, Frdii.file);
-    fwrite(&NumRdiiNodes, sizeof(INT4), 1, Frdii.file);
+    fwrite(&RdiiStep, sizeof(INT4), 1, sp->Frdii.file);
+    fwrite(&NumRdiiNodes, sizeof(INT4), 1, sp->Frdii.file);
     for (j=0; j<Nobjects[NODE]; j++)
     {
-        if ( Node[j].rdiiInflow ) fwrite(&j, sizeof(INT4), 1, Frdii.file);
+        if ( Node[j].rdiiInflow ) fwrite(&j, sizeof(INT4), 1, sp->Frdii.file);
     }
     return TRUE;
 }
@@ -1476,15 +1476,15 @@ int getNodeRdii()
 
 //=============================================================================
 
-void saveRdiiFlows(DateTime currentDate)
+void saveRdiiFlows(SWMM_Project *sp, DateTime currentDate)
 //
 //  Input:   currentDate = current calendar date/time
 //  Output:  none
 //  Purpose: saves current set of RDII inflows in current flow units to file.
 //
 {
-    fwrite(&currentDate, sizeof(DateTime), 1, Frdii.file);
-    fwrite(RdiiNodeFlow, sizeof(REAL4), NumRdiiNodes, Frdii.file);             //(5.1.003)
+    fwrite(&currentDate, sizeof(DateTime), 1, sp->Frdii.file);
+    fwrite(RdiiNodeFlow, sizeof(REAL4), NumRdiiNodes, sp->Frdii.file);             //(5.1.003)
 }
 
 //=============================================================================
@@ -1504,7 +1504,7 @@ void  closeRdiiProcessor(SWMM_Project *sp)
 
     // --- free allocated memory and close RDII file
     freeRdiiMemory();
-    if ( Frdii.file ) fclose(Frdii.file);
+    if ( sp->Frdii.file ) fclose(sp->Frdii.file);
 }
 
 //=============================================================================

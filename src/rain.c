@@ -194,7 +194,7 @@ void rain_close(SWMM_Project *sp)
         if ( sp->Frain.mode == SCRATCH_FILE ) remove(sp->Frain.name);
     }
     sp->Frain.file = NULL;
-    rdii_closeRdii();
+    rdii_closeRdii(sp);
 }
 
 //=============================================================================

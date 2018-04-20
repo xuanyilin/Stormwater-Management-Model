@@ -222,8 +222,8 @@ void    rdii_deleteRdiiInflow(int node);
 void    rdii_initUnitHyd(int unitHyd);
 int     rdii_readUnitHydParams(char* tok[], int ntoks);
 void    rdii_openRdii(SWMM_Project *sp);
-void    rdii_closeRdii(void);
-int     rdii_getNumRdiiFlows(DateTime aDate);
+void    rdii_closeRdii(SWMM_Project *sp);
+int     rdii_getNumRdiiFlows(SWMM_Project *sp, DateTime aDate);
 void    rdii_getRdiiFlow(int index, int* node, double* q);
 
 //-----------------------------------------------------------------------------

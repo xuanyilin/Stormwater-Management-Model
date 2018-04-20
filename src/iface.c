@@ -115,8 +115,8 @@ int iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks)
         break;
 
       case RDII_FILE:
-        Frdii.mode = k;
-        sstrncpy(Frdii.name, tok[2], MAXFNAME);
+        sp->Frdii.mode = k;
+        sstrncpy(sp->Frdii.name, tok[2], MAXFNAME);
         break;
 
       case INFLOWS_FILE:

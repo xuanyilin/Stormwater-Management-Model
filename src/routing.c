@@ -69,7 +69,7 @@ static void addExternalInflows(DateTime currentDate);
 static void addDryWeatherInflows(DateTime currentDate);
 static void addWetWeatherInflows(double routingTime);
 static void addGroundwaterInflows(double routingTime);
-static void addRdiiInflows(DateTime currentDate);
+static void addRdiiInflows(SWMM_Project *sp, DateTime currentDate);
 static void addIfaceInflows(DateTime currentDate);
 static void addLidDrainInflows(double routingTime);                            //(5.1.008)
 static void removeStorageLosses(double tStep);
@@ -273,7 +273,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         addWetWeatherInflows(OldRoutingTime);
         addGroundwaterInflows(OldRoutingTime);
         addLidDrainInflows(OldRoutingTime);
-        addRdiiInflows(currentDate);
+        addRdiiInflows(sp, currentDate);
         addIfaceInflows(currentDate);
 
         // --- check if can skip steady state periods based on flows
@@ -592,7 +592,7 @@ void addLidDrainInflows(double routingTime)
 
 //=============================================================================
 
-void addRdiiInflows(DateTime currentDate)
+void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
 //
 //  Input:   currentDate = current date/time
 //  Output:  none
@@ -604,7 +604,7 @@ void addRdiiInflows(DateTime currentDate)
     int    numRdiiNodes;
 
     // --- see if any nodes have RDII at current date
-    numRdiiNodes = rdii_getNumRdiiFlows(currentDate);
+    numRdiiNodes = rdii_getNumRdiiFlows(sp, currentDate);
 
     // --- add RDII flow to each node's lateral inflow
     for (i=0; i<numRdiiNodes; i++)

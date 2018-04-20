@@ -1101,8 +1101,8 @@ struct SWMM_Project {
                  Frpt,                     // Report file
                  Fclimate,                 // Climate file
                  Frain,                    // Rainfall file
-                 Frunoff;                  // Runoff file
-//                      Frdii,                    // RDII inflow file
+                 Frunoff,                  // Runoff file
+                 Frdii;                    // RDII inflow file
 //                      Fhotstart1,               // Hot start input file
 //                      Fhotstart2,               // Hot start output file
 //                      Finflows,                 // Inflows routing file
