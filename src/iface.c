@@ -330,7 +330,7 @@ void openFileForOutput(SWMM_Project *sp)
 
     // --- write title & reporting time step to file
     fprintf(sp->Foutflows.file, "SWMM5 Interface File");
-    fprintf(sp->Foutflows.file, "\n%s", Title[0]);
+    fprintf(sp->Foutflows.file, "\n%s", sp->Title[0]);
     fprintf(sp->Foutflows.file, "\n%-4d - reporting time step in sec", ReportStep);
 
     // --- write number & names of each constituent (including flow) to file

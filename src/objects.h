@@ -1113,12 +1113,12 @@ struct SWMM_Project {
                  Nperiods,                 // Number of reporting periods
                  StepCount,                // Number of routing steps used
                  NonConvergeCount;         // Number of non-converging steps
-//
-//    EXTERN char
-//                      Msg[MAXMSG+1],            // Text of output message
-//                      ErrorMsg[MAXMSG+1],       // Text of error message           //(5.1.011)
-//                      Title[MAXTITLE][MAXMSG+1],// Project title
-//                      TempDir[MAXFNAME+1];      // Temporary file directory
+
+   char
+                 Msg[MAXMSG+1],            // Text of output message
+                 ErrorMsg[MAXMSG+1],       // Text of error message           //(5.1.011)
+                 Title[MAXTITLE][MAXMSG+1],// Project title
+                 TempDir[MAXFNAME+1];      // Temporary file directory
 //
 //    EXTERN TRptFlags
 //                      RptFlags;                 // Reporting options

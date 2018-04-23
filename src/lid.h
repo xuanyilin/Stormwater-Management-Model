@@ -191,7 +191,7 @@ int      lid_readProcParams(char* tok[], int ntoks);
 int      lid_readGroupParams(char* tok[], int ntoks);
 
 void     lid_validate(SWMM_Project *sp);
-void     lid_initState(void);
+void     lid_initState(SWMM_Project *sp);
 void     lid_setOldGroupState(int subcatch);                                   //(5.1.008)
 
 double   lid_getPervArea(int subcatch);

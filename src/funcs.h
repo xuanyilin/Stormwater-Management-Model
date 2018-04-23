@@ -58,11 +58,11 @@
 #include "swmm5.h"
 #include "toolkitAPI.h"
 
-void     project_open(SWMM_Project *p, char *f1, char *f2, char *f3);
+void     project_open(SWMM_Project *sp, char *f1, char *f2, char *f3);
 void     project_close(void);
 
-void     project_readInput(SWMM_Project *);
-int      project_readOption(char* s1, char* s2);
+void     project_readInput(SWMM_Project *sp);
+int      project_readOption(SWMM_Project *sp, char* s1, char* s2);
 void     project_validate(SWMM_Project *sp);
 int      project_init(SWMM_Project *sp);
 
@@ -554,7 +554,7 @@ double   UCF(int quantity);                   // units conversion factor
 int      getInt(char *s, int *y);             // get integer from string
 int      getFloat(char *s, float *y);         // get float from string
 int      getDouble(char *s, double *y);       // get double from string
-char*    getTempFileName(char *s);            // get temporary file name
+char*    getTempFileName(SWMM_Project *sp, char *s); // get temporary file name
 int      findmatch(char *s, char *keyword[]); // search for matching keyword
 int      match(char *str, char *substr);      // true if substr matches part of str
 int      strcomp(char *s1, char *s2);         // case insensitive string compare

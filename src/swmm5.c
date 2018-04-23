@@ -204,6 +204,7 @@ int  main(int argc, char *argv[])
     char *binaryFile;
     char *arg1;
     char blank[] = "";
+    char msg[MAXMSG+1];
     char SEMVERSION[SEMVERSION_LEN];
     time_t start;
     double runTime;
@@ -235,8 +236,8 @@ int  main(int argc, char *argv[])
 			writecon("COMMANDS:\n");
 			writecon("\t--help (-h)       Help Docs\n");
 			writecon("\t--version (-v)    Build Version\n");
-			sprintf(Msg, "\nRUNNING A SIMULATION:\n%s\n\n\n", FMT01);
-			writecon(Msg);
+			sprintf(msg, "\nRUNNING A SIMULATION:\n%s\n\n\n", FMT01);
+			writecon(msg);
 		}
 		else if (strcmp(arg1, "--version") == 0 || strcmp(arg1, "-v") == 0)
 		{
@@ -256,16 +257,16 @@ int  main(int argc, char *argv[])
         if (argc > 3) binaryFile = argv[3];
         else          binaryFile = blank;
         
-		sprintf(Msg, "\n... EPA-SWMM 5.1 (Build %s)\n", SEMVERSION);
-		writecon(Msg);
+		sprintf(msg, "\n... EPA-SWMM 5.1 (Build %s)\n", SEMVERSION);
+		writecon(msg);
 
         // --- run SWMM
         swmm_run(inputFile, reportFile, binaryFile);
 
         // Display closing status on console
         runTime = difftime(time(0), start);
-        sprintf(Msg, "\n\n... EPA-SWMM completed in %.2f seconds.", runTime);
-        writecon(Msg);
+        sprintf(msg, "\n\n... EPA-SWMM completed in %.2f seconds.", runTime);
+        writecon(msg);
         if      ( ErrorCode   ) writecon(FMT03);
         else if ( Warnings    ) writecon(FMT04);                               //(5.1.011)
         else                    writecon(FMT05);
@@ -355,9 +356,9 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
                     theDay = (long)elapsedTime;
                     theHour = (long)((elapsedTime - floor(elapsedTime)) * 24.0);
                     writecon("\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                    //sprintf(Msg, "%-5d hour: %-2d", theDay, theHour);
-					sprintf(Msg, "%-5ld hour: %-2ld", theDay, theHour);
-                    writecon(Msg);
+                    //sprintf(sp->Msg, "%-5d hour: %-2d", theDay, theHour);
+					sprintf(_defaultProject->Msg, "%-5ld hour: %-2ld", theDay, theHour);
+                    writecon(_defaultProject->Msg);
                     oldHour = newHour;
                 }
             } while ( elapsedTime > 0.0 && !ErrorCode );
@@ -412,7 +413,7 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
         // --- initialize error & warning codes
         datetime_setDateFormat(M_D_Y);
         ErrorCode = 0;
-        strcpy(ErrorMsg, "");
+        strcpy(sp->ErrorMsg, "");
         Warnings = 0;
         IsOpenFlag = FALSE;
         IsStartedFlag = FALSE;
@@ -848,8 +849,12 @@ int DLLEXPORT swmm_getWarnings(void)
 //=============================================================================
 
 ////  New function added to release 5.1.011.  ////                             //(5.1.011)
+int  DLLEXPORT swmm_getError( char* errMsg, int msgLen) {
 
-int  DLLEXPORT swmm_getError(char* errMsg, int msgLen)
+    return swmm_getError_project(_defaultProject, errMsg, msgLen);
+}
+
+int  DLLEXPORT swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen)
 //
 //  Input:   errMsg = character array to hold error message text
 //           msgLen = maximum size of errMsg
@@ -860,11 +865,11 @@ int  DLLEXPORT swmm_getError(char* errMsg, int msgLen)
     size_t errMsgLen = msgLen;
 
     // --- copy text of last error message into errMsg
-    if ( ErrorCode > 0 && strlen(ErrorMsg) == 0 ) sstrncpy(errMsg, "", 1);
+    if ( ErrorCode > 0 && strlen(sp->ErrorMsg) == 0 ) sstrncpy(errMsg, "", 1);
     else
     {
-	    errMsgLen = MIN(errMsgLen, strlen(ErrorMsg));
-	    errMsg = sstrncpy(errMsg, ErrorMsg, errMsgLen);
+	    errMsgLen = MIN(errMsgLen, strlen(sp->ErrorMsg));
+	    errMsg = sstrncpy(errMsg, sp->ErrorMsg, errMsgLen);
     }
 
     // --- remove leading line feed from errMsg
@@ -924,7 +929,7 @@ int  strcomp(char *s1, char *s2)
 
 //=============================================================================
 
-char* getTempFileName(char* fname)
+char* getTempFileName(SWMM_Project *sp, char* fname)
 //
 //  Input:   fname = file name string (with max size of MAXFNAME)
 //  Output:  returns pointer to file name
@@ -938,10 +943,10 @@ char* getTempFileName(char* fname)
     char* dir = NULL;
 
     // --- set dir to user's choice of a temporary directory
-    if (strlen(TempDir) > 0)
+    if (strlen(sp->TempDir) > 0)
     {
-        _mkdir(TempDir);
-        dir = TempDir;
+        _mkdir(sp->TempDir);
+        dir = sp->TempDir;
     }
 
     // --- use _tempnam to get a pointer to an unused file name

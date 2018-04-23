@@ -227,10 +227,10 @@ void report_writeLogo(SWMM_Project *sp)
 
 	getSemVersion(SEMVERSION);
 
-	sprintf(Msg, \
+	sprintf(sp->Msg, \
 		"\n  EPA STORM WATER MANAGEMENT MODEL - VERSION 5.1 (Build %s)", SEMVERSION);
 
-    fprintf(sp->Frpt.file, Msg);
+    fprintf(sp->Frpt.file, sp->Msg);
     fprintf(sp->Frpt.file, FMT09);
     fprintf(sp->Frpt.file, FMT10);
     time(&SysTime);                    // Save starting wall clock time
@@ -248,9 +248,9 @@ void report_writeTitle(SWMM_Project *sp)
     int i;
     int lineCount = 0;                                                         //(5.1.011)
     if ( ErrorCode ) return;
-    for (i=0; i<MAXTITLE; i++) if ( strlen(Title[i]) > 0 )
+    for (i=0; i<MAXTITLE; i++) if ( strlen(sp->Title[i]) > 0 )
     {
-        WRITE(Title[i]);
+        WRITE(sp->Title[i]);
         lineCount++;                                                           //(5.1.011)
     }
     if ( lineCount > 0 ) WRITE("");                                            //(5.1.011)
@@ -1397,7 +1397,7 @@ void report_writeErrorMsg(SWMM_Project *sp, int code, char* s)
     // --- save message to ErrorMsg if it's not for a line of input data
     if ( ErrorCode <= ERR_INPUT || ErrorCode >= ERR_FILE_NAME )
     {                                                
-        sprintf(ErrorMsg, error_getMsg(ErrorCode), s);
+        sprintf(sp->ErrorMsg, error_getMsg(ErrorCode), s);
     }
 ////
 }

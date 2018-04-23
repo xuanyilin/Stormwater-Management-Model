@@ -141,7 +141,7 @@ void  rain_open(SWMM_Project *sp)
     else switch ( sp->Frain.mode )
     {
       case SCRATCH_FILE:
-        getTempFileName(sp->Frain.name);
+        getTempFileName(sp, sp->Frain.name);
         if ( (sp->Frain.file = fopen(sp->Frain.name, "w+b")) == NULL)
         {
             report_writeErrorMsg(sp, ERR_RAIN_FILE_SCRATCH, "");

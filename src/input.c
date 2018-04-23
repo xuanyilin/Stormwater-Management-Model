@@ -53,8 +53,8 @@ static int  Mevents;                   // Working number of event periods      /
 static int  addObject(int objType, char* id);
 static int  getTokens(char *s);
 static int  parseLine(SWMM_Project *sp, int sect, char* line);
-static int  readOption(char* line);
-static int  readTitle(char* line);
+static int  readOption(SWMM_Project *sp, char* line);
+static int  readTitle(SWMM_Project *sp, char* line);
 static int  readControl(SWMM_Project *sp, char* tok[], int ntoks);
 static int  readNode(int type);
 static int  readLink(int type);
@@ -114,7 +114,7 @@ int input_countObjects(SWMM_Project *sp)
 
         // --- if in OPTIONS section then read the option setting
         //     otherwise add object and its ID name (tok) to project
-        if ( sect == s_OPTION ) errcode = readOption(line);
+        if ( sect == s_OPTION ) errcode = readOption(sp, line);
         else if ( sect >= 0 )   errcode = addObject(sect, tok);
 
         // --- report any error found
@@ -451,7 +451,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
     switch (sect)
     {
       case s_TITLE:
-        return readTitle(line);
+        return readTitle(sp, line);
 
       case s_RAINGAGE:
         j = Mobjects[GAGE];
@@ -641,7 +641,7 @@ int readControl(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-int readOption(char* line)
+int readOption(SWMM_Project *sp, char* line)
 //
 //  Input:   line = line of input data
 //  Output:  returns error code
@@ -650,12 +650,12 @@ int readOption(char* line)
 {
     Ntokens = getTokens(line);
     if ( Ntokens < 2 ) return 0;
-    return project_readOption(Tok[0], Tok[1]);
+    return project_readOption(sp, Tok[0], Tok[1]);
 }
 
 //=============================================================================
 
-int readTitle(char* line)
+int readTitle(SWMM_Project *sp, char* line)
 //
 //  Input:   line = line from input file
 //  Output:  returns error code
@@ -666,14 +666,14 @@ int readTitle(char* line)
     for (i = 0; i < MAXTITLE; i++)
     {
         // --- find next empty Title entry
-        if ( strlen(Title[i]) == 0 )
+        if ( strlen(sp->Title[i]) == 0 )
         {
             // --- strip line feed character from input line
             n = strlen(line);
             if (line[n-1] == 10) line[n-1] = ' ';
 
             // --- copy input line into Title entry
-            sstrncpy(Title[i], line, MAXMSG);
+            sstrncpy(sp->Title[i], line, MAXMSG);
             break;
         }
     }

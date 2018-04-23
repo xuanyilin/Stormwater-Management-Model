@@ -83,6 +83,10 @@ int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month, in
 }
 
 int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
+{
+    return swmm_setSimulationDateTime_project(_defaultProject, timetype, dtimestr);
+}
+int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype, char *dtimestr)
 //
 // Input:   timetype = time type to return
 //          DateTime String
@@ -113,8 +117,8 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
         {
             //StartDateTime (globals.h)
             case SM_STARTDATE:
-                project_readOption("START_DATE", theDate);
-                project_readOption("START_TIME", theTime);
+                project_readOption(sp, "START_DATE", theDate);
+                project_readOption(sp, "START_TIME", theTime);
                 StartDateTime = StartDate + StartTime;
                 TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
@@ -122,8 +126,8 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
                 break;
             //EndDateTime (globals.h)
             case SM_ENDDATE:
-                project_readOption("END_DATE", theDate);
-                project_readOption("END_TIME", theTime);
+                project_readOption(sp, "END_DATE", theDate);
+                project_readOption(sp, "END_TIME", theTime);
                 EndDateTime = EndDate + EndTime;
                 TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
@@ -131,8 +135,8 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
                 break;
             //ReportStart (globals.h)
             case SM_REPORTDATE:
-                project_readOption("REPORT_START_DATE", theDate);
-                project_readOption("REPORT_START_TIME", theTime);
+                project_readOption(sp, "REPORT_START_DATE", theDate);
+                project_readOption(sp, "REPORT_START_TIME", theTime);
                 ReportStart = ReportStartDate + ReportStartTime;
                 break;
             default: errcode = ERR_API_OUTBOUNDS; break;

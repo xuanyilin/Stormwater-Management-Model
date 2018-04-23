@@ -472,6 +472,8 @@ int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
  @return Error code
 */
 int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr);
+int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
+        char *dtimestr);
 
 //-------------------------------
 // Active Simulation Results API

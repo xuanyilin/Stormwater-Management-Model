@@ -872,9 +872,9 @@ void validateLidProc(SWMM_Project *sp, int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_PAVE_LAYER);
-            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, LidProcs[j].ID);
+            strcat(sp->Msg, ERR_PAVE_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
@@ -890,9 +890,9 @@ void validateLidProc(SWMM_Project *sp, int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_SOIL_LAYER);
-            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, LidProcs[j].ID);
+            strcat(sp->Msg, ERR_SOIL_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
@@ -905,9 +905,9 @@ void validateLidProc(SWMM_Project *sp, int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_STOR_LAYER);
-            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, LidProcs[j].ID);
+            strcat(sp->Msg, ERR_STOR_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
@@ -927,9 +927,9 @@ void validateLidProc(SWMM_Project *sp, int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
     {
-        strcpy(Msg, LidProcs[j].ID);
-        strcat(Msg, ERR_DRAIN_OFFSET);
-        report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+        strcpy(sp->Msg, LidProcs[j].ID);
+        strcat(sp->Msg, ERR_DRAIN_OFFSET);
+        report_writeErrorMsg(ERR_LID_PARAMS, sp->Msg);
     }
 */
 ////
@@ -944,9 +944,9 @@ void validateLidProc(SWMM_Project *sp, int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_SWALE_SURF);
-            report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, LidProcs[j].ID);
+            strcat(sp->Msg, ERR_SWALE_SURF);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
         else LidProcs[j].surface.alpha = 
@@ -1058,9 +1058,9 @@ void validateLidGroup(SWMM_Project *sp, int j)
             if ( grnampt_setParams(&(lidUnit->soilInfil), p) == FALSE )
             {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                strcpy(Msg, LidProcs[k].ID);
-                strcat(Msg, ERR_SOIL_LAYER);
-                report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+                strcpy(sp->Msg, LidProcs[k].ID);
+                strcat(sp->Msg, ERR_SOIL_LAYER);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
             }
         }
@@ -1076,18 +1076,18 @@ void validateLidGroup(SWMM_Project *sp, int j)
                 if ( grnampt_setParams(&(lidUnit->soilInfil), p) == FALSE )
                 {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                    strcpy(Msg, LidProcs[k].ID);
-                    strcat(Msg, ERR_GREEN_AMPT);
-                    report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+                    strcpy(sp->Msg, LidProcs[k].ID);
+                    strcat(sp->Msg, ERR_GREEN_AMPT);
+                    report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
                 }
             }
             if ( lidUnit->fullWidth <= 0.0 )
             {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                strcpy(Msg, LidProcs[k].ID);
-                strcat(Msg, ERR_SWALE_WIDTH);
-                report_writeErrorMsg(sp, ERR_LID_PARAMS, Msg);
+                strcpy(sp->Msg, LidProcs[k].ID);
+                strcat(sp->Msg, ERR_SWALE_WIDTH);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
             }
         }
@@ -1125,7 +1125,7 @@ void validateLidGroup(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void lid_initState()
+void lid_initState(SWMM_Project *sp)
 //
 //  Purpose: initializes the internal state of each LID in a subcatchment.
 //  Input:   none 
@@ -1193,7 +1193,7 @@ void lid_initState()
             //... initialize report file for the LID
             if ( lidUnit->rptFile )
             {
-                initLidRptFile(Title[0], LidProcs[k].ID, Subcatch[j].ID, lidUnit);
+                initLidRptFile(sp->Title[0], LidProcs[k].ID, Subcatch[j].ID, lidUnit);
             }
 
             //... initialize drain flows                                       //(5.1.008)

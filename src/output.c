@@ -397,7 +397,7 @@ void output_openOutFile(SWMM_Project *sp)
     else
     {
         sp->Fout.mode = SCRATCH_FILE;
-        getTempFileName(sp->Fout.name);
+        getTempFileName(sp, sp->Fout.name);
     }
 
     // --- try to open the file

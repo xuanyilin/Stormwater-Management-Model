@@ -291,7 +291,7 @@ int  project_init(SWMM_Project *sp)
 {
     int j;
     climate_initState();
-    lid_initState();
+    lid_initState(sp);
     for (j=0; j<Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
     for (j=0; j<Nobjects[GAGE]; j++)     gage_initState(sp, j);
     for (j=0; j<Nobjects[SUBCATCH]; j++) subcatch_initState(j);
@@ -408,7 +408,7 @@ void project_freeMatrix(double **a)
 
 //=============================================================================
 
-int project_readOption(char* s1, char* s2)
+int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 //
 //  Input:   s1 = option keyword
 //           s2 = string representation of option's value
@@ -712,7 +712,7 @@ int project_readOption(char* s1, char* s2)
         break;
 
       case TEMPDIR: // Temporary Directory
-        sstrncpy(TempDir, s2, MAXFNAME);
+        sstrncpy(sp->TempDir, s2, MAXFNAME);
         break;
 
     }
@@ -766,8 +766,8 @@ void setDefaults(SWMM_Project *sp)
    int i, j;
 
    // Project title & temp. file path
-   for (i = 0; i < MAXTITLE; i++) strcpy(Title[i], "");
-   strcpy(TempDir, "");
+   for (i = 0; i < MAXTITLE; i++) strcpy(sp->Title[i], "");
+   strcpy(sp->TempDir, "");
 
    // Interface files
    sp->Frain.mode      = SCRATCH_FILE;     // Use scratch rainfall file
