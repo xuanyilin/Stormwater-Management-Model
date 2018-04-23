@@ -83,7 +83,7 @@ static void report_LinkHeader(SWMM_Project *sp, char *id);
 
 //=============================================================================
 
-int report_readOptions(char* tok[], int ntoks)
+int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -100,29 +100,29 @@ int report_readOptions(char* tok[], int ntoks)
     {
       case 0: // Input
         m = findmatch(tok[1], NoYesWords);
-        if      ( m == YES ) RptFlags.input = TRUE;
-        else if ( m == NO )  RptFlags.input = FALSE;
+        if      ( m == YES ) sp->RptFlags.input = TRUE;
+        else if ( m == NO )  sp->RptFlags.input = FALSE;
         else                 return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
 
       case 1: // Continuity
         m = findmatch(tok[1], NoYesWords);
-        if      ( m == YES ) RptFlags.continuity = TRUE;
-        else if ( m == NO )  RptFlags.continuity = FALSE;
+        if      ( m == YES ) sp->RptFlags.continuity = TRUE;
+        else if ( m == NO )  sp->RptFlags.continuity = FALSE;
         else                 return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
 
       case 2: // Flow Statistics
         m = findmatch(tok[1], NoYesWords);
-        if      ( m == YES ) RptFlags.flowStats = TRUE;
-        else if ( m == NO )  RptFlags.flowStats = FALSE;
+        if      ( m == YES ) sp->RptFlags.flowStats = TRUE;
+        else if ( m == NO )  sp->RptFlags.flowStats = FALSE;
         else                 return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
 
       case 3: // Controls
         m = findmatch(tok[1], NoYesWords);
-        if      ( m == YES ) RptFlags.controls = TRUE;
-        else if ( m == NO )  RptFlags.controls = FALSE;
+        if      ( m == YES ) sp->RptFlags.controls = TRUE;
+        else if ( m == NO )  sp->RptFlags.controls = FALSE;
         else                 return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
 
@@ -132,8 +132,8 @@ int report_readOptions(char* tok[], int ntoks)
 
       case 7: // Node Statistics
         m = findmatch(tok[1], NoYesWords);
-        if      ( m == YES ) RptFlags.nodeStats = TRUE;
-        else if ( m == NO )  RptFlags.nodeStats = FALSE;
+        if      ( m == YES ) sp->RptFlags.nodeStats = TRUE;
+        else if ( m == NO )  sp->RptFlags.nodeStats = FALSE;
         else                 return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
 
@@ -157,9 +157,9 @@ int report_readOptions(char* tok[], int ntoks)
     }
     switch ( m )
     {
-      case SUBCATCH: RptFlags.subcatchments = k;  break;
-      case NODE:     RptFlags.nodes = k;  break;
-      case LINK:     RptFlags.links = k;  break;
+      case SUBCATCH: sp->RptFlags.subcatchments = k;  break;
+      case NODE:     sp->RptFlags.nodes = k;  break;
+      case LINK:     sp->RptFlags.links = k;  break;
     }
     return 0;
 }
@@ -1073,15 +1073,15 @@ void report_writeReport(SWMM_Project *sp)
 {
     if ( ErrorCode ) return;
     if ( sp->Nperiods == 0 ) return;
-    if ( RptFlags.subcatchments != NONE
+    if ( sp->RptFlags.subcatchments != NONE
          && ( IgnoreRainfall == FALSE ||
               IgnoreSnowmelt == FALSE ||
               IgnoreGwater == FALSE)
        ) report_Subcatchments(sp);
 
     if ( IgnoreRouting == TRUE && IgnoreQuality == TRUE ) return;
-    if ( RptFlags.nodes != NONE ) report_Nodes(sp);
-    if ( RptFlags.links != NONE ) report_Links(sp);
+    if ( sp->RptFlags.nodes != NONE ) report_Nodes(sp);
+    if ( sp->RptFlags.links != NONE ) report_Links(sp);
 }
 
 //=============================================================================

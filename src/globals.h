@@ -65,8 +65,8 @@ EXTERN SWMM_Project *_defaultProject;
 //                  Title[MAXTITLE][MAXMSG+1],// Project title
 //                  TempDir[MAXFNAME+1];      // Temporary file directory
 
-EXTERN TRptFlags
-                  RptFlags;                 // Reporting options
+//EXTERN TRptFlags
+//                  RptFlags;                 // Reporting options
 
 EXTERN int
                   Nobjects[MAX_OBJ_TYPES],  // Number of each object type

@@ -90,7 +90,7 @@ int     input_readData(SWMM_Project *p);
 //-----------------------------------------------------------------------------
 //   Report Writer Methods
 //-----------------------------------------------------------------------------
-int     report_readOptions(char* tok[], int ntoks);
+int     report_readOptions(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    report_writeLine(SWMM_Project *sp, char* line);
 void    report_writeSysTime(SWMM_Project *sp);

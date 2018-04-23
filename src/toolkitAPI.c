@@ -1362,7 +1362,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         link_setSetting(index, 0.0);
 
         // Add control action to RPT file if desired flagged
-        if (RptFlags.controls)
+        if (sp->RptFlags.controls)
         {
             currentTime = getDateTime(NewRoutingTime);
             report_writeControlAction(sp, currentTime, Link[index].ID,

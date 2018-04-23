@@ -944,7 +944,7 @@ int executeActionList(SWMM_Project *sp, DateTime currentTime)
             if ( Link[a1->link].targetSetting != a1->value )
             {
                 Link[a1->link].targetSetting = a1->value;
-                if ( RptFlags.controls && a1->curve < 0                        //(5.1.011)
+                if ( sp->RptFlags.controls && a1->curve < 0                        //(5.1.011)
                      && a1->tseries < 0 && a1->attribute != r_PID )            //(5.1.011)
                     report_writeControlAction(sp, currentTime, Link[a1->link].ID,
                                               a1->value, Rules[a1->rule].ID);

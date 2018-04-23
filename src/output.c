@@ -364,9 +364,9 @@ void  output_checkFileSize(SWMM_Project *sp)
 //           to access using an integer file pointer variable.
 //
 {
-    if ( RptFlags.subcatchments != NONE ||
-         RptFlags.nodes != NONE ||
-         RptFlags.links != NONE )
+    if ( sp->RptFlags.subcatchments != NONE ||
+         sp->RptFlags.nodes != NONE ||
+         sp->RptFlags.links != NONE )
     {
         if ( (double)OutputStartPos + (double)BytesPerPeriod * TotalDuration
              / 1000.0 / (double)ReportStep >= (double)MAXFILESIZE )

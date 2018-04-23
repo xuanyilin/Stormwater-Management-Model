@@ -1119,10 +1119,10 @@ struct SWMM_Project {
                  ErrorMsg[MAXMSG+1],       // Text of error message           //(5.1.011)
                  Title[MAXTITLE][MAXMSG+1],// Project title
                  TempDir[MAXFNAME+1];      // Temporary file directory
-//
-//    EXTERN TRptFlags
-//                      RptFlags;                 // Reporting options
-//
+
+   TRptFlags
+                 RptFlags;                 // Reporting options
+
 //    EXTERN int
 //                      Nobjects[MAX_OBJ_TYPES],  // Number of each object type
 //                      Nnodes[MAX_NODE_TYPES],   // Number of each node sub-type

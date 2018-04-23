@@ -322,7 +322,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     massbal_updateRoutingTotals(routingStep/2.);
 
     // --- update summary statistics
-    if ( RptFlags.flowStats && Nobjects[LINK] > 0 )
+    if ( sp->RptFlags.flowStats && Nobjects[LINK] > 0 )
     {
         stats_updateFlowStats(routingStep, getDateTime(NewRoutingTime),
                               stepCount, inSteadyState);

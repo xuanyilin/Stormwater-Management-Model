@@ -435,7 +435,7 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
         project_validate(sp);
 
         // --- write input summary to report file if requested
-        if ( RptFlags.input ) inputrpt_writeInput(sp);
+        if ( sp->RptFlags.input ) inputrpt_writeInput(sp);
     }
 
 #ifdef EXH                                                                     //(5.1.011)
@@ -528,7 +528,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 
         // --- write project options to report file 
 	    report_writeOptions(sp);
-        if ( RptFlags.controls ) report_writeControlActionsHeading(sp);
+        if ( sp->RptFlags.controls ) report_writeControlActionsHeading(sp);
 ////
     }
 

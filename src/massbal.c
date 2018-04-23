@@ -290,13 +290,13 @@ void massbal_report(SWMM_Project *sp)
     if ( Nobjects[SUBCATCH] > 0 )
     {
         if ( massbal_getRunoffError() > MAX_RUNOFF_BALANCE_ERR ||
-             RptFlags.continuity == TRUE
+             sp->RptFlags.continuity == TRUE
            ) report_writeRunoffError(sp, &RunoffTotals, TotalArea);
 
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality )
         {
             if ( massbal_getLoadingError() > MAX_RUNOFF_BALANCE_ERR ||
-                 RptFlags.continuity == TRUE
+                 sp->RptFlags.continuity == TRUE
                ) report_writeLoadingError(sp, LoadingTotals);
         }
     }
@@ -304,7 +304,7 @@ void massbal_report(SWMM_Project *sp)
     if ( Nobjects[AQUIFER] > 0  && !IgnoreGwater )
     {
         if ( massbal_getGwaterError() > MAX_RUNOFF_BALANCE_ERR ||
-             RptFlags.continuity == TRUE )
+             sp->RptFlags.continuity == TRUE )
         {
             for ( j = 0; j < Nobjects[SUBCATCH]; j++ )
             {
@@ -317,13 +317,13 @@ void massbal_report(SWMM_Project *sp)
     if ( Nobjects[NODE] > 0 && !IgnoreRouting )
     {
         if ( massbal_getFlowError() > MAX_FLOW_BALANCE_ERR ||
-             RptFlags.continuity == TRUE
+             sp->RptFlags.continuity == TRUE
            ) report_writeFlowError(sp, &FlowTotals);
     
         if ( Nobjects[POLLUT] > 0 && !IgnoreQuality )
         {
             if ( massbal_getQualError() > MAX_FLOW_BALANCE_ERR ||
-                 RptFlags.continuity == TRUE
+                 sp->RptFlags.continuity == TRUE
                ) report_writeQualError(sp, QualTotals);
         }
     }

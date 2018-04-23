@@ -248,11 +248,11 @@ void project_validate(SWMM_Project *sp)
     }
 
     // --- adjust individual reporting flags to match global reporting flag
-    if ( RptFlags.subcatchments == ALL )
+    if ( sp->RptFlags.subcatchments == ALL )
         for (i=0; i<Nobjects[SUBCATCH]; i++) Subcatch[i].rptFlag = TRUE;
-    if ( RptFlags.nodes == ALL )
+    if ( sp->RptFlags.nodes == ALL )
         for (i=0; i<Nobjects[NODE]; i++) Node[i].rptFlag = TRUE;
-    if ( RptFlags.links == ALL )
+    if ( sp->RptFlags.links == ALL )
         for (i=0; i<Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
 
     // --- validate dynamic wave options
@@ -839,14 +839,14 @@ void setDefaults(SWMM_Project *sp)
    SweepEnd        = 365;
 
    // Reporting options
-   RptFlags.input         = FALSE;
-   RptFlags.continuity    = TRUE;
-   RptFlags.flowStats     = TRUE;
-   RptFlags.controls      = FALSE;
-   RptFlags.subcatchments = FALSE;
-   RptFlags.nodes         = FALSE;
-   RptFlags.links         = FALSE;
-   RptFlags.nodeStats     = FALSE;
+   sp->RptFlags.input         = FALSE;
+   sp->RptFlags.continuity    = TRUE;
+   sp->RptFlags.flowStats     = TRUE;
+   sp->RptFlags.controls      = FALSE;
+   sp->RptFlags.subcatchments = FALSE;
+   sp->RptFlags.nodes         = FALSE;
+   sp->RptFlags.links         = FALSE;
+   sp->RptFlags.nodeStats     = FALSE;
 
    // Temperature data
    Temp.dataSource  = NO_TEMP;
