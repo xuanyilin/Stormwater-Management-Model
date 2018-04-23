@@ -81,8 +81,9 @@ void odesolve_close()
 }
 
 
-int odesolve_integrate(double ystart[], int n, double x1, double x2,
-      double eps, double h1, void (*derivs)(double, double*, double*))
+int odesolve_integrate(double ystart[], int n, double x1,
+        double x2, double eps, double h1,
+        void (*derivs)(double, double*, double*))
 //---------------------------------------------------------------
 //   Driver function for Runge-Kutta integration with adaptive
 //   stepsize control. Integrates starting n values in ystart[]

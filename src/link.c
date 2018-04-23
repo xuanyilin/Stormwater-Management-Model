@@ -87,11 +87,12 @@ static int    conduit_readParams(int j, int k, char* tok[], int ntoks);
 static void   conduit_validate(SWMM_Project *sp, int j, int k);
 static void   conduit_initState(int j, int k);
 static void   conduit_reverse(int j, int k);
-static double conduit_getLength(int j);
-static double conduit_getLengthFactor(int j, int k, double roughness);
+static double conduit_getLength(SWMM_Project *sp, int j);
+static double conduit_getLengthFactor(SWMM_Project *sp, int j, int k,
+        double roughness);
 static double conduit_getSlope(SWMM_Project *sp, int j);
 static double conduit_getInflow(int j);
-static double conduit_getLossRate(int j, double q, double tstep);              //(5.1.008)
+static double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tstep);              //(5.1.008)
 
 static int    pump_readParams(int j, int k, char* tok[], int ntoks);
 static void   pump_validate(SWMM_Project *sp, int j, int k);
@@ -471,7 +472,7 @@ double link_getOffsetHeight(SWMM_Project *sp, int j, double offset, double elev)
 
 //=============================================================================
 
-void link_initState(int j)
+void link_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -496,7 +497,7 @@ void link_initState(int j)
     if ( Link[j].type == PUMP    ) pump_initState(j, Link[j].subIndex);
 
     // --- initialize water quality state
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         Link[j].oldQual[p] = 0.0;
         Link[j].newQual[p] = 0.0;
@@ -552,7 +553,7 @@ void link_setOldHydState(int j)
 
 //=============================================================================
 
-void link_setOldQualState(int j)
+void link_setOldQualState(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -560,7 +561,7 @@ void link_setOldQualState(int j)
 //
 {
     int p;
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         Link[j].oldQual[p] = Link[j].newQual[p];
         Link[j].newQual[p] = 0.0;
@@ -639,7 +640,7 @@ int link_setFlapGate(int j, int n1, int n2, double q)
 
 //=============================================================================
 
-void link_getResults(int j, double f, float x[])
+void link_getResults(SWMM_Project *sp, int j, double f, float x[])
 //
 //  Input:   j = link index
 //           f = time weighting factor
@@ -684,7 +685,7 @@ void link_getResults(int j, double f, float x[])
     x[LINK_VOLUME]   = (float)v;
     x[LINK_CAPACITY] = (float)c;
 
-    if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
+    if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         c = f1*Link[j].oldQual[p] + f*Link[j].newQual[p];
         x[LINK_QUAL+p] = (float)c;
@@ -773,14 +774,14 @@ double  link_getYnorm(int j, double q)
 
 //=============================================================================
 
-double link_getLength(int j)
+double link_getLength(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns length (ft)
 //  Purpose: finds true length of a link.
 //
 {
-    if ( Link[j].type == CONDUIT ) return conduit_getLength(j);
+    if ( Link[j].type == CONDUIT ) return conduit_getLength(sp, j);
     return 0.0;
 }
 
@@ -858,7 +859,7 @@ double link_getPower(int j)
 
 //=============================================================================
 
-double link_getLossRate(int j, double q, double tStep)                         //(5.1.008)
+double link_getLossRate(SWMM_Project *sp, int j, double q, double tStep)                         //(5.1.008)
 //
 //  Input:   j = link index
 //           q = flow rate (ft3/sec)                                           //(5.1.008)
@@ -868,7 +869,7 @@ double link_getLossRate(int j, double q, double tStep)                         /
 //           evaporation and seepage.
 //
 {
-    if ( Link[j].type == CONDUIT ) return conduit_getLossRate(j, q, tStep);    //(5.1.008)
+    if ( Link[j].type == CONDUIT ) return conduit_getLossRate(sp, j, q, tStep);    //(5.1.008)
     else return 0.0;
 }
 
@@ -1068,12 +1069,12 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
          LengtheningStep > 0.0 &&
          Link[j].xsect.type != DUMMY )
     {
-        lengthFactor = conduit_getLengthFactor(j, k, roughness);
+        lengthFactor = conduit_getLengthFactor(sp, j, k, roughness);
     }
 
     if ( lengthFactor != 1.0 )
     {
-        Conduit[k].modLength = lengthFactor * conduit_getLength(j);
+        Conduit[k].modLength = lengthFactor * conduit_getLength(sp, j);
         slope /= lengthFactor;
         roughness = roughness / sqrt(lengthFactor);
     }
@@ -1153,7 +1154,7 @@ void conduit_reverse(int j, int k)
 
 //=============================================================================
 
-double conduit_getLength(int j)
+double conduit_getLength(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns conduit's length (ft)
@@ -1169,13 +1170,13 @@ double conduit_getLength(int j)
     int t;
     if ( Link[j].xsect.type != IRREGULAR ) return Conduit[k].length;
     t = Link[j].xsect.transect;
-    if ( t < 0 || t >= Nobjects[TRANSECT] ) return Conduit[k].length;
+    if ( t < 0 || t >= sp->Nobjects[TRANSECT] ) return Conduit[k].length;
     return Conduit[k].length / Transect[t].lengthFactor;
 }
 
 //=============================================================================
 
-double conduit_getLengthFactor(int j, int k, double roughness)
+double conduit_getLengthFactor(SWMM_Project *sp, int j, int k, double roughness)
 //
 //  Input:   j = link index
 //           k = conduit index
@@ -1207,7 +1208,7 @@ double conduit_getLengthFactor(int j, int k, double roughness)
     // --- determine ratio of Courant length to actual length
     if ( LengtheningStep == 0.0 ) tStep = RouteStep;
     else                          tStep = MIN(RouteStep, LengtheningStep);
-    ratio = (sqrt(GRAVITY*yFull) + vFull) * tStep / conduit_getLength(j);
+    ratio = (sqrt(GRAVITY*yFull) + vFull) * tStep / conduit_getLength(sp, j);
 
     // --- return max. of 1.0 and ratio
     if ( ratio > 1.0 ) return ratio;
@@ -1224,7 +1225,7 @@ double conduit_getSlope(SWMM_Project *sp, int j)
 //
 {
     double elev1, elev2, delta, slope;
-    double length = conduit_getLength(j);
+    double length = conduit_getLength(sp, j);
 
     // --- check that elevation drop > minimum allowable drop
     elev1 = Link[j].offset1 + Node[Link[j].node1].invertElev;
@@ -1290,7 +1291,7 @@ double conduit_getInflow(int j)
 
 //=============================================================================
 
-double conduit_getLossRate(int j, double q, double tStep)                      //(5.1.008)
+double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)                      //(5.1.008)
 //
 //  Input:   j = link index
 //           tStep = time step (sec)
@@ -1312,7 +1313,7 @@ double conduit_getLossRate(int j, double q, double tStep)                      /
     if ( depth > FUDGE )
     {
         xsect = &Link[j].xsect;
-        length = conduit_getLength(j);
+        length = conduit_getLength(sp, j);
 
         // --- find evaporation rate for open conduits
         if ( xsect_isOpen(xsect->type) && Evap.rate > 0.0 )

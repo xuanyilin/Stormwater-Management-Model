@@ -127,7 +127,7 @@ void  rain_open(SWMM_Project *sp)
 
     // --- see how many gages get their data from a file
     count = 0;
-    for (i = 0; i < Nobjects[GAGE]; i++)
+    for (i = 0; i < sp->Nobjects[GAGE]; i++)
     {
         if ( Gage[i].dataSource == RAIN_FILE ) count++;
     }
@@ -237,7 +237,7 @@ void createRainFile(SWMM_Project *sp, int count)
 
     // --- loop through project's  rain gages,
     //     looking for ones using rain files
-    for ( i = 0; i < Nobjects[GAGE]; i++ )
+    for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
         if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
         if ( rainFileConflict(sp, i) ) break;
@@ -365,7 +365,7 @@ void initRainFile(SWMM_Project *sp)
     filePos = ftell(sp->Frain.file);
 
     // --- locate information for each raingage in interface file
-    for ( i = 0; i < Nobjects[GAGE]; i++ )
+    for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
         if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
 

@@ -43,7 +43,7 @@ static double checkNormalFlow(int j, double q, double y1, double y2,
 
 //=============================================================================
 
-void  dwflow_findConduitFlow(int j, int steps, double omega, double dt)
+void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, double dt)
 //
 //  Input:   j        = link index
 //           steps    = number of iteration steps taken
@@ -154,7 +154,7 @@ void  dwflow_findConduitFlow(int j, int steps, double omega, double dt)
         Link[j].dqdh  = GRAVITY * dt * aMid / length * barrels;
         Link[j].froude = 0.0;
         Link[j].newDepth = MIN(yMid, Link[j].xsect.yFull);
-        Link[j].newVolume = Conduit[k].a1 * link_getLength(j) * barrels;
+        Link[j].newVolume = Conduit[k].a1 * link_getLength(sp, j) * barrels;
         Link[j].newFlow = 0.0;
         return;
     }
@@ -213,7 +213,7 @@ void  dwflow_findConduitFlow(int j, int steps, double omega, double dt)
     }
 
     // --- 6. term for evap and seepage losses per unit length
-    dq6 = link_getLossRate(j, qOld, dt) * 2.5 * dt * v / link_getLength(j);    //(5.1.012)
+    dq6 = link_getLossRate(sp, j, qOld, dt) * 2.5 * dt * v / link_getLength(sp, j);    //(5.1.012)
 
     // --- combine terms to find new conduit flow
     denom = 1.0 + dq1 + dq5;
@@ -269,7 +269,7 @@ void  dwflow_findConduitFlow(int j, int steps, double omega, double dt)
     aMid = (a1 + a2) / 2.0;
     aMid = MIN(aMid, xsect->aFull);
     Conduit[k].fullState = link_getFullState(a1, a2, xsect->aFull);            //(5.1.008)
-    Link[j].newVolume = aMid * link_getLength(j) * barrels;
+    Link[j].newVolume = aMid * link_getLength(sp, j) * barrels;
     Link[j].newFlow = q * barrels;
 }
 

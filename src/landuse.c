@@ -354,8 +354,8 @@ int  landuse_readWashoffParams(char* tok[], int ntoks)
 
 //=============================================================================
 
-void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
-		double area, double curb)
+void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
+        double* initBuildup, double area, double curb)
 //
 //  Input:   landFactor = array of land use factors
 //           initBuildup = total initial buildup of each pollutant
@@ -381,7 +381,7 @@ void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
     startDrySeconds = StartDryDays*SECperDAY;
 
     // --- examine each land use
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- initialize date when last swept
         landFactor[i].lastSwept = StartDateTime - Landuse[i].sweepDays0;
@@ -392,7 +392,7 @@ void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
         fCurb = f * curb;
 
         // --- determine buildup of each pollutant
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             // --- if an initial loading was supplied, then use it to
             //     find the starting buildup over the land use
@@ -531,7 +531,7 @@ double landuse_getBuildupMass(int i, int p, double days)
 
 //=============================================================================
 
-double landuse_getAvgBmpEffic(int j, int p)
+double landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p)
 //
 //  Input:   j = subcatchment index
 //           p = pollutant index
@@ -542,7 +542,7 @@ double landuse_getAvgBmpEffic(int j, int p)
 {
     int    i;
     double r = 0.0;
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         r += Subcatch[j].landFactor[i].fraction *
              Landuse[i].washoffFunc[p].bmpEffic;

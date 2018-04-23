@@ -97,8 +97,8 @@ static char     MemPoolAllocated;      // TRUE if memory pool allocated
 static void initPointers(void);
 static void setDefaults(SWMM_Project *sp);
 static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
-static void createObjects(void);
-static void deleteObjects(void);
+static void createObjects(SWMM_Project *sp);
+static void deleteObjects(SWMM_Project *sp);
 static void createHashTables(SWMM_Project *sp);
 static void deleteHashTables(void);
 
@@ -133,7 +133,7 @@ void project_readInput(SWMM_Project *sp)
 
     // --- count number of objects in input file and create them
     input_countObjects(sp);
-    createObjects();
+    createObjects(sp);
 
     // --- read project data from input file
     input_readData(sp);
@@ -193,12 +193,12 @@ void project_validate(SWMM_Project *sp)
     int err;
 
     // --- validate Curves and TimeSeries
-    for ( i=0; i<Nobjects[CURVE]; i++ )
+    for ( i=0; i<sp->Nobjects[CURVE]; i++ )
     {
          err = table_validate(&Curve[i]);
          if ( err ) report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, Curve[i].ID);
     }
-    for ( i=0; i<Nobjects[TSERIES]; i++ )
+    for ( i=0; i<sp->Nobjects[TSERIES]; i++ )
     {
         err = table_validate(&Tseries[i]);
         if ( err ) report_writeTseriesErrorMsg(sp, err, &Tseries[i]);
@@ -208,16 +208,16 @@ void project_validate(SWMM_Project *sp)
     //     (NOTE: order is important !!!!)
     climate_validate(sp);
     lid_validate(sp);
-    if ( Nobjects[SNOWMELT] == 0 ) IgnoreSnowmelt = TRUE;
-    if ( Nobjects[AQUIFER]  == 0 ) IgnoreGwater   = TRUE;
-    for ( i=0; i<Nobjects[GAGE]; i++ )     gage_validate(sp, i);
-    for ( i=0; i<Nobjects[AQUIFER]; i++ )  gwater_validateAquifer(sp, i);
-    for ( i=0; i<Nobjects[SUBCATCH]; i++ ) subcatch_validate(sp, i);
-    for ( i=0; i<Nobjects[SNOWMELT]; i++ ) snow_validateSnowmelt(sp, i);
+    if ( sp->Nobjects[SNOWMELT] == 0 ) IgnoreSnowmelt = TRUE;
+    if ( sp->Nobjects[AQUIFER]  == 0 ) IgnoreGwater   = TRUE;
+    for ( i=0; i<sp->Nobjects[GAGE]; i++ )     gage_validate(sp, i);
+    for ( i=0; i<sp->Nobjects[AQUIFER]; i++ )  gwater_validateAquifer(sp, i);
+    for ( i=0; i<sp->Nobjects[SUBCATCH]; i++ ) subcatch_validate(sp, i);
+    for ( i=0; i<sp->Nobjects[SNOWMELT]; i++ ) snow_validateSnowmelt(sp, i);
 
     // --- compute geometry tables for each shape curve
     j = 0;
-    for ( i=0; i<Nobjects[CURVE]; i++ )
+    for ( i=0; i<sp->Nobjects[CURVE]; i++ )
     {
         if ( Curve[i].curveType == SHAPE_CURVE )
         {
@@ -231,9 +231,9 @@ void project_validate(SWMM_Project *sp)
 
     // --- validate links before nodes, since the latter can
     //     result in adjustment of node depths
-    for ( i=0; i<Nobjects[NODE]; i++) Node[i].oldDepth = Node[i].fullDepth;
-    for ( i=0; i<Nobjects[LINK]; i++) link_validate(sp, i);
-    for ( i=0; i<Nobjects[NODE]; i++) node_validate(sp, i);
+    for ( i=0; i<sp->Nobjects[NODE]; i++) Node[i].oldDepth = Node[i].fullDepth;
+    for ( i=0; i<sp->Nobjects[LINK]; i++) link_validate(sp, i);
+    for ( i=0; i<sp->Nobjects[NODE]; i++) node_validate(sp, i);
 
     // --- adjust time steps if necessary
     if ( DryStep < WetStep )
@@ -249,11 +249,11 @@ void project_validate(SWMM_Project *sp)
 
     // --- adjust individual reporting flags to match global reporting flag
     if ( sp->RptFlags.subcatchments == ALL )
-        for (i=0; i<Nobjects[SUBCATCH]; i++) Subcatch[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[SUBCATCH]; i++) Subcatch[i].rptFlag = TRUE;
     if ( sp->RptFlags.nodes == ALL )
-        for (i=0; i<Nobjects[NODE]; i++) Node[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[NODE]; i++) Node[i].rptFlag = TRUE;
     if ( sp->RptFlags.links == ALL )
-        for (i=0; i<Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
 
     // --- validate dynamic wave options
     if ( RouteModel == DW ) dynwave_validate();                                //(5.1.008)
@@ -263,20 +263,20 @@ void project_validate(SWMM_Project *sp)
     if ( NumThreads == 0 ) NumThreads = omp_get_num_threads();                 //(5.1.008)
     else NumThreads = MIN(NumThreads, omp_get_num_threads());                  //(5.1.008)
 }
-    if ( Nobjects[LINK] < 4 * NumThreads ) NumThreads = 1;                     //(5.1.008)
+    if ( sp->Nobjects[LINK] < 4 * NumThreads ) NumThreads = 1;                     //(5.1.008)
 
 }
 
 //=============================================================================
 
-void project_close()
+void project_close(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: closes a SWMM project.
 //
 {
-    deleteObjects();
+    deleteObjects(sp);
     deleteHashTables();
 }
 
@@ -292,11 +292,11 @@ int  project_init(SWMM_Project *sp)
     int j;
     climate_initState();
     lid_initState(sp);
-    for (j=0; j<Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
-    for (j=0; j<Nobjects[GAGE]; j++)     gage_initState(sp, j);
-    for (j=0; j<Nobjects[SUBCATCH]; j++) subcatch_initState(j);
-    for (j=0; j<Nobjects[NODE]; j++)     node_initState(j);
-    for (j=0; j<Nobjects[LINK]; j++)     link_initState(j);
+    for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
+    for (j=0; j<sp->Nobjects[GAGE]; j++)     gage_initState(sp, j);
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) subcatch_initState(sp, j);
+    for (j=0; j<sp->Nobjects[NODE]; j++)     node_initState(sp, j);
+    for (j=0; j<sp->Nobjects[LINK]; j++)     link_initState(sp, j);
     return ErrorCode;
 }
 
@@ -946,7 +946,7 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
 
 //=============================================================================
 
-void createObjects()
+void createObjects(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -960,27 +960,27 @@ void createObjects()
 
     // --- allocate memory for each category of object
     if ( ErrorCode ) return;
-    Gage     = (TGage *)     calloc(Nobjects[GAGE],     sizeof(TGage));
-    Subcatch = (TSubcatch *) calloc(Nobjects[SUBCATCH], sizeof(TSubcatch));
-    Node     = (TNode *)     calloc(Nobjects[NODE],     sizeof(TNode));
+    Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
+    Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
+    Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
     Outfall  = (TOutfall *)  calloc(Nnodes[OUTFALL],    sizeof(TOutfall));
     Divider  = (TDivider *)  calloc(Nnodes[DIVIDER],    sizeof(TDivider));
     Storage  = (TStorage *)  calloc(Nnodes[STORAGE],    sizeof(TStorage));
-    Link     = (TLink *)     calloc(Nobjects[LINK],     sizeof(TLink));
+    Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
     Conduit  = (TConduit *)  calloc(Nlinks[CONDUIT],    sizeof(TConduit));
     Pump     = (TPump *)     calloc(Nlinks[PUMP],       sizeof(TPump));
     Orifice  = (TOrifice *)  calloc(Nlinks[ORIFICE],    sizeof(TOrifice));
     Weir     = (TWeir *)     calloc(Nlinks[WEIR],       sizeof(TWeir));
     Outlet   = (TOutlet *)   calloc(Nlinks[OUTLET],     sizeof(TOutlet));
-    Pollut   = (TPollut *)   calloc(Nobjects[POLLUT],   sizeof(TPollut));
-    Landuse  = (TLanduse *)  calloc(Nobjects[LANDUSE],  sizeof(TLanduse));
-    Pattern  = (TPattern *)  calloc(Nobjects[TIMEPATTERN],  sizeof(TPattern));
-    Curve    = (TTable *)    calloc(Nobjects[CURVE],    sizeof(TTable));
-    Tseries  = (TTable *)    calloc(Nobjects[TSERIES],  sizeof(TTable));
-    Aquifer  = (TAquifer *)  calloc(Nobjects[AQUIFER],  sizeof(TAquifer));
-    UnitHyd  = (TUnitHyd *)  calloc(Nobjects[UNITHYD],  sizeof(TUnitHyd));
-    Snowmelt = (TSnowmelt *) calloc(Nobjects[SNOWMELT], sizeof(TSnowmelt));
-    Shape    = (TShape *)    calloc(Nobjects[SHAPE],    sizeof(TShape));
+    Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
+    Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
+    Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
+    Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
+    Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
+    Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
+    UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
+    Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
+    Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
     // --- create array of detailed routing event periods
@@ -990,70 +990,70 @@ void createObjects()
 ////
 
     // --- create LID objects
-    lid_create(Nobjects[LID], Nobjects[SUBCATCH]);
+    lid_create(sp->Nobjects[LID], sp->Nobjects[SUBCATCH]);
 
     // --- create control rules
-    ErrorCode = controls_create(Nobjects[CONTROL]);
+    ErrorCode = controls_create(sp->Nobjects[CONTROL]);
     if ( ErrorCode ) return;
 
     // --- create cross section transects
-    ErrorCode = transect_create(Nobjects[TRANSECT]);
+    ErrorCode = transect_create(sp->Nobjects[TRANSECT]);
     if ( ErrorCode ) return;
 
     // --- allocate memory for infiltration data
-    infil_create(Nobjects[SUBCATCH], InfilModel);
+    infil_create(sp->Nobjects[SUBCATCH], InfilModel);
 
     // --- allocate memory for water quality state variables
-    for (j = 0; j < Nobjects[SUBCATCH]; j++)
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         Subcatch[j].initBuildup =
-                              (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].oldQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].newQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].pondedQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].totalLoad  = (double *) calloc(Nobjects[POLLUT], sizeof(double));
+                              (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Subcatch[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Subcatch[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Subcatch[j].pondedQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Subcatch[j].totalLoad  = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
     }
-    for (j = 0; j < Nobjects[NODE]; j++)
+    for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        Node[j].oldQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Node[j].newQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
+        Node[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Node[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
         Node[j].extInflow = NULL;
         Node[j].dwfInflow = NULL;
         Node[j].rdiiInflow = NULL;
         Node[j].treatment = NULL;
     }
-    for (j = 0; j < Nobjects[LINK]; j++)
+    for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        Link[j].oldQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Link[j].newQual = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        Link[j].totalLoad = (double *) calloc(Nobjects[POLLUT], sizeof(double));
+        Link[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Link[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        Link[j].totalLoad = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
     }
 
     // --- allocate memory for land use buildup/washoff functions
-    for (j = 0; j < Nobjects[LANDUSE]; j++)
+    for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
     {
         Landuse[j].buildupFunc =
-            (TBuildup *) calloc(Nobjects[POLLUT], sizeof(TBuildup));
+            (TBuildup *) calloc(sp->Nobjects[POLLUT], sizeof(TBuildup));
         Landuse[j].washoffFunc =
-            (TWashoff *) calloc(Nobjects[POLLUT], sizeof(TWashoff));
+            (TWashoff *) calloc(sp->Nobjects[POLLUT], sizeof(TWashoff));
     }
 
     // --- allocate memory for subcatchment landuse factors
-    for (j = 0; j < Nobjects[SUBCATCH]; j++)
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         Subcatch[j].landFactor =
-            (TLandFactor *) calloc(Nobjects[LANDUSE], sizeof(TLandFactor));
-        for (k = 0; k < Nobjects[LANDUSE]; k++)
+            (TLandFactor *) calloc(sp->Nobjects[LANDUSE], sizeof(TLandFactor));
+        for (k = 0; k < sp->Nobjects[LANDUSE]; k++)
         {
             Subcatch[j].landFactor[k].buildup =
-                (double *) calloc(Nobjects[POLLUT], sizeof(double));
+                (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
         }
     }
 
     // --- initialize buildup & washoff functions
-    for (j = 0; j < Nobjects[LANDUSE]; j++)
+    for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
     {
-        for (k = 0; k < Nobjects[POLLUT]; k++)
+        for (k = 0; k < sp->Nobjects[POLLUT]; k++)
         {
             Landuse[j].buildupFunc[k].funcType = NO_BUILDUP;
             Landuse[j].buildupFunc[k].normalizer = PER_AREA;
@@ -1062,14 +1062,14 @@ void createObjects()
     }
 
     // --- initialize rain gage properties
-    for (j = 0; j < Nobjects[GAGE]; j++)
+    for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
         Gage[j].tSeries = -1;
         strcpy(Gage[j].fname, "");
     }
 
     // --- initialize subcatchment properties
-    for (j = 0; j < Nobjects[SUBCATCH]; j++)
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         Subcatch[j].outSubcatch = -1;
         Subcatch[j].outNode     = -1;
@@ -1079,23 +1079,23 @@ void createObjects()
         Subcatch[j].gwDeepFlowExpr = NULL;                                     //(5.1.007)
         Subcatch[j].snowpack    = NULL;
         Subcatch[j].lidArea     = 0.0;
-        for (k = 0; k < Nobjects[POLLUT]; k++)
+        for (k = 0; k < sp->Nobjects[POLLUT]; k++)
         {
             Subcatch[j].initBuildup[k] = 0.0;
         }
     }
 
     // --- initialize RDII unit hydrograph properties
-    for ( j = 0; j < Nobjects[UNITHYD]; j++ ) rdii_initUnitHyd(j);
+    for ( j = 0; j < sp->Nobjects[UNITHYD]; j++ ) rdii_initUnitHyd(j);
 
     // --- initialize snowmelt properties
-    for ( j = 0; j < Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(j);
+    for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(j);
 
     // --- initialize storage node exfiltration                                //(5.1.007)
     for (j = 0; j < Nnodes[STORAGE]; j++) Storage[j].exfil = NULL;             //(5.1.007)
 
     // --- initialize link properties
-    for (j = 0; j < Nobjects[LINK]; j++)
+    for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         Link[j].xsect.type   = -1;
         Link[j].cLossInlet   = 0.0;
@@ -1106,19 +1106,19 @@ void createObjects()
     for (j = 0; j < Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
 
     // --- initialize reporting flags
-    for (j = 0; j < Nobjects[SUBCATCH]; j++) Subcatch[j].rptFlag = FALSE;
-    for (j = 0; j < Nobjects[NODE]; j++) Node[j].rptFlag = FALSE;
-    for (j = 0; j < Nobjects[LINK]; j++) Link[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) Subcatch[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[NODE]; j++) Node[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[LINK]; j++) Link[j].rptFlag = FALSE;
 
     //  --- initialize curves, time series, and time patterns
-    for (j = 0; j < Nobjects[CURVE]; j++)   table_init(&Curve[j]);
-    for (j = 0; j < Nobjects[TSERIES]; j++) table_init(&Tseries[j]);
-    for (j = 0; j < Nobjects[TIMEPATTERN]; j++) inflow_initDwfPattern(j);
+    for (j = 0; j < sp->Nobjects[CURVE]; j++)   table_init(&Curve[j]);
+    for (j = 0; j < sp->Nobjects[TSERIES]; j++) table_init(&Tseries[j]);
+    for (j = 0; j < sp->Nobjects[TIMEPATTERN]; j++) inflow_initDwfPattern(j);
 }
 
 //=============================================================================
 
-void deleteObjects()
+void deleteObjects(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1132,9 +1132,9 @@ void deleteObjects()
     int j, k;
 
     // --- free memory for landuse factors & groundwater
-    if ( Subcatch ) for (j = 0; j < Nobjects[SUBCATCH]; j++)
+    if ( Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        for (k = 0; k < Nobjects[LANDUSE]; k++)
+        for (k = 0; k < sp->Nobjects[LANDUSE]; k++)
         {
             FREE(Subcatch[j].landFactor[k].buildup);
         }
@@ -1145,14 +1145,14 @@ void deleteObjects()
     }
 
     // --- free memory for buildup/washoff functions
-    if ( Landuse ) for (j = 0; j < Nobjects[LANDUSE]; j++)
+    if ( Landuse ) for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
     {
         FREE(Landuse[j].buildupFunc);
         FREE(Landuse[j].washoffFunc)
     }
 
     // --- free memory for water quality state variables
-    if ( Subcatch ) for (j = 0; j < Nobjects[SUBCATCH]; j++)
+    if ( Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         FREE(Subcatch[j].initBuildup);
         FREE(Subcatch[j].oldQual);
@@ -1160,12 +1160,12 @@ void deleteObjects()
         FREE(Subcatch[j].pondedQual);
         FREE(Subcatch[j].totalLoad);
     }
-    if ( Node ) for (j = 0; j < Nobjects[NODE]; j++)
+    if ( Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         FREE(Node[j].oldQual);
         FREE(Node[j].newQual);
     }
-    if ( Link ) for (j = 0; j < Nobjects[LINK]; j++)
+    if ( Link ) for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         FREE(Link[j].oldQual);
         FREE(Link[j].newQual);
@@ -1194,18 +1194,18 @@ void deleteObjects()
         FREE(Outfall[j].wRouted);                                              //(5.1.008)
 
     // --- free memory used for nodal inflows & treatment functions
-    if ( Node ) for (j = 0; j < Nobjects[NODE]; j++)
+    if ( Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         inflow_deleteExtInflows(j);
         inflow_deleteDwfInflows(j);
         rdii_deleteRdiiInflow(j);
-        treatmnt_delete(j);
+        treatmnt_delete(sp, j);
     }
 
     // --- delete table entries for curves and time series
-    if ( Tseries ) for (j = 0; j < Nobjects[TSERIES]; j++)
+    if ( Tseries ) for (j = 0; j < sp->Nobjects[TSERIES]; j++)
         table_deleteEntries(&Tseries[j]);
-    if ( Curve ) for (j = 0; j < Nobjects[CURVE]; j++)
+    if ( Curve ) for (j = 0; j < sp->Nobjects[CURVE]; j++)
         table_deleteEntries(&Curve[j]);
 
     // --- delete cross section transects

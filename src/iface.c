@@ -279,7 +279,7 @@ double iface_getIfaceQual(int index, int pollut)
 
 //=============================================================================
 
-void iface_saveOutletResults(DateTime reportDate, FILE* file)
+void iface_saveOutletResults(SWMM_Project *sp, DateTime reportDate, FILE* file)
 //
 //  Input:   reportDate = reporting date/time
 //           file = ptr. to interface file
@@ -293,7 +293,7 @@ void iface_saveOutletResults(DateTime reportDate, FILE* file)
     datetime_decodeTime(reportDate, &hr, &min, &sec);
     sprintf(theDate, " %04d %02d  %02d  %02d  %02d  %02d ",
             yr, mon, day, hr, min, sec);
-    for (i=0; i<Nobjects[NODE]; i++)
+    for (i=0; i<sp->Nobjects[NODE]; i++)
     {
         // --- check that node is an outlet node
         if ( !isOutletNode(i) ) continue;
@@ -302,7 +302,7 @@ void iface_saveOutletResults(DateTime reportDate, FILE* file)
         fprintf(file, "\n%-16s", Node[i].ID);
         fprintf(file, "%s", theDate);
         fprintf(file, " %-10f", Node[i].inflow * UCF(FLOW));
-        for ( p = 0; p < Nobjects[POLLUT]; p++ )
+        for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
         {
             fprintf(file, " %-10f", Node[i].newQual[p]);
         }
@@ -335,9 +335,9 @@ void openFileForOutput(SWMM_Project *sp)
 
     // --- write number & names of each constituent (including flow) to file
     fprintf(sp->Foutflows.file, "\n%-4d - number of constituents as listed below:",
-            Nobjects[POLLUT] + 1);
+            sp->Nobjects[POLLUT] + 1);
     fprintf(sp->Foutflows.file, "\nFLOW %s", FlowUnitWords[FlowUnits]);
-    for (i=0; i<Nobjects[POLLUT]; i++)
+    for (i=0; i<sp->Nobjects[POLLUT]; i++)
     {
         fprintf(sp->Foutflows.file, "\n%s %s", Pollut[i].ID,
             QualUnitsWords[Pollut[i].units]);
@@ -345,14 +345,14 @@ void openFileForOutput(SWMM_Project *sp)
 
     // --- count number of outlet nodes
     n = 0;
-    for (i=0; i<Nobjects[NODE]; i++)
+    for (i=0; i<sp->Nobjects[NODE]; i++)
     {
         if ( isOutletNode(i) ) n++;
     }
 
     // --- write number and names of outlet nodes to file
     fprintf(sp->Foutflows.file, "\n%-4d - number of nodes as listed below:", n);
-    for (i=0; i<Nobjects[NODE]; i++)
+    for (i=0; i<sp->Nobjects[NODE]; i++)
     {
           if ( isOutletNode(i) )
             fprintf(sp->Foutflows.file, "\n%s", Node[i].ID);
@@ -361,7 +361,7 @@ void openFileForOutput(SWMM_Project *sp)
     // --- write column headings
     fprintf(sp->Foutflows.file,
         "\nNode             Year Mon Day Hr  Min Sec FLOW      ");
-    for (i=0; i<Nobjects[POLLUT]; i++)
+    for (i=0; i<sp->Nobjects[POLLUT]; i++)
     {
         fprintf(sp->Foutflows.file, " %-10s", Pollut[i].ID);
     }
@@ -369,7 +369,7 @@ void openFileForOutput(SWMM_Project *sp)
     // --- if reporting starts immediately, save initial outlet values
     if ( ReportStart == StartDateTime )
     {
-        iface_saveOutletResults(ReportStart, sp->Foutflows.file);
+        iface_saveOutletResults(sp, ReportStart, sp->Foutflows.file);
     }
 }
 
@@ -476,11 +476,11 @@ int  getIfaceFilePolluts(SWMM_Project *sp)
     if ( IfaceFlowUnits < 0 ) return ERR_ROUTING_FILE_FORMAT;
 
     // --- allocate memory for pollutant index array
-    if ( Nobjects[POLLUT] > 0 )
+    if ( sp->Nobjects[POLLUT] > 0 )
     {
-        IfacePolluts = (int *) calloc(Nobjects[POLLUT], sizeof(int));
+        IfacePolluts = (int *) calloc(sp->Nobjects[POLLUT], sizeof(int));
         if ( !IfacePolluts ) return ERR_MEMORY;
-        for (i=0; i<Nobjects[POLLUT]; i++) IfacePolluts[i] = -1;
+        for (i=0; i<sp->Nobjects[POLLUT]; i++) IfacePolluts[i] = -1;
     }
 
     // --- read pollutant names & units
@@ -492,7 +492,7 @@ int  getIfaceFilePolluts(SWMM_Project *sp)
             if ( feof(sp->Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
             fgets(line, MAXLINE, sp->Finflows.file);
             sscanf(line, "%s %s", s1, s2);
-            if ( Nobjects[POLLUT] > 0 )
+            if ( sp->Nobjects[POLLUT] > 0 )
             {
                 j = project_findObject(POLLUT, s1);
                 if ( j < 0 ) continue;

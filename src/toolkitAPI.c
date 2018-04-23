@@ -27,12 +27,12 @@ int     massbal_getRunoffTotal(SM_RunoffTotals *runoffTot);
 double  massbal_getTotalArea(void);
 int     massbal_getNodeTotalInflow(int index, double *value);
 
-int  stats_getNodeStat(int index, SM_NodeStats *nodeStats);
-int  stats_getStorageStat(int index, SM_StorageStats *storageStats);
-int  stats_getOutfallStat(int index, SM_OutfallStats *outfallStats);
-int  stats_getLinkStat(int index, SM_LinkStats *linkStats);
-int  stats_getPumpStat(int index, SM_PumpStats *pumpStats);
-int  stats_getSubcatchStat(int index, SM_SubcatchStats *subcatchStats);
+int  stats_getNodeStat(SWMM_Project *sp, int index, SM_NodeStats *nodeStats);
+int  stats_getStorageStat(SWMM_Project *sp, int index, SM_StorageStats *storageStats);
+int  stats_getOutfallStat(SWMM_Project *sp, int index, SM_OutfallStats *outfallStats);
+int  stats_getLinkStat(SWMM_Project *sp, int index, SM_LinkStats *linkStats);
+int  stats_getPumpStat(SWMM_Project *sp, int index, SM_PumpStats *pumpStats);
+int  stats_getSubcatchStat(SWMM_Project *sp, int index, SM_SubcatchStats *subcatchStats);
 
 //-----------------------------------------------------------------------------
 //  Extended API Functions
@@ -271,7 +271,12 @@ int DLLEXPORT  swmm_getSimulationParam(int type, double *value)
     return (errcode);
 }
 
-int DLLEXPORT  swmm_countObjects(int type, int *count)
+int DLLEXPORT  swmm_countObjects(int type, int *count) {
+
+    return swmm_countObjects_project(_defaultProject, type, count);
+}
+
+int DLLEXPORT  swmm_countObjects_project(SWMM_Project *sp, int type, int *count)
 //
 // Input:   type = object type (Based on SM_ObjectType enum)
 // Output:  count = pointer to integer
@@ -279,11 +284,16 @@ int DLLEXPORT  swmm_countObjects(int type, int *count)
 // Purpose: uses Object Count table to find number of elements of an object
 {
     if(type >= MAX_OBJ_TYPES)return ERR_API_OUTBOUNDS;
-    *count = Nobjects[type];
+    *count = sp->Nobjects[type];
     return (0);
 }
 
 int DLLEXPORT swmm_getObjectId(int type, int index, char *id)
+{
+    return swmm_getObjectId_project(_defaultProject, type, index, id);
+}
+
+int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, char *id)
 //
 // Input:   type = object type (Based on SM_ObjectType enum)
 //          index = Index of desired ID
@@ -301,7 +311,7 @@ int DLLEXPORT swmm_getObjectId(int type, int index, char *id)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[type])
+    else if (index < 0 || index >= sp->Nobjects[type])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -348,6 +358,11 @@ int DLLEXPORT swmm_getObjectId(int type, int index, char *id)
 }
 
 int DLLEXPORT swmm_getNodeType(int index, int *Ntype)
+{
+    return swmm_getNodeType_project(_defaultProject, index, Ntype);
+}
+
+int DLLEXPORT swmm_getNodeType_project(SWMM_Project *sp, int index, int *Ntype)
 //
 // Input:   index = Index of desired ID
 //          Ntype = Node type (Based on enum SM_NodeType)
@@ -361,7 +376,7 @@ int DLLEXPORT swmm_getNodeType(int index, int *Ntype)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[NODE])
+    else if (index < 0 || index >= sp->Nobjects[NODE])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -371,6 +386,11 @@ int DLLEXPORT swmm_getNodeType(int index, int *Ntype)
 }
 
 int DLLEXPORT swmm_getLinkType(int index, int *Ltype)
+{
+    return swmm_getLinkType_project(_defaultProject, index, Ltype);
+}
+
+int DLLEXPORT swmm_getLinkType_project(SWMM_Project *sp, int index, int *Ltype)
 //
 // Input:   index = Index of desired ID
 //          Ltype = Link type (Based on enum SM_LinkType)
@@ -384,7 +404,7 @@ int DLLEXPORT swmm_getLinkType(int index, int *Ltype)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -394,6 +414,11 @@ int DLLEXPORT swmm_getLinkType(int index, int *Ltype)
 }
 
 int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2)
+{
+    return swmm_getLinkConnections_project(_defaultProject, index, Node1, Node2);
+}
+
+int DLLEXPORT swmm_getLinkConnections_project(SWMM_Project *sp, int index, int *Node1, int *Node2)
 //
 // Input:   index = Index of desired ID
 // Output:  Node1 and Node2 indeces
@@ -407,7 +432,7 @@ int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -420,6 +445,11 @@ int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2)
 }
 
 int DLLEXPORT swmm_getLinkDirection(int index, signed char *value)
+{
+    return swmm_getLinkDirection_project(_defaultProject, index, value);
+}
+
+int DLLEXPORT swmm_getLinkDirection_project(SWMM_Project *sp, int index, signed char *value)
 //
 // Input:   index = Index of desired ID
 // Output:  Link Direction (Only changes is slope < 0)
@@ -433,7 +463,7 @@ int DLLEXPORT swmm_getLinkDirection(int index, signed char *value)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -445,6 +475,11 @@ int DLLEXPORT swmm_getLinkDirection(int index, signed char *value)
 }
 
 int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value)
+{
+    return swmm_getNodeParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_getNodeParam_project(SWMM_Project *sp, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_NodeProperty)
@@ -459,7 +494,7 @@ int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[NODE])
+    else if (index < 0 || index >= sp->Nobjects[NODE])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -484,6 +519,11 @@ int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value)
 }
 
 int DLLEXPORT swmm_setNodeParam(int index, int Param, double value)
+{
+    return swmm_setNodeParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_setNodeParam_project(SWMM_Project *sp, int index, int Param, double value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_NodeProperty)
@@ -503,7 +543,7 @@ int DLLEXPORT swmm_setNodeParam(int index, int Param, double value)
         errcode = ERR_API_SIM_NRUNNING;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[NODE])
+    else if (index < 0 || index >= sp->Nobjects[NODE])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -530,6 +570,11 @@ int DLLEXPORT swmm_setNodeParam(int index, int Param, double value)
 }
 
 int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value)
+{
+    return swmm_getLinkParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_getLinkParam_project(SWMM_Project *sp, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_LinkProperty)
@@ -544,7 +589,7 @@ int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -573,6 +618,11 @@ int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value)
 }
 
 int DLLEXPORT swmm_setLinkParam(int index, int Param, double value)
+{
+    return swmm_setLinkParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_setLinkParam_project(SWMM_Project *sp, int index, int Param, double value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_LinkProperty)
@@ -587,7 +637,7 @@ int DLLEXPORT swmm_setLinkParam(int index, int Param, double value)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -614,12 +664,12 @@ int DLLEXPORT swmm_setLinkParam(int index, int Param, double value)
                 Link[index].q0 = value / UCF(FLOW); break;
             case SM_FLOWLIMIT:
                 Link[index].qLimit = value / UCF(FLOW); break;
-            case SM_INLETLOSS:
-                Link[index].cLossInlet; break;
-            case SM_OUTLETLOSS:
-                Link[index].cLossOutlet; break;
-            case SM_AVELOSS:
-                Link[index].cLossAvg; break;
+//            case SM_INLETLOSS:
+//                Link[index].cLossInlet; break;
+//            case SM_OUTLETLOSS:
+//                Link[index].cLossOutlet; break;
+//            case SM_AVELOSS:
+//                Link[index].cLossAvg; break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
         // re-validated link
@@ -629,8 +679,12 @@ int DLLEXPORT swmm_setLinkParam(int index, int Param, double value)
     return(errcode);
 }
 
-
 int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value)
+{
+    return swmm_getSubcatchParam_project(_defaultProject, index, Param, value);
+}
+
+int DLLEXPORT swmm_getSubcatchParam_project(SWMM_Project *sp, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_SubcProperty)
@@ -645,7 +699,7 @@ int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[SUBCATCH])
+    else if (index < 0 || index >= sp->Nobjects[SUBCATCH])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -694,7 +748,7 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
         errcode = ERR_API_SIM_NRUNNING;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[SUBCATCH])
+    else if (index < 0 || index >= sp->Nobjects[SUBCATCH])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -721,7 +775,12 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
     return(errcode);
 }
 
-int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *ObjIndex )
+int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *ObjIndex)
+{
+    return swmm_getSubcatchOutConnection_project(_defaultProject, index, type, ObjIndex);
+}
+
+int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_Project *sp, int index, int *type, int *ObjIndex )
 //
 // Input:   index = Index of desired ID
 //         (Subcatchments can load to Node or another Subcatchment)
@@ -737,7 +796,7 @@ int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *ObjIndex 
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[SUBCATCH])
+    else if (index < 0 || index >= sp->Nobjects[SUBCATCH])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -797,8 +856,12 @@ int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr)
     return(0);
 }
 
-
 int DLLEXPORT swmm_getNodeResult(int index, int type, double *result)
+{
+    return swmm_getNodeResult_project(_defaultProject, index, type, result);
+}
+
+int DLLEXPORT swmm_getNodeResult_project(SWMM_Project *sp, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_NodeResult)
@@ -813,7 +876,7 @@ int DLLEXPORT swmm_getNodeResult(int index, int type, double *result)
         errcode = ERR_API_SIM_NRUNNING;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[NODE])
+    else if (index < 0 || index >= sp->Nobjects[NODE])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -845,6 +908,11 @@ int DLLEXPORT swmm_getNodeResult(int index, int type, double *result)
 }
 
 int DLLEXPORT swmm_getLinkResult(int index, int type, double *result)
+{
+    return swmm_getLinkResult_project(_defaultProject, index, type, result);
+}
+
+int DLLEXPORT swmm_getLinkResult_project(SWMM_Project *sp, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_LinkResult)
@@ -859,7 +927,7 @@ int DLLEXPORT swmm_getLinkResult(int index, int type, double *result)
         errcode = ERR_API_SIM_NRUNNING;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -890,6 +958,11 @@ int DLLEXPORT swmm_getLinkResult(int index, int type, double *result)
 }
 
 int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result)
+{
+    return swmm_getSubcatchResult_project(_defaultProject, index, type, result);
+}
+
+int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_SubcResult)
@@ -904,7 +977,7 @@ int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result)
         errcode = ERR_API_SIM_NRUNNING;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[SUBCATCH])
+    else if (index < 0 || index >= sp->Nobjects[SUBCATCH])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -940,7 +1013,7 @@ int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
 // Return:  API Error
 // Purpose: Gets Node Stats and Converts Units
 {
-    int errorcode = stats_getNodeStat(index, nodeStats);
+    int errorcode = stats_getNodeStat(sp, index, nodeStats);
 
     if (errorcode == 0)
     {
@@ -998,7 +1071,7 @@ int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
 // Return:  API Error
 // Purpose: Gets Storage Node Stats and Converts Units
 {
-    int errorcode = stats_getStorageStat(index, storageStats);
+    int errorcode = stats_getStorageStat(sp, index, storageStats);
 
     if (errorcode == 0)
     {
@@ -1020,6 +1093,13 @@ int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
 }
 
 int DLLEXPORT swmm_getOutfallStats(int index, SM_OutfallStats *outfallStats)
+{
+    return swmm_getOutfallStats_project(_defaultProject, index,
+        outfallStats);
+}
+
+int DLLEXPORT swmm_getOutfallStats_project(SWMM_Project *sp, int index,
+        SM_OutfallStats *outfallStats)
 //
 // Output:  Outfall Stats Structure (SM_OutfallStats)
 // Return:  API Error
@@ -1028,7 +1108,7 @@ int DLLEXPORT swmm_getOutfallStats(int index, SM_OutfallStats *outfallStats)
 //          to free the pollutants array.
 {
     int p;
-    int errorcode = stats_getOutfallStat(index, outfallStats);
+    int errorcode = stats_getOutfallStat(sp, index, outfallStats);
 
     if (errorcode == 0)
     {
@@ -1044,14 +1124,15 @@ int DLLEXPORT swmm_getOutfallStats(int index, SM_OutfallStats *outfallStats)
         // Current Maximum Flow
         outfallStats->maxFlow *= UCF(FLOW);
         // Convert Mass Units
-        if (Nobjects[POLLUT] > 0)
+        if (sp->Nobjects[POLLUT] > 0)
         {
-            for (p = 0; p < Nobjects[POLLUT]; p++)
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 outfallStats->totalLoad[p] *= (LperFT3 * Pollut[p].mcf);
-                if (Pollut[p].units == COUNT)
-                {
-                    outfallStats->totalLoad[p] = LOG10(outfallStats->totalLoad[p]);
-                }
+
+            if (Pollut[p].units == COUNT)
+            {
+                outfallStats->totalLoad[p] = LOG10(outfallStats->totalLoad[p]);
+            }
         }
     }
 
@@ -1068,15 +1149,19 @@ void DLLEXPORT swmm_freeOutfallStats(SM_OutfallStats *outfallStats)
     FREE(outfallStats->totalLoad);
 }
 
-
-
 int DLLEXPORT swmm_getLinkStats(int index, SM_LinkStats *linkStats)
+{
+    return swmm_getLinkStats_project(_defaultProject, index, linkStats);
+}
+
+int DLLEXPORT swmm_getLinkStats_project(SWMM_Project *sp, int index,
+        SM_LinkStats *linkStats)
 //
 // Output:  Link Stats Structure (SM_LinkStats)
 // Return:  API Error
 // Purpose: Gets Link Stats and Converts Units
 {
-    int errorcode = stats_getLinkStat(index, linkStats);
+    int errorcode = stats_getLinkStat(sp, index, linkStats);
 
     if (errorcode == 0)
     {
@@ -1107,14 +1192,19 @@ int DLLEXPORT swmm_getLinkStats(int index, SM_LinkStats *linkStats)
     return (errorcode);
 }
 
-
 int DLLEXPORT swmm_getPumpStats(int index, SM_PumpStats *pumpStats)
+{
+    return swmm_getPumpStats_project(_defaultProject, index, pumpStats);
+}
+
+int DLLEXPORT swmm_getPumpStats_project(SWMM_Project *sp, int index,
+        SM_PumpStats *pumpStats)
 //
 // Output:  Pump Link Stats Structure (SM_PumpStats)
 // Return:  API Error
 // Purpose: Gets Pump Link Stats and Converts Units
 {
-    int errorcode = stats_getPumpStat(index, pumpStats);
+    int errorcode = stats_getPumpStat(sp, index, pumpStats);
 
     if (errorcode == 0)
     {
@@ -1138,8 +1228,13 @@ int DLLEXPORT swmm_getPumpStats(int index, SM_PumpStats *pumpStats)
     return (errorcode);
 }
 
-
 int DLLEXPORT swmm_getSubcatchStats(int index, SM_SubcatchStats *subcatchStats)
+{
+    return swmm_getSubcatchStats_project(_defaultProject, index, subcatchStats);
+}
+
+int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
+        SM_SubcatchStats *subcatchStats)
 //
 // Output:  Subcatchment Stats Structure (SM_SubcatchStats)
 // Return:  API Error
@@ -1148,7 +1243,7 @@ int DLLEXPORT swmm_getSubcatchStats(int index, SM_SubcatchStats *subcatchStats)
 //       to free the pollutants array.
 {
     int p;
-    int errorcode = stats_getSubcatchStat(index, subcatchStats);
+    int errorcode = stats_getSubcatchStat(sp, index, subcatchStats);
 
     if (errorcode == 0)
     {
@@ -1167,15 +1262,16 @@ int DLLEXPORT swmm_getSubcatchStats(int index, SM_SubcatchStats *subcatchStats)
         // Cumulative Evaporation Volume
         subcatchStats->evap *= (UCF(RAINDEPTH) / a);
 
-        if (Nobjects[POLLUT] > 0)
+        if (sp->Nobjects[POLLUT] > 0)
         {
-            for (p = 0; p < Nobjects[POLLUT]; p++)
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 subcatchStats->surfaceBuildup[p] /= (a * UCF(LANDAREA));
-                if (Pollut[p].units == COUNT)
-                {
-                    subcatchStats->surfaceBuildup[p] =
+
+            if (Pollut[p].units == COUNT)
+            {
+                subcatchStats->surfaceBuildup[p] =
                         LOG10(subcatchStats->surfaceBuildup[p]);
-                }
+            }
         }
     }
 
@@ -1264,7 +1360,15 @@ int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot)
     return(errorcode);
 }
 
-int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall, double *total)
+int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall,
+            double *total)
+{
+    return swmm_getGagePrecip_project(_defaultProject, index, rainfall, snowfall,
+            total);
+}
+
+int DLLEXPORT swmm_getGagePrecip_project(SWMM_Project *sp, int index,
+        double *rainfall, double *snowfall, double *total)
 //
 // Input:   index = Index of desired ID
 // Output:  Rainfall intensity and snow for the gage
@@ -1278,7 +1382,7 @@ int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall, 
 	    errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[GAGE])
+    else if (index < 0 || index >= sp->Nobjects[GAGE])
     {
 	    errcode = ERR_API_OBJECT_INDEX;
     }
@@ -1289,8 +1393,12 @@ int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall, 
     }
     return(errcode);
 }
-
 int DLLEXPORT swmm_setGagePrecip(int index, double value)
+{
+    return swmm_setGagePrecip_project(_defaultProject, index, value);
+}
+
+int DLLEXPORT swmm_setGagePrecip_project(SWMM_Project *sp, int index, double value)
 //
 // Input:   index = Index of desired ID
 //          value = rainfall intensity to be set
@@ -1304,7 +1412,7 @@ int DLLEXPORT swmm_setGagePrecip(int index, double value)
 	    errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[GAGE])
+    else if (index < 0 || index >= sp->Nobjects[GAGE])
     {
 	    errcode = ERR_API_OBJECT_INDEX;
     }
@@ -1346,7 +1454,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[LINK])
+    else if (index < 0 || index >= sp->Nobjects[LINK])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -1372,8 +1480,12 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
     return(errcode);
 }
 
-
 int DLLEXPORT swmm_setNodeInflow(int index, double flowrate)
+{
+    return swmm_setNodeInflow_project(_defaultProject, index, flowrate);
+}
+
+int DLLEXPORT swmm_setNodeInflow_project(SWMM_Project *sp, int index, double flowrate)
 //
 // Input:   index = Index of desired ID
 //          value = New Inflow Rate
@@ -1388,7 +1500,7 @@ int DLLEXPORT swmm_setNodeInflow(int index, double flowrate)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if (index < 0 || index >= Nobjects[NODE])
+    else if (index < 0 || index >= sp->Nobjects[NODE])
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
@@ -1416,7 +1528,7 @@ int DLLEXPORT swmm_setNodeInflow(int index, double flowrate)
             double baseline = 0.0; // Baseline Inflow Rate
 
             // Initializes Inflow Object
-            errcode = inflow_setExtInflow(index, param, type, tSeries,
+            errcode = inflow_setExtInflow(sp, index, param, type, tSeries,
                 basePat, cf, baseline, sf);
 
             // Get The Inflow Object
@@ -1435,6 +1547,11 @@ int DLLEXPORT swmm_setNodeInflow(int index, double flowrate)
 }
 
 int DLLEXPORT swmm_setOutfallStage(int index, double stage)
+{
+    return swmm_setOutfallStage_project(_defaultProject, index, stage);
+}
+
+int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double stage)
 //
 // Input:   index = Index of desired outfall
 //          stage = New outfall stage (head)
@@ -1448,7 +1565,7 @@ int DLLEXPORT swmm_setOutfallStage(int index, double stage)
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if object index is within bounds
-    else if ( index < 0 || index >= Nobjects[NODE] )
+    else if ( index < 0 || index >= sp->Nobjects[NODE] )
     {
         errcode = ERR_API_OBJECT_INDEX;
     }

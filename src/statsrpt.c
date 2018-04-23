@@ -87,21 +87,21 @@ void statsrpt_writeReport(SWMM_Project *sp)
     else                  Vcf = 28.317 / 1.0e6;
 
     // --- report summary results for subcatchment runoff 
-    if ( Nobjects[SUBCATCH] > 0 )
+    if ( sp->Nobjects[SUBCATCH] > 0 )
     {
         if ( !IgnoreRainfall ||
-             (Nobjects[SNOWMELT] > 0 && !IgnoreSnowmelt) ||
-             (Nobjects[AQUIFER] > 0  && !IgnoreGwater) )
+             (sp->Nobjects[SNOWMELT] > 0 && !IgnoreSnowmelt) ||
+             (sp->Nobjects[AQUIFER] > 0  && !IgnoreGwater) )
         {
             writeSubcatchRunoff(sp);
             lid_writeWaterBalance(sp);
             if ( !IgnoreGwater ) writeGroundwater(sp);                           //(5.1.008)
-            if ( Nobjects[POLLUT] > 0 && !IgnoreQuality) writeSubcatchLoads(sp);
+            if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality) writeSubcatchLoads(sp);
         }
     }
 
     // --- report summary results for flow routing
-    if ( Nobjects[LINK] > 0 && !IgnoreRouting )
+    if ( sp->Nobjects[LINK] > 0 && !IgnoreRouting )
     {
         writeNodeDepths(sp);
         writeNodeFlows(sp);
@@ -113,7 +113,7 @@ void statsrpt_writeReport(SWMM_Project *sp)
         writeFlowClass(sp);
         writeLinkSurcharge(sp);
         writePumpFlows(sp);
-        if ( Nobjects[POLLUT] > 0 && !IgnoreQuality) writeLinkLoads(sp);
+        if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality) writeLinkLoads(sp);
     }
 }
 
@@ -124,7 +124,7 @@ void writeSubcatchRunoff(SWMM_Project *sp)
     int    j;
     double a, x, r;
 
-    if ( Nobjects[SUBCATCH] == 0 ) return;
+    if ( sp->Nobjects[SUBCATCH] == 0 ) return;
     WRITE("");
     WRITE("***************************");
     WRITE("Subcatchment Runoff Summary");
@@ -144,7 +144,7 @@ void writeSubcatchRunoff(SWMM_Project *sp)
     fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------");
 
-    for ( j = 0; j < Nobjects[SUBCATCH]; j++ )
+    for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
         a = Subcatch[j].area;
         if ( a == 0.0 ) continue;
@@ -181,8 +181,8 @@ void    writeGroundwater(SWMM_Project *sp)
     double totalSeconds = NewRunoffTime / 1000.;
     double x[9];
 
-    if ( Nobjects[SUBCATCH] == 0 ) return;
-    for ( j = 0; j < Nobjects[SUBCATCH]; j++ )
+    if ( sp->Nobjects[SUBCATCH] == 0 ) return;
+    for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
         if ( Subcatch[j].groundwater != NULL ) count++;
     }
@@ -208,7 +208,7 @@ void    writeGroundwater(SWMM_Project *sp)
     fprintf(sp->Frpt.file,
 "\n  -----------------------------------------------------------------------------------------------------");
 
-    for ( j = 0; j < Nobjects[SUBCATCH]; j++ )
+    for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
         if ( Subcatch[j].area == 0.0 || Subcatch[j].groundwater == NULL ) continue;
         fprintf(sp->Frpt.file, "\n  %-20s", Subcatch[j].ID);
@@ -239,7 +239,7 @@ void writeSubcatchLoads(SWMM_Project *sp)
     char  pollutLine[]   = "--------------";
 
     // --- create an array to hold total loads for each pollutant
-    totals = (double *) calloc(Nobjects[POLLUT], sizeof(double));
+    totals = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
     if ( totals )
     {
         // --- print the table headings 
@@ -249,11 +249,11 @@ void writeSubcatchLoads(SWMM_Project *sp)
         WRITE("****************************");
         WRITE("");
         fprintf(sp->Frpt.file, "\n  %s", subcatchLine);
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
         fprintf(sp->Frpt.file, "\n                      ");
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
         fprintf(sp->Frpt.file, "\n  Subcatchment        ");
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             i = UnitSystem;
             if ( Pollut[p].units == COUNT ) i = 2;
@@ -262,13 +262,13 @@ void writeSubcatchLoads(SWMM_Project *sp)
             totals[p] = 0.0;
         }
         fprintf(sp->Frpt.file, "\n  %s", subcatchLine);
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
 
         // --- print the pollutant loadings from each subcatchment
-        for ( j = 0; j < Nobjects[SUBCATCH]; j++ )
+        for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
         {
             fprintf(sp->Frpt.file, "\n  %-20s", Subcatch[j].ID);
-            for (p = 0; p < Nobjects[POLLUT]; p++)
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 x = Subcatch[j].totalLoad[p];
                 totals[p] += x;
@@ -279,9 +279,9 @@ void writeSubcatchLoads(SWMM_Project *sp)
 
         // --- print the total loading of each pollutant
         fprintf(sp->Frpt.file, "\n  %s", subcatchLine);
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
         fprintf(sp->Frpt.file, "\n  System              ");
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             x = totals[p];
             if ( Pollut[p].units == COUNT ) x = LOG10(x);
@@ -305,7 +305,7 @@ void writeNodeDepths(SWMM_Project *sp)
 {
     int j, days, hrs, mins;
 
-    if ( Nobjects[LINK] == 0 ) return;
+    if ( sp->Nobjects[LINK] == 0 ) return;
 
     WRITE("");
     WRITE("******************");
@@ -324,7 +324,7 @@ void writeNodeDepths(SWMM_Project *sp)
     fprintf(sp->Frpt.file,
 "\n  ---------------------------------------------------------------------------------");
 
-    for ( j = 0; j < Nobjects[NODE]; j++ )
+    for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
         fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
         fprintf(sp->Frpt.file, " %-9s ", NodeTypeWords[Node[j].type]);
@@ -367,7 +367,7 @@ void writeNodeFlows(SWMM_Project *sp)
     fprintf(sp->Frpt.file,
 "\n  -------------------------------------------------------------------------------------------------");
 
-    for ( j = 0; j < Nobjects[NODE]; j++ )
+    for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
         fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
         fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[Node[j].type]);
@@ -401,7 +401,7 @@ void writeNodeSurcharge(SWMM_Project *sp)
     WRITE("**********************");
     WRITE("");
 
-    for ( j = 0; j < Nobjects[NODE]; j++ )
+    for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
         if ( Node[j].type == OUTFALL ) continue;
         if ( NodeStats[j].timeSurcharged == 0.0 ) continue;
@@ -448,7 +448,7 @@ void writeNodeFlooding(SWMM_Project *sp)
     WRITE("*********************");
     WRITE("");
 
-    for ( j = 0; j < Nobjects[NODE]; j++ )
+    for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
         if ( Node[j].type == OUTFALL ) continue;
         if ( NodeStats[j].timeFlooded == 0.0 ) continue;
@@ -526,7 +526,7 @@ void writeStorageVolumes(SWMM_Project *sp)
         fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------");
 
-        for ( j = 0; j < Nobjects[NODE]; j++ )
+        for ( j = 0; j < sp->Nobjects[NODE]; j++ )
         {
             if ( Node[j].type != STORAGE ) continue;
             k = Node[j].subIndex;
@@ -580,8 +580,8 @@ void writeOutfallLoads(SWMM_Project *sp)
     if ( Nnodes[OUTFALL] > 0 )
     {
         // --- initial totals
-        totals = (double *) calloc(Nobjects[POLLUT], sizeof(double));
-        for (p=0; p<Nobjects[POLLUT]; p++) totals[p] = 0.0;
+        totals = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        for (p=0; p<sp->Nobjects[POLLUT]; p++) totals[p] = 0.0;
         flowSum = 0.0;
         freqSum = 0.0;
 		volSum  = 0.0;
@@ -596,18 +596,18 @@ void writeOutfallLoads(SWMM_Project *sp)
         // --- print table column headers
         fprintf(sp->Frpt.file,
  "\n  -----------------------------------------------------------"); 
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
         fprintf(sp->Frpt.file,
  "\n                         Flow       Avg       Max       Total");
-        for (p=0; p<Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file,"         Total");
+        for (p=0; p<sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file,"         Total");
         fprintf(sp->Frpt.file,
  "\n                         Freq      Flow      Flow      Volume");
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
         fprintf(sp->Frpt.file,
  "\n  Outfall Node           Pcnt       %3s       %3s    %8s",
             FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
 			VolUnitsWords[UnitSystem]);
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             i = UnitSystem;
             if ( Pollut[p].units == COUNT ) i = 2;
@@ -616,10 +616,10 @@ void writeOutfallLoads(SWMM_Project *sp)
         }
         fprintf(sp->Frpt.file,
  "\n  -----------------------------------------------------------");
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
 
         // --- identify each outfall node
-        for (j=0; j<Nobjects[NODE]; j++)
+        for (j=0; j<sp->Nobjects[NODE]; j++)
         {
             if ( Node[j].type != OUTFALL ) continue;
             k = Node[j].subIndex;
@@ -644,7 +644,7 @@ void writeOutfallLoads(SWMM_Project *sp)
             volSum += NodeInflow[j];
 
             // --- print load of each pollutant for outfall
-            for (p=0; p<Nobjects[POLLUT]; p++)
+            for (p=0; p<sp->Nobjects[POLLUT]; p++)
             {
                 x = OutfallStats[k].totalLoad[p] * LperFT3 * Pollut[p].mcf;
                 totals[p] += x;
@@ -657,7 +657,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         outfallCount = Nnodes[OUTFALL];
         fprintf(sp->Frpt.file,
  "\n  -----------------------------------------------------------"); 
-        for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "--------------");
 
         fprintf(sp->Frpt.file, "\n  System              %7.2f ",
             freqSum/outfallCount);
@@ -666,7 +666,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         fprintf(sp->Frpt.file, FlowFmt, MaxOutfallFlow*UCF(FLOW));
 		fprintf(sp->Frpt.file, "%12.3f", volSum * Vcf);
 
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             x = totals[p];
             if ( Pollut[p].units == COUNT ) x = LOG10(x);
@@ -689,7 +689,7 @@ void writeLinkFlows(SWMM_Project *sp)
     int    j, k, days, hrs, mins;
     double v, fullDepth;
 
-    if ( Nobjects[LINK] == 0 ) return;
+    if ( sp->Nobjects[LINK] == 0 ) return;
     WRITE("");
     WRITE("********************");
     WRITE("Link Flow Summary");
@@ -709,7 +709,7 @@ void writeLinkFlows(SWMM_Project *sp)
     fprintf(sp->Frpt.file,
 "\n  -----------------------------------------------------------------------------");
 
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         // --- print link ID
         k = Link[j].subIndex;
@@ -787,7 +787,7 @@ void writeFlowClass(SWMM_Project *sp)
 "\n                       /Actual         Up    Down  Sub   Sup   Up    Down  Norm  Inlet "
 "\n  Conduit               Length    Dry  Dry   Dry   Crit  Crit  Crit  Crit  Ltd   Ctrl  "
 "\n  -------------------------------------------------------------------------------------");
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         if ( Link[j].type != CONDUIT ) continue;
         if ( Link[j].xsect.type == DUMMY ) continue;
@@ -819,7 +819,7 @@ void writeLinkSurcharge(SWMM_Project *sp)
     WRITE("Conduit Surcharge Summary");
     WRITE("*************************");
     WRITE("");
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         if ( Link[j].type != CONDUIT ||
 			 Link[j].xsect.type == DUMMY ) continue; 
@@ -876,7 +876,7 @@ void writePumpFlows(SWMM_Project *sp)
 "\n  ---------------------------------------------------------------------------------------------------------",
         FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
         FlowUnitWords[FlowUnits], VolUnitsWords[UnitSystem]);
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         if ( Link[j].type != PUMP ) continue;
         k = Link[j].subIndex;
@@ -919,11 +919,11 @@ void writeLinkLoads(SWMM_Project *sp)
     WRITE("***************************");
     WRITE("");
     fprintf(sp->Frpt.file, "\n  %s", linkLine);
-    for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
     fprintf(sp->Frpt.file, "\n                      ");
-    for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
     fprintf(sp->Frpt.file, "\n  Link                ");
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         i = UnitSystem;
         if ( Pollut[p].units == COUNT ) i = 2;
@@ -931,13 +931,13 @@ void writeLinkLoads(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "%14s", units);
     }
     fprintf(sp->Frpt.file, "\n  %s", linkLine);
-    for (p = 0; p < Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
 
     // --- print the pollutant loadings carried by each link
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             x = Link[j].totalLoad[p] * LperFT3 * Pollut[p].mcf;
             if ( Pollut[p].units == COUNT ) x = LOG10(x);

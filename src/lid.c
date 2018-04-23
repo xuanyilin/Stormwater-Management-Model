@@ -1366,7 +1366,7 @@ double  lid_getDrainFlow(int j, int timePeriod)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void  lid_addDrainLoads(int j, double c[], double tStep)
+void  lid_addDrainLoads(SWMM_Project *sp, int j, double c[], double tStep)
 //
 //  Purpose: adds pollutant loads routed from drains to system
 //           mass balance totals.
@@ -1396,7 +1396,7 @@ void  lid_addDrainLoads(int j, double c[], double tStep)
                 || lidUnit->drainSubcatch == j )
             {
                 //... For each pollutant 
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     //... get drain's mass load
                     w = lidUnit->newDrainFlow * c[p] * tStep *
@@ -1415,7 +1415,7 @@ void  lid_addDrainLoads(int j, double c[], double tStep)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void lid_addDrainRunon(int j)
+void lid_addDrainRunon(SWMM_Project *sp, int j)
 //
 //  Purpose: adds drain flows from LIDs in a given subcatchment to the
 //           subcatchments that were designated to receive them 
@@ -1450,7 +1450,7 @@ void lid_addDrainRunon(int j)
                 //... add pollutant loads from drain to subcatchment
                 //    (newQual[] contains loading rate (mass/sec) at this
                 //    point which is converted later on to a concentration)
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     Subcatch[k].newQual[p] +=
                         q * Subcatch[j].oldQual[p] * LperFT3;
@@ -1465,7 +1465,7 @@ void lid_addDrainRunon(int j)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void  lid_addDrainInflow(int j, double f)
+void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
 //
 //  Purpose: adds LID drain flow to conveyance system nodes 
 //  Input:   j = subcatchment index
@@ -1503,7 +1503,7 @@ void  lid_addDrainInflow(int j, double f)
                 massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
 
                 //... add pollutant load, based on parent subcatchment quality 
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     //... get previous & current drain loads
                     w1 = lidUnit->oldDrainFlow * Subcatch[j].oldQual[p];
@@ -1512,7 +1512,7 @@ void  lid_addDrainInflow(int j, double f)
                     //... add interpolated load to node's wet weather loading
                     w = (1.0 - f) * w1 + f * w2;
                     Node[k].newQual[p] += w;
-                    massbal_addInflowQual(WET_WEATHER_INFLOW, p, w);
+                    massbal_addInflowQual(sp, WET_WEATHER_INFLOW, p, w);
                 }
             }
             lidList = lidList->nextLidUnit;

@@ -503,9 +503,9 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         project_init(sp);
 
         // --- see if runoff & routing needs to be computed
-        if ( Nobjects[SUBCATCH] > 0 ) DoRunoff = TRUE;
+        if ( sp->Nobjects[SUBCATCH] > 0 ) DoRunoff = TRUE;
         else DoRunoff = FALSE;
-        if ( Nobjects[NODE] > 0 && !IgnoreRouting ) DoRouting = TRUE;
+        if ( sp->Nobjects[NODE] > 0 && !IgnoreRouting ) DoRouting = TRUE;
         else DoRouting = FALSE;
 
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
@@ -624,7 +624,7 @@ void execRouting(SWMM_Project *sp)                                              
         // --- determine when next routing time occurs
         sp->StepCount++;
         if ( !DoRouting ) routingStep = MIN(WetStep, ReportStep);
-        else routingStep = routing_getRoutingStep(RouteModel, RouteStep);
+        else routingStep = routing_getRoutingStep(sp, RouteModel, RouteStep);
         if ( routingStep <= 0.0 )
         {
             ErrorCode = ERR_TIMESTEP;
@@ -702,7 +702,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         }
 
         // --- close all computing systems
-        stats_close();
+        stats_close(sp);
         massbal_close();
         if ( !IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
@@ -749,7 +749,7 @@ int DLLEXPORT swmm_close_project(SWMM_Project *sp)
 //
 {
     if ( sp->Fout.file ) output_close();
-    if ( IsOpenFlag ) project_close();
+    if ( IsOpenFlag ) project_close(sp);
     report_writeSysTime(sp);
     if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);
     if ( sp->Frpt.file != NULL ) fclose(sp->Frpt.file);

@@ -65,13 +65,14 @@ typedef struct
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void   node_setParams(int j, int type, int k, double x[]);
-static int    junc_readParams(int j, int k, char* tok[], int ntoks);
+static void   node_setParams(SWMM_Project *sp, int j, int type, int k, double x[]);
+static int    junc_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks);
 
-static int    outfall_readParams(int j, int k, char* tok[], int ntoks);
+static int    outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks);
 static void   outfall_setOutletDepth(int j, double yNorm, double yCrit, double z);
 
-static int    storage_readParams(int j, int k, char* tok[], int ntoks);
+static int    storage_readParams(SWMM_Project *sp, int j, int k, char* tok[],
+        int ntoks);
 static double storage_getDepth(int j, double v);
 static double storage_getVolume(int j, double d);
 static double storage_getSurfArea(int j, double d);
@@ -79,14 +80,15 @@ static void   storage_getVolDiff(double y, double* f, double* df, void* p);
 static double storage_getOutflow(int j, int i);
 static double storage_getLosses(int j, double tStep);
 
-static int    divider_readParams(int j, int k, char* tok[], int ntoks);
+static int    divider_readParams(SWMM_Project *sp, int j, int k, char* tok[],
+        int ntoks);
 static void   divider_validate(SWMM_Project *sp, int j);
 static double divider_getOutflow(int j, int link);
 
 
 //=============================================================================
 
-int node_readParams(int j, int type, int k, char* tok[], int ntoks)
+int node_readParams(SWMM_Project *sp, int j, int type, int k, char* tok[], int ntoks)
 //
 //  Input:   j = node index
 //           type = node type code
@@ -99,17 +101,17 @@ int node_readParams(int j, int type, int k, char* tok[], int ntoks)
 {
     switch ( type )
     {
-      case JUNCTION: return junc_readParams(j, k, tok, ntoks);
-      case OUTFALL:  return outfall_readParams(j, k, tok, ntoks);
-      case STORAGE:  return storage_readParams(j, k, tok, ntoks);
-      case DIVIDER:  return divider_readParams(j, k, tok, ntoks);
+      case JUNCTION: return junc_readParams(sp, j, k, tok, ntoks);
+      case OUTFALL:  return outfall_readParams(sp, j, k, tok, ntoks);
+      case STORAGE:  return storage_readParams(sp, j, k, tok, ntoks);
+      case DIVIDER:  return divider_readParams(sp, j, k, tok, ntoks);
       default:       return 0;
     }
 }
 
 //=============================================================================
 
-void  node_setParams(int j, int type, int k, double x[])
+void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
 //
 //  Input:   j = node index
 //           type = node type code
@@ -153,7 +155,7 @@ void  node_setParams(int j, int type, int k, double x[])
         if ( Outfall[k].routeTo >= 0 )
         {
             Outfall[k].wRouted =
-                (double *) calloc(Nobjects[POLLUT], sizeof(double));
+                (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
         }
 ////
         break;
@@ -218,7 +220,7 @@ void  node_validate(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void node_initState(int j)
+void node_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -237,7 +239,7 @@ void node_initState(int j)
     Node[j].newVolume = Node[j].oldVolume;
 
     // --- initialize water quality state
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         Node[j].oldQual[p]  = 0.0;
         Node[j].newQual[p]  = 0.0;
@@ -272,7 +274,7 @@ void node_initState(int j)
         if ( Outfall[k].routeTo >= 0 )
         {
             Outfall[k].vRouted = 0.0;
-            for (p = 0; p < Nobjects[POLLUT]; p++) Outfall[k].wRouted[p] = 0.0;
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++) Outfall[k].wRouted[p] = 0.0;
         }
     }
 ////
@@ -294,7 +296,7 @@ void node_setOldHydState(int j)
 
 //=============================================================================
 
-void node_setOldQualState(int j)
+void node_setOldQualState(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -302,7 +304,7 @@ void node_setOldQualState(int j)
 //
 {
     int p;
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         Node[j].oldQual[p] = Node[j].newQual[p];
         Node[j].newQual[p] = 0.0;
@@ -487,7 +489,7 @@ double node_getSystemOutflow(int j, int *isFlooded)
 
 //=============================================================================
 
-void node_getResults(int j, double f, float x[])
+void node_getResults(SWMM_Project *sp, int j, double f, float x[])
 //
 //  Input:   j = node index
 //           f = weighting factor
@@ -513,7 +515,7 @@ void node_getResults(int j, double f, float x[])
     z = Node[j].overflow * UCF(FLOW);
     x[NODE_OVERFLOW] = (float)z;
 
-    if ( !IgnoreQuality ) for (p = 0; p < Nobjects[POLLUT]; p++)
+    if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         z = f1*Node[j].oldQual[p] + f*Node[j].newQual[p];
         x[NODE_QUAL+p] = (float)z;
@@ -596,7 +598,7 @@ double node_getLosses(int j, double tStep)
 //                   J U N C T I O N   M E T H O D S
 //=============================================================================
 
-int junc_readParams(int j, int k, char* tok[], int ntoks)
+int junc_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = node index
 //           k = junction index
@@ -636,7 +638,7 @@ int junc_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to junction object
     Node[j].ID = id;
-    node_setParams(j, JUNCTION, k, x);
+    node_setParams(sp, j, JUNCTION, k, x);
     return 0;
 }
 
@@ -645,7 +647,7 @@ int junc_readParams(int j, int k, char* tok[], int ntoks)
 //                   S T O R A G E   M E T H O D S
 //=============================================================================
 
-int storage_readParams(int j, int k, char* tok[], int ntoks)
+int storage_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = node index
 //           k = storage unit index
@@ -726,7 +728,7 @@ int storage_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to storage unit object
     Node[j].ID = id;
-    node_setParams(j, STORAGE, k, x);
+    node_setParams(sp, j, STORAGE, k, x);
 
     // --- read exfiltration parameters if present
     if ( ntoks > n ) return exfil_readStorageParams(k, tok, ntoks, n);         //(5.1.007)
@@ -972,7 +974,7 @@ double storage_getLosses(int j, double tStep)
 //                   D I V I D E R   M E T H O D S
 //=============================================================================
 
-int divider_readParams(int j, int k, char* tok[], int ntoks)
+int divider_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = node index
 //           k = divider index
@@ -1069,7 +1071,7 @@ int divider_readParams(int j, int k, char* tok[], int ntoks)
  
     // --- add parameters to data base
     Node[j].ID = id;
-    node_setParams(j, DIVIDER, k, x);
+    node_setParams(sp, j, DIVIDER, k, x);
     return 0;
 }
 
@@ -1192,7 +1194,7 @@ double divider_getOutflow(int j, int k)
 //                    O U T F A L L   M E T H O D S
 //=============================================================================
 
-int outfall_readParams(int j, int k, char* tok[], int ntoks)
+int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = node index
 //           k = outfall index
@@ -1268,7 +1270,7 @@ int outfall_readParams(int j, int k, char* tok[], int ntoks)
 ////
 
     Node[j].ID = id;
-    node_setParams(j, OUTFALL, k, x);
+    node_setParams(sp, j, OUTFALL, k, x);
     return 0;
 }
 

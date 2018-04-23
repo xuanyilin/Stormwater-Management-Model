@@ -49,13 +49,13 @@ extern double      VlidReturn;    // LID outflow returned to pervious area
 //-----------------------------------------------------------------------------
 // Function declarations
 //-----------------------------------------------------------------------------
-static void  findWashoffLoads(int j, double runoff);
-static void  findPondedLoads(int j, double tStep);
-static void  findLidLoads(int j, double tStep);
+static void  findWashoffLoads(SWMM_Project *sp, int j, double runoff);
+static void  findPondedLoads(SWMM_Project *sp, int j, double tStep);
+static void  findLidLoads(SWMM_Project *sp, int j, double tStep);
 
 //=============================================================================
 
-void surfqual_initState(int j)
+void surfqual_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  none
@@ -65,7 +65,7 @@ void surfqual_initState(int j)
     int p;
 
     // --- initialize washoff quality
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         Subcatch[j].oldQual[p] = 0.0;
         Subcatch[j].newQual[p] = 0.0;
@@ -73,13 +73,13 @@ void surfqual_initState(int j)
     }
 
     // --- initialize pollutant buildup
-	landuse_getInitBuildup(Subcatch[j].landFactor,  Subcatch[j].initBuildup,
+	landuse_getInitBuildup(sp, Subcatch[j].landFactor,  Subcatch[j].initBuildup,
 		Subcatch[j].area, Subcatch[j].curbLength);
 }
 
 //=============================================================================
 
-void surfqual_getBuildup(int j, double tStep)
+void surfqual_getBuildup(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j = subcatchment index
 //           tStep = time step (sec)
@@ -96,7 +96,7 @@ void surfqual_getBuildup(int j, double tStep)
     double  newBuildup;                // buildup at end of time step
 
     // --- consider each landuse
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- skip landuse if not in subcatch
         f = Subcatch[j].landFactor[i].fraction;
@@ -107,7 +107,7 @@ void surfqual_getBuildup(int j, double tStep)
         curb = f * Subcatch[j].curbLength;
 
         // --- examine each pollutant
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             // --- see if snow-only buildup is in effect
             if (Pollut[p].snowOnly 
@@ -127,7 +127,7 @@ void surfqual_getBuildup(int j, double tStep)
 
 //=============================================================================
 
-void surfqual_sweepBuildup(int j, DateTime aDate)
+void surfqual_sweepBuildup(SWMM_Project *sp, int j, DateTime aDate)
 //
 //  Input:   j = subcatchment index
 //           aDate = current date/time
@@ -145,7 +145,7 @@ void surfqual_sweepBuildup(int j, DateTime aDate)
          Subcatch[j].snowpack->wsnow[IMPERV0] > MIN_TOTAL_DEPTH ) return;
 
     // --- consider each land use
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- skip land use if not in subcatchment 
         if ( Subcatch[j].landFactor[i].fraction == 0.0 ) continue;
@@ -161,7 +161,7 @@ void surfqual_sweepBuildup(int j, DateTime aDate)
             Subcatch[j].landFactor[i].lastSwept = aDate;
 
             // --- examine each pollutant
-            for (p = 0; p < Nobjects[POLLUT]; p++)
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 // --- reduce buildup by the fraction available
                 //     times the sweeping effic.
@@ -182,7 +182,7 @@ void surfqual_sweepBuildup(int j, DateTime aDate)
 
 //=============================================================================
 
-void  surfqual_getWashoff(int j, double runoff, double tStep)
+void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
 //
 //  Input:   j = subcatchment index
 //           runoff = total subcatchment runoff before internal re-routing or
@@ -212,13 +212,13 @@ void  surfqual_getWashoff(int j, double runoff, double tStep)
 
     // --- return if there is no area or no pollutants
     area = Subcatch[j].area;
-    if ( Nobjects[POLLUT] == 0 || area == 0.0 ) return;
+    if ( sp->Nobjects[POLLUT] == 0 || area == 0.0 ) return;
 
     // --- find contributions from washoff, runon and wet precip. to OutflowLoad
-    for (p = 0; p < Nobjects[POLLUT]; p++) OutflowLoad[p] = 0.0;
-    findWashoffLoads(j, runoff);
-    findPondedLoads(j, tStep);
-    findLidLoads(j, tStep);
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++) OutflowLoad[p] = 0.0;
+    findWashoffLoads(sp, j, runoff);
+    findPondedLoads(sp, j, tStep);
+    findLidLoads(sp, j, tStep);
 
     // --- contribution from direct rainfall on LID areas
     vLidRain = Subcatch[j].rainfall * Subcatch[j].lidArea * tStep;
@@ -246,7 +246,7 @@ void  surfqual_getWashoff(int j, double runoff, double tStep)
     hasOutflow = (vOut2 > MIN_RUNOFF * area * tStep);
 
     // --- for each pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- convert washoff load to a concentration
         cOut = 0.0;
@@ -282,7 +282,7 @@ void  surfqual_getWashoff(int j, double runoff, double tStep)
     // --- add contribution of LID drain flows to mass balance 
     if ( Subcatch[j].lidArea > 0.0 )
     {
-        lid_addDrainLoads(j, Subcatch[j].newQual, tStep);
+        lid_addDrainLoads(sp, j, Subcatch[j].newQual, tStep);
     }
 }
 
@@ -303,7 +303,7 @@ double surfqual_getWtdWashoff(int j, int p, double f)
 
 //=============================================================================
 
-void findPondedLoads(int j, double tStep)
+void findPondedLoads(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j = subcatchment index
 //           tStep = time step (sec)
@@ -332,7 +332,7 @@ void findPondedLoads(int j, double tStep)
     // --- compute precip. volume over time step (ft3)
     vRain = Subcatch[j].rainfall * nonLidArea * tStep;
 
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- update mass balance for wet deposition
         wRain = Pollut[p].pptConcen * LperFT3 * vRain;
@@ -366,7 +366,7 @@ void findPondedLoads(int j, double tStep)
             wPonded -= wOutflow;
 
             // --- reduce outflow load by average BMP removal
-            bmpRemoval = landuse_getAvgBmpEffic(j, p) * wOutflow;
+            bmpRemoval = landuse_getAvgBmpEffic(sp, j, p) * wOutflow;
             massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p,
                 bmpRemoval*Pollut[p].mcf);
             wOutflow -= bmpRemoval;
@@ -380,7 +380,7 @@ void findPondedLoads(int j, double tStep)
 
 //=============================================================================
 
-void  findWashoffLoads(int j, double runoff)
+void  findWashoffLoads(SWMM_Project *sp, int j, double runoff)
 //
 //  Input:   j = subcatchment index
 //           runoff = subcatchment runoff before internal re-routing or
@@ -398,12 +398,12 @@ void  findWashoffLoads(int j, double runoff)
     
     // --- examine each land use
     if ( runoff < MIN_RUNOFF ) return;
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         if ( Subcatch[j].landFactor[i].fraction > 0.0 )
         {
             // --- compute load generated by washoff function
-            for (p = 0; p < Nobjects[POLLUT]; p++)
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 OutflowLoad[p] += landuse_getWashoffLoad(
                     i, p, area, Subcatch[j].landFactor, runoff, Voutflow);
@@ -412,7 +412,7 @@ void  findWashoffLoads(int j, double runoff)
     }
 
     // --- compute contribution from any co-pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- check if pollutant p has a co-pollutant k
         k = Pollut[p].coPollut;
@@ -433,7 +433,7 @@ void  findWashoffLoads(int j, double runoff)
 
 //=============================================================================
 
-void  findLidLoads(int j, double tStep)
+void  findLidLoads(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j = subcatchment index
 //           tStep = time step (sec)
@@ -458,7 +458,7 @@ void  findLidLoads(int j, double tStep)
     //     (for partial LID coverage, runon loads were directed onto non-LID area)
     useRunon = (lidArea == Subcatch[j].area);
 
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- wet deposition load on LID area
         wLidRain = Pollut[p].pptConcen * vLidRain * LperFT3;

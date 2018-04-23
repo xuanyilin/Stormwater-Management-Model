@@ -107,16 +107,16 @@ static MathExpr* DeepFlowExpr;    // user-supplied deep GW flow expression     /
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void   getDxDt(double t, double* x, double* dxdt);
-static void   getFluxes(double upperVolume, double lowerDepth);
+static void   getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt);
+static void   getFluxes(SWMM_Project *sp, double upperVolume, double lowerDepth);
 static void   getEvapRates(double theta, double upperDepth);
 static double getUpperPerc(double theta, double upperDepth);
 static double getGWFlow(double lowerDepth);
 static void   updateMassBal(double area,  double tStep);
 
 // Used to process custom GW outflow equations
-static int    getVariableIndex(char* s);
-static double getVariableValue(int varIndex);
+static int    getVariableIndex(SWMM_Project *sp, char* s);
+static double getVariableValue(SWMM_Project *sp, int varIndex);
 
 //=============================================================================
 
@@ -261,7 +261,7 @@ int gwater_readGroundwaterParams(char* tok[], int ntoks)
 
 ////  This function was re-written for release 5.1.007.  ////                  //(5.1.007)
 
-int gwater_readFlowExpression(char* tok[], int ntoks)
+int gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -307,7 +307,7 @@ int gwater_readFlowExpression(char* tok[], int ntoks)
     // --- create a parsed expression tree from the string expr
     //     (getVariableIndex is the function that converts a GW
     //      variable's name into an index number) 
-    expr = mathexpr_create(exprStr, getVariableIndex);
+    expr = mathexpr_create(sp, exprStr, getVariableIndex);
     if ( expr == NULL ) return error_setInpError(ERR_TREATMENT_EXPR, "");
 
     // --- save expression tree with the subcatchment
@@ -480,7 +480,8 @@ double gwater_getVolume(int j)
 
 //=============================================================================
 
-void gwater_getGroundwater(int j, double evap, double infil, double tStep)
+void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
+        double tStep)
 //
 //  Purpose: computes groundwater flow from subcatchment during current time step.
 //  Input:   j     = subcatchment index
@@ -590,7 +591,7 @@ void gwater_getGroundwater(int j, double evap, double infil, double tStep)
     // --- save new values of state values
     GW->theta = x[THETA];
     GW->lowerDepth  = x[LOWERDEPTH];
-    getFluxes(GW->theta, GW->lowerDepth);
+    getFluxes(sp, GW->theta, GW->lowerDepth);
     GW->oldFlow = GW->newFlow;
     GW->newFlow = GWFlow;
     GW->evapLoss = UpperEvap + LowerEvap;
@@ -639,7 +640,7 @@ void updateMassBal(double area, double tStep)
 
 ////  This function was re-written for release 5.1.007.  ////                  //(5.1.007)
 
-void  getFluxes(double theta, double lowerDepth)
+void  getFluxes(SWMM_Project *sp, double theta, double lowerDepth)
 //
 //  Input:   upperVolume = vol. depth of upper zone (ft)
 //           upperDepth  = depth of upper zone (ft)
@@ -667,7 +668,7 @@ void  getFluxes(double theta, double lowerDepth)
 
     // --- find loss rate to deep GW
     if ( DeepFlowExpr != NULL )
-        LowerLoss = mathexpr_eval(DeepFlowExpr, getVariableValue) /
+        LowerLoss = mathexpr_eval(sp, DeepFlowExpr, getVariableValue) /
                     UCF(RAINFALL);
     else
         LowerLoss = A.lowerLossCoeff * lowerDepth / TotalDepth;
@@ -677,7 +678,7 @@ void  getFluxes(double theta, double lowerDepth)
     GWFlow = getGWFlow(lowerDepth);
     if ( LatFlowExpr != NULL )
     {
-        GWFlow += mathexpr_eval(LatFlowExpr, getVariableValue) / UCF(GWFLOW);
+        GWFlow += mathexpr_eval(sp, LatFlowExpr, getVariableValue) / UCF(GWFLOW);
     }
     if ( GWFlow >= 0.0 ) GWFlow = MIN(GWFlow, MaxGWFlowPos);
     else GWFlow = MAX(GWFlow, MaxGWFlowNeg);
@@ -685,7 +686,7 @@ void  getFluxes(double theta, double lowerDepth)
 
 //=============================================================================
 
-void  getDxDt(double t, double* x, double* dxdt)
+void  getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt)
 //
 //  Input:   t    = current time (not used)
 //           x    = array of state variables
@@ -698,7 +699,7 @@ void  getDxDt(double t, double* x, double* dxdt)
     double qLower;    // inflow - outflow for lower zone (ft/sec)
     double denom;
 
-    getFluxes(x[THETA], x[LOWERDEPTH]);
+    getFluxes(sp, x[THETA], x[LOWERDEPTH]);
     qUpper = Infil - UpperEvap - UpperPerc;
     qLower = UpperPerc - LowerLoss - LowerEvap - GWFlow;
 
@@ -842,7 +843,7 @@ double getGWFlow(double lowerDepth)
 
 //=============================================================================
 
-int  getVariableIndex(char* s)
+int  getVariableIndex(SWMM_Project *sp, char* s)
 //
 //  Input:   s = name of a groundwater variable
 //  Output:  returns index of groundwater variable
@@ -858,7 +859,7 @@ int  getVariableIndex(char* s)
 
 //=============================================================================
 
-double getVariableValue(int varIndex)
+double getVariableValue(SWMM_Project *sp, int varIndex)
 //
 //  Input:   varIndex = index of a GW variable
 //  Output:  returns current value of GW variable

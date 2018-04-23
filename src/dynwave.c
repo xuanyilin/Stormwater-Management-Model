@@ -84,26 +84,26 @@ static int     Steps;                  // number of Picard iterations
 //-----------------------------------------------------------------------------
 //  Function declarations
 //-----------------------------------------------------------------------------
-static void   initRoutingStep(void);
-static void   initNodeStates(void);
-static void   findBypassedLinks();
-static void   findLimitedLinks();
+static void   initRoutingStep(SWMM_Project *sp);
+static void   initNodeStates(SWMM_Project *sp);
+static void   findBypassedLinks(SWMM_Project *sp);
+static void   findLimitedLinks(SWMM_Project *sp);
 
-static void   findLinkFlows(double dt);
+static void   findLinkFlows(SWMM_Project *sp, double dt);
 static int    isTrueConduit(int link);
 static void   findNonConduitFlow(int link, double dt);
 static void   findNonConduitSurfArea(int link);
 static double getModPumpFlow(int link, double q, double dt);
 static void   updateNodeFlows(int link);
 
-static int    findNodeDepths(double dt);
+static int    findNodeDepths(SWMM_Project *sp, double dt);
 static void   setNodeDepth(int node, double dt);
 static double getFloodedDepth(int node, int canPond, double dV, double yNew,
               double yMax, double dt);
 
-static double getVariableStep(double maxStep);
-static double getLinkStep(double tMin, int *minLink);
-static double getNodeStep(double tMin, int *minNode);
+static double getVariableStep(SWMM_Project *sp, double maxStep);
+static double getLinkStep(SWMM_Project *sp, double tMin, int *minLink);
+static double getNodeStep(SWMM_Project *sp, double tMin, int *minNode);
 
 //=============================================================================
 
@@ -120,7 +120,7 @@ void dynwave_init(SWMM_Project *sp)
     double z;
 
     VariableStep = 0.0;
-    Xnode = (TXnode *) calloc(Nobjects[NODE], sizeof(TXnode));
+    Xnode = (TXnode *) calloc(sp->Nobjects[NODE], sizeof(TXnode));
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
     if ( Xnode == NULL )
@@ -132,7 +132,7 @@ void dynwave_init(SWMM_Project *sp)
 //////////////////////////////////////
 
     // --- initialize node surface areas & crown elev.
-    for (i = 0; i < Nobjects[NODE]; i++ )
+    for (i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         Xnode[i].newSurfArea = 0.0;
         Xnode[i].oldSurfArea = 0.0;
@@ -140,7 +140,7 @@ void dynwave_init(SWMM_Project *sp)
     }
 
     // --- update node crown elev. & initialize links
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         j = Link[i].node1;
         z = Node[j].invertElev + Link[i].offset1 + Link[i].xsect.yFull;
@@ -187,7 +187,7 @@ void dynwave_validate()
 
 //=============================================================================
 
-double dynwave_getRoutingStep(double fixedStep)
+double dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep)
 //
 //  Input:   fixedStep = user-supplied fixed time step (sec)
 //  Output:  returns routing time step (sec)
@@ -207,7 +207,7 @@ double dynwave_getRoutingStep(double fixedStep)
     }
 
     // --- otherwise compute variable step based on current flow solution
-    else VariableStep = getVariableStep(fixedStep);
+    else VariableStep = getVariableStep(sp, fixedStep);
 
     // --- adjust step to be a multiple of a millisecond
     VariableStep = floor(1000.0 * VariableStep) / 1000.0;
@@ -231,42 +231,42 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
     Steps = 0;
     converged = FALSE;
     Omega = OMEGA;
-    initRoutingStep();
+    initRoutingStep(sp);
 
     // --- keep iterating until convergence 
     while ( Steps < MaxTrials )
     {
         // --- execute a routing step & check for nodal convergence
-        initNodeStates();
-        findLinkFlows(tStep);
-        converged = findNodeDepths(tStep);
+        initNodeStates(sp);
+        findLinkFlows(sp, tStep);
+        converged = findNodeDepths(sp, tStep);
         Steps++;
         if ( Steps > 1 )
         {
             if ( converged ) break;
 
             // --- check if link calculations can be skipped in next step
-            findBypassedLinks();
+            findBypassedLinks(sp);
         }
     }
     if ( !converged ) sp->NonConvergeCount++;
 
     //  --- identify any capacity-limited conduits
-    findLimitedLinks();
+    findLimitedLinks(sp);
     return Steps;
 }
 
 //=============================================================================
 
-void   initRoutingStep()
+void   initRoutingStep(SWMM_Project *sp)
 {
     int i;
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         Xnode[i].converged = FALSE;
         Xnode[i].dYdT = 0.0;
     }
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         Link[i].bypassed = FALSE;
         Link[i].surfArea1 = 0.0;
@@ -279,7 +279,7 @@ void   initRoutingStep()
 
 //=============================================================================
 
-void initNodeStates()
+void initNodeStates(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -288,7 +288,7 @@ void initNodeStates()
 {
     int i;
 
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         // --- initialize nodal surface area
         if ( AllowPonding )
@@ -322,10 +322,10 @@ void initNodeStates()
 
 //=============================================================================
 
-void   findBypassedLinks()
+void   findBypassedLinks(SWMM_Project *sp)
 {
     int i;
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( Xnode[Link[i].node1].converged &&
              Xnode[Link[i].node2].converged )
@@ -336,7 +336,7 @@ void   findBypassedLinks()
 
 //=============================================================================
 
-void  findLimitedLinks()
+void  findLimitedLinks(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -346,7 +346,7 @@ void  findLimitedLinks()
     int    j, n1, n2, k;
     double h1, h2;
 
-    for (j = 0; j < Nobjects[LINK]; j++)
+    for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         // ---- check only non-dummy conduit links
         if ( !isTrueConduit(j) ) continue;                                     //(5.1.008)
@@ -369,7 +369,7 @@ void  findLimitedLinks()
 
 //=============================================================================
 
-void findLinkFlows(double dt)
+void findLinkFlows(SWMM_Project *sp, double dt)
 {
     int i;
 
@@ -377,21 +377,21 @@ void findLinkFlows(double dt)
 #pragma omp parallel num_threads(NumThreads)                                   //(5.1.008)
 {
     #pragma omp for                                                            //(5.1.008)
-    for ( i = 0; i < Nobjects[LINK]; i++)
+    for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( isTrueConduit(i) && !Link[i].bypassed )
-            dwflow_findConduitFlow(i, Steps, Omega, dt);
+            dwflow_findConduitFlow(sp, i, Steps, Omega, dt);
     }
 }
 
     // --- update inflow/outflows for nodes attached to non-dummy conduits
-    for ( i = 0; i < Nobjects[LINK]; i++)
+    for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( isTrueConduit(i) ) updateNodeFlows(i);
     }
 
     // --- find new flows for all dummy conduits, pumps & regulators
-    for ( i = 0; i < Nobjects[LINK]; i++)
+    for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( !isTrueConduit(i) )
         {	
@@ -575,14 +575,14 @@ void updateNodeFlows(int i)
 
 //=============================================================================
 
-int findNodeDepths(double dt)
+int findNodeDepths(SWMM_Project *sp, double dt)
 {
     int i;
     int converged;      // convergence flag
     double yOld;        // previous node depth (ft)
 
     // --- compute outfall depths based on flow in connecting link
-    for ( i = 0; i < Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
 
     // --- compute new depth for all non-outfall nodes and determine if
     //     depth change from previous iteration is below tolerance
@@ -590,7 +590,7 @@ int findNodeDepths(double dt)
 #pragma omp parallel num_threads(NumThreads)                                   //(5.1.008)
 {
     #pragma omp for private(yOld)                                              //(5.1.008)
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         if ( Node[i].type == OUTFALL ) continue;
         yOld = Node[i].newDepth;
@@ -752,7 +752,7 @@ double getFloodedDepth(int i, int canPond, double dV, double yNew,
 
 //=============================================================================
 
-double getVariableStep(double maxStep)
+double getVariableStep(SWMM_Project *sp, double maxStep)
 //
 //  Input:   maxStep = user-supplied max. time step (sec)
 //  Output:  returns time step (sec)
@@ -768,8 +768,8 @@ double getVariableStep(double maxStep)
 
     // --- find stable time step for links & then nodes
     tMin = maxStep;
-    tMinLink = getLinkStep(tMin, &minLink);
-    tMinNode = getNodeStep(tMinLink, &minNode);
+    tMinLink = getLinkStep(sp, tMin, &minLink);
+    tMinNode = getNodeStep(sp, tMinLink, &minNode);
 
     // --- use smaller of the link and node time step
     tMin = tMinLink;
@@ -789,7 +789,7 @@ double getVariableStep(double maxStep)
 
 //=============================================================================
 
-double getLinkStep(double tMin, int *minLink)
+double getLinkStep(SWMM_Project *sp, double tMin, int *minLink)
 //
 //  Input:   tMin = critical time step found so far (sec)
 //  Output:  minLink = index of link with critical time step;
@@ -804,7 +804,7 @@ double getLinkStep(double tMin, int *minLink)
     double tLink = tMin;                // critical link time step (sec)
 
     // --- examine each conduit link
-    for ( i = 0; i < Nobjects[LINK]; i++ )
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
         if ( Link[i].type == CONDUIT )
         {
@@ -818,7 +818,7 @@ double getLinkStep(double tMin, int *minLink)
 
             // --- compute time step to satisfy Courant condition
             t = Link[i].newVolume / Conduit[k].barrels / q;
-            t = t * Conduit[k].modLength / link_getLength(i);
+            t = t * Conduit[k].modLength / link_getLength(sp, i);
             t = t * Link[i].froude / (1.0 + Link[i].froude) * CourantFactor;
 
             // --- update critical link time step
@@ -834,7 +834,7 @@ double getLinkStep(double tMin, int *minLink)
 
 //=============================================================================
 
-double getNodeStep(double tMin, int *minNode)
+double getNodeStep(SWMM_Project *sp, double tMin, int *minNode)
 //
 //  Input:   tMin = critical time step found so far (sec)
 //  Output:  minNode = index of node with critical time step;
@@ -851,7 +851,7 @@ double getNodeStep(double tMin, int *minNode)
 
     // --- find smallest time so that estimated change in nodal depth
     //     does not exceed safety factor * maxdepth
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- see if node can be skipped
         if ( Node[i].type == OUTFALL ) continue;

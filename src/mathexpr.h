@@ -11,6 +11,7 @@
 #ifndef MATHEXPR_H
 #define MATHEXPR_H
 
+#include "SWMM5.h"
 
 //  Node in a tokenized math expression list
 struct ExprNode
@@ -24,10 +25,12 @@ struct ExprNode
 typedef struct ExprNode MathExpr;
 
 //  Creates a tokenized math expression from a string
-MathExpr* mathexpr_create(char* s, int (*getVar) (char *));
+MathExpr* mathexpr_create(SWMM_Project *sp, char* s,
+        int (*getVar) (SWMM_Project *sp, char *));
 
 //  Evaluates a tokenized math expression
-double mathexpr_eval(MathExpr* expr, double (*getVal) (int));
+double mathexpr_eval(SWMM_Project *sp, MathExpr* expr,
+        double (*getVal) (SWMM_Project *sp, int));
 
 //  Deletes a tokenized math expression
 void  mathexpr_delete(MathExpr* expr);

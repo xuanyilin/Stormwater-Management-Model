@@ -44,9 +44,9 @@ static int   LoopLinksLast;            // number of links in a loop
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void createAdjList(int listType);
-static void adjustAdjList(void);
-static int  topoSort(int sortedLinks[]);
+static void createAdjList(SWMM_Project *sp, int listType);
+static void adjustAdjList(SWMM_Project *sp);
+static int  topoSort(SWMM_Project *sp, int sortedLinks[]);
 static void findCycles(SWMM_Project *sp);
 static void findSpanningTree(SWMM_Project *sp, int startNode);
 static void evalLoop(SWMM_Project *sp, int startLink);
@@ -64,7 +64,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
     int i, n = 0;
 
     // --- no need to sort links for Dyn. Wave routing
-    for ( i=0; i<Nobjects[LINK]; i++) sortedLinks[i] = i;
+    for ( i=0; i<sp->Nobjects[LINK]; i++) sortedLinks[i] = i;
     if ( RouteModel == DW )
     {
 
@@ -74,8 +74,8 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
         if ( ErrorCode ) return;
 
         // --- find number of outflow links for each node
-        for ( i=0; i<Nobjects[NODE]; i++ ) Node[i].degree = 0;
-        for ( i=0; i<Nobjects[LINK]; i++ )
+        for ( i=0; i<sp->Nobjects[NODE]; i++ ) Node[i].degree = 0;
+        for ( i=0; i<sp->Nobjects[LINK]; i++ )
         {
             // --- if upstream node is an outfall, then increment outflow
             //     count for downstream node, otherwise increment count
@@ -95,10 +95,10 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
 
     // --- allocate arrays used for topo sorting
     if ( ErrorCode ) return;
-    InDegree = (int *) calloc(Nobjects[NODE], sizeof(int));
-    StartPos = (int *) calloc(Nobjects[NODE], sizeof(int));
-    AdjList  = (int *) calloc(Nobjects[LINK], sizeof(int));
-    Stack    = (int *) calloc(Nobjects[NODE], sizeof(int));
+    InDegree = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
+    StartPos = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
+    AdjList  = (int *) calloc(sp->Nobjects[LINK], sizeof(int));
+    Stack    = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
     if ( InDegree == NULL || StartPos == NULL ||
          AdjList == NULL || Stack == NULL )
     {
@@ -107,17 +107,17 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
     else
     {
         // --- create a directed adjacency list of links leaving each node
-        createAdjList(DIRECTED);
+        createAdjList(sp, DIRECTED);
 
         // --- adjust adjacency list for DIVIDER nodes
-        adjustAdjList();
+        adjustAdjList(sp);
 
         // --- find number of links entering each node
-        for (i = 0; i < Nobjects[NODE]; i++) InDegree[i] = 0;
-        for (i = 0; i < Nobjects[LINK]; i++) InDegree[ Link[i].node2 ]++;
+        for (i = 0; i < sp->Nobjects[NODE]; i++) InDegree[i] = 0;
+        for (i = 0; i < sp->Nobjects[LINK]; i++) InDegree[ Link[i].node2 ]++;
 
         // --- topo sort the links
-        n = topoSort(sortedLinks);
+        n = topoSort(sp, sortedLinks);
     }   
 
     // --- free allocated memory
@@ -127,7 +127,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
     FREE(Stack);
 
     // --- check that all links are included in SortedLinks
-    if ( !ErrorCode &&  n != Nobjects[LINK] )
+    if ( !ErrorCode &&  n != sp->Nobjects[LINK] )
     {
         report_writeErrorMsg(sp, ERR_LOOP, "");
         findCycles(sp);
@@ -136,7 +136,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
 
 //=============================================================================
 
-void createAdjList(int listType)
+void createAdjList(SWMM_Project *sp ,int listType)
 //
 //  Input:   lsitType = DIRECTED or UNDIRECTED
 //  Output:  none
@@ -148,8 +148,8 @@ void createAdjList(int listType)
     // --- determine degree of each node
     //     (for DIRECTED list only count link at its upstream node;
     //      for UNDIRECTED list count link at both end nodes)
-    for (i = 0; i < Nobjects[NODE]; i++) Node[i].degree = 0;
-    for (j = 0; j < Nobjects[LINK]; j++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++) Node[i].degree = 0;
+    for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         Node[ Link[j].node1 ].degree++;
         if ( listType == UNDIRECTED ) Node[ Link[j].node2 ].degree++;
@@ -159,17 +159,17 @@ void createAdjList(int listType)
     //     (the adjacency list, AdjList, is one long vector containing
     //      the individual node lists one after the other)
     StartPos[0] = 0;
-    for (i = 0; i < Nobjects[NODE]-1; i++)
+    for (i = 0; i < sp->Nobjects[NODE]-1; i++)
     {
         StartPos[i+1] = StartPos[i] + Node[i].degree;
         Node[i].degree = 0;
     }
-    Node[Nobjects[NODE]-1].degree = 0;
+    Node[sp->Nobjects[NODE]-1].degree = 0;
 
     // --- traverse the list of links once more,
     //     adding each link's index to the proper 
     //     position in the adjacency list
-    for (j = 0; j < Nobjects[LINK]; j++)
+    for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         i = Link[j].node1;
         k = StartPos[i] + Node[i].degree;
@@ -187,7 +187,7 @@ void createAdjList(int listType)
 
 //=============================================================================
 
-void adjustAdjList()
+void adjustAdjList(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -198,7 +198,7 @@ void adjustAdjList()
     int i, j, k, m;
 
     // --- check each node
-    for (i=0; i<Nobjects[NODE]; i++)
+    for (i=0; i<sp->Nobjects[NODE]; i++)
     {
         // --- skip nodes that are not Dividers
         if ( Node[i].type != DIVIDER ) continue;
@@ -219,7 +219,7 @@ void adjustAdjList()
 
 //=============================================================================
 
-int topoSort(int sortedLinks[])
+int topoSort(SWMM_Project *sp, int sortedLinks[])
 //
 //  Input:   none
 //  Output:  sortedLinks = array of sorted link indexes,
@@ -233,7 +233,7 @@ int topoSort(int sortedLinks[])
     // --- initialize a stack which contains nodes with zero in-degree
     First = 0;
     Last = -1;
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         if ( InDegree[i] == 0 )
         {
@@ -290,25 +290,25 @@ void  findCycles(SWMM_Project *sp)
     int i;
 
     // --- allocate arrays
-    AdjList  = (int *) calloc(2*Nobjects[LINK], sizeof(int));
-    StartPos = (int *) calloc(Nobjects[NODE], sizeof(int));
-    Stack    = (int *) calloc(Nobjects[NODE], sizeof(int));
-    Examined = (char *) calloc(Nobjects[NODE], sizeof(char));
-    InTree   = (char *) calloc(Nobjects[LINK], sizeof(char));
-    LoopLinks = (int *) calloc(Nobjects[LINK], sizeof(int));
+    AdjList  = (int *) calloc(2*sp->Nobjects[LINK], sizeof(int));
+    StartPos = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
+    Stack    = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
+    Examined = (char *) calloc(sp->Nobjects[NODE], sizeof(char));
+    InTree   = (char *) calloc(sp->Nobjects[LINK], sizeof(char));
+    LoopLinks = (int *) calloc(sp->Nobjects[LINK], sizeof(int));
     if ( StartPos && AdjList && Stack && Examined && InTree && LoopLinks )
     {
         // --- create an undirected adjacency list for the nodes
-        createAdjList(UNDIRECTED);
+        createAdjList(sp, UNDIRECTED);
 
         // --- set to empty the list of nodes examined and the list
         //     of links in the spanning tree
-        for ( i=0; i<Nobjects[NODE]; i++) Examined[i] = 0;
-        for ( i=0; i<Nobjects[LINK]; i++) InTree[i] = 0;
+        for ( i=0; i<sp->Nobjects[NODE]; i++) Examined[i] = 0;
+        for ( i=0; i<sp->Nobjects[LINK]; i++) InTree[i] = 0;
 
         // --- find a spanning tree for each unexamined node
         //     (cycles are identified as tree is constructed)
-        for ( i=0; i<Nobjects[NODE]; i++)
+        for ( i=0; i<sp->Nobjects[NODE]; i++)
         {
             if ( Examined[i] ) continue;
             Last = -1;
@@ -489,7 +489,7 @@ void checkDummyLinks(SWMM_Project *sp)
 
     // --- create an array that marks nodes
     //     (calloc initializes the array to 0)
-    marked = (int *) calloc(Nobjects[NODE], sizeof(int));
+    marked = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
     if ( marked == NULL )
     {
         report_writeErrorMsg(sp, ERR_MEMORY, "");
@@ -498,7 +498,7 @@ void checkDummyLinks(SWMM_Project *sp)
 
     // --- mark nodes that whose incoming links are all
     //     either dummy links or ideal pumps
-    for ( i = 0; i < Nobjects[LINK]; i++ )
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
         j = Link[i].node2;
         if ( Link[i].direction < 0 ) j = Link[i].node1;
@@ -512,7 +512,7 @@ void checkDummyLinks(SWMM_Project *sp)
     }
 
     // --- find marked nodes with outgoing dummy links or ideal pumps
-    for ( i = 0; i < Nobjects[LINK]; i++ )
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
         if ( (Link[i].type == CONDUIT && Link[i].xsect.type == DUMMY) ||
              (Link[i].type == PUMP && 

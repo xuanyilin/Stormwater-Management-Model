@@ -98,7 +98,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     qin = (*qinflow) / Conduit[k].barrels / Qfull;
 
     // --- compute evaporation and infiltration loss rate
-	q3 = link_getLossRate(j, qin*Qfull, tStep) / Qfull;                        //(5.1.008)
+	q3 = link_getLossRate(sp, j, qin*Qfull, tStep) / Qfull;                        //(5.1.008)
 
     // --- normalize previous areas
     a1 = Conduit[k].a1 / Afull;
@@ -121,7 +121,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     else
     {
         // --- compute constant factors
-        dxdt = link_getLength(j) / tStep * Afull / Qfull;
+        dxdt = link_getLength(sp, j) / tStep * Afull / Qfull;
         dq   = q2 - q1;
         C1   = dxdt * WT / WX;
         C2   = (1.0 - WT) * (ain - a1);

@@ -29,7 +29,7 @@
 
 //=============================================================================
 
-int inflow_readExtInflow(char* tok[], int ntoks)
+int inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -116,11 +116,11 @@ int inflow_readExtInflow(char* tok[], int ntoks)
         if ( basePat < 0 ) return error_setInpError(ERR_NAME, tok[7]);
     }
 	
-	return(inflow_setExtInflow(j, param, type, tseries, basePat,
+	return(inflow_setExtInflow(sp, j, param, type, tseries, basePat,
 		cf, baseline, sf));
 }
 
-int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
+int inflow_validate(SWMM_Project *sp, int param, int type, int tseries, int basePat, double *cf)
 // 
 // Purpose: Validates Inflow
 // Input:  param = -1 for Flow or Index of Pollutant
@@ -132,7 +132,7 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 {
 	int errcode = 0;
 	// Validate param
-	if (param >= Nobjects[POLLUT])
+	if (param >= sp->Nobjects[POLLUT])
 	{
 		errcode = ERR_API_POLLUT_INDEX;
 	}
@@ -144,12 +144,12 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 		errcode = ERR_KEYWORD;
 	}
 	// Validate Timeseries Index
-	else if (tseries >= Nobjects[TSERIES])
+	else if (tseries >= sp->Nobjects[TSERIES])
 	{
 		errcode = ERR_API_TSERIES_INDEX;
 	}
 	// Validate Timepattern Index
-	else if (basePat >= Nobjects[TIMEPATTERN])
+	else if (basePat >= sp->Nobjects[TIMEPATTERN])
 	{
 		errcode = ERR_API_PATTERN_INDEX;
 	}
@@ -171,8 +171,8 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 }
 
 
-int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
-						double cf, double baseline, double sf)
+int inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type, int tseries,
+        int basePat, double cf, double baseline, double sf)
 // Purpose:  This function assigns property values to the inflow object 
 // Inputs:   j = Node index
 //           param = FLOW (-1) or pollutant index
@@ -188,7 +188,7 @@ int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
 	int errcode = 0;
 
 	// Validate Inflow
-	errcode = inflow_validate(param, type, tseries, basePat, &cf);
+	errcode = inflow_validate(sp, param, type, tseries, basePat, &cf);
 	
 	if (errcode == 0)
 	{

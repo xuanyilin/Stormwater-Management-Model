@@ -202,9 +202,9 @@ double   lid_getStoredVolume(int subcatch);
 //double   lid_getSurfaceDepth(int subcatch);                                  //(5.1.008)
 //double   lid_getDepthOnPavement(int subcatch, double impervDepth);           //(5.1.008)
 
-void     lid_addDrainLoads(int subcatch, double c[], double tStep);            //(5.1.008)
-void     lid_addDrainRunon(int subcatch);                                      //(5.1.008)
-void     lid_addDrainInflow(int subcatch, double f);                           //(5.1.008)
+void     lid_addDrainLoads(SWMM_Project *sp, int subcatch, double c[], double tStep);            //(5.1.008)
+void     lid_addDrainRunon(SWMM_Project *sp, int subcatch);                                      //(5.1.008)
+void     lid_addDrainInflow(SWMM_Project *sp, int subcatch, double f);                           //(5.1.008)
 
 void     lid_getRunoff(int subcatch, double tStep);                            //(5.1.008)
 

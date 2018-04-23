@@ -128,7 +128,7 @@ static void readFileValues(SWMM_Project *sp);
 
 static void setNextEvapDate(DateTime thedate);                                 //(5.1.008)
 static void setEvap(DateTime theDate);
-static void setTemp(DateTime theDate);
+static void setTemp(SWMM_Project *sp, DateTime theDate);
 static void setWind(DateTime theDate);
 static void updateTempTimes(int day);
 static void updateTempMoveAve(double tmin, double tmax);                       //(5.1.010)
@@ -600,7 +600,7 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
 //
 {
     if ( sp->Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
-    if ( Temp.dataSource != NO_TEMP ) setTemp(theDate);
+    if ( Temp.dataSource != NO_TEMP ) setTemp(sp, theDate);
     setEvap(theDate);
     setWind(theDate);
     Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
@@ -737,7 +737,7 @@ void updateFileValues(SWMM_Project *sp, DateTime theDate)
 
 //=============================================================================
 
-void setTemp(DateTime theDate)
+void setTemp(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = simulation date
 //  Output:  none
@@ -779,7 +779,7 @@ void setTemp(DateTime theDate)
 
         // --- compute snow melt coefficients based on day of year
         Snow.season = sin(0.0172615*(day-81.0));
-        for (j=0; j<Nobjects[SNOWMELT]; j++)
+        for (j=0; j<sp->Nobjects[SNOWMELT]; j++)
         {
             snow_setMeltCoeffs(j, Snow.season);
         }

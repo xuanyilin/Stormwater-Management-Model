@@ -69,7 +69,7 @@ EXTERN SWMM_Project *_defaultProject;
 //                  RptFlags;                 // Reporting options
 
 EXTERN int
-                  Nobjects[MAX_OBJ_TYPES],  // Number of each object type
+//                  Nobjects[MAX_OBJ_TYPES],  // Number of each object type
                   Nnodes[MAX_NODE_TYPES],   // Number of each node sub-type
                   Nlinks[MAX_LINK_TYPES],   // Number of each link sub-type
                   UnitSystem,               // Unit system

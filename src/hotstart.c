@@ -157,21 +157,21 @@ int openHotstartFile1(SWMM_Project *sp)
     {    
         fread(&nSubcatch, sizeof(int), 1, sp->Fhotstart1.file);
     }
-    else nSubcatch = Nobjects[SUBCATCH];
+    else nSubcatch = sp->Nobjects[SUBCATCH];
     if ( fileVersion >= 3 )                                                    //(5.1.008)
     {
         fread(&nLandUses, sizeof(int), 1, sp->Fhotstart1.file);
     }
-    else nLandUses = Nobjects[LANDUSE];
+    else nLandUses = sp->Nobjects[LANDUSE];
     fread(&nNodes, sizeof(int), 1, sp->Fhotstart1.file);
     fread(&nLinks, sizeof(int), 1, sp->Fhotstart1.file);
     fread(&nPollut, sizeof(int), 1, sp->Fhotstart1.file);
     fread(&flowUnits, sizeof(int), 1, sp->Fhotstart1.file);
-    if ( nSubcatch != Nobjects[SUBCATCH] 
-    ||   nLandUses != Nobjects[LANDUSE]
-    ||   nNodes    != Nobjects[NODE]
-    ||   nLinks    != Nobjects[LINK]
-    ||   nPollut   != Nobjects[POLLUT]
+    if ( nSubcatch != sp->Nobjects[SUBCATCH]
+    ||   nLandUses != sp->Nobjects[LANDUSE]
+    ||   nNodes    != sp->Nobjects[NODE]
+    ||   nLinks    != sp->Nobjects[LINK]
+    ||   nPollut   != sp->Nobjects[POLLUT]
     ||   flowUnits != FlowUnits )
     {
          report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
@@ -212,11 +212,11 @@ int openHotstartFile2(SWMM_Project *sp)
     }
 
     // --- write file stamp & number of objects to file
-    nSubcatch = Nobjects[SUBCATCH];
-    nLandUses = Nobjects[LANDUSE];
-    nNodes = Nobjects[NODE];
-    nLinks = Nobjects[LINK];
-    nPollut = Nobjects[POLLUT];
+    nSubcatch = sp->Nobjects[SUBCATCH];
+    nLandUses = sp->Nobjects[LANDUSE];
+    nNodes = sp->Nobjects[NODE];
+    nLinks = sp->Nobjects[LINK];
+    nPollut = sp->Nobjects[POLLUT];
     flowUnits = FlowUnits;
     fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Fhotstart2.file);
     fwrite(&nSubcatch, sizeof(int), 1, sp->Fhotstart2.file);
@@ -240,7 +240,7 @@ void  saveRouting(SWMM_Project *sp)
     int   i, j;
     float x[3];
 
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         x[0] = (float)Node[i].newDepth;
         x[1] = (float)Node[i].newLatFlow;
@@ -255,19 +255,19 @@ void  saveRouting(SWMM_Project *sp)
         }
 ////
 
-        for (j = 0; j < Nobjects[POLLUT]; j++)
+        for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             x[0] = (float)Node[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
     }
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         x[0] = (float)Link[i].newFlow;
         x[1] = (float)Link[i].newDepth;
         x[2] = (float)Link[i].setting;
         fwrite(x, sizeof(float), 3, sp->Fhotstart2.file);
-        for (j = 0; j < Nobjects[POLLUT]; j++)
+        for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             x[0] = (float)Link[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
@@ -296,7 +296,7 @@ void readRouting(SWMM_Project *sp)
         // --- flow and available upper zone volume not used
         xgw[2] = 0.0;
         xgw[3] = MISSING;
-        for (i = 0; i < Nobjects[SUBCATCH]; i++)
+        for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
         {
             // --- read moisture content and water table elevation as floats
             if ( !readFloat(sp, &x, f) ) return;
@@ -310,7 +310,7 @@ void readRouting(SWMM_Project *sp)
     }
 
     // --- read node states
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         if ( !readFloat(sp, &x, f) ) return;
         Node[i].newDepth = x;
@@ -326,7 +326,7 @@ void readRouting(SWMM_Project *sp)
         }
 ////
 
-        for (j = 0; j < Nobjects[POLLUT]; j++)
+        for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             if ( !readFloat(sp, &x, f) ) return;
             Node[i].newQual[j] = x;
@@ -335,7 +335,7 @@ void readRouting(SWMM_Project *sp)
         // --- read in zeros here for backwards compatibility
         if ( fileVersion <= 2 )
         {
-            for (j = 0; j < Nobjects[POLLUT]; j++)
+            for (j = 0; j < sp->Nobjects[POLLUT]; j++)
             {
                 if ( !readFloat(sp, &x, f) ) return;
             }
@@ -343,7 +343,7 @@ void readRouting(SWMM_Project *sp)
     }
 
     // --- read link states
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( !readFloat(sp, &x, f) ) return;
         Link[i].newFlow = x;
@@ -358,7 +358,7 @@ void readRouting(SWMM_Project *sp)
         link_setTargetSetting(i);
         link_setSetting(i, 0.0);
 ////
-        for (j = 0; j < Nobjects[POLLUT]; j++)
+        for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             if ( !readFloat(sp, &x, f) ) return;
             Link[i].newQual[j] = x;
@@ -380,10 +380,10 @@ void  saveRunoff(SWMM_Project *sp)
     double* x;
     FILE*  f = sp->Fhotstart2.file;
 
-    sizeX = MAX(6, Nobjects[POLLUT]+1);
+    sizeX = MAX(6, sp->Nobjects[POLLUT]+1);
     x = (double *) calloc(sizeX, sizeof(double));
 
-    for (i = 0; i < Nobjects[SUBCATCH]; i++)
+    for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
     {
         // Ponded depths for each sub-area & total runoff (4 elements)
         for (j = 0; j < 3; j++) x[j] = Subcatch[i].subArea[j].depth;
@@ -413,22 +413,22 @@ void  saveRunoff(SWMM_Project *sp)
         }
 
         // Water quality
-        if ( Nobjects[POLLUT] > 0 )                                            //(5.1.008)
+        if ( sp->Nobjects[POLLUT] > 0 )                                            //(5.1.008)
         {
             // Runoff quality
-            for (j=0; j<Nobjects[POLLUT]; j++) x[j] = Subcatch[i].newQual[j];
-            fwrite(x, sizeof(double), Nobjects[POLLUT], f);
+            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = Subcatch[i].newQual[j];
+            fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
 
             // Ponded quality
-            for (j=0; j<Nobjects[POLLUT]; j++) x[j] = Subcatch[i].pondedQual[j];
-            fwrite(x, sizeof(double), Nobjects[POLLUT], f);
+            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = Subcatch[i].pondedQual[j];
+            fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
             
             // Buildup and when streets were last swept
-            for (k=0; k<Nobjects[LANDUSE]; k++)
+            for (k=0; k<sp->Nobjects[LANDUSE]; k++)
             {
-                for (j=0; j<Nobjects[POLLUT]; j++)
+                for (j=0; j<sp->Nobjects[POLLUT]; j++)
                     x[j] = Subcatch[i].landFactor[k].buildup[j];
-                fwrite(x, sizeof(double), Nobjects[POLLUT], f);
+                fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
                 x[0] = Subcatch[i].landFactor[k].lastSwept;
                 fwrite(x, sizeof(double), 1, f);
             }
@@ -450,7 +450,7 @@ void  readRunoff(SWMM_Project *sp)
     double x[6];
     FILE*  f = sp->Fhotstart1.file;
 
-    for (i = 0; i < Nobjects[SUBCATCH]; i++)
+    for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
     {
         // Ponded depths & runoff (4 elements)
         for (j = 0; j < 3; j++)
@@ -481,20 +481,20 @@ void  readRunoff(SWMM_Project *sp)
         }
 
         // Water quality
-        if ( Nobjects[POLLUT] > 0 )                                            //(5.1.008)
+        if ( sp->Nobjects[POLLUT] > 0 )                                            //(5.1.008)
         {
             // Runoff quality
-            for (j=0; j<Nobjects[POLLUT]; j++)
+            for (j=0; j<sp->Nobjects[POLLUT]; j++)
                 if ( ! readDouble(sp, &Subcatch[i].newQual[j], f) ) return;        //(5.1.008)
 
             // Ponded quality
-            for (j=0; j<Nobjects[POLLUT]; j++)
+            for (j=0; j<sp->Nobjects[POLLUT]; j++)
                 if ( !readDouble(sp, &Subcatch[i].pondedQual[j], f) ) return;
             
             // Buildup and when streets were last swept
-            for (k=0; k<Nobjects[LANDUSE]; k++)
+            for (k=0; k<sp->Nobjects[LANDUSE]; k++)
             {
-                for (j=0; j<Nobjects[POLLUT]; j++)
+                for (j=0; j<sp->Nobjects[POLLUT]; j++)
                 {
                     if ( !readDouble(sp,
                         &Subcatch[i].landFactor[k].buildup[j], f) ) return;

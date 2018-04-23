@@ -50,20 +50,20 @@ static const double STOPTOL = 0.005;   // storage updating stopping tolerance
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void   initLinkDepths(void);
-static void   initNodeDepths(void);
-static void   initNodes(void);
-static void   initLinks(int routingModel);                                     //(5.1.008)
+static void   initLinkDepths(SWMM_Project *sp);
+static void   initNodeDepths(SWMM_Project *sp);
+static void   initNodes(SWMM_Project *sp);
+static void   initLinks(SWMM_Project *sp, int routingModel);                                     //(5.1.008)
 static void   validateTreeLayout(SWMM_Project *sp);
 static void   validateGeneralLayout(SWMM_Project *sp);
-static void   updateStorageState(int i, int j, int links[], double dt);
-static double getStorageOutflow(int node, int j, int links[], double dt);
+static void   updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt);
+static double getStorageOutflow(SWMM_Project *sp, int node, int j, int links[], double dt);
 static double getLinkInflow(int link, double dt);
-static void   setNewNodeState(int node, double dt);
-static void   setNewLinkState(int link);
+static void   setNewNodeState(SWMM_Project *sp, int node, double dt);
+static void   setNewLinkState(SWMM_Project *sp, int link);
 static void   updateNodeDepth(int node, double y);
-static int    steadyflow_execute(int link, double* qin, double* qout,
-              double tStep);
+static int    steadyflow_execute(SWMM_Project *sp, int link, double* qin,
+        double* qout, double tStep);
 
 
 //=============================================================================
@@ -85,8 +85,8 @@ void flowrout_init(SWMM_Project *sp, int routingModel)
         // --- initialize node & link depths if not using a hotstart file
         if ( sp->Fhotstart1.mode == NO_FILE )
         {
-            initNodeDepths();
-            initLinkDepths();
+            initNodeDepths(sp);
+            initLinkDepths(sp);
         }
     }
 
@@ -94,8 +94,8 @@ void flowrout_init(SWMM_Project *sp, int routingModel)
     else validateTreeLayout(sp);
 
     // --- initialize node & link volumes
-    initNodes();
-    initLinks(routingModel);                                                   //(5.1.008)
+    initNodes(sp);
+    initLinks(sp, routingModel);                                                   //(5.1.008)
 }
 
 //=============================================================================
@@ -112,7 +112,7 @@ void  flowrout_close(int routingModel)
 
 //=============================================================================
 
-double flowrout_getRoutingStep(int routingModel, double fixedStep)
+double flowrout_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedStep)
 //
 //  Input:   routingModel = type of routing method used
 //           fixedStep = user-assigned max. routing step (sec)
@@ -122,7 +122,7 @@ double flowrout_getRoutingStep(int routingModel, double fixedStep)
 {
     if ( routingModel == DW )
     {
-        return dynwave_getRoutingStep(fixedStep);
+        return dynwave_getRoutingStep(sp, fixedStep);
     }
     return fixedStep;
 }
@@ -146,7 +146,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
 
     // --- set overflows to drain any ponded water
     if ( ErrorCode ) return 0;
-    for (j = 0; j < Nobjects[NODE]; j++)
+    for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         Node[j].updated = FALSE;
         Node[j].overflow = 0.0;
@@ -165,19 +165,19 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
 
     // --- otherwise examine each link, moving from upstream to downstream
     steps = 0.0;
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         // --- see if upstream node is a storage unit whose state needs updating
         j = links[i];
         n1 = Link[j].node1;
-        if ( Node[n1].type == STORAGE ) updateStorageState(n1, i, links, tStep);
+        if ( Node[n1].type == STORAGE ) updateStorageState(sp, n1, i, links, tStep);
 
         // --- retrieve inflow at upstream end of link
         qin  = getLinkInflow(j, tStep);
 
         // route flow through link
         if ( routingModel == SF )
-            steps += steadyflow_execute(j, &qin, &qout, tStep);
+            steps += steadyflow_execute(sp, j, &qin, &qout, tStep);
         else steps += kinwave_execute(sp, j, &qin, &qout, tStep);
         Link[j].newFlow = qout;
 
@@ -185,11 +185,11 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
         Node[ Link[j].node1 ].outflow += qin;
         Node[ Link[j].node2 ].inflow += qout;
     }
-    if ( Nobjects[LINK] > 0 ) steps /= Nobjects[LINK];
+    if ( sp->Nobjects[LINK] > 0 ) steps /= sp->Nobjects[LINK];
 
     // --- update state of each non-updated node and link
-    for ( j=0; j<Nobjects[NODE]; j++) setNewNodeState(j, tStep);
-    for ( j=0; j<Nobjects[LINK]; j++) setNewLinkState(j);
+    for ( j=0; j<sp->Nobjects[NODE]; j++) setNewNodeState(sp, j, tStep);
+    for ( j=0; j<sp->Nobjects[LINK]; j++) setNewLinkState(sp, j);
     return (int)(steps+0.5);
 }
 
@@ -206,7 +206,7 @@ void validateTreeLayout(SWMM_Project *sp)
     int    j;
 
     // --- check nodes
-    for ( j = 0; j < Nobjects[NODE]; j++ )
+    for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
         switch ( Node[j].type )
         {
@@ -239,7 +239,7 @@ void validateTreeLayout(SWMM_Project *sp)
     }
 
     // ---  check links 
-    for (j=0; j<Nobjects[LINK]; j++)
+    for (j=0; j<sp->Nobjects[LINK]; j++)
     {
         switch ( Link[j].type )
         {
@@ -277,10 +277,10 @@ void validateGeneralLayout(SWMM_Project *sp)
     int outletCount = 0;
 
     // --- use node inflow attribute to count inflow connections
-    for ( i=0; i<Nobjects[NODE]; i++ ) Node[i].inflow = 0.0;
+    for ( i=0; i<sp->Nobjects[NODE]; i++ ) Node[i].inflow = 0.0;
 
     // --- examine each link
-    for ( j = 0; j < Nobjects[LINK]; j++ )
+    for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         // --- update inflow link count of downstream node
         i = Link[j].node1;
@@ -304,7 +304,7 @@ void validateGeneralLayout(SWMM_Project *sp)
 
     // --- check each node to see if it qualifies as an outlet node
     //     (meaning that degree = 0)
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- if node is of type Outfall, check that it has only 1
         //     connecting link (which can either be an outflow or inflow link)
@@ -320,7 +320,7 @@ void validateGeneralLayout(SWMM_Project *sp)
     if ( outletCount == 0 ) report_writeErrorMsg(sp, ERR_NO_OUTLETS, "");
 
     // --- reset node inflows back to zero
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         if ( Node[i].inflow == 0.0 ) Node[i].degree = -Node[i].degree;
         Node[i].inflow = 0.0;
@@ -329,7 +329,7 @@ void validateGeneralLayout(SWMM_Project *sp)
 
 //=============================================================================
 
-void initNodeDepths(void)
+void initNodeDepths(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -343,14 +343,14 @@ void initNodeDepths(void)
     // --- use Node[].inflow as a temporary accumulator for depth in 
     //     connecting links and Node[].outflow as a temporary counter
     //     for the number of connecting links
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         Node[i].inflow  = 0.0;
         Node[i].outflow = 0.0;
     }
 
     // --- total up flow depths in all connecting links into nodes
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( Link[i].newDepth > FUDGE ) y = Link[i].newDepth + Link[i].offset1;
         else y = 0.0;
@@ -364,7 +364,7 @@ void initNodeDepths(void)
 
     // --- if no user-supplied depth then set initial depth at non-storage/
     //     non-outfall nodes to average of depths in connecting links
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         if ( Node[i].type == OUTFALL ) continue;
         if ( Node[i].type == STORAGE ) continue;
@@ -376,12 +376,12 @@ void initNodeDepths(void)
     }
 
     // --- compute initial depths at all outfall nodes
-    for ( i = 0; i < Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
 }
 
 //=============================================================================
          
-void initLinkDepths()
+void initLinkDepths(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -392,7 +392,7 @@ void initLinkDepths()
     double y, y1, y2;                  // depths (ft)
 
     // --- examine each link
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         // --- examine each conduit
         if ( Link[i].type == CONDUIT )
@@ -419,7 +419,7 @@ void initLinkDepths()
 
 ////  This function was modified for release 5.1.008.  ////                    //(5.1.008)
 
-void initNodes()
+void initNodes(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -428,7 +428,7 @@ void initNodes()
 {
     int i;
 
-    for ( i = 0; i < Nobjects[NODE]; i++ )
+    for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- initialize node inflow and outflow
         Node[i].inflow = Node[i].newLatFlow;
@@ -449,7 +449,7 @@ void initNodes()
 
     // --- update nodal inflow/outflow at ends of each link
     //     (needed for Steady Flow & Kin. Wave routing)
-    for ( i = 0; i < Nobjects[LINK]; i++ )
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
         if ( Link[i].newFlow >= 0.0 )
         {
@@ -468,7 +468,7 @@ void initNodes()
 
 ////  This function was modified for release 5.1.008.  ////                    //(5.1.008)
 
-void initLinks(int routingModel)
+void initLinks(SWMM_Project *sp, int routingModel)
 //
 //  Input:   none
 //  Output:  none
@@ -479,7 +479,7 @@ void initLinks(int routingModel)
     int    k;                          // conduit or pump index
 
     // --- examine each link
-    for ( i = 0; i < Nobjects[LINK]; i++ )
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
         if ( routingModel == SF) Link[i].newFlow = 0.0;
 
@@ -497,7 +497,7 @@ void initLinks(int routingModel)
 
             // --- compute initial volume from area
             {
-                Link[i].newVolume = Conduit[k].a1 * link_getLength(i) *
+                Link[i].newVolume = Conduit[k].a1 * link_getLength(sp, i) *
                                     Conduit[k].barrels;
             }
             Link[i].oldVolume = Link[i].newVolume;
@@ -527,7 +527,7 @@ double getLinkInflow(int j, double dt)
 
 //=============================================================================
 
-void updateStorageState(int i, int j, int links[], double dt)
+void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
 //
 //  Input:   i = index of storage node
 //           j = current position in links array
@@ -565,7 +565,7 @@ void updateStorageState(int i, int j, int links[], double dt)
     while ( iter < MAXITER && !stopped )
     {
         // --- find new volume from flow balance eqn.
-        v2 = vFixed - 0.5 * getStorageOutflow(i, j, links, dt) * dt;           //(5.1.007)
+        v2 = vFixed - 0.5 * getStorageOutflow(sp, i, j, links, dt) * dt;           //(5.1.007)
 
         // --- limit volume to full volume if no ponding
         //     and compute overflow rate
@@ -602,7 +602,7 @@ void updateStorageState(int i, int j, int links[], double dt)
 
 //=============================================================================
 
-double getStorageOutflow(int i, int j, int links[], double dt)
+double getStorageOutflow(SWMM_Project *sp, int i, int j, int links[], double dt)
 //
 //  Input:   i = index of storage node
 //           j = current position in links array
@@ -615,7 +615,7 @@ double getStorageOutflow(int i, int j, int links[], double dt)
     int   k, m;
     double outflow = 0.0;
 
-    for (k = j; k < Nobjects[LINK]; k++)
+    for (k = j; k < sp->Nobjects[LINK]; k++)
     {
         m = links[k];
         if ( Link[m].node1 != i ) break;
@@ -626,7 +626,7 @@ double getStorageOutflow(int i, int j, int links[], double dt)
 
 //=============================================================================
 
-void setNewNodeState(int j, double dt)
+void setNewNodeState(SWMM_Project *sp, int j, double dt)
 //
 //  Input:   j  = node index
 //           dt = time step (sec)
@@ -643,7 +643,7 @@ void setNewNodeState(int j, double dt)
     if ( Node[j].type == STORAGE )
     {	
 	if ( Node[j].updated == FALSE )
-	    updateStorageState(j, Nobjects[LINK], NULL, dt);
+	    updateStorageState(sp, j, sp->Nobjects[LINK], NULL, dt);
         return; 
     }
 //////////////////////////////////////////////////////////
@@ -673,7 +673,7 @@ void setNewNodeState(int j, double dt)
 
 //=============================================================================
 
-void setNewLinkState(int j)
+void setNewLinkState(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -692,7 +692,7 @@ void setNewLinkState(int j)
         // --- find avg. depth from entry/exit conditions
         k = Link[j].subIndex;
         a = 0.5 * (Conduit[k].a1 + Conduit[k].a2);
-        Link[j].newVolume = a * link_getLength(j) * Conduit[k].barrels;
+        Link[j].newVolume = a * link_getLength(sp, j) * Conduit[k].barrels;
         y1 = xsect_getYofA(&Link[j].xsect, Conduit[k].a1);
         y2 = xsect_getYofA(&Link[j].xsect, Conduit[k].a2);
         Link[j].newDepth = 0.5 * (y1 + y2);
@@ -748,7 +748,7 @@ void updateNodeDepth(int i, double y)
 
 //=============================================================================
 
-int steadyflow_execute(int j, double* qin, double* qout, double tStep)
+int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, double tStep)
 //
 //  Input:   j = link index
 //           qin = inflow to link (cfs)
@@ -772,7 +772,7 @@ int steadyflow_execute(int j, double* qin, double* qout, double tStep)
         else 
         {
             // --- subtract evap and infil losses from inflow
-            q -= link_getLossRate(j, q, tStep);                                //(5.1.008)
+            q -= link_getLossRate(sp, j, q, tStep);                                //(5.1.008)
             if ( q < 0.0 ) q = 0.0;
 
             // --- flow can't exceed full flow 

@@ -44,18 +44,18 @@ static const double ZeroVolume = 0.0353147; // 1 liter in ft3
 //-----------------------------------------------------------------------------
 //  Function declarations
 //-----------------------------------------------------------------------------
-static void  findLinkMassFlow(int i, double tStep);
-static void  findNodeQual(int j);
-static void  findLinkQual(int i, double tStep);
-static void  findSFLinkQual(int i, double qSeep, double fEvap, double tStep);
-static void  findStorageQual(int j, double tStep);
+static void  findLinkMassFlow(SWMM_Project *sp, int i, double tStep);
+static void  findNodeQual(SWMM_Project *sp, int j);
+static void  findLinkQual(SWMM_Project *sp, int i, double tStep);
+static void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double tStep);
+static void  findStorageQual(SWMM_Project *sp, int j, double tStep);
 static void  updateHRT(int j, double v, double q, double tStep);
-static double getReactedQual(int p, double c, double v1, double tStep);
+static double getReactedQual(SWMM_Project *sp, int p, double c, double v1, double tStep);
 static double getMixedQual(double c, double v1, double wIn, double qIn,
               double tStep);
 //=============================================================================
 
-void    qualrout_init()
+void    qualrout_init(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -65,10 +65,10 @@ void    qualrout_init()
     int     i, p, isWet;
     double  c;
 
-    for (i = 0; i < Nobjects[NODE]; i++)
+    for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         isWet = ( Node[i].newDepth > FUDGE );
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
             if ( isWet ) c = Pollut[p].initConcen;
@@ -77,10 +77,10 @@ void    qualrout_init()
         }
     }
 
-    for (i = 0; i < Nobjects[LINK]; i++)
+    for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         isWet = ( Link[i].newDepth > FUDGE );
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
             if ( isWet ) c = Pollut[p].initConcen;
@@ -104,10 +104,10 @@ void qualrout_execute(SWMM_Project *sp, double tStep)
     double qIn, vAvg;
 
     // --- find mass flow each link contributes to its downstream node
-    for ( i = 0; i < Nobjects[LINK]; i++ ) findLinkMassFlow(i, tStep);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) findLinkMassFlow(sp, i, tStep);
 
     // --- find new water quality concentration at each node  
-    for (j = 0; j < Nobjects[NODE]; j++)
+    for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         // --- get node inflow and average volume
         qIn = Node[j].inflow;
@@ -117,22 +117,22 @@ void qualrout_execute(SWMM_Project *sp, double tStep)
         if ( Node[j].treatment )
         {
             if ( qIn < ZERO ) qIn = 0.0;
-            treatmnt_setInflow(qIn, Node[j].newQual);
+            treatmnt_setInflow(sp, qIn, Node[j].newQual);
         }
        
         // --- find new quality at the node 
         if ( Node[j].type == STORAGE || Node[j].oldVolume > FUDGE )
         {
-            findStorageQual(j, tStep);
+            findStorageQual(sp, j, tStep);
         }
-        else findNodeQual(j);
+        else findNodeQual(sp, j);
 
         // --- apply treatment to new quality values
         if ( Node[j].treatment ) treatmnt_treat(sp, j, qIn, vAvg, tStep);
     }
 
     // --- find new water quality in each link
-    for ( i = 0; i < Nobjects[LINK]; i++ ) findLinkQual(i, tStep);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) findLinkQual(sp, i, tStep);
 }
 
 //=============================================================================
@@ -170,7 +170,7 @@ double getMixedQual(double c, double v1, double wIn, double qIn, double tStep)
 
 //=============================================================================
 
-void findLinkMassFlow(int i, double tStep)
+void findLinkMassFlow(SWMM_Project *sp, int i, double tStep)
 //
 //  Input:   i = link index
 //           tStep = time step (sec)
@@ -194,7 +194,7 @@ void findLinkMassFlow(int i, double tStep)
     qLink = fabs(qLink);
 
     // --- examine each pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- temporarily accumulate inflow load in Node[j].newQual
         w = qLink * Link[i].oldQual[p];
@@ -207,7 +207,7 @@ void findLinkMassFlow(int i, double tStep)
 
 //=============================================================================
 
-void findNodeQual(int j)
+void findNodeQual(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -221,19 +221,19 @@ void findNodeQual(int j)
     qNode = Node[j].inflow;
     if ( qNode > ZERO )
     {
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             Node[j].newQual[p] /= qNode;
         }
     }
 
     // --- otherwise concen. is 0
-    else for (p = 0; p < Nobjects[POLLUT]; p++) Node[j].newQual[p] = 0.0;
+    else for (p = 0; p < sp->Nobjects[POLLUT]; p++) Node[j].newQual[p] = 0.0;
 }
 
 //=============================================================================
 
-void findLinkQual(int i, double tStep)
+void findLinkQual(SWMM_Project *sp, int i, double tStep)
 //
 //  Input:   i = link index
 //           tStep = routing time step (sec)
@@ -264,7 +264,7 @@ void findLinkQual(int i, double tStep)
     //     link is not a conduit or is a dummy link
     if ( Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY )
     {
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             Link[i].newQual[p] = Node[j].newQual[p];
         }
@@ -291,7 +291,7 @@ void findLinkQual(int i, double tStep)
     // --- Steady Flow routing requires special treatment
     if ( RouteModel == SF )
     {
-        findSFLinkQual(i, qSeep, fEvap, tStep);
+        findSFLinkQual(sp, i, qSeep, fEvap, tStep);
         return;
     }
 
@@ -305,19 +305,19 @@ void findLinkQual(int i, double tStep)
     }
 
     // --- examine each pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- start with concen. at start of time step
         c1 = Link[i].oldQual[p];
 
         // --- update mass balance accounting for seepage loss
-        massbal_addSeepageLoss(p, qSeep*c1);
+        massbal_addSeepageLoss(sp, p, qSeep*c1);
 
         // --- increase concen. by evaporation factor
         c1 *= fEvap;
 
         // --- reduce concen. by 1st-order reaction
-        c2 = getReactedQual(p, c1, v1, tStep);
+        c2 = getReactedQual(sp, p, c1, v1, tStep);
 
         // --- mix resulting contents with inflow from upstream node
         wIn = Node[j].newQual[p]*qIn;
@@ -326,7 +326,7 @@ void findLinkQual(int i, double tStep)
         // --- set concen. to zero if remaining volume is negligible
         if ( v2 < ZeroVolume )
         {
-            massbal_addToFinalStorage(p, c2 * v2);
+            massbal_addToFinalStorage(sp, p, c2 * v2);
             c2 = 0.0;
         }
 
@@ -337,7 +337,7 @@ void findLinkQual(int i, double tStep)
 
 //=============================================================================
 
-void  findSFLinkQual(int i, double qSeep, double fEvap, double tStep)
+void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double tStep)
 //
 //  Input:   i = link index
 //           tStep = routing time step (sec)
@@ -352,13 +352,13 @@ void  findSFLinkQual(int i, double qSeep, double fEvap, double tStep)
     double lossRate;
 
     // --- examine each pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- conduit's quality equals upstream node quality
         c1 = Node[j].newQual[p];
 
         // --- update mass balance accounting for seepage loss
-        massbal_addSeepageLoss(p, qSeep*c1);
+        massbal_addSeepageLoss(sp, p, qSeep*c1);
 
         // --- increase concen. by evaporation factor
         c1 *= fEvap;
@@ -370,7 +370,7 @@ void  findSFLinkQual(int i, double qSeep, double fEvap, double tStep)
             c2 = c1 * exp(-Pollut[p].kDecay * tStep);
             c2 = MAX(0.0, c2);
             lossRate = (c1 - c2) * Link[i].newFlow;
-            massbal_addReactedMass(p, lossRate);
+            massbal_addReactedMass(sp, p, lossRate);
         }
         Link[i].newQual[p] = c2;
     }
@@ -378,7 +378,7 @@ void  findSFLinkQual(int i, double qSeep, double fEvap, double tStep)
 
 //=============================================================================
 
-void  findStorageQual(int j, double tStep)
+void  findStorageQual(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j = node index
 //           tStep = routing time step (sec)
@@ -420,13 +420,13 @@ void  findStorageQual(int j, double tStep)
     }
 
     // --- for each pollutant
-    for (p = 0; p < Nobjects[POLLUT]; p++)
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- start with concen. at start of time step 
         c1 = Node[j].oldQual[p];
 
         // --- update mass balance accounting for exfiltration loss
-        massbal_addSeepageLoss(p, qExfil*c1);
+        massbal_addSeepageLoss(sp, p, qExfil*c1);
 
         // --- increase concen. by evaporation factor
         c1 *= fEvap;
@@ -435,7 +435,7 @@ void  findStorageQual(int j, double tStep)
         if ( Node[j].treatment == NULL ||
              Node[j].treatment[p].equation == NULL )
         {
-            c1 = getReactedQual(p, c1, v1, tStep);
+            c1 = getReactedQual(sp, p, c1, v1, tStep);
         }
 
         // --- mix resulting contents with inflow from all sources
@@ -446,7 +446,7 @@ void  findStorageQual(int j, double tStep)
         // --- set concen. to zero if remaining volume is negligible
         if ( Node[j].newVolume <= ZeroVolume )
         {
-            massbal_addToFinalStorage(p, c2 * Node[j].newVolume);
+            massbal_addToFinalStorage(sp, p, c2 * Node[j].newVolume);
             c2 = 0.0;
         }
 
@@ -477,7 +477,7 @@ void updateHRT(int j, double v, double q, double tStep)
 
 //=============================================================================
 
-double getReactedQual(int p, double c, double v1, double tStep)
+double getReactedQual(SWMM_Project *sp, int p, double c, double v1, double tStep)
 //
 //  Input:   p = pollutant index
 //           c = initial concentration (mass/ft3)
@@ -495,7 +495,7 @@ double getReactedQual(int p, double c, double v1, double tStep)
     c2 = c * (1.0 - kDecay * tStep);
     c2 = MAX(0.0, c2);
     lossRate = (c - c2) * v1 / tStep;
-    massbal_addReactedMass(p, lossRate);
+    massbal_addReactedMass(sp, p, lossRate);
     return c2;
 }
  

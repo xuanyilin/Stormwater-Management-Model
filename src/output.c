@@ -63,9 +63,9 @@ REAL4*           LinkResults;
 //-----------------------------------------------------------------------------
 static void output_openOutFile(SWMM_Project *sp);
 static void output_saveID(char* id, FILE* file);
-static void output_saveSubcatchResults(double reportTime, FILE* file);
-static void output_saveNodeResults(double reportTime, FILE* file);
-static void output_saveLinkResults(double reportTime, FILE* file);
+static void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file);
+static void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file);
+static void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file);
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -102,7 +102,7 @@ int output_open(SWMM_Project *sp)
 
     // --- ignore pollutants if no water quality analsis performed
     if ( IgnoreQuality ) NumPolluts = 0;
-    else NumPolluts = Nobjects[POLLUT];
+    else NumPolluts = sp->Nobjects[POLLUT];
 
     // --- subcatchment results consist of Rainfall, Snowdepth, Evap, 
     //     Infil, Runoff, GW Flow, GW Elev, GW Sat, and Washoff
@@ -120,9 +120,9 @@ int output_open(SWMM_Project *sp)
     NumSubcatch = 0;
     NumNodes = 0;
     NumLinks = 0;
-    for (j=0; j<Nobjects[SUBCATCH]; j++) if (Subcatch[j].rptFlag) NumSubcatch++;
-    for (j=0; j<Nobjects[NODE]; j++) if (Node[j].rptFlag) NumNodes++;
-    for (j=0; j<Nobjects[LINK]; j++) if (Link[j].rptFlag) NumLinks++;
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (Subcatch[j].rptFlag) NumSubcatch++;
+    for (j=0; j<sp->Nobjects[NODE]; j++) if (Node[j].rptFlag) NumNodes++;
+    for (j=0; j<sp->Nobjects[LINK]; j++) if (Link[j].rptFlag) NumLinks++;
 
     BytesPerPeriod = sizeof(REAL8)
         + NumSubcatch * NsubcatchResults * sizeof(REAL4)
@@ -161,15 +161,15 @@ int output_open(SWMM_Project *sp)
 
     // --- save ID names of subcatchments, nodes, links, & pollutants 
     IDStartPos = ftell(sp->Fout.file);
-    for (j=0; j<Nobjects[SUBCATCH]; j++)
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
         if ( Subcatch[j].rptFlag ) output_saveID(Subcatch[j].ID, sp->Fout.file);
     }
-    for (j=0; j<Nobjects[NODE];     j++)
+    for (j=0; j<sp->Nobjects[NODE];     j++)
     {
         if ( Node[j].rptFlag ) output_saveID(Node[j].ID, sp->Fout.file);
     }
-    for (j=0; j<Nobjects[LINK];     j++)
+    for (j=0; j<sp->Nobjects[LINK];     j++)
     {
         if ( Link[j].rptFlag ) output_saveID(Link[j].ID, sp->Fout.file);
     }
@@ -189,7 +189,7 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_AREA;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
-    for (j=0; j<Nobjects[SUBCATCH]; j++)
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
          if ( !Subcatch[j].rptFlag ) continue;
          SubcatchResults[0] = (REAL4)(Subcatch[j].area * UCF(LANDAREA));
@@ -205,7 +205,7 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = INPUT_MAX_DEPTH;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
-    for (j=0; j<Nobjects[NODE]; j++)
+    for (j=0; j<sp->Nobjects[NODE]; j++)
     {
         if ( !Node[j].rptFlag ) continue;
         k = Node[j].type;
@@ -229,7 +229,7 @@ int output_open(SWMM_Project *sp)
     k = INPUT_LENGTH;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
 
-    for (j=0; j<Nobjects[LINK]; j++)
+    for (j=0; j<sp->Nobjects[LINK]; j++)
     {
         if ( !Link[j].rptFlag ) continue;
         k = Link[j].type;
@@ -425,15 +425,15 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
     for (i=0; i<MAX_SYS_RESULTS; i++) SysResults[i] = 0.0f;
     date = reportDate;
     fwrite(&date, sizeof(REAL8), 1, sp->Fout.file);
-    if (Nobjects[SUBCATCH] > 0)
-        output_saveSubcatchResults(reportTime, sp->Fout.file);
-    if (Nobjects[NODE] > 0)
-        output_saveNodeResults(reportTime, sp->Fout.file);
-    if (Nobjects[LINK] > 0)
-        output_saveLinkResults(reportTime, sp->Fout.file);
+    if (sp->Nobjects[SUBCATCH] > 0)
+        output_saveSubcatchResults(sp, reportTime, sp->Fout.file);
+    if (sp->Nobjects[NODE] > 0)
+        output_saveNodeResults(sp, reportTime, sp->Fout.file);
+    if (sp->Nobjects[LINK] > 0)
+        output_saveLinkResults(sp, reportTime, sp->Fout.file);
     fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
     if ( sp->Foutflows.mode == SAVE_FILE && !IgnoreRouting )
-        iface_saveOutletResults(reportDate, sp->Foutflows.file);
+        iface_saveOutletResults(sp, reportDate, sp->Foutflows.file);
     sp->Nperiods++;
 }
 
@@ -493,7 +493,7 @@ void output_saveID(char* id, FILE* file)
 
 //=============================================================================
 
-void output_saveSubcatchResults(double reportTime, FILE* file)
+void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
 //
 //  Input:   reportTime = elapsed simulation time (millisec)
 //           file = ptr. to binary output file
@@ -508,7 +508,7 @@ void output_saveSubcatchResults(double reportTime, FILE* file)
     DateTime reportDate = getDateTime(reportTime);
 
     // --- update reported rainfall at each rain gage
-    for ( j=0; j<Nobjects[GAGE]; j++ )
+    for ( j=0; j<sp->Nobjects[GAGE]; j++ )
     {
         gage_setReportRainfall(j, reportDate);
     }
@@ -517,10 +517,10 @@ void output_saveSubcatchResults(double reportTime, FILE* file)
     f = (reportTime - OldRunoffTime) / (NewRunoffTime - OldRunoffTime);
 
     // --- write subcatchment results to file
-    for ( j=0; j<Nobjects[SUBCATCH]; j++)
+    for ( j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
         // --- retrieve interpolated results for reporting time & write to file
-        subcatch_getResults(j, f, SubcatchResults);
+        subcatch_getResults(sp, j, f, SubcatchResults);
         if ( Subcatch[j].rptFlag )
             fwrite(SubcatchResults, sizeof(REAL4), NsubcatchResults, file);
 
@@ -559,7 +559,7 @@ void output_saveSubcatchResults(double reportTime, FILE* file)
 
 //=============================================================================
 
-void output_saveNodeResults(double reportTime, FILE* file)
+void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
 //
 //  Input:   reportTime = elapsed simulation time (millisec)
 //           file = ptr. to binary output file
@@ -575,10 +575,10 @@ void output_saveNodeResults(double reportTime, FILE* file)
                (NewRoutingTime - OldRoutingTime);
 
     // --- write node results to file
-    for (j=0; j<Nobjects[NODE]; j++)
+    for (j=0; j<sp->Nobjects[NODE]; j++)
     {
         // --- retrieve interpolated results for reporting time & write to file
-        node_getResults(j, f, NodeResults);
+        node_getResults(sp, j, f, NodeResults);
         if ( Node[j].rptFlag )
             fwrite(NodeResults, sizeof(REAL4), NnodeResults, file);
         stats_updateMaxNodeDepth(j, NodeResults[NODE_DEPTH]);                 //(5.1.008)
@@ -603,7 +603,7 @@ void output_saveNodeResults(double reportTime, FILE* file)
 
 //=============================================================================
 
-void output_saveLinkResults(double reportTime, FILE* file)
+void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
 //
 //  Input:   reportTime = elapsed simulation time (millisec)
 //           file = ptr. to binary output file
@@ -619,10 +619,10 @@ void output_saveLinkResults(double reportTime, FILE* file)
     f = (reportTime - OldRoutingTime) / (NewRoutingTime - OldRoutingTime);
 
     // --- write link results to file
-    for (j=0; j<Nobjects[LINK]; j++)
+    for (j=0; j<sp->Nobjects[LINK]; j++)
     {
         // --- retrieve interpolated results for reporting time & write to file
-        link_getResults(j, f, LinkResults);
+        link_getResults(sp, j, f, LinkResults);
         if ( Link[j].rptFlag ) 
             fwrite(LinkResults, sizeof(REAL4), NlinkResults, file);
 
