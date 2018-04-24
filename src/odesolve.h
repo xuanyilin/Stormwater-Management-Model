@@ -13,9 +13,9 @@
 // functions that open, close, and use the ODE solver
 int  odesolve_open(int n);
 void odesolve_close(void);
-int  odesolve_integrate(double ystart[], int n, double x1,
+int  odesolve_integrate(SWMM_Project *sp, double ystart[], int n, double x1,
         double x2, double eps, double h1,
-        void (*derivs)(double, double*, double*));
+        void (*derivs)(SWMM_Project*, double, double*, double*));
 
 
 #endif //ODESOLVE_H

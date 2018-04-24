@@ -109,7 +109,7 @@ static double getSubareaInfil(int j, TSubarea* subarea, double precip,
               double tStep);
 static double findSubareaRunoff(TSubarea* subarea, double tRunoff);            //(5.1.008)
 static void   updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* tx);
-static void   getDdDt(double t, double* d, double* dddt);
+static void   getDdDt(SWMM_Project *sp, double t, double* d, double* dddt);
 
 //=============================================================================
 
@@ -1099,7 +1099,7 @@ void updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* dt)
         if ( subarea->alpha > 0.0 && tx > 0.0 )
         {
             theSubarea = subarea;
-            odesolve_integrate(&(subarea->depth), 1, 0, tx, ODETOL, tx,
+            odesolve_integrate(sp, &(subarea->depth), 1, 0, tx, ODETOL, tx,
                                getDdDt);
         }
         else
@@ -1119,7 +1119,7 @@ void updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* dt)
 
 //=============================================================================
 
-void  getDdDt(double t, double* d, double* dddt)
+void  getDdDt(SWMM_Project *sp, double t, double* d, double* dddt)
 //
 //  Input:   t = current time (not used)
 //           d = stored depth (ft)

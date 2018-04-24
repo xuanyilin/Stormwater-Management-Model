@@ -573,7 +573,7 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     
     // --- integrate eqns. for d(Theta)/dt and d(LowerDepth)/dt
     //     NOTE: ODE solver must have been initialized previously
-    odesolve_integrate(x, 2, 0, tStep, GWTOL, tStep, getDxDt);
+    odesolve_integrate(sp, x, 2, 0, tStep, GWTOL, tStep, getDxDt);
     
     // --- keep state variables within allowable bounds
     x[THETA] = MAX(x[THETA], A.wiltingPoint);
