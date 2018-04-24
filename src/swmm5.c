@@ -267,8 +267,8 @@ int  main(int argc, char *argv[])
         runTime = difftime(time(0), start);
         sprintf(msg, "\n\n... EPA-SWMM completed in %.2f seconds.", runTime);
         writecon(msg);
-        if      ( ErrorCode   ) writecon(FMT03);
-        else if ( Warnings    ) writecon(FMT04);                               //(5.1.011)
+        if      ( swmm_getError() )   writecon(FMT03);
+        else if ( swmm_getWarnings() ) writecon(FMT04);                         //(5.1.011)
         else                    writecon(FMT05);
     }
 
@@ -327,24 +327,26 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
 //  Purpose: runs a SWMM simulation.
 //
 {
+    int error = 0;
+
     long newHour, oldHour = 0;
     long theDay, theHour;
     double elapsedTime = 0.0;                                                  //(5.1.011)
 
     // --- open the files & read input data
-    ErrorCode = 0;
-
     swmm_alloc_project(&_defaultProject);
+    _defaultProject->ErrorCode = 0;
+
     swmm_open_project(_defaultProject, f1, f2, f3);
 
     // --- run the simulation if input data OK
-    if ( !ErrorCode )
+    if ( !_defaultProject->ErrorCode )
     {
         // --- initialize values
         swmm_start_project(_defaultProject, TRUE);
 
         // --- execute each time step until elapsed time is re-set to 0
-        if ( !ErrorCode )
+        if ( !_defaultProject->ErrorCode )
         {
             writecon("\n o  Simulating day: 0     hour:  0");
             do
@@ -356,12 +358,12 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
                     theDay = (long)elapsedTime;
                     theHour = (long)((elapsedTime - floor(elapsedTime)) * 24.0);
                     writecon("\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                    //sprintf(sp->Msg, "%-5d hour: %-2d", theDay, theHour);
+                    //sprintf(_defaultProject->Msg, "%-5d hour: %-2d", theDay, theHour);
 					sprintf(_defaultProject->Msg, "%-5ld hour: %-2ld", theDay, theHour);
                     writecon(_defaultProject->Msg);
                     oldHour = newHour;
                 }
-            } while ( elapsedTime > 0.0 && !ErrorCode );
+            } while ( elapsedTime > 0.0 && !_defaultProject->ErrorCode );
             writecon("\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
                      "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
             writecon("Simulation complete           ");
@@ -377,9 +379,10 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
     // --- close the system
     swmm_close_project(_defaultProject);
 
+    error = _defaultProject->ErrorCode;
     swmm_free_project(&_defaultProject);
 
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error;
 }
 
 //=============================================================================
@@ -412,23 +415,23 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
     {
         // --- initialize error & warning codes
         datetime_setDateFormat(M_D_Y);
-        ErrorCode = 0;
+        sp->ErrorCode = 0;
         strcpy(sp->ErrorMsg, "");
-        Warnings = 0;
+        sp->Warnings = 0;
         IsOpenFlag = FALSE;
         IsStartedFlag = FALSE;
         ExceptionCount = 0;
 
         // --- open a SWMM project
         project_open(sp, f1, f2, f3);
-        if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
+        if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                      //(5.1.011)
         IsOpenFlag = TRUE;
         report_writeLogo(sp);
         writecon(FMT06);
 
         // --- retrieve project data from input file
         project_readInput(sp);
-        if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
+        if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                      //(5.1.011)
 
         // --- write project title to report file & validate data
         report_writeTitle(sp);
@@ -442,10 +445,10 @@ int DLLEXPORT swmm_open_project(SWMM_Project *sp, char* f1, char* f2, char* f3)
     // --- end of try loop; handle exception here
     __except(xfilter(sp, GetExceptionCode(), "swmm_open", 0.0, 0))             //(5.1.011)
     {
-        ErrorCode = ERR_SYSTEM;
+        sp->ErrorCode = ERR_SYSTEM;
     }
 #endif
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 
 //=============================================================================
@@ -461,11 +464,11 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 //
 {
     // --- check that a project is open & no run started
-    if ( ErrorCode ) return error_getCode(ErrorCode);                          //(5.1.011)
+    if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                          //(5.1.011)
     if ( !IsOpenFlag || IsStartedFlag )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
-        return error_getCode(ErrorCode);                                       //(5.1.011)
+        return error_getCode(sp->ErrorCode);                                       //(5.1.011)
     }
 
     // --- save saveResults flag to global variable                            //(5.1.011)
@@ -496,8 +499,8 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 
         // --- open rainfall processor (creates/opens a rainfall
         //     interface file and generates any RDII flows)
-        if ( !IgnoreRainfall ) rain_open(sp);
-        if ( ErrorCode ) return error_getCode(ErrorCode);                      //(5.1.011)
+        if ( !sp->IgnoreRainfall ) rain_open(sp);
+        if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                      //(5.1.011)
 
         // --- initialize state of each major system component
         project_init(sp);
@@ -505,7 +508,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         // --- see if runoff & routing needs to be computed
         if ( sp->Nobjects[SUBCATCH] > 0 ) DoRunoff = TRUE;
         else DoRunoff = FALSE;
-        if ( sp->Nobjects[NODE] > 0 && !IgnoreRouting ) DoRouting = TRUE;
+        if ( sp->Nobjects[NODE] > 0 && !sp->IgnoreRouting ) DoRouting = TRUE;
         else DoRouting = FALSE;
 
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
@@ -517,7 +520,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         if ( DoRunoff ) runoff_open(sp);
 
         // --- open & read hot start file if present
-        if ( !hotstart_open(sp) ) return ErrorCode;
+        if ( !hotstart_open(sp) ) return sp->ErrorCode;
 
         // --- open routing processor
         if ( DoRouting ) routing_open(sp);
@@ -536,10 +539,10 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
     // --- end of try loop; handle exception here
     __except(xfilter(sp, GetExceptionCode(), "swmm_start", 0.0, 0))            //(5.1.011)
     {
-        ErrorCode = ERR_SYSTEM;
+        sp->ErrorCode = ERR_SYSTEM;
     }
 #endif
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 //=============================================================================
 int DLLEXPORT swmm_step(double* elapsedTime) {
@@ -555,11 +558,11 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
 //
 {
     // --- check that simulation can proceed
-    if ( ErrorCode ) return error_getCode(ErrorCode);                          //(5.1.011)
+    if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                          //(5.1.011)
     if ( !IsOpenFlag || !IsStartedFlag  )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
-        return error_getCode(ErrorCode);                                       //(5.1.011)
+        return error_getCode(sp->ErrorCode);                                       //(5.1.011)
     }
 
 #ifdef EXH                                                                     //(5.1.011)
@@ -598,10 +601,10 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
     // --- end of try loop; handle exception here
     __except(xfilter(sp, GetExceptionCode(), "swmm_step", ElapsedTime, sp->StepCount)) //(5.1.011)
     {
-        ErrorCode = ERR_SYSTEM;
+        sp->ErrorCode = ERR_SYSTEM;
     }
 #endif
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 
 //=============================================================================
@@ -624,10 +627,10 @@ void execRouting(SWMM_Project *sp)                                              
         // --- determine when next routing time occurs
         sp->StepCount++;
         if ( !DoRouting ) routingStep = MIN(WetStep, ReportStep);
-        else routingStep = routing_getRoutingStep(sp, RouteModel, RouteStep);
+        else routingStep = routing_getRoutingStep(sp, sp->RouteModel, RouteStep);
         if ( routingStep <= 0.0 )
         {
-            ErrorCode = ERR_TIMESTEP;
+            sp->ErrorCode = ERR_TIMESTEP;
             return;
         }
         nextRoutingTime = NewRoutingTime + 1000.0 * routingStep;
@@ -647,7 +650,7 @@ void execRouting(SWMM_Project *sp)                                              
         if ( DoRunoff ) while ( NewRunoffTime < nextRoutingTime )
         {
             runoff_execute(sp);
-            if ( ErrorCode ) return;
+            if ( sp->ErrorCode ) return;
         }
 
         // --- if no runoff analysis, update climate state (for evaporation)
@@ -655,7 +658,7 @@ void execRouting(SWMM_Project *sp)                                              
   
         // --- route flows & pollutants through drainage system                //(5.1.008)
         //     (while updating NewRoutingTime)                                 //(5.1.008)
-        if ( DoRouting ) routing_execute(sp, RouteModel, routingStep);
+        if ( DoRouting ) routing_execute(sp, sp->RouteModel, routingStep);
         else NewRoutingTime = nextRoutingTime;
     }
 
@@ -664,7 +667,7 @@ void execRouting(SWMM_Project *sp)                                              
     __except(xfilter(sp, GetExceptionCode(), "execRouting",                        //(5.1.011)
                      ElapsedTime, sp->StepCount))                                  //(5.1.011)
     {
-        ErrorCode = ERR_SYSTEM;
+        sp->ErrorCode = ERR_SYSTEM;
         return;
     }
 #endif
@@ -686,7 +689,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
     if ( !IsOpenFlag )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
-        return error_getCode(ErrorCode);                                       //(5.1.011)
+        return error_getCode(sp->ErrorCode);                                       //(5.1.011)
     }
 
     if ( IsStartedFlag )
@@ -695,7 +698,7 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         if ( sp->Fout.file ) output_end(sp);
 
         // --- report mass balance results and system statistics
-        if ( !ErrorCode )
+        if ( !sp->ErrorCode )
         {
             massbal_report(sp);
             stats_report(sp);
@@ -704,13 +707,13 @@ int DLLEXPORT swmm_end_project(SWMM_Project *sp)
         // --- close all computing systems
         stats_close(sp);
         massbal_close();
-        if ( !IgnoreRainfall ) rain_close(sp);
+        if ( !sp->IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
-        if ( DoRouting ) routing_close(sp, RouteModel);
+        if ( DoRouting ) routing_close(sp, sp->RouteModel);
         hotstart_close(sp);
         IsStartedFlag = FALSE;
     }
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 
 //=============================================================================
@@ -726,13 +729,13 @@ int DLLEXPORT swmm_report_project(SWMM_Project *sp)
 //
 {
     if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
-    if ( ErrorCode ) report_writeErrorCode(sp);
+    if ( sp->ErrorCode ) report_writeErrorCode(sp);
     else
     {
         writecon(FMT07);
         report_writeReport(sp);
     }
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 
 //=============================================================================
@@ -836,21 +839,25 @@ void DLLEXPORT swmm_getVersionInfo(char* major, char* minor, char* patch)
 //=============================================================================
 
 ////  New function added to release 5.1.011.  ////                             //(5.1.011)
-
 int DLLEXPORT swmm_getWarnings(void)
+{
+    return swmm_getWarnings_project(_defaultProject);
+}
+
+int DLLEXPORT swmm_getWarnings_project(SWMM_Project *sp)
 //
 //  Input:  none
 //  Output: returns number of warning messages issued.
 //  Purpose: retireves number of warning messages issued during an analysis.
 {
-    return Warnings;
+    return sp->Warnings;
 }
 
 //=============================================================================
 
 ////  New function added to release 5.1.011.  ////                             //(5.1.011)
-int  DLLEXPORT swmm_getError( char* errMsg, int msgLen) {
-
+int  DLLEXPORT swmm_getError(char* errMsg, int msgLen)
+{
     return swmm_getError_project(_defaultProject, errMsg, msgLen);
 }
 
@@ -865,7 +872,7 @@ int  DLLEXPORT swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen)
     size_t errMsgLen = msgLen;
 
     // --- copy text of last error message into errMsg
-    if ( ErrorCode > 0 && strlen(sp->ErrorMsg) == 0 ) sstrncpy(errMsg, "", 1);
+    if ( sp->ErrorCode > 0 && strlen(sp->ErrorMsg) == 0 ) sstrncpy(errMsg, "", 1);
     else
     {
 	    errMsgLen = MIN(errMsgLen, strlen(sp->ErrorMsg));
@@ -874,7 +881,8 @@ int  DLLEXPORT swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen)
 
     // --- remove leading line feed from errMsg
     if ( errMsgLen > 0 && errMsg[0] == '\n' ) errMsg[0] = ' ';
-    return error_getCode(ErrorCode);                                           //(5.1.011)
+
+    return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
 
 //=============================================================================
@@ -890,7 +898,7 @@ double UCF(SWMM_Project *sp, int u)
 //
 {
     if ( u < FLOW ) return Ucf[u][sp->UnitSystem];
-    else            return Qcf[FlowUnits];
+    else            return Qcf[sp->FlowUnits];
 }
 
 //=============================================================================
