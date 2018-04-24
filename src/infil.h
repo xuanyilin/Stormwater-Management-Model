@@ -93,7 +93,7 @@ extern TCurveNum* CNInfil;
 //-----------------------------------------------------------------------------
 //   Infiltration Methods
 //-----------------------------------------------------------------------------
-void    infil_create(int subcatchCount, int model);
+void    infil_create(SWMM_Project *sp, int subcatchCount, int model);
 void    infil_delete(void);
 int     infil_readParams(SWMM_Project *sp, int model, char* tok[], int ntoks);
 void    infil_initState(int area, int model);

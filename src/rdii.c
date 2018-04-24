@@ -419,9 +419,9 @@ void rdii_openRdii(SWMM_Project *sp)
     RdiiStartDate = NO_DATE;
 
     // --- create the RDII file if existing file not being used
-    if ( IgnoreRDII ) return;                                                  //(5.1.004)
+    if ( sp->IgnoreRDII ) return;                                                  //(5.1.004)
     if ( sp->Frdii.mode != USE_FILE ) createRdiiFile(sp);
-    if ( sp->Frdii.mode == NO_FILE || ErrorCode ) return;
+    if ( sp->Frdii.mode == NO_FILE || sp->ErrorCode ) return;
 
     // --- try to open the RDII file in binary mode
     sp->Frdii.file = fopen(sp->Frdii.name, "rb");
@@ -443,7 +443,7 @@ void rdii_openRdii(SWMM_Project *sp)
     if ( strcmp(fStamp, FileStamp) == 0 )
     {
         RdiiFileType = BINARY;
-        ErrorCode = readRdiiFileHeader(sp);
+        sp->ErrorCode = readRdiiFileHeader(sp);
     }
 
     // --- if stamp invalid try to open the file in text mode
@@ -455,9 +455,9 @@ void rdii_openRdii(SWMM_Project *sp)
     }
 
     // --- catch any error
-    if ( ErrorCode )
+    if ( sp->ErrorCode )
     {
-        report_writeErrorMsg(sp, ErrorCode, sp->Frdii.name);
+        report_writeErrorMsg(sp, sp->ErrorCode, sp->Frdii.name);
     }
 
     // --- read the first set of RDII flows form the file
@@ -484,10 +484,10 @@ void openRdiiTextFile(SWMM_Project *sp)
     }
 
     // --- read header records from file
-    ErrorCode = readRdiiTextFileHeader(sp);
-    if ( ErrorCode )
+    sp->ErrorCode = readRdiiTextFileHeader(sp);
+    if ( sp->ErrorCode )
     {
-        report_writeErrorMsg(sp, ErrorCode, sp->Frdii.name);
+        report_writeErrorMsg(sp, sp->ErrorCode, sp->Frdii.name);
     }
 }
 
@@ -741,11 +741,11 @@ void createRdiiFile(SWMM_Project *sp)
     // --- validate RDII data
     validateRdii(sp);
     initGageData(sp);
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
 
     // --- open RDII processing system
     openRdiiProcessor(sp);
-    if ( !ErrorCode )
+    if ( !sp->ErrorCode )
     {
         // --- initialize rain gage & UH processing data
         initUnitHydData(sp);
@@ -755,7 +755,7 @@ void createRdiiFile(SWMM_Project *sp)
 
         // --- examine rainfall record over each RdiiStep time step
         elapsedTime = 0.0;
-        while ( elapsedTime <= duration && !ErrorCode )
+        while ( elapsedTime <= duration && !sp->ErrorCode )
         {
             // --- compute current calendar date/time
             currentDate = StartDateTime + elapsedTime / SECperDAY;
@@ -1497,7 +1497,7 @@ void  closeRdiiProcessor(SWMM_Project *sp)
 //
 {
     // --- write rainfall & RDII totals to report file
-    if ( !ErrorCode )
+    if ( !sp->ErrorCode )
     {
         report_writeRdiiStats(sp, TotalRainVol, TotalRdiiVol);
     }

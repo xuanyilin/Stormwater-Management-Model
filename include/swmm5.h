@@ -153,6 +153,8 @@ int  DLLEXPORT   swmm_getError(char* errMsg, int msgLen);
 int  DLLEXPORT   swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen);                      //(5.1.011)
 
 int  DLLEXPORT   swmm_getWarnings(void);                                       //(5.1.011)
+int  DLLEXPORT   swmm_getWarnings_project(SWMM_Project *sp);
+
 int  swmm_IsOpenFlag(void);
 int  swmm_IsStartedFlag(void);
 

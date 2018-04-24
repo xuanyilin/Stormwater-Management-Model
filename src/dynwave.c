@@ -227,7 +227,7 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
     int converged;
 
     // --- initialize
-    if ( ErrorCode ) return 0;
+    if ( sp->ErrorCode ) return 0;
     Steps = 0;
     converged = FALSE;
     Omega = OMEGA;
@@ -291,7 +291,7 @@ void initNodeStates(SWMM_Project *sp)
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         // --- initialize nodal surface area
-        if ( AllowPonding )
+        if ( sp->AllowPonding )
         {
             Xnode[i].newSurfArea = node_getPondedArea(sp, i, Node[i].newDepth);
         }
@@ -632,7 +632,7 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     double  f;                         // relative surcharge depth
 
     // --- see if node can pond water above it
-    canPond = (AllowPonding && Node[i].pondedArea > 0.0);
+    canPond = (sp->AllowPonding && Node[i].pondedArea > 0.0);
     isPonded = (canPond && Node[i].newDepth > Node[i].fullDepth);
 
     // --- initialize values

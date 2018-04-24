@@ -91,7 +91,7 @@ static double curvenum_getInfil(TCurveNum *infil, double tstep, double irate,
 
 //=============================================================================
 
-void infil_create(int subcatchCount, int model)
+void infil_create(SWMM_Project *sp, int subcatchCount, int model)
 //
 //  Purpose: creates an array of infiltration objects.
 //  Input:   n = number of subcatchments
@@ -104,18 +104,18 @@ void infil_create(int subcatchCount, int model)
     case HORTON:
     case MOD_HORTON:
         HortInfil = (THorton *) calloc(subcatchCount, sizeof(THorton));
-        if ( HortInfil == NULL ) ErrorCode = ERR_MEMORY;
+        if ( HortInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
     case GREEN_AMPT:
     case MOD_GREEN_AMPT:                                                       //(5.1.010)
         GAInfil = (TGrnAmpt *) calloc(subcatchCount, sizeof(TGrnAmpt));
-        if ( GAInfil == NULL ) ErrorCode = ERR_MEMORY;
+        if ( GAInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
     case CURVE_NUMBER:
         CNInfil = (TCurveNum *) calloc(subcatchCount, sizeof(TCurveNum));
-        if ( CNInfil == NULL ) ErrorCode = ERR_MEMORY;
+        if ( CNInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
-    default: ErrorCode = ERR_MEMORY;
+    default: sp->ErrorCode = ERR_MEMORY;
     }
 }
 

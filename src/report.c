@@ -247,7 +247,7 @@ void report_writeTitle(SWMM_Project *sp)
 {
     int i;
     int lineCount = 0;                                                         //(5.1.011)
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
     for (i=0; i<MAXTITLE; i++) if ( strlen(sp->Title[i]) > 0 )
     {
         WRITE(sp->Title[i]);
@@ -278,47 +278,47 @@ void report_writeOptions(SWMM_Project *sp)
     WRITE("Analysis Options");
     WRITE("****************");
     fprintf(sp->Frpt.file, "\n  Flow Units ............... %s",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     fprintf(sp->Frpt.file, "\n  Process Models:");
     fprintf(sp->Frpt.file, "\n    Rainfall/Runoff ........ ");
-    if ( IgnoreRainfall || sp->Nobjects[GAGE] == 0 )
+    if ( sp->IgnoreRainfall || sp->Nobjects[GAGE] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else fprintf(sp->Frpt.file, "YES");
 
     fprintf(sp->Frpt.file, "\n    RDII ................... ");                     //(5.1.004)
-    if ( IgnoreRDII || sp->Nobjects[UNITHYD] == 0 )
+    if ( sp->IgnoreRDII || sp->Nobjects[UNITHYD] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else fprintf(sp->Frpt.file, "YES");
 
     fprintf(sp->Frpt.file, "\n    Snowmelt ............... ");
-    if ( IgnoreSnowmelt || sp->Nobjects[SNOWMELT] == 0 )
+    if ( sp->IgnoreSnowmelt || sp->Nobjects[SNOWMELT] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else fprintf(sp->Frpt.file, "YES");
     fprintf(sp->Frpt.file, "\n    Groundwater ............ ");
-    if ( IgnoreGwater || sp->Nobjects[AQUIFER] == 0 )
+    if ( sp->IgnoreGwater || sp->Nobjects[AQUIFER] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else fprintf(sp->Frpt.file, "YES");
     fprintf(sp->Frpt.file, "\n    Flow Routing ........... ");
-    if ( IgnoreRouting || sp->Nobjects[LINK] == 0 )
+    if ( sp->IgnoreRouting || sp->Nobjects[LINK] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else
     {
         fprintf(sp->Frpt.file, "YES");
         fprintf(sp->Frpt.file, "\n    Ponding Allowed ........ ");
-        if ( AllowPonding ) fprintf(sp->Frpt.file, "YES");
+        if ( sp->AllowPonding ) fprintf(sp->Frpt.file, "YES");
         else                fprintf(sp->Frpt.file, "NO");
     }
     fprintf(sp->Frpt.file, "\n    Water Quality .......... ");
-    if ( IgnoreQuality || sp->Nobjects[POLLUT] == 0 )
+    if ( sp->IgnoreQuality || sp->Nobjects[POLLUT] == 0 )
         fprintf(sp->Frpt.file, "NO");
     else fprintf(sp->Frpt.file, "YES");
 
     if ( sp->Nobjects[SUBCATCH] > 0 )
     fprintf(sp->Frpt.file, "\n  Infiltration Method ...... %s",
-        InfilModelWords[InfilModel]);
+        InfilModelWords[sp->InfilModel]);
     if ( sp->Nobjects[LINK] > 0 )
     fprintf(sp->Frpt.file, "\n  Flow Routing Method ...... %s",
-        RouteModelWords[RouteModel]);
+        RouteModelWords[sp->RouteModel]);
     datetime_dateToStr(StartDate, str);
     fprintf(sp->Frpt.file, "\n  Starting Date ............ %s", str);
     datetime_timeToStr(StartTime, str);
@@ -340,7 +340,7 @@ void report_writeOptions(SWMM_Project *sp)
     if ( sp->Nobjects[LINK] > 0 )
     {
         fprintf(sp->Frpt.file, "\n  Routing Time Step ........ %.2f sec", RouteStep);
-		if ( RouteModel == DW )
+		if ( sp->RouteModel == DW )
 		{
 		fprintf(sp->Frpt.file, "\n  Variable Time Step ....... ");
 		if ( CourantFactor > 0.0 ) fprintf(sp->Frpt.file, "YES");
@@ -947,7 +947,7 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
 {
     int i, j, k;
 
-    if ( RouteModel != DW || sp->Nobjects[LINK] == 0 ) return;
+    if ( sp->RouteModel != DW || sp->Nobjects[LINK] == 0 ) return;
     if ( nMaxStats <= 0 ) return;
     if ( maxMassBalErrs[0].index >= 0 )
     {
@@ -1071,15 +1071,15 @@ void report_writeReport(SWMM_Project *sp)
 //  Purpose: writes simulation results to report file.
 //
 {
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
     if ( sp->Nperiods == 0 ) return;
     if ( sp->RptFlags.subcatchments != NONE
-         && ( IgnoreRainfall == FALSE ||
-              IgnoreSnowmelt == FALSE ||
-              IgnoreGwater == FALSE)
+         && ( sp->IgnoreRainfall == FALSE ||
+              sp->IgnoreSnowmelt == FALSE ||
+              sp->IgnoreGwater == FALSE)
        ) report_Subcatchments(sp);
 
-    if ( IgnoreRouting == TRUE && IgnoreQuality == TRUE ) return;
+    if ( sp->IgnoreRouting == TRUE && sp->IgnoreQuality == TRUE ) return;
     if ( sp->RptFlags.nodes != NONE ) report_Nodes(sp);
     if ( sp->RptFlags.links != NONE ) report_Links(sp);
 }
@@ -1098,9 +1098,9 @@ void report_Subcatchments(SWMM_Project *sp)
     DateTime days;
     char     theDate[12];
     char     theTime[9];
-    int      hasSnowmelt = (sp->Nobjects[SNOWMELT] > 0 && !IgnoreSnowmelt);
-    int      hasGwater   = (sp->Nobjects[AQUIFER] > 0  && !IgnoreGwater);
-    int      hasQuality  = (sp->Nobjects[POLLUT] > 0 && !IgnoreQuality);
+    int      hasSnowmelt = (sp->Nobjects[SNOWMELT] > 0 && !sp->IgnoreSnowmelt);
+    int      hasGwater   = (sp->Nobjects[AQUIFER] > 0  && !sp->IgnoreGwater);
+    int      hasQuality  = (sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality);
 
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
     WRITE("");
@@ -1152,9 +1152,9 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
 //
 {
     int i;
-    int hasSnowmelt = (sp->Nobjects[SNOWMELT] > 0 && !IgnoreSnowmelt);
-    int hasGwater   = (sp->Nobjects[AQUIFER] > 0  && !IgnoreGwater);
-    int hasQuality  = (sp->Nobjects[POLLUT] > 0 && !IgnoreQuality);
+    int hasSnowmelt = (sp->Nobjects[SNOWMELT] > 0 && !sp->IgnoreSnowmelt);
+    int hasGwater   = (sp->Nobjects[AQUIFER] > 0  && !sp->IgnoreGwater);
+    int hasQuality  = (sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality);
 
     // --- print top border of header
     WRITE("");
@@ -1181,9 +1181,9 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
 
     // --- print second line of column headings
     if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
-    "\n                            in/hr     in/hr %9s", FlowUnitWords[FlowUnits]);
+    "\n                            in/hr     in/hr %9s", FlowUnitWords[sp->FlowUnits]);
     else fprintf(sp->Frpt.file,
-    "\n                            mm/hr     mm/hr %9s", FlowUnitWords[FlowUnits]);
+    "\n                            mm/hr     mm/hr %9s", FlowUnitWords[sp->FlowUnits]);
     if ( hasSnowmelt )
     {
         if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "      inches");
@@ -1192,9 +1192,9 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
     if ( hasGwater )
     {
         if ( sp->UnitSystem == US )
-            fprintf(sp->Frpt.file, "      feet %9s", FlowUnitWords[FlowUnits]);
+            fprintf(sp->Frpt.file, "      feet %9s", FlowUnitWords[sp->FlowUnits]);
         else
-            fprintf(sp->Frpt.file, "    meters %9s", FlowUnitWords[FlowUnits]);
+            fprintf(sp->Frpt.file, "    meters %9s", FlowUnitWords[sp->FlowUnits]);
     }
     if ( hasQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
@@ -1247,7 +1247,7 @@ void report_Nodes(SWMM_Project *sp)
                     theDate, theTime, NodeResults[NODE_INFLOW],
                     NodeResults[NODE_OVERFLOW], NodeResults[NODE_DEPTH],
                     NodeResults[NODE_HEAD]);
-                if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
+                if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                     fprintf(sp->Frpt.file, " %9.3f", NodeResults[NODE_QUAL + p]);
             }
             WRITE("");
@@ -1275,19 +1275,19 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
 
     fprintf(sp->Frpt.file,
     "\n                           Inflow  Flooding     Depth      Head");
-    if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
+    if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
     if ( sp->UnitSystem == US) strcpy(lengthUnits, "feet");
     else strcpy(lengthUnits, "meters");
     fprintf(sp->Frpt.file,
     "\n  Date        Time      %9s %9s %9s %9s",
-        FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
+        FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits],
         lengthUnits, lengthUnits);
-    if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
+    if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
 
     WRITE(LINE_64);
-    if ( !IgnoreQuality )
+    if ( !sp->IgnoreQuality )
         for (i = 0; i < sp->Nobjects[POLLUT]; i++) fprintf(sp->Frpt.file, LINE_10);
 }
 
@@ -1327,7 +1327,7 @@ void report_Links(SWMM_Project *sp)
                     theDate, theTime, LinkResults[LINK_FLOW],
                     LinkResults[LINK_VELOCITY], LinkResults[LINK_DEPTH],
                     LinkResults[LINK_CAPACITY]);
-                if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
+                if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                     fprintf(sp->Frpt.file, " %9.3f", LinkResults[LINK_QUAL + p]);
             }
             WRITE("");
@@ -1354,22 +1354,22 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
 
     fprintf(sp->Frpt.file,
     "\n                             Flow  Velocity     Depth  Capacity/");
-    if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
+    if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
 
     if ( sp->UnitSystem == US )
         fprintf(sp->Frpt.file,
         "\n  Date        Time     %10s    ft/sec      feet   Setting ",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     else
         fprintf(sp->Frpt.file,
         "\n  Date        Time     %10s     m/sec    meters   Setting ",
-        FlowUnitWords[FlowUnits]);
-    if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
+        FlowUnitWords[sp->FlowUnits]);
+    if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, " %9s", QualUnitsWords[Pollut[i].units]);
 
     WRITE(LINE_64);
-    if ( !IgnoreQuality )
+    if ( !sp->IgnoreQuality )
         for (i = 0; i < sp->Nobjects[POLLUT]; i++) fprintf(sp->Frpt.file, LINE_10);
 }
 
@@ -1391,13 +1391,13 @@ void report_writeErrorMsg(SWMM_Project *sp, int code, char* s)
         WRITE("");
         fprintf(sp->Frpt.file, error_getMsg(code), s);
     }
-    ErrorCode = code;
+    sp->ErrorCode = code;
 
 ////  Following code segment added to release 5.1.011.  ////                   //(5.1.011)
     // --- save message to ErrorMsg if it's not for a line of input data
-    if ( ErrorCode <= ERR_INPUT || ErrorCode >= ERR_FILE_NAME )
+    if ( sp->ErrorCode <= ERR_INPUT || sp->ErrorCode >= ERR_FILE_NAME )
     {                                                
-        sprintf(sp->ErrorMsg, error_getMsg(ErrorCode), s);
+        sprintf(sp->ErrorMsg, error_getMsg(sp->ErrorCode), s);
     }
 ////
 }
@@ -1413,10 +1413,10 @@ void report_writeErrorCode(SWMM_Project *sp)
 {
     if ( sp->Frpt.file )
     {
-        if ( (ErrorCode >= ERR_MEMORY && ErrorCode <= ERR_TIMESTEP)
-        ||   (ErrorCode >= ERR_FILE_NAME && ErrorCode <= ERR_OUT_FILE)
-        ||   (ErrorCode == ERR_SYSTEM) )
-            fprintf(sp->Frpt.file, error_getMsg(ErrorCode));
+        if ( (sp->ErrorCode >= ERR_MEMORY && sp->ErrorCode <= ERR_TIMESTEP)
+        ||   (sp->ErrorCode >= ERR_FILE_NAME && sp->ErrorCode <= ERR_OUT_FILE)
+        ||   (sp->ErrorCode == ERR_SYSTEM) )
+            fprintf(sp->Frpt.file, error_getMsg(sp->ErrorCode));
     }
 }
 
@@ -1453,7 +1453,7 @@ void report_writeWarningMsg(SWMM_Project *sp, char* msg, char* id)
 //
 {
     fprintf(sp->Frpt.file, "\n  %s %s", msg, id);
-    Warnings++;                                                                //(5.1.011)
+    sp->Warnings++;                                                                //(5.1.011)
 }
 
 //=============================================================================

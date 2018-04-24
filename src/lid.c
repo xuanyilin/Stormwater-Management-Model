@@ -219,7 +219,7 @@ static void   validateLidGroup(SWMM_Project *sp, int j);
 static int    isLidPervious(int k);
 static double getImpervAreaRunoff(int j);                                      //(5.1.008)
 static double getSurfaceDepth(int subcatch);                                   //(5.1.008)
-static void   findNativeInfil(int j, double tStep);                            //(5.1.008)
+static void   findNativeInfil(SWMM_Project *sp, int j, double tStep);                            //(5.1.008)
 
 ////  Re-definition of evalLidUnit.  ////                                      //(5.1.008)
 static void   evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit,
@@ -228,7 +228,7 @@ static void   evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit,
 
 //=============================================================================
 
-void lid_create(int lidCount, int subcatchCount)
+void lid_create(SWMM_Project *sp, int lidCount, int subcatchCount)
 //
 //  Purpose: creates an array of LID objects.
 //  Input:   n = number of LID processes
@@ -248,7 +248,7 @@ void lid_create(int lidCount, int subcatchCount)
     LidGroups = (TLidGroup *) calloc(GroupCount, sizeof(TLidGroup));
     if ( LidGroups == NULL )
     {
-        ErrorCode = ERR_MEMORY;
+        sp->ErrorCode = ERR_MEMORY;
         return;
     }
 
@@ -260,7 +260,7 @@ void lid_create(int lidCount, int subcatchCount)
     LidProcs = (TLidProc *) calloc(LidCount, sizeof(TLidProc));
     if ( LidProcs == NULL )
     {
-        ErrorCode = ERR_MEMORY;
+        sp->ErrorCode = ERR_MEMORY;
         return;
     }
 
@@ -1069,7 +1069,7 @@ void validateLidGroup(SWMM_Project *sp, int j)
         //... assign vegetative swale infiltration parameters
         if ( LidProcs[k].lidType == VEG_SWALE )
         {
-            if ( InfilModel == GREEN_AMPT || InfilModel == MOD_GREEN_AMPT )    //(5.1.010)
+            if ( sp->InfilModel == GREEN_AMPT || sp->InfilModel == MOD_GREEN_AMPT )    //(5.1.010)
             {
                 p[0] = GAInfil[j].S * UCF(sp, RAINDEPTH);
                 p[1] = GAInfil[j].Ks * UCF(sp, RAINFALL);
@@ -1555,7 +1555,7 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
     if ( Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
 
     //... find subcatchment's infiltration rate into native soil
-    findNativeInfil(j, tStep);
+    findNativeInfil(sp, j, tStep);
 
     //... get runoff from impervious, non-LID subarea of subcatchment (cfs)
     if ( Subcatch[j].area > Subcatch[j].lidArea )
@@ -1609,7 +1609,7 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
 
 //=============================================================================
 
-void findNativeInfil(int j, double tStep)
+void findNativeInfil(SWMM_Project *sp, int j, double tStep)
 //
 //  Purpose: determines a subcatchment's current infiltration rate into
 //           its native soil.
@@ -1630,14 +1630,14 @@ void findNativeInfil(int j, double tStep)
     //... otherwise find infil. rate for the subcatchment's rainfall + runon
     else
     {
-        NativeInfil = infil_getInfil(j, InfilModel, tStep,
+        NativeInfil = infil_getInfil(j, sp->InfilModel, tStep,
                                      Subcatch[j].rainfall,
                                      Subcatch[j].runon,
                                      getSurfaceDepth(j));                      //(5.1.008)
     }
 
     //... see if there is any groundwater-imposed limit on infil.
-    if ( !IgnoreGwater && Subcatch[j].groundwater )
+    if ( !sp->IgnoreGwater && Subcatch[j].groundwater )
     {
         MaxNativeInfil = Subcatch[j].groundwater->maxInfilVol / tStep;
     }

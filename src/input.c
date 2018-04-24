@@ -79,7 +79,7 @@ int input_countObjects(SWMM_Project *sp)
     long  lineCount = 0;
 
     // --- initialize number of objects & set default values
-    if ( ErrorCode ) return ErrorCode;
+    if ( sp->ErrorCode ) return sp->ErrorCode;
     error_setInpError(0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++) sp->Nobjects[i] = 0;
     for (i = 0; i < MAX_NODE_TYPES; i++) sp->Nnodes[i] = 0;
@@ -127,8 +127,8 @@ int input_countObjects(SWMM_Project *sp)
     }
 
     // --- set global error code if input errors were found
-    if ( errsum > 0 ) ErrorCode = ERR_INPUT;
-    return ErrorCode;
+    if ( errsum > 0 ) sp->ErrorCode = ERR_INPUT;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -152,7 +152,7 @@ int input_readData(SWMM_Project *sp)
     // --- initialize working item count arrays
     //     (final counts in Mobjects, Mnodes & Mlinks should
     //      match those in sp->Nobjects, sp->Nnodes and sp->Nlinks).
-    if ( ErrorCode ) return ErrorCode;
+    if ( sp->ErrorCode ) return sp->ErrorCode;
     error_setInpError(0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++)  Mobjects[i] = 0;
     for (i = 0; i < MAX_NODE_TYPES; i++) Mnodes[i] = 0;
@@ -237,8 +237,8 @@ int input_readData(SWMM_Project *sp)
     }   /* End of while */
 
     // --- check for errors
-    if (errsum > 0)  ErrorCode = ERR_INPUT;
-    return ErrorCode;
+    if (errsum > 0)  sp->ErrorCode = ERR_INPUT;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -478,7 +478,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return subcatch_readSubareaParams(sp, Tok, Ntokens);
 
       case s_INFIL:
-        return infil_readParams(sp, InfilModel, Tok, Ntokens);
+        return infil_readParams(sp, sp->InfilModel, Tok, Ntokens);
 
       case s_AQUIFER:
         j = Mobjects[AQUIFER];

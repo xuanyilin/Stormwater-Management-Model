@@ -38,8 +38,8 @@ static double getWidth(TXsect* xsect, double y);
 static double getArea(TXsect* xsect, double y);
 static double getHydRad(TXsect* xsect, double y);
 
-static double checkNormalFlow(int j, double q, double y1, double y2,
-              double a1, double r1);
+static double checkNormalFlow(SWMM_Project *sp, int j, double q, double y1,
+        double y2, double a1, double r1);
 
 //=============================================================================
 
@@ -181,8 +181,8 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     rWtd = r1 + (rMid - r1) * rho;
 
     // --- determine how much inertial damping to apply
-    if      ( InertDamping == NO_DAMPING )   sigma = 1.0;
-    else if ( InertDamping == FULL_DAMPING ) sigma = 0.0;
+    if      ( sp->InertDamping == NO_DAMPING )   sigma = 1.0;
+    else if ( sp->InertDamping == FULL_DAMPING ) sigma = 0.0;
 
     // --- use full inertial damping if closed conduit is surcharged
     if ( isFull && !xsect_isOpen(xsect->type) ) sigma = 0.0;
@@ -190,7 +190,7 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     // --- compute terms of momentum eqn.:
     // --- 1. friction slope term
     if ( xsect->type == FORCE_MAIN && isFull )
-         dq1 = dt * forcemain_getFricSlope(j, fabs(v), rMid);
+         dq1 = dt * forcemain_getFricSlope(sp, j, fabs(v), rMid);
     else dq1 = dt * Conduit[k].roughFactor / pow(rWtd, 1.33333) * fabs(v);
 
     // --- 2. energy slope term
@@ -236,7 +236,7 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
         if ( y1 < Link[j].xsect.yFull &&
                ( Link[j].flowClass == SUBCRITICAL ||
                  Link[j].flowClass == SUPCRITICAL )
-           ) q = checkNormalFlow(j, q, y1, y2, a1, r1);
+           ) q = checkNormalFlow(sp, j, q, y1, y2, a1, r1);
     }
 
     // --- apply under-relaxation weighting between new & old flows;
@@ -595,8 +595,8 @@ double getHydRad(TXsect* xsect, double y)
 
 //=============================================================================
 
-double checkNormalFlow(int j, double q, double y1, double y2, double a1,
-                       double r1)
+double checkNormalFlow(SWMM_Project *sp, int j, double q, double y1, double y2,
+        double a1, double r1)
 //
 //  Input:   j = link index
 //           q = link flow found from dynamic wave equations (cfs)
@@ -617,13 +617,13 @@ double checkNormalFlow(int j, double q, double y1, double y2, double a1,
     double f1;
 
     // --- check if water surface slope < conduit slope
-    if ( NormalFlowLtd == SLOPE || NormalFlowLtd == BOTH || hasOutfall )
+    if ( sp->NormalFlowLtd == SLOPE || sp->NormalFlowLtd == BOTH || hasOutfall )
     {
         if ( y1 < y2 ) check = TRUE;
     }
 
     // --- check if Fr >= 1.0 at upstream end of conduit
-    if ( !check && (NormalFlowLtd == FROUDE || NormalFlowLtd == BOTH) &&
+    if ( !check && (sp->NormalFlowLtd == FROUDE || sp->NormalFlowLtd == BOTH) &&
          !hasOutfall )
     {
         if ( y1 > FUDGE && y2 > FUDGE )

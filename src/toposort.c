@@ -65,13 +65,13 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
 
     // --- no need to sort links for Dyn. Wave routing
     for ( i=0; i<sp->Nobjects[LINK]; i++) sortedLinks[i] = i;
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
 
         // --- check for nodes with both incoming and outgoing
         //     dummy links (creates ambiguous ordering)
         checkDummyLinks(sp);
-        if ( ErrorCode ) return;
+        if ( sp->ErrorCode ) return;
 
         // --- find number of outflow links for each node
         for ( i=0; i<sp->Nobjects[NODE]; i++ ) Node[i].degree = 0;
@@ -94,7 +94,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
     }
 
     // --- allocate arrays used for topo sorting
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
     InDegree = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
     StartPos = (int *) calloc(sp->Nobjects[NODE], sizeof(int));
     AdjList  = (int *) calloc(sp->Nobjects[LINK], sizeof(int));
@@ -127,7 +127,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
     FREE(Stack);
 
     // --- check that all links are included in SortedLinks
-    if ( !ErrorCode &&  n != sp->Nobjects[LINK] )
+    if ( !sp->ErrorCode &&  n != sp->Nobjects[LINK] )
     {
         report_writeErrorMsg(sp, ERR_LOOP, "");
         findCycles(sp);

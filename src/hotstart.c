@@ -172,7 +172,7 @@ int openHotstartFile1(SWMM_Project *sp)
     ||   nNodes    != sp->Nobjects[NODE]
     ||   nLinks    != sp->Nobjects[LINK]
     ||   nPollut   != sp->Nobjects[POLLUT]
-    ||   flowUnits != FlowUnits )
+    ||   flowUnits != sp->FlowUnits )
     {
          report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
          return FALSE;
@@ -182,7 +182,7 @@ int openHotstartFile1(SWMM_Project *sp)
     if ( fileVersion >= 3 ) readRunoff(sp);                                      //(5.1.008)
     readRouting(sp);
     fclose(sp->Fhotstart1.file);
-    if ( ErrorCode ) return FALSE;
+    if ( sp->ErrorCode ) return FALSE;
     else return TRUE;
 }
 
@@ -217,7 +217,7 @@ int openHotstartFile2(SWMM_Project *sp)
     nNodes = sp->Nobjects[NODE];
     nLinks = sp->Nobjects[LINK];
     nPollut = sp->Nobjects[POLLUT];
-    flowUnits = FlowUnits;
+    flowUnits = sp->FlowUnits;
     fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Fhotstart2.file);
     fwrite(&nSubcatch, sizeof(int), 1, sp->Fhotstart2.file);
     fwrite(&nLandUses, sizeof(int), 1, sp->Fhotstart2.file);
@@ -392,7 +392,7 @@ void  saveRunoff(SWMM_Project *sp)
 
         // Infiltration state (max. of 6 elements)
         for (j=0; j<sizeX; j++) x[j] = 0.0;
-        infil_getState(i, InfilModel, x);
+        infil_getState(i, sp->InfilModel, x);
         fwrite(x, sizeof(double), 6, f);
 
         // Groundwater state (4 elements)
@@ -461,7 +461,7 @@ void  readRunoff(SWMM_Project *sp)
 
         // Infiltration state (max. of 6 elements)
         for (j=0; j<6; j++) if ( !readDouble(sp, &x[j], f) ) return;
-        infil_setState(i, InfilModel, x);
+        infil_setState(i, sp->InfilModel, x);
 
         // Groundwater state (4 elements)
         if ( Subcatch[i].groundwater != NULL )

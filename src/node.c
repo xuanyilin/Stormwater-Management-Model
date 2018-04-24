@@ -430,7 +430,7 @@ double node_getMaxOutflow(int j, double q, double tStep)
 
 //=============================================================================
 
-double node_getSystemOutflow(int j, int *isFlooded)
+double node_getSystemOutflow(SWMM_Project *sp, int j, int *isFlooded)
 //
 //  Input:   j = node index
 //           isFlooded = TRUE if node becomes flooded
@@ -468,7 +468,7 @@ double node_getSystemOutflow(int j, int *isFlooded)
     }
 
     // --- node is a terminal node under Steady or Kin. Wave routing
-    else if ( RouteModel != DW &&
+    else if ( sp->RouteModel != DW &&
               Node[j].degree == 0 &&
               Node[j].type != STORAGE
             )
@@ -517,7 +517,7 @@ void node_getResults(SWMM_Project *sp, int j, double f, float x[])
     z = Node[j].overflow * UCF(sp, FLOW);
     x[NODE_OVERFLOW] = (float)z;
 
-    if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
+    if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         z = f1*Node[j].oldQual[p] + f*Node[j].newQual[p];
         x[NODE_QUAL+p] = (float)z;

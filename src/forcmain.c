@@ -34,7 +34,7 @@ static double forcemain_getReynolds(double v, double hrad);
 
 //=============================================================================
 
-double forcemain_getEquivN(int j, int k)
+double forcemain_getEquivN(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = conduit index
@@ -48,7 +48,7 @@ double forcemain_getEquivN(int j, int k)
     TXsect xsect = Link[j].xsect;
     double f;
     double d = xsect.yFull;
-    switch ( ForceMainEqn )
+    switch ( sp->ForceMainEqn )
     {
       case H_W:
         return 1.067 / xsect.rBot * pow(d/Conduit[k].slope, 0.04);
@@ -61,7 +61,7 @@ double forcemain_getEquivN(int j, int k)
 
 //=============================================================================
 
-double forcemain_getRoughFactor(int j, double lengthFactor)
+double forcemain_getRoughFactor(SWMM_Project *sp, int j, double lengthFactor)
 //
 //  Input:   j = link index
 //           lengthFactor = factor by which a pipe will be artifically lengthened
@@ -72,7 +72,7 @@ double forcemain_getRoughFactor(int j, double lengthFactor)
 {
     TXsect xsect = Link[j].xsect;
     double r;
-    switch ( ForceMainEqn )
+    switch ( sp->ForceMainEqn )
     {
       case H_W:
         r = 1.318*xsect.rBot*pow(lengthFactor, 0.54);
@@ -85,7 +85,7 @@ double forcemain_getRoughFactor(int j, double lengthFactor)
 
 //=============================================================================
 
-double forcemain_getFricSlope(int j, double v, double hrad)
+double forcemain_getFricSlope(SWMM_Project *sp, int j, double v, double hrad)
 //
 //  Input:   j = link index
 //           v = flow velocity (ft/sec)
@@ -100,7 +100,7 @@ double forcemain_getFricSlope(int j, double v, double hrad)
 {
     double re, f;
     TXsect xsect = Link[j].xsect;
-    switch ( ForceMainEqn )
+    switch ( sp->ForceMainEqn )
     {
       case H_W:
         return xsect.sBot * pow(v, 0.852) / pow(hrad, 1.1667);

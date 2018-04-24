@@ -88,7 +88,7 @@ int routing_open(SWMM_Project *sp)
 //
 {
     // --- open treatment system
-    if ( !treatmnt_open(sp) ) return ErrorCode;
+    if ( !treatmnt_open(sp) ) return sp->ErrorCode;
 
     // --- topologically sort the links
     SortedLinks = NULL;
@@ -98,17 +98,17 @@ int routing_open(SWMM_Project *sp)
         if ( !SortedLinks )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
         toposort_sortLinks(sp, SortedLinks);
-        if ( ErrorCode ) return ErrorCode;
+        if ( sp->ErrorCode ) return sp->ErrorCode;
     }
 
     // --- open any routing interface files
     iface_openRoutingFiles(sp);
 
     // --- initialize flow and quality routing systems                         //(5.1.008)
-    flowrout_init(sp, RouteModel);                                             //(5.1.008)
+    flowrout_init(sp, sp->RouteModel);                                             //(5.1.008)
     if ( sp->Fhotstart1.mode == NO_FILE ) qualrout_init(sp);                         //(5.1.008)
 
     // --- initialize routing events                                           //(5.1.011)
@@ -116,7 +116,7 @@ int routing_open(SWMM_Project *sp)
     NextEvent = 0;                                                             //(5.1.011)
     //InSteadyState = (NumEvents > 0);                                         //(5.1.012)
     BetweenEvents = (NumEvents > 0);                                           //(5.1.012)
-    return ErrorCode;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -195,7 +195,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
 
     // --- update continuity with current state
     //     applied over 1/2 of time step
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
     massbal_updateRoutingTotals(sp, routingStep/2.);
 
     // --- find new link target settings that are not related to
@@ -277,7 +277,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         addIfaceInflows(sp, currentDate);
 
         // --- check if can skip steady state periods based on flows
-        if ( SkipSteadyState )
+        if ( sp->SkipSteadyState )
         {
             if ( OldRoutingTime == 0.0
             ||   actionCount > 0
@@ -305,7 +305,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         }
 
         // --- route quality through the drainage network
-        if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality )
+        if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality )
         {
             qualrout_execute(sp, routingStep);
         }
@@ -803,7 +803,7 @@ void removeOutflows(SWMM_Project *sp, double tStep)
 
         // --- update mass balance with flow and mass leaving the system
         //     through outfalls and flooded interior nodes
-        q = node_getSystemOutflow(i, &isFlooded);
+        q = node_getSystemOutflow(sp, i, &isFlooded);
         if ( q != 0.0 )
         {
             massbal_addOutflowFlow(q, isFlooded);

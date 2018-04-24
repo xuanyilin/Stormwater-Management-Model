@@ -145,7 +145,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
     double steps;                      // computational step count
 
     // --- set overflows to drain any ponded water
-    if ( ErrorCode ) return 0;
+    if ( sp->ErrorCode ) return 0;
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         Node[j].updated = FALSE;
@@ -436,7 +436,7 @@ void initNodes(SWMM_Project *sp)
 
         // --- initialize node volume
         Node[i].newVolume = 0.0;
-        if ( AllowPonding &&
+        if ( sp->AllowPonding &&
              Node[i].pondedArea > 0.0 &&
              Node[i].newDepth > Node[i].fullDepth )
         {
@@ -576,7 +576,7 @@ void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
             Node[i].overflow = (v2 - MAX(Node[i].oldVolume,
                                          Node[i].fullVolume)) / dt;
             if ( Node[i].overflow < FUDGE ) Node[i].overflow = 0.0;            //(5.1.012)
-            if ( !AllowPonding || Node[i].pondedArea == 0.0 )
+            if ( !sp->AllowPonding || Node[i].pondedArea == 0.0 )
                 v2 = Node[i].fullVolume;
         }
 
@@ -656,7 +656,7 @@ void setNewNodeState(SWMM_Project *sp, int j, double dt)
 
     // --- determine any overflow lost from system
     Node[j].overflow = 0.0;
-    canPond = (AllowPonding && Node[j].pondedArea > 0.0);
+    canPond = (sp->AllowPonding && Node[j].pondedArea > 0.0);
     if ( Node[j].newVolume > Node[j].fullVolume )
     {
         Node[j].overflow = (Node[j].newVolume - MAX(Node[j].oldVolume,

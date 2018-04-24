@@ -98,10 +98,10 @@ int output_open(SWMM_Project *sp)
 
     // --- open binary output file
     output_openOutFile(sp);
-    if ( ErrorCode ) return ErrorCode;
+    if ( sp->ErrorCode ) return sp->ErrorCode;
 
     // --- ignore pollutants if no water quality analsis performed
-    if ( IgnoreQuality ) NumPolluts = 0;
+    if ( sp->IgnoreQuality ) NumPolluts = 0;
     else NumPolluts = sp->Nobjects[POLLUT];
 
     // --- subcatchment results consist of Rainfall, Snowdepth, Evap, 
@@ -140,7 +140,7 @@ int output_open(SWMM_Project *sp)
     if ( !SubcatchResults || !NodeResults || !LinkResults )
     {
         report_writeErrorMsg(sp, ERR_MEMORY, "");
-        return ErrorCode;
+        return sp->ErrorCode;
     }
 
     fseek(sp->Fout.file, 0, SEEK_SET);
@@ -148,7 +148,7 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Magic number
     k = VERSION;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Version number
-    k = FlowUnits;
+    k = sp->FlowUnits;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Flow units
     k = NumSubcatch;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # subcatchments
@@ -347,11 +347,11 @@ int output_open(SWMM_Project *sp)
     if ( fwrite(&k, sizeof(INT4), 1, sp->Fout.file) < 1)
     {
         report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
-        return ErrorCode;
+        return sp->ErrorCode;
     }
     OutputStartPos = ftell(sp->Fout.file);
     if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
-    return ErrorCode;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -404,7 +404,7 @@ void output_openOutFile(SWMM_Project *sp)
     if ( (sp->Fout.file = fopen(sp->Fout.name, "w+b")) == NULL)
     {
         writecon(FMT14);
-        ErrorCode = ERR_OUT_FILE;
+        sp->ErrorCode = ERR_OUT_FILE;
     }
 }
 
@@ -432,7 +432,7 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
     if (sp->Nobjects[LINK] > 0)
         output_saveLinkResults(sp, reportTime, sp->Fout.file);
     fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
-    if ( sp->Foutflows.mode == SAVE_FILE && !IgnoreRouting )
+    if ( sp->Foutflows.mode == SAVE_FILE && !sp->IgnoreRouting )
         iface_saveOutletResults(sp, reportDate, sp->Foutflows.file);
     sp->Nperiods++;
 }
@@ -453,7 +453,7 @@ void output_end(SWMM_Project *sp)
     fwrite(&OutputStartPos, sizeof(INT4), 1, sp->Fout.file);
     k = sp->Nperiods;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
-    k = (INT4)error_getCode(ErrorCode);
+    k = (INT4)error_getCode(sp->ErrorCode);
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = MAGICNUMBER;
     if (fwrite(&k, sizeof(INT4), 1, sp->Fout.file) < 1)

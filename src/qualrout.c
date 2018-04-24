@@ -289,7 +289,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
     if ( vEvap > 0.0 && v1 > ZeroVolume ) fEvap += vEvap / v1;
 
     // --- Steady Flow routing requires special treatment
-    if ( RouteModel == SF )
+    if ( sp->RouteModel == SF )
     {
         findSFLinkQual(sp, i, qSeep, fEvap, tStep);
         return;
@@ -298,7 +298,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
     // --- adjust inflow to compensate for volume change under Dynamic
     //     Wave routing (which produces just a single (out)flow rate
     //     for a conduit)
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         qIn = qIn + (v2 + vLosses - v1) / tStep; 
         qIn = MAX(qIn, 0.0);

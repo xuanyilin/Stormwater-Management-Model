@@ -79,7 +79,7 @@ void statsrpt_writeReport(SWMM_Project *sp)
 //
 {
     // --- set number of decimal places for reporting flow values
-    if ( FlowUnits == MGD || FlowUnits == CMS ) strcpy(FlowFmt, "%9.3f");
+    if ( sp->FlowUnits == MGD || sp->FlowUnits == CMS ) strcpy(FlowFmt, "%9.3f");
     else strcpy(FlowFmt, "%9.2f");
 
     // --- volume conversion factor from ft3 to Mgal or Mliters
@@ -89,23 +89,23 @@ void statsrpt_writeReport(SWMM_Project *sp)
     // --- report summary results for subcatchment runoff 
     if ( sp->Nobjects[SUBCATCH] > 0 )
     {
-        if ( !IgnoreRainfall ||
-             (sp->Nobjects[SNOWMELT] > 0 && !IgnoreSnowmelt) ||
-             (sp->Nobjects[AQUIFER] > 0  && !IgnoreGwater) )
+        if ( !sp->IgnoreRainfall ||
+             (sp->Nobjects[SNOWMELT] > 0 && !sp->IgnoreSnowmelt) ||
+             (sp->Nobjects[AQUIFER] > 0  && !sp->IgnoreGwater) )
         {
             writeSubcatchRunoff(sp);
             lid_writeWaterBalance(sp);
-            if ( !IgnoreGwater ) writeGroundwater(sp);                           //(5.1.008)
-            if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality) writeSubcatchLoads(sp);
+            if ( !sp->IgnoreGwater ) writeGroundwater(sp);                           //(5.1.008)
+            if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality) writeSubcatchLoads(sp);
         }
     }
 
     // --- report summary results for flow routing
-    if ( sp->Nobjects[LINK] > 0 && !IgnoreRouting )
+    if ( sp->Nobjects[LINK] > 0 && !sp->IgnoreRouting )
     {
         writeNodeDepths(sp);
         writeNodeFlows(sp);
-        if ( RouteModel == DW ) writeNodeSurcharge(sp);                          //(5.1.011)
+        if ( sp->RouteModel == DW ) writeNodeSurcharge(sp);                          //(5.1.011)
         writeNodeFlooding(sp);
         writeStorageVolumes(sp);
         writeOutfallLoads(sp);
@@ -113,7 +113,7 @@ void statsrpt_writeReport(SWMM_Project *sp)
         writeFlowClass(sp);
         writeLinkSurcharge(sp);
         writePumpFlows(sp);
-        if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality) writeLinkLoads(sp);
+        if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality) writeLinkLoads(sp);
     }
 }
 
@@ -137,10 +137,10 @@ void writeSubcatchRunoff(SWMM_Project *sp)
 "\n                           Precip      Runon       Evap      Infil     Runoff      Runoff   Runoff   Coeff");
     if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
 "\n  Subcatchment                 in         in         in         in         in    %8s      %3s",
-        VolUnitsWords[sp->UnitSystem], FlowUnitWords[FlowUnits]);
+        VolUnitsWords[sp->UnitSystem], FlowUnitWords[sp->FlowUnits]);
     else fprintf(sp->Frpt.file,
 "\n  Subcatchment                 mm         mm         mm         mm         mm    %8s      %3s",
-        VolUnitsWords[sp->UnitSystem], FlowUnitWords[FlowUnits]);
+        VolUnitsWords[sp->UnitSystem], FlowUnitWords[sp->FlowUnits]);
     fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------");
 
@@ -201,10 +201,10 @@ void    writeGroundwater(SWMM_Project *sp)
 "\n                          Infil     Evap  Seepage  Outflow  Outflow   Moist.    Table   Moist.    Table");
     if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
 "\n  Subcatchment               in       in       in       in      %3s                ft                ft",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     else fprintf(sp->Frpt.file,
 "\n  Subcatchment               mm       mm       mm       mm      %3s                 m                 m",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     fprintf(sp->Frpt.file,
 "\n  -----------------------------------------------------------------------------------------------------");
 
@@ -362,7 +362,7 @@ void writeNodeFlows(SWMM_Project *sp)
 "\n                                  Lateral    Total  Time of Max      Inflow      Inflow     Balance"
 "\n                                   Inflow   Inflow   Occurrence      Volume      Volume       Error"
 "\n  Node                 Type           %3s      %3s  days hr:min    %8s    %8s     Percent",
-        FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits], VolUnitsWords[sp->UnitSystem],
+        FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits], VolUnitsWords[sp->UnitSystem],
         VolUnitsWords[sp->UnitSystem]);                                            //(5.1.009)
     fprintf(sp->Frpt.file,
 "\n  -------------------------------------------------------------------------------------------------");
@@ -462,12 +462,12 @@ void writeNodeFlooding(SWMM_Project *sp)
 "\n                                                             Total   Maximum"
 "\n                                 Maximum   Time of Max       Flood    Ponded"
 "\n                        Hours       Rate    Occurrence      Volume");
-            if ( RouteModel == DW ) fprintf(sp->Frpt.file, "     Depth");
+            if ( sp->RouteModel == DW ) fprintf(sp->Frpt.file, "     Depth");
             else                    fprintf(sp->Frpt.file, "    Volume");
             fprintf(sp->Frpt.file,
 "\n  Node                 Flooded       %3s   days hr:min    %8s",
-                FlowUnitWords[FlowUnits], VolUnitsWords[sp->UnitSystem]);
-            if ( RouteModel == DW )      fprintf(sp->Frpt.file, "    %6s",
+                FlowUnitWords[sp->FlowUnits], VolUnitsWords[sp->UnitSystem]);
+            if ( sp->RouteModel == DW )      fprintf(sp->Frpt.file, "    %6s",
                                          PondingUnitsWords[sp->UnitSystem]);
             else if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "  1000 ft3");
             else                         fprintf(sp->Frpt.file, "   1000 m3");
@@ -481,7 +481,7 @@ void writeNodeFlooding(SWMM_Project *sp)
         getElapsedTime(NodeStats[j].maxOverflowDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "   %4d  %02d:%02d", days, hrs, mins);
 		fprintf(sp->Frpt.file, "%12.3f", NodeStats[j].volFlooded * Vcf);
-        if ( RouteModel == DW )
+        if ( sp->RouteModel == DW )
             fprintf(sp->Frpt.file, " %9.3f",
                 (NodeStats[j].maxDepth - Node[j].fullDepth) * UCF(sp, LENGTH));
         else
@@ -522,7 +522,7 @@ void writeStorageVolumes(SWMM_Project *sp)
 "\n  Storage Unit          1000 ft3    Full  Loss  Loss      1000 ft3    Full    days hr:min        ");
         else fprintf(sp->Frpt.file,
 "\n  Storage Unit           1000 m3    Full  Loss  Loss       1000 m3    Full    days hr:min        ");
-        fprintf(sp->Frpt.file, "%3s", FlowUnitWords[FlowUnits]);
+        fprintf(sp->Frpt.file, "%3s", FlowUnitWords[sp->FlowUnits]);
         fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------");
 
@@ -605,7 +605,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
         fprintf(sp->Frpt.file,
  "\n  Outfall Node           Pcnt       %3s       %3s    %8s",
-            FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
+            FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits],
 			VolUnitsWords[sp->UnitSystem]);
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
@@ -702,10 +702,10 @@ void writeLinkFlows(SWMM_Project *sp)
 "\n                                  |Flow|   Occurrence   |Veloc|    Full    Full");
     if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
 "\n  Link                 Type          %3s  days hr:min    ft/sec    Flow   Depth",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     else fprintf(sp->Frpt.file,
 "\n  Link                 Type          %3s  days hr:min     m/sec    Flow   Depth",
-        FlowUnitWords[FlowUnits]);
+        FlowUnitWords[sp->FlowUnits]);
     fprintf(sp->Frpt.file,
 "\n  -----------------------------------------------------------------------------");
 
@@ -775,7 +775,7 @@ void writeFlowClass(SWMM_Project *sp)
 {
     int   i, j, k;
 
-    if ( RouteModel != DW ) return;
+    if ( sp->RouteModel != DW ) return;
     WRITE("");
     WRITE("***************************");
     WRITE("Flow Classification Summary");
@@ -874,8 +874,8 @@ void writePumpFlows(SWMM_Project *sp)
 "\n                        Percent   Number of      Flow      Flow      Flow    Volume     Usage    Pump Curve"
 "\n  Pump                 Utilized   Start-Ups       %3s       %3s       %3s  %8s     Kw-hr    Low   High"
 "\n  ---------------------------------------------------------------------------------------------------------",
-        FlowUnitWords[FlowUnits], FlowUnitWords[FlowUnits],
-        FlowUnitWords[FlowUnits], VolUnitsWords[sp->UnitSystem]);
+        FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits],
+        FlowUnitWords[sp->FlowUnits], VolUnitsWords[sp->UnitSystem]);
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         if ( Link[j].type != PUMP ) continue;

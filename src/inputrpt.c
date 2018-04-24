@@ -31,7 +31,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
     int i, k;
     int lidCount = 0;
 
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
 
     WRITE("");
     WRITE("*************");

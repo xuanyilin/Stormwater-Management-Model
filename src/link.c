@@ -105,7 +105,7 @@ static int    orifice_readParams(SWMM_Project *sp, int j, int k, char* tok[], in
 static void   orifice_validate(SWMM_Project *sp, int j, int k);
 static void   orifice_setSetting(int j, double tstep);
 static double orifice_getWeirCoeff(int j, int k, double h);
-static double orifice_getInflow(int j);
+static double orifice_getInflow(SWMM_Project *sp, int j);
 static double orifice_getFlow(int j, int k, double head, double f,
               int hasFlapGate);
 
@@ -385,7 +385,7 @@ void  link_validate(SWMM_Project *sp, int j)
 {
     int   n;
 
-    if ( LinkOffsets == ELEV_OFFSET ) link_convertOffsets(sp, j);
+    if ( sp->LinkOffsets == ELEV_OFFSET ) link_convertOffsets(sp, j);
     switch ( Link[j].type )
     {
       case CONDUIT: conduit_validate(sp, j, Link[j].subIndex); break;
@@ -523,7 +523,7 @@ double  link_getInflow(SWMM_Project *sp, int j)
     {
       case CONDUIT: return conduit_getInflow(sp, j);
       case PUMP:    return pump_getInflow(sp, j);
-      case ORIFICE: return orifice_getInflow(j);
+      case ORIFICE: return orifice_getInflow(sp, j);
       case WEIR:    return weir_getInflow(sp, j);
       case OUTLET:  return outlet_getInflow(sp, j);
       default:      return node_getOutflow(sp, Link[j].node1, j);
@@ -689,7 +689,7 @@ void link_getResults(SWMM_Project *sp, int j, double f, float x[])
     x[LINK_VOLUME]   = (float)v;
     x[LINK_CAPACITY] = (float)c;
 
-    if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
+    if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         c = f1*Link[j].oldQual[p] + f*Link[j].newQual[p];
         x[LINK_QUAL+p] = (float)c;
@@ -933,10 +933,10 @@ int  conduit_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
         return error_setInpError(ERR_NUMBER, tok[4]);
 
     // --- parse offsets
-    if ( LinkOffsets == ELEV_OFFSET && *tok[5] == '*' ) x[2] = MISSING;
+    if ( sp->LinkOffsets == ELEV_OFFSET && *tok[5] == '*' ) x[2] = MISSING;
     else if ( !getDouble(tok[5], &x[2]) )
         return error_setInpError(ERR_NUMBER, tok[5]);
-    if ( LinkOffsets == ELEV_OFFSET && *tok[6] == '*' ) x[3] = MISSING;
+    if ( sp->LinkOffsets == ELEV_OFFSET && *tok[6] == '*' ) x[3] = MISSING;
     else if ( !getDouble(tok[6], &x[3]) )
         return error_setInpError(ERR_NUMBER, tok[6]);
 
@@ -974,7 +974,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     double lengthFactor, roughness, slope;
 
     // --- a storage node cannot have a dummy outflow link
-    if ( Link[j].xsect.type == DUMMY && RouteModel == DW )                     //(5.1.007)
+    if ( Link[j].xsect.type == DUMMY && sp->RouteModel == DW )                     //(5.1.007)
     {
         if ( Node[Link[j].node1].type == STORAGE )
         {
@@ -997,7 +997,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- if force main xsection, adjust units on D-W roughness height
     if ( Link[j].xsect.type == FORCE_MAIN )
     {
-        if ( ForceMainEqn == D_W ) Link[j].xsect.rBot /= UCF(sp, RAINDEPTH);
+        if ( sp->ForceMainEqn == D_W ) Link[j].xsect.rBot /= UCF(sp, RAINDEPTH);
         if ( Link[j].xsect.rBot <= 0.0 )
             report_writeErrorMsg(sp, ERR_XSECT, Link[j].ID);
     }
@@ -1018,7 +1018,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
         else if ( Link[j].xsect.aFull <= 0.0 )
             report_writeErrorMsg(sp, ERR_XSECT, Link[j].ID);
     }
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
 
     // --- check for negative offsets
     if ( Link[j].offset1 < 0.0 )
@@ -1045,7 +1045,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- reverse orientation of conduit if using dynamic wave routing
     //     and slope is negative
-    if ( RouteModel == DW &&
+    if ( sp->RouteModel == DW &&
          slope < 0.0 &&
          Link[j].xsect.type != DUMMY )
     {
@@ -1055,9 +1055,9 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- get equivalent Manning roughness for Force Mains
     //     for use when pipe is partly full
     roughness = Conduit[k].roughness;
-    if ( RouteModel == DW && Link[j].xsect.type == FORCE_MAIN )
+    if ( sp->RouteModel == DW && Link[j].xsect.type == FORCE_MAIN )
     {
-        roughness = forcemain_getEquivN(j, k);
+        roughness = forcemain_getEquivN(sp, j, k);
     }
 
     // --- adjust roughness for meandering natural channels
@@ -1069,7 +1069,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- lengthen conduit if lengthening option is in effect
     lengthFactor = 1.0;
-    if ( RouteModel == DW &&
+    if ( sp->RouteModel == DW &&
          LengtheningStep > 0.0 &&
          Link[j].xsect.type != DUMMY )
     {
@@ -1088,10 +1088,10 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- special case for non-Manning Force Mains
     //     (roughness factor for full flow is saved in xsect.sBot)
-    if ( RouteModel == DW && Link[j].xsect.type == FORCE_MAIN )
+    if ( sp->RouteModel == DW && Link[j].xsect.type == FORCE_MAIN )
     {
         Link[j].xsect.sBot =
-            forcemain_getRoughFactor(j, lengthFactor);
+            forcemain_getRoughFactor(sp, j, lengthFactor);
     }
     Conduit[k].roughFactor = GRAVITY * SQR(roughness/PHI);
 
@@ -1257,7 +1257,7 @@ double conduit_getSlope(SWMM_Project *sp, int j)
         report_writeWarningMsg(sp, WARN05, Link[j].ID);
         slope = MinSlope;
         // keep min. slope positive for SF or KW routing
-        if (RouteModel == SF || RouteModel == KW) return slope;
+        if (sp->RouteModel == SF || sp->RouteModel == KW) return slope;
     }
 
     // --- change sign for adverse slope
@@ -1637,7 +1637,7 @@ int  orifice_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     m = findmatch(tok[3], OrificeTypeWords);
     if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[3]);
     x[0] = m;                                              // type
-    if ( LinkOffsets == ELEV_OFFSET && *tok[4] == '*' ) x[1] = MISSING;
+    if ( sp->LinkOffsets == ELEV_OFFSET && *tok[4] == '*' ) x[1] = MISSING;
     else if ( ! getDouble(tok[4], &x[1]) )                 // crest height
         return error_setInpError(ERR_NUMBER, tok[4]);
     if ( ! getDouble(tok[5], &x[2]) || x[2] < 0.0 )        // cDisch
@@ -1780,7 +1780,7 @@ double orifice_getWeirCoeff(int j, int k, double h)
 
 //=============================================================================
 
-double orifice_getInflow(int j)
+double orifice_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns orifice flow rate (cfs)
@@ -1801,7 +1801,7 @@ double orifice_getInflow(int j)
     k  = Link[j].subIndex;
 
     // --- find heads at upstream & downstream nodes
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         h1 = Node[n1].newDepth + Node[n1].invertElev;
         h2 = Node[n2].newDepth + Node[n2].invertElev;
@@ -2006,7 +2006,7 @@ int   weir_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     m = findmatch(tok[3], WeirTypeWords);
     if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[3]);
     x[0] = m;                                              // type
-    if ( LinkOffsets == ELEV_OFFSET && *tok[4] == '*' ) x[1] = MISSING;
+    if ( sp->LinkOffsets == ELEV_OFFSET && *tok[4] == '*' ) x[1] = MISSING;
     else if ( ! getDouble(tok[4], &x[1]) )                 // height
         return error_setInpError(ERR_NUMBER, tok[4]);
     if ( ! getDouble(tok[5], &x[2]) || x[2] < 0.0 )        // cDisch1
@@ -2195,7 +2195,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
     n1 = Link[j].node1;
     n2 = Link[j].node2;
     k  = Link[j].subIndex;
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         h1 = Node[n1].newDepth + Node[n1].invertElev;
         h2 = Node[n2].newDepth + Node[n2].invertElev;
@@ -2530,12 +2530,12 @@ int outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- get height above invert
-    if ( LinkOffsets == ELEV_OFFSET && *tok[3] == '*' ) x[0] = MISSING;
+    if ( sp->LinkOffsets == ELEV_OFFSET && *tok[3] == '*' ) x[0] = MISSING;
     else
     {
         if ( ! getDouble(tok[3], &x[0]) )
             return error_setInpError(ERR_NUMBER, tok[3]);
-	if ( LinkOffsets == DEPTH_OFFSET && x[0] < 0.0 ) x[0] = 0.0;
+	if ( sp->LinkOffsets == DEPTH_OFFSET && x[0] < 0.0 ) x[0] = 0.0;
     }
 
     // --- see if outlet flow relation is tabular or functional
@@ -2604,7 +2604,7 @@ double outlet_getInflow(SWMM_Project *sp, int j)
     k  = Link[j].subIndex;
 
     // --- find heads at upstream & downstream nodes
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         h1 = Node[n1].newDepth + Node[n1].invertElev;
         h2 = Node[n2].newDepth + Node[n2].invertElev;
@@ -2630,7 +2630,7 @@ double outlet_getInflow(SWMM_Project *sp, int j)
     //     outlet is the depth above the crest elev. while for a NODE_HEAD
     //     curve it is the difference between upstream & downstream heads
     hcrest = Node[n1].invertElev + Link[j].offset1;
-    if ( Outlet[k].curveType == NODE_HEAD && RouteModel == DW )
+    if ( Outlet[k].curveType == NODE_HEAD && sp->RouteModel == DW )
         head = h1 - MAX(h2, hcrest);
     else head = h1 - hcrest;
 

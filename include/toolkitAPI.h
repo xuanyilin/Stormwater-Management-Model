@@ -323,6 +323,8 @@ int DLLEXPORT swmm_getSimulationUnit_project(SWMM_Project *sp, int type,
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationAnalysisSetting(int type, int *value);
+int DLLEXPORT swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
+        int type, int *value);
 
 /**
  @brief Gets Simulation Analysis Setting

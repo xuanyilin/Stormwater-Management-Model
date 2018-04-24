@@ -184,7 +184,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 //   LID Methods
 //-----------------------------------------------------------------------------
-void     lid_create(int lidCount, int subcatchCount);
+void     lid_create(SWMM_Project *sp, int lidCount, int subcatchCount);
 void     lid_delete(void);
 
 int      lid_readProcParams(SWMM_Project *sp, char* tok[], int ntoks);

@@ -39,7 +39,7 @@
 //-------------------------------------------------
 // Macro to evaluate function x with error checking
 //-------------------------------------------------
-#define CALL(x) (ErrorCode = ((ErrorCode>0) ? (ErrorCode) : (x)))
+#define CALL(x) (sp->ErrorCode = ((sp->ErrorCode>0) ? (sp->ErrorCode) : (x)))
 
 
 #endif //MACROS_H

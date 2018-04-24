@@ -61,7 +61,7 @@ static int   getIfaceFilePolluts(SWMM_Project *sp);
 static int   getIfaceFileNodes(SWMM_Project *sp);
 static void  setOldIfaceValues(void);
 static void  readNewIfaceValues(SWMM_Project *sp);
-static int   isOutletNode(int node);
+static int   isOutletNode(SWMM_Project *sp, int node);
 
 
 //=============================================================================
@@ -296,7 +296,7 @@ void iface_saveOutletResults(SWMM_Project *sp, DateTime reportDate, FILE* file)
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
         // --- check that node is an outlet node
-        if ( !isOutletNode(i) ) continue;
+        if ( !isOutletNode(sp, i) ) continue;
 
         // --- write node ID, date, flow, and quality to file
         fprintf(file, "\n%-16s", Node[i].ID);
@@ -336,7 +336,7 @@ void openFileForOutput(SWMM_Project *sp)
     // --- write number & names of each constituent (including flow) to file
     fprintf(sp->Foutflows.file, "\n%-4d - number of constituents as listed below:",
             sp->Nobjects[POLLUT] + 1);
-    fprintf(sp->Foutflows.file, "\nFLOW %s", FlowUnitWords[FlowUnits]);
+    fprintf(sp->Foutflows.file, "\nFLOW %s", FlowUnitWords[sp->FlowUnits]);
     for (i=0; i<sp->Nobjects[POLLUT]; i++)
     {
         fprintf(sp->Foutflows.file, "\n%s %s", Pollut[i].ID,
@@ -347,14 +347,14 @@ void openFileForOutput(SWMM_Project *sp)
     n = 0;
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
-        if ( isOutletNode(i) ) n++;
+        if ( isOutletNode(sp, i) ) n++;
     }
 
     // --- write number and names of outlet nodes to file
     fprintf(sp->Foutflows.file, "\n%-4d - number of nodes as listed below:", n);
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
-          if ( isOutletNode(i) )
+          if ( isOutletNode(sp, i) )
             fprintf(sp->Foutflows.file, "\n%s", Node[i].ID);
     }
 
@@ -627,7 +627,7 @@ void setOldIfaceValues()
 
 //=============================================================================
 
-int  isOutletNode(int i)
+int  isOutletNode(SWMM_Project *sp, int i)
 //
 //  Input:   i = node index
 //  Output:  returns 1 if node is an outlet, 0 if not.
@@ -635,7 +635,7 @@ int  isOutletNode(int i)
 //
 {
     // --- for DW routing only outfalls are outlets
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         return (Node[i].type == OUTFALL);
     }

@@ -530,7 +530,7 @@ void climate_openFile(SWMM_Project *sp)
     }
 
     // --- initialize file dates and current climate variable values
-    if ( !ErrorCode )
+    if ( !sp->ErrorCode )
     {
         FileElapsedDays = 0;
         FileLastDay = datetime_daysPerMonth(FileYear, FileMonth);
@@ -1141,7 +1141,7 @@ void readFileValues(SWMM_Project *sp)
         for (j=0; j<MAXDAYSPERMONTH; j++) FileData[i][j] = MISSING;
     }
 
-    while ( !ErrorCode )
+    while ( !sp->ErrorCode )
     {
         // --- return when date on line is after current file date
         if ( feof(sp->Fclimate.file) ) return;

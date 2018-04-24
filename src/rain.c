@@ -217,7 +217,7 @@ void createRainFile(SWMM_Project *sp, int count)
     char  fileStamp[] = "SWMM5-RAIN";
 
     // --- make sure interface file is open and no error condition
-    if ( ErrorCode || !sp->Frain.file ) return;
+    if ( sp->ErrorCode || !sp->Frain.file ) return;
 
     // --- write file stamp & # gages to file
     fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Frain.file);
@@ -239,7 +239,7 @@ void createRainFile(SWMM_Project *sp, int count)
     //     looking for ones using rain files
     for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
-        if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
+        if ( sp->ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
         if ( rainFileConflict(sp, i) ) break;
 
         // --- position rain file to where data for gage will begin
@@ -264,7 +264,7 @@ void createRainFile(SWMM_Project *sp, int count)
     }
 
     // --- if there was an error condition, then delete newly created file
-    if ( ErrorCode )
+    if ( sp->ErrorCode )
     {
         fclose(sp->Frain.file);
         sp->Frain.file = NULL;
@@ -330,7 +330,7 @@ int addGageToRainFile(SWMM_Project *sp, int i)
         }
         fclose(f);
     }
-    if ( ErrorCode ) return 0;
+    if ( sp->ErrorCode ) return 0;
     else
     return 1;
 }
@@ -351,7 +351,7 @@ void initRainFile(SWMM_Project *sp)
     long  filePos;
 
     // --- make sure interface file is open and no error condition
-    if ( ErrorCode || !sp->Frain.file ) return;
+    if ( sp->ErrorCode || !sp->Frain.file ) return;
 
     // --- check that interface file contains proper file stamp
     rewind(sp->Frain.file);
@@ -367,7 +367,7 @@ void initRainFile(SWMM_Project *sp)
     // --- locate information for each raingage in interface file
     for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
-        if ( ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
+        if ( sp->ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
 
         // --- match station ID for gage with one in file
         fseek(sp->Frain.file, filePos, SEEK_SET);

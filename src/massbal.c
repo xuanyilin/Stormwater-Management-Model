@@ -169,7 +169,7 @@ int massbal_open(SWMM_Project *sp)
 
     // --- add contribution of minimum surface area (i.e., manhole area)
     //     to initial storage under dynamic wave routing
-    if ( RouteModel == DW )
+    if ( sp->RouteModel == DW )
     {
         for (j = 0; j < sp->Nobjects[NODE]; j++)
 	{
@@ -194,7 +194,7 @@ int massbal_open(SWMM_Project *sp)
         if ( LoadingTotals == NULL )
         {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
-             return ErrorCode;
+             return sp->ErrorCode;
         }
         for (j = 0; j < n; j++)
         {
@@ -217,7 +217,7 @@ int massbal_open(SWMM_Project *sp)
          if ( QualTotals == NULL || StepQualTotals == NULL )
          {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
-             return ErrorCode;
+             return sp->ErrorCode;
          }
      }
 
@@ -246,17 +246,17 @@ int massbal_open(SWMM_Project *sp)
         if ( NodeInflow == NULL )
         {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
-             return ErrorCode;
+             return sp->ErrorCode;
         }
         NodeOutflow = (double *) calloc(sp->Nobjects[NODE], sizeof(double));
         if ( NodeOutflow == NULL )
         {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
-             return ErrorCode;
+             return sp->ErrorCode;
         }
         for (j = 0; j < sp->Nobjects[NODE]; j++) NodeInflow[j] = Node[j].newVolume;
     }
-    return ErrorCode;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -293,7 +293,7 @@ void massbal_report(SWMM_Project *sp)
              sp->RptFlags.continuity == TRUE
            ) report_writeRunoffError(sp, &RunoffTotals, TotalArea);
 
-        if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality )
+        if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality )
         {
             if ( massbal_getLoadingError(sp) > MAX_RUNOFF_BALANCE_ERR ||
                  sp->RptFlags.continuity == TRUE
@@ -301,7 +301,7 @@ void massbal_report(SWMM_Project *sp)
         }
     }
 
-    if ( sp->Nobjects[AQUIFER] > 0  && !IgnoreGwater )
+    if ( sp->Nobjects[AQUIFER] > 0  && !sp->IgnoreGwater )
     {
         if ( massbal_getGwaterError(sp) > MAX_RUNOFF_BALANCE_ERR ||
              sp->RptFlags.continuity == TRUE )
@@ -314,13 +314,13 @@ void massbal_report(SWMM_Project *sp)
        }
     }
 
-    if ( sp->Nobjects[NODE] > 0 && !IgnoreRouting )
+    if ( sp->Nobjects[NODE] > 0 && !sp->IgnoreRouting )
     {
         if ( massbal_getFlowError(sp) > MAX_FLOW_BALANCE_ERR ||
              sp->RptFlags.continuity == TRUE
            ) report_writeFlowError(sp, &FlowTotals);
     
-        if ( sp->Nobjects[POLLUT] > 0 && !IgnoreQuality )
+        if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality )
         {
             if ( massbal_getQualError(sp) > MAX_FLOW_BALANCE_ERR ||
                  sp->RptFlags.continuity == TRUE
@@ -682,7 +682,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
 
     // --- add contribution from minimum surface area (i.e., manhole diameter)
     //     to final storage under dynamic wave routing
-    if ( isFinalStorage && RouteModel == DW )
+    if ( isFinalStorage && sp->RouteModel == DW )
     {
         for (j = 0; j < sp->Nobjects[NODE]; j++)
         {
@@ -693,7 +693,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
     }
 
     // --- skip final link storage for Steady Flow routing 
-    if ( isFinalStorage && RouteModel == SF ) return totalStorage;
+    if ( isFinalStorage && sp->RouteModel == SF ) return totalStorage;
 
     // --- add on volume stored in links
     for (j = 0; j < sp->Nobjects[LINK]; j++)
@@ -1077,7 +1077,7 @@ double massbal_getStoredMass(SWMM_Project *sp, int p)
         storedMass += Node[j].newVolume * Node[j].newQual[p];
 
     // --- get mass stored in links (except for Steady Flow routing)
-    if ( RouteModel != SF )                                                    //(5.1.011)
+    if ( sp->RouteModel != SF )                                                    //(5.1.011)
     {
         for (j = 0; j < sp->Nobjects[LINK]; j++)
             storedMass += Link[j].newVolume * Link[j].newQual[p];

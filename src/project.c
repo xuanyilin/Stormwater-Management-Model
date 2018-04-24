@@ -137,7 +137,7 @@ void project_readInput(SWMM_Project *sp)
 
     // --- read project data from input file
     input_readData(sp);
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
 
     // --- establish starting & ending date/time
     StartDateTime = StartDate + StartTime;
@@ -208,8 +208,8 @@ void project_validate(SWMM_Project *sp)
     //     (NOTE: order is important !!!!)
     climate_validate(sp);
     lid_validate(sp);
-    if ( sp->Nobjects[SNOWMELT] == 0 ) IgnoreSnowmelt = TRUE;
-    if ( sp->Nobjects[AQUIFER]  == 0 ) IgnoreGwater   = TRUE;
+    if ( sp->Nobjects[SNOWMELT] == 0 ) sp->IgnoreSnowmelt = TRUE;
+    if ( sp->Nobjects[AQUIFER]  == 0 ) sp->IgnoreGwater   = TRUE;
     for ( i=0; i<sp->Nobjects[GAGE]; i++ )     gage_validate(sp, i);
     for ( i=0; i<sp->Nobjects[AQUIFER]; i++ )  gwater_validateAquifer(sp, i);
     for ( i=0; i<sp->Nobjects[SUBCATCH]; i++ ) subcatch_validate(sp, i);
@@ -256,7 +256,7 @@ void project_validate(SWMM_Project *sp)
         for (i=0; i<sp->Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
 
     // --- validate dynamic wave options
-    if ( RouteModel == DW ) dynwave_validate(sp);                                //(5.1.008)
+    if ( sp->RouteModel == DW ) dynwave_validate(sp);                                //(5.1.008)
 
 #pragma omp parallel                                                           //(5.1.008)
 {
@@ -297,7 +297,7 @@ int  project_init(SWMM_Project *sp)
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++) subcatch_initState(sp, j);
     for (j=0; j<sp->Nobjects[NODE]; j++)     node_initState(sp, j);
     for (j=0; j<sp->Nobjects[LINK]; j++)     link_initState(sp, j);
-    return ErrorCode;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -433,8 +433,8 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case FLOW_UNITS:
         m = findmatch(s2, FlowUnitWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        FlowUnits = m;
-        if ( FlowUnits <= MGD ) sp->UnitSystem = US;
+        sp->FlowUnits = m;
+        if ( sp->FlowUnits <= MGD ) sp->UnitSystem = US;
         else                    sp->UnitSystem = SI;
         break;
 
@@ -442,7 +442,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case INFIL_MODEL:
         m = findmatch(s2, InfilModelWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        InfilModel = m;
+        sp->InfilModel = m;
         break;
 
       // --- choice of flow routing method
@@ -450,9 +450,9 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         m = findmatch(s2, RouteModelWords);
         if ( m < 0 ) m = findmatch(s2, OldRouteModelWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        if ( m == NO_ROUTING ) IgnoreRouting = TRUE;
-        else RouteModel = m;
-        if ( RouteModel == EKW ) RouteModel = KW;
+        if ( m == NO_ROUTING ) sp->IgnoreRouting = TRUE;
+        else sp->RouteModel = m;
+        if ( sp->RouteModel == EKW ) sp->RouteModel = KW;
         break;
 
       // --- simulation start date
@@ -553,7 +553,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case INERT_DAMPING:
         m = findmatch(s2, InertDampingWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        else InertDamping = m;
+        else sp->InertDamping = m;
         break;
 
       // --- Yes/No options (NO = 0, YES = 1)
@@ -570,15 +570,15 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
         switch ( k )
         {
-          case ALLOW_PONDING:     AllowPonding    = m;  break;
-          case SLOPE_WEIGHTING:   SlopeWeighting  = m;  break;
-          case SKIP_STEADY_STATE: SkipSteadyState = m;  break;
-          case IGNORE_RAINFALL:   IgnoreRainfall  = m;  break;
-          case IGNORE_SNOWMELT:   IgnoreSnowmelt  = m;  break;
-          case IGNORE_GWATER:     IgnoreGwater    = m;  break;
-          case IGNORE_ROUTING:    IgnoreRouting   = m;  break;
-          case IGNORE_QUALITY:    IgnoreQuality   = m;  break;
-          case IGNORE_RDII:       IgnoreRDII      = m;  break;                 //(5.1.004)
+          case ALLOW_PONDING:     sp->AllowPonding    = m;  break;
+          case SLOPE_WEIGHTING:   sp->SlopeWeighting  = m;  break;
+          case SKIP_STEADY_STATE: sp->SkipSteadyState = m;  break;
+          case IGNORE_RAINFALL:   sp->IgnoreRainfall  = m;  break;
+          case IGNORE_SNOWMELT:   sp->IgnoreSnowmelt  = m;  break;
+          case IGNORE_GWATER:     sp->IgnoreGwater    = m;  break;
+          case IGNORE_ROUTING:    sp->IgnoreRouting   = m;  break;
+          case IGNORE_QUALITY:    sp->IgnoreQuality   = m;  break;
+          case IGNORE_RDII:       sp->IgnoreRDII      = m;  break;                 //(5.1.004)
         }
         break;
 
@@ -586,29 +586,30 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         m = findmatch(s2, NormalFlowWords); 
         //if ( m < 0 ) m = findmatch(s2, NoYesWords);   DEPRECATED             //(5.1.012)
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        NormalFlowLtd = m;
+        sp->NormalFlowLtd = m;
         break;
 
       case FORCE_MAIN_EQN:
         m = findmatch(s2, ForceMainEqnWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        ForceMainEqn = m;
+        sp->ForceMainEqn = m;
         break;
 
       case LINK_OFFSETS:
         m = findmatch(s2, LinkOffsetWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
-        LinkOffsets = m;
+        sp->LinkOffsets = m;
         break;
 
-      // --- compatibility option for selecting solution method for
-      //     dynamic wave flow routing (NOT CURRENTLY USED)
-      case COMPATIBILITY:
-        if      ( strcomp(s2, "3") ) Compatibility = SWMM3;
-        else if ( strcomp(s2, "4") ) Compatibility = SWMM4;
-        else if ( strcomp(s2, "5") ) Compatibility = SWMM5;
-        else return error_setInpError(ERR_KEYWORD, s2);
-        break;
+// TODO: This option is a no op. It should be deprecated.
+//      // --- compatibility option for selecting solution method for
+//      //     dynamic wave flow routing (NOT CURRENTLY USED)
+//      case COMPATIBILITY:
+//        if      ( strcomp(s2, "3") ) Compatibility = SWMM3;
+//        else if ( strcomp(s2, "4") ) Compatibility = SWMM4;
+//        else if ( strcomp(s2, "5") ) Compatibility = SWMM5;
+//        else return error_setInpError(ERR_KEYWORD, s2);
+//        break;
 
       // --- routing or lengthening time step (in decimal seconds)
       //     (lengthening time step is used in Courant stability formula
@@ -791,25 +792,25 @@ void setDefaults(SWMM_Project *sp)
 
    // Analysis options
    sp->UnitSystem      = US;               // US unit system
-   FlowUnits       = CFS;              // CFS flow units
-   InfilModel      = HORTON;           // Horton infiltration method
-   RouteModel      = KW;               // Kin. wave flow routing method
-   AllowPonding    = FALSE;            // No ponding at nodes
-   InertDamping    = SOME;             // Partial inertial damping
-   NormalFlowLtd   = BOTH;             // Default normal flow limitation
-   ForceMainEqn    = H_W;              // Hazen-Williams eqn. for force mains
-   LinkOffsets     = DEPTH_OFFSET;     // Use depth for link offsets
+   sp->FlowUnits       = CFS;              // CFS flow units
+   sp->InfilModel      = HORTON;           // Horton infiltration method
+   sp->RouteModel      = KW;               // Kin. wave flow routing method
+   sp->AllowPonding    = FALSE;            // No ponding at nodes
+   sp->InertDamping    = SOME;             // Partial inertial damping
+   sp->NormalFlowLtd   = BOTH;             // Default normal flow limitation
+   sp->ForceMainEqn    = H_W;              // Hazen-Williams eqn. for force mains
+   sp->LinkOffsets     = DEPTH_OFFSET;     // Use depth for link offsets
    LengtheningStep = 0;                // No lengthening of conduits
    CourantFactor   = 0.0;              // No variable time step 
    MinSurfArea     = 0.0;              // Force use of default min. surface area
    MinSlope        = 0.0;              // No user supplied minimum conduit slope //(5.1.012)
-   SkipSteadyState = FALSE;            // Do flow routing in steady state periods 
-   IgnoreRainfall  = FALSE;            // Analyze rainfall/runoff
-   IgnoreRDII      = FALSE;            // Analyze RDII                         //(5.1.004)
-   IgnoreSnowmelt  = FALSE;            // Analyze snowmelt 
-   IgnoreGwater    = FALSE;            // Analyze groundwater 
-   IgnoreRouting   = FALSE;            // Analyze flow routing
-   IgnoreQuality   = FALSE;            // Analyze water quality
+   sp->SkipSteadyState = FALSE;            // Do flow routing in steady state periods
+   sp->IgnoreRainfall  = FALSE;            // Analyze rainfall/runoff
+   sp->IgnoreRDII      = FALSE;            // Analyze RDII                         //(5.1.004)
+   sp->IgnoreSnowmelt  = FALSE;            // Analyze snowmelt 
+   sp->IgnoreGwater    = FALSE;            // Analyze groundwater 
+   sp->IgnoreRouting   = FALSE;            // Analyze flow routing
+   sp->IgnoreQuality   = FALSE;            // Analyze water quality
    WetStep         = 300;              // Runoff wet time step (secs)
    DryStep         = 3600;             // Runoff dry time step (secs)
    RouteStep       = 300.0;            // Routing time step (secs)
@@ -824,8 +825,8 @@ void setDefaults(SWMM_Project *sp)
    NumEvents       = 0;                // Number of detailed routing events    //(5.1.011)
 
    // Deprecated options
-   SlopeWeighting  = TRUE;             // Use slope weighting 
-   Compatibility   = SWMM4;            // Use SWMM 4 up/dn weighting method
+   sp->SlopeWeighting  = TRUE;             // Use slope weighting
+//   Compatibility   = SWMM4;            // Use SWMM 4 up/dn weighting method
 
    // Starting & ending date/time
    StartDate       = datetime_encodeDate(2004, 1, 1);
@@ -924,7 +925,7 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
     if (strcomp(f1, f2) || strcomp(f1, f3) || strcomp(f2, f3))
     {
         writecon(FMT11);
-        ErrorCode = ERR_FILE_NAME;
+        sp->ErrorCode = ERR_FILE_NAME;
         return;
     }
 
@@ -933,13 +934,13 @@ void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
     {
         writecon(FMT12);
         writecon(f1);
-        ErrorCode = ERR_INP_FILE;
+        sp->ErrorCode = ERR_INP_FILE;
         return;
     }
     if ((sp->Frpt.file = fopen(f2,"wt")) == NULL)
     {
        writecon(FMT13);
-       ErrorCode = ERR_RPT_FILE;
+       sp->ErrorCode = ERR_RPT_FILE;
        return;
     }
 }
@@ -959,7 +960,7 @@ void createObjects(SWMM_Project *sp)
     int j, k;
 
     // --- allocate memory for each category of object
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
     Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
     Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
@@ -990,18 +991,18 @@ void createObjects(SWMM_Project *sp)
 ////
 
     // --- create LID objects
-    lid_create(sp->Nobjects[LID], sp->Nobjects[SUBCATCH]);
+    lid_create(sp, sp->Nobjects[LID], sp->Nobjects[SUBCATCH]);
 
     // --- create control rules
-    ErrorCode = controls_create(sp->Nobjects[CONTROL]);
-    if ( ErrorCode ) return;
+    sp->ErrorCode = controls_create(sp->Nobjects[CONTROL]);
+    if ( sp->ErrorCode ) return;
 
     // --- create cross section transects
-    ErrorCode = transect_create(sp->Nobjects[TRANSECT]);
-    if ( ErrorCode ) return;
+    sp->ErrorCode = transect_create(sp->Nobjects[TRANSECT]);
+    if ( sp->ErrorCode ) return;
 
     // --- allocate memory for infiltration data
-    infil_create(sp->Nobjects[SUBCATCH], InfilModel);
+    infil_create(sp, sp->Nobjects[SUBCATCH], sp->InfilModel);
 
     // --- allocate memory for water quality state variables
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)

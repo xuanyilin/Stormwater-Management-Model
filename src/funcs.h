@@ -393,7 +393,7 @@ double  node_getPondedArea(SWMM_Project *sp, int node, double depth);
 double  node_getOutflow(SWMM_Project *sp, int node, int link);
 double  node_getLosses(SWMM_Project *sp, int node, double tStep);
 double  node_getMaxOutflow(int node, double q, double tStep);
-double  node_getSystemOutflow(int node, int *isFlooded);
+double  node_getSystemOutflow(SWMM_Project *sp, int node, int *isFlooded);
 void    node_getResults(SWMM_Project *sp, int node, double wt, float x[]);
 
 //-----------------------------------------------------------------------------
@@ -495,9 +495,9 @@ double  roadway_getInflow(SWMM_Project *sp, int link, double dir, double hcrest,
 //-----------------------------------------------------------------------------
 //   Force Main Methods
 //-----------------------------------------------------------------------------
-double  forcemain_getEquivN(int j, int k);
-double  forcemain_getRoughFactor(int j, double lengthFactor);
-double  forcemain_getFricSlope(int j, double v, double hrad);
+double  forcemain_getEquivN(SWMM_Project *sp, int j, int k);
+double  forcemain_getRoughFactor(SWMM_Project *sp, int j, double lengthFactor);
+double  forcemain_getFricSlope(SWMM_Project *sp, int j, double v, double hrad);
 
 //-----------------------------------------------------------------------------
 //   Cross-Section Transect Methods

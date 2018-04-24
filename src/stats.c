@@ -119,7 +119,7 @@ int  stats_open(SWMM_Project *sp)
         if ( !SubcatchStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
         for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
         {
@@ -137,7 +137,7 @@ int  stats_open(SWMM_Project *sp)
                 if ( !SubcatchStats[j].surfaceBuildup )
                 {
                     report_writeErrorMsg(sp, ERR_MEMORY, "");
-                    return ErrorCode;
+                    return sp->ErrorCode;
                 }
                 for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
                     SubcatchStats[j].surfaceBuildup[p] = 0.0;
@@ -169,7 +169,7 @@ int  stats_open(SWMM_Project *sp)
         if ( !NodeStats || !LinkStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
     }
 
@@ -219,7 +219,7 @@ int  stats_open(SWMM_Project *sp)
         if ( !StorageStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
         else for ( k = 0; k < sp->Nobjects[NODE]; k++ )
         {
@@ -243,7 +243,7 @@ int  stats_open(SWMM_Project *sp)
         if ( !OutfallStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
         else for ( j = 0; j < sp->Nnodes[OUTFALL]; j++ )
         {
@@ -257,7 +257,7 @@ int  stats_open(SWMM_Project *sp)
                 if ( !OutfallStats[j].totalLoad )
                 {
                     report_writeErrorMsg(sp, ERR_MEMORY, "");
-                    return ErrorCode;
+                    return sp->ErrorCode;
                 }
                 for (k=0; k<sp->Nobjects[POLLUT]; k++)
                     OutfallStats[j].totalLoad[k] = 0.0;
@@ -273,7 +273,7 @@ int  stats_open(SWMM_Project *sp)
         if ( !PumpStats ) 
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
-            return ErrorCode;
+            return sp->ErrorCode;
         }
         else for ( j = 0; j < sp->Nlinks[PUMP]; j++ )
         {
@@ -339,7 +339,7 @@ void  stats_report(SWMM_Project *sp)
 //
 {
     // --- report flow routing accuracy statistics
-    if ( sp->Nobjects[LINK] > 0 && RouteModel != NO_ROUTING )
+    if ( sp->Nobjects[LINK] > 0 && sp->RouteModel != NO_ROUTING )
     {
         stats_findMaxStats(sp);
         report_writeMaxStats(sp, MaxMassBalErrs, MaxCourantCrit, MAX_STATS);
@@ -525,7 +525,7 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     int    k, p;
     double newVolume = Node[j].newVolume;
     double newDepth = Node[j].newDepth;
-    int    canPond = (AllowPonding && Node[j].pondedArea > 0.0);
+    int    canPond = (sp->AllowPonding && Node[j].pondedArea > 0.0);
 
     // --- update depth statistics
     NodeStats[j].avgDepth += newDepth;
@@ -549,7 +549,7 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
 
         // --- for dynamic wave routing, classify a non-storage node as        //(5.1.011)
         //     surcharged if its water level exceeds its crown elev.           //(5.1.011)
-        if ( RouteModel == DW && Node[j].type != STORAGE &&                    //(5.1.011)
+        if ( sp->RouteModel == DW && Node[j].type != STORAGE &&                    //(5.1.011)
              newDepth + Node[j].invertElev + FUDGE >= Node[j].crownElev )
         {
             NodeStats[j].timeSurcharged += tStep;
@@ -774,7 +774,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     }
 
     // --- stop if not using a variable time step
-    if ( RouteModel != DW || CourantFactor == 0.0 ) return;
+    if ( sp->RouteModel != DW || CourantFactor == 0.0 ) return;
 
     // --- find nodes most frequently Courant critical
     if ( sp->StepCount == 0 ) return;                                              //(5.1.008)

@@ -117,7 +117,7 @@ int runoff_open(SWMM_Project *sp)
     }
 
 ////  Call to climate_openFile() moved to climate_validate().  ////            //(5.1.007)
-    return ErrorCode;
+    return sp->ErrorCode;
 }
 
 //=============================================================================
@@ -168,7 +168,7 @@ void runoff_execute(SWMM_Project *sp)
     DateTime currentDate;              // current date/time 
     char     canSweep;                 // TRUE if street sweeping can occur
 
-    if ( ErrorCode ) return;
+    if ( sp->ErrorCode ) return;
 
     // --- find previous runoff time step in sec                               //(5.1.011)
     oldRunoffStep = (NewRunoffTime - OldRunoffTime) / 1000.0;                  //(5.1.011)
@@ -214,7 +214,7 @@ void runoff_execute(SWMM_Project *sp)
     runoffStep = runoff_getTimeStep(sp, currentDate);
     if ( runoffStep <= 0.0 )
     {
-        ErrorCode = ERR_TIMESTEP;
+        sp->ErrorCode = ERR_TIMESTEP;
         return;
     }
 
@@ -243,7 +243,7 @@ void runoff_execute(SWMM_Project *sp)
     {
         if ( Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
         subcatch_getRunon(sp, j);
-        if ( !IgnoreSnowmelt ) snow_plowSnow(sp, j, runoffStep);
+        if ( !sp->IgnoreSnowmelt ) snow_plowSnow(sp, j, runoffStep);
     }
     
     // --- determine runoff and pollutant buildup/washoff in each subcatchment
@@ -263,7 +263,7 @@ void runoff_execute(SWMM_Project *sp)
         if ( Subcatch[j].newSnowDepth > 0.0 ) HasSnow = TRUE;
 
         // --- skip pollutant buildup/washoff if quality ignored
-        if ( IgnoreQuality ) continue;
+        if ( sp->IgnoreQuality ) continue;
 
         // --- add to pollutant buildup if runoff is negligible
         if ( runoff < MIN_RUNOFF ) surfqual_getBuildup(sp, j, runoffStep);
@@ -349,7 +349,7 @@ void runoff_initFile(SWMM_Project *sp)
         // --- write file stamp, # subcatchments & # pollutants to file
         nSubcatch = sp->Nobjects[SUBCATCH];
         nPollut = sp->Nobjects[POLLUT];
-        flowUnits = FlowUnits;
+        flowUnits = sp->FlowUnits;
         fwrite(fileStamp, sizeof(char), strlen(fileStamp), sp->Frunoff.file);
         fwrite(&nSubcatch, sizeof(int), 1, sp->Frunoff.file);
         fwrite(&nPollut, sizeof(int), 1, sp->Frunoff.file);
@@ -376,7 +376,7 @@ void runoff_initFile(SWMM_Project *sp)
         fread(&MaxSteps, sizeof(int), 1, sp->Frunoff.file);
         if ( nSubcatch != sp->Nobjects[SUBCATCH]
         ||   nPollut   != sp->Nobjects[POLLUT]
-        ||   flowUnits != FlowUnits
+        ||   flowUnits != sp->FlowUnits
         ||   MaxSteps  <= 0 )
         {
              report_writeErrorMsg(sp, ERR_RUNOFF_FILE_FORMAT, "");

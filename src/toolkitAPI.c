@@ -170,8 +170,8 @@ int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_Project *sp, int type, int *v
         {
             // System Unit (enum.h UnitsType)
             case SM_SYSTEMUNIT:  *value = sp->UnitSystem; break;
-            // Flow Unit (enum.h FlowUnitsType)
-            case SM_FLOWUNIT:  *value = FlowUnits; break;
+            // Flow Unit (enum.h sp->FlowUnitsType)
+            case SM_FLOWUNIT:  *value = sp->FlowUnits; break;
             // Concentration Unit
             //case 2:  *value = sp->UnitSystem; break;
             // Type not available
@@ -183,6 +183,12 @@ int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_Project *sp, int type, int *v
 }
 
 int DLLEXPORT  swmm_getSimulationAnalysisSetting(int type, int *value)
+{
+    return swmm_getSimulationAnalysisSetting_project(_defaultProject, type, value);
+}
+
+int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
+        int type, int *value)
 //
 // Input:   type = analysis type
 // Output:  setting True or False
@@ -200,21 +206,21 @@ int DLLEXPORT  swmm_getSimulationAnalysisSetting(int type, int *value)
         switch(type)
         {
             // No ponding at nodes (True or False)
-            case SM_ALLOWPOND:  *value = AllowPonding; break;
+            case SM_ALLOWPOND:  *value = sp->AllowPonding; break;
             // Do flow routing in steady state periods  (True or False)
-            case SM_SKIPSTEADY:  *value = SkipSteadyState; break;
+            case SM_SKIPSTEADY:  *value = sp->SkipSteadyState; break;
             // Analyze rainfall/runoff  (True or False)
-            case SM_IGNORERAIN:  *value = IgnoreRainfall; break;
+            case SM_IGNORERAIN:  *value = sp->IgnoreRainfall; break;
             // Analyze RDII (True or False)
-            case SM_IGNORERDII:  *value = IgnoreRDII; break;
+            case SM_IGNORERDII:  *value = sp->IgnoreRDII; break;
             // Analyze snowmelt (True or False)
-            case SM_IGNORESNOW:  *value = IgnoreSnowmelt; break;
+            case SM_IGNORESNOW:  *value = sp->IgnoreSnowmelt; break;
             // Analyze groundwater (True or False)
-            case SM_IGNOREGW:  *value = IgnoreGwater; break;
+            case SM_IGNOREGW:  *value = sp->IgnoreGwater; break;
             // Analyze flow routing (True or False)
-            case SM_IGNOREROUTE:  *value = IgnoreRouting; break;
+            case SM_IGNOREROUTE:  *value = sp->IgnoreRouting; break;
             // Analyze water quality (True or False)
-            case SM_IGNORERQUAL:  *value = IgnoreQuality; break;
+            case SM_IGNORERQUAL:  *value = sp->IgnoreQuality; break;
             // Type not available
             default: errcode = ERR_API_OUTBOUNDS; break;
         }

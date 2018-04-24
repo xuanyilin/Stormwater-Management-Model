@@ -268,7 +268,7 @@ void  gage_initState(SWMM_Project *sp, int j)
     Gage[j].reportRainfall = 0.0;
     // --- rainfall api sets external rainfall rate
     Gage[j].externalRain = 0.0;
-    if ( IgnoreRainfall ) return;
+    if ( sp->IgnoreRainfall ) return;
 
     // --- for gage with file data:
     if ( Gage[j].dataSource == RAIN_FILE)
@@ -321,7 +321,7 @@ void gage_setState(SWMM_Project *sp, int j, DateTime t)
     if ( Gage[j].isUsed == FALSE ) return;
 
     // --- set rainfall to zero if disabled
-    if ( IgnoreRainfall )
+    if ( sp->IgnoreRainfall )
     {
         Gage[j].rainfall = 0.0;
         return;
@@ -413,7 +413,7 @@ double gage_getPrecip(SWMM_Project *sp, int j, double *rainfall, double *snowfal
 {
     *rainfall = 0.0;
     *snowfall = 0.0;
-    if ( !IgnoreSnowmelt && Temp.ta <= Snow.snotmp )
+    if ( !sp->IgnoreSnowmelt && Temp.ta <= Snow.snotmp )
     {
        *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(sp, RAINFALL);
     }

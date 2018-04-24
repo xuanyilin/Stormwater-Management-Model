@@ -105,8 +105,8 @@ static  char *RunoffRoutingWords[] = { w_OUTLET,  w_IMPERV, w_PERV, NULL};
 static void   getNetPrecip(SWMM_Project *sp, int j, double* netPrecip, double tStep);
 static double getSubareaRunoff(SWMM_Project *sp, int subcatch, int subarea,    //(5.1.008)
         double area, double rainfall, double evap, double tStep);
-static double getSubareaInfil(int j, TSubarea* subarea, double precip,
-              double tStep);
+static double getSubareaInfil(SWMM_Project *sp, int j, TSubarea* subarea,
+        double precip, double tStep);
 static double findSubareaRunoff(TSubarea* subarea, double tRunoff);            //(5.1.008)
 static void   updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* tx);
 static void   getDdDt(SWMM_Project *sp, double t, double* d, double* dddt);
@@ -433,7 +433,7 @@ void  subcatch_initState(SWMM_Project *sp, int j)
     }
 
     // --- initialize state of infiltration, groundwater, & snow pack objects
-    if ( Subcatch[j].infil == j )  infil_initState(j, InfilModel);
+    if ( Subcatch[j].infil == j )  infil_initState(j, sp->InfilModel);
     if ( Subcatch[j].groundwater ) gwater_initState(j);
     if ( Subcatch[j].snowpack )    snow_initSnowpack(j);
 
@@ -707,7 +707,7 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     }
 
     // --- update groundwater levels & flows if applicable
-    if ( !IgnoreGwater && Subcatch[j].groundwater )
+    if ( !sp->IgnoreGwater && Subcatch[j].groundwater )
     {
         gwater_getGroundwater(sp, j, Vpevap, Vinfil+VlidInfil, tStep);             //(5.1.010)
     }
@@ -776,7 +776,7 @@ void getNetPrecip(SWMM_Project *sp, int j, double* netPrecip, double tStep)
     // --- determine net precipitation input (netPrecip) to each sub-area
 
     // --- if subcatch has a snowpack, then base netPrecip on possible snow melt
-    if ( Subcatch[j].snowpack && !IgnoreSnowmelt )
+    if ( Subcatch[j].snowpack && !sp->IgnoreSnowmelt )
     {
         Subcatch[j].newSnowDepth = 
             snow_getSnowMelt(j, rainfall, snowfall, tStep, netPrecip);
@@ -913,7 +913,7 @@ void  subcatch_getResults(SWMM_Project *sp, int j, double f, float x[])
     }
 
     // --- retrieve pollutant washoff
-    if ( !IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++ )
+    if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++ )
     {
         if ( runoff == 0.0 ) z = 0.0;
         else z = f1 * Subcatch[j].oldQual[p] + f * Subcatch[j].newQual[p];
@@ -963,7 +963,7 @@ double getSubareaRunoff(SWMM_Project *sp, int j, int i, double area, double prec
     surfEvap = MIN(surfMoisture, evap);
 
     // --- compute infiltration loss rate
-    if ( i == PERV ) infil = getSubareaInfil(j, subarea, precip, tStep);
+    if ( i == PERV ) infil = getSubareaInfil(sp, j, subarea, precip, tStep);
 
     // --- add precip to other subarea inflows
     subarea->inflow += precip;
@@ -1001,7 +1001,7 @@ double getSubareaRunoff(SWMM_Project *sp, int j, int i, double area, double prec
 
 //=============================================================================
 
-double getSubareaInfil(int j, TSubarea* subarea, double precip, double tStep)
+double getSubareaInfil(SWMM_Project *sp, int j, TSubarea* subarea, double precip, double tStep)
 //
 //  Purpose: computes infiltration rate at current time step.
 //  Input:   j = subcatchment index
@@ -1014,12 +1014,12 @@ double getSubareaInfil(int j, TSubarea* subarea, double precip, double tStep)
     double infil = 0.0;                     // actual infiltration rate (ft/sec)
 
     // --- compute infiltration rate 
-    infil = infil_getInfil(j, InfilModel, tStep, precip,
+    infil = infil_getInfil(j, sp->InfilModel, tStep, precip,
                            subarea->inflow, subarea->depth);
 
     // --- limit infiltration rate by available void space in unsaturated
     //     zone of any groundwater aquifer
-    if ( !IgnoreGwater && Subcatch[j].groundwater )
+    if ( !sp->IgnoreGwater && Subcatch[j].groundwater )
     {
         infil = MIN(infil,
                     Subcatch[j].groundwater->maxInfilVol/tStep);

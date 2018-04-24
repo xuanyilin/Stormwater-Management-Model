@@ -73,25 +73,25 @@ EXTERN int
 //                  Nnodes[MAX_NODE_TYPES],   // Number of each node sub-type
 //                  Nlinks[MAX_LINK_TYPES],   // Number of each link sub-type
 //                  UnitSystem,               // Unit system
-                  FlowUnits,                // Flow units
-                  InfilModel,               // Infiltration method
-                  RouteModel,               // Flow routing method
-                  ForceMainEqn,             // Flow equation for force mains
-                  LinkOffsets,              // Link offset convention
-                  AllowPonding,             // Allow water to pond at nodes
-                  InertDamping,             // Degree of inertial damping
-                  NormalFlowLtd,            // Normal flow limited
-                  SlopeWeighting,           // Use slope weighting
-                  Compatibility,            // SWMM 5/3/4 compatibility
-                  SkipSteadyState,          // Skip over steady state periods
-                  IgnoreRainfall,           // Ignore rainfall/runoff
-                  IgnoreRDII,               // Ignore RDII                     //(5.1.004)
-                  IgnoreSnowmelt,           // Ignore snowmelt
-                  IgnoreGwater,             // Ignore groundwater
-                  IgnoreRouting,            // Ignore flow routing
-                  IgnoreQuality,            // Ignore water quality
-                  ErrorCode,                // Error code number
-                  Warnings,                 // Number of warning messages      //(5.1.011)
+//                  FlowUnits,                // Flow units
+//                  InfilModel,               // Infiltration method
+//                  RouteModel,               // Flow routing method
+//                  ForceMainEqn,             // Flow equation for force mains
+//                  LinkOffsets,              // Link offset convention
+//                  AllowPonding,             // Allow water to pond at nodes
+//                  InertDamping,             // Degree of inertial damping
+//                  NormalFlowLtd,            // Normal flow limited
+//                  SlopeWeighting,           // Use slope weighting
+//                  Compatibility,            // SWMM 5/3/4 compatibility
+//                  SkipSteadyState,          // Skip over steady state periods
+//                  IgnoreRainfall,           // Ignore rainfall/runoff
+//                  IgnoreRDII,               // Ignore RDII                     //(5.1.004)
+//                  IgnoreSnowmelt,           // Ignore snowmelt
+//                  IgnoreGwater,             // Ignore groundwater
+//                  IgnoreRouting,            // Ignore flow routing
+//                  IgnoreQuality,            // Ignore water quality
+//                  ErrorCode,                // Error code number
+//                  Warnings,                 // Number of warning messages      //(5.1.011)
                   WetStep,                  // Runoff wet time step (sec)
                   DryStep,                  // Runoff dry time step (sec)
                   ReportStep,               // Reporting time step (sec)
