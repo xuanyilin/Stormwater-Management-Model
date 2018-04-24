@@ -58,7 +58,7 @@ static void   validateTreeLayout(SWMM_Project *sp);
 static void   validateGeneralLayout(SWMM_Project *sp);
 static void   updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt);
 static double getStorageOutflow(SWMM_Project *sp, int node, int j, int links[], double dt);
-static double getLinkInflow(int link, double dt);
+static double getLinkInflow(SWMM_Project *sp, int link, double dt);
 static void   setNewNodeState(SWMM_Project *sp, int node, double dt);
 static void   setNewLinkState(SWMM_Project *sp, int link);
 static void   updateNodeDepth(int node, double y);
@@ -173,7 +173,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
         if ( Node[n1].type == STORAGE ) updateStorageState(sp, n1, i, links, tStep);
 
         // --- retrieve inflow at upstream end of link
-        qin  = getLinkInflow(j, tStep);
+        qin  = getLinkInflow(sp, j, tStep);
 
         // route flow through link
         if ( routingModel == SF )
@@ -376,7 +376,7 @@ void initNodeDepths(SWMM_Project *sp)
     }
 
     // --- compute initial depths at all outfall nodes
-    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(sp, i);
 }
 
 //=============================================================================
@@ -444,7 +444,7 @@ void initNodes(SWMM_Project *sp)
                                 (Node[i].newDepth - Node[i].fullDepth) *
                                 Node[i].pondedArea;
         }
-        else Node[i].newVolume = node_getVolume(i, Node[i].newDepth);
+        else Node[i].newVolume = node_getVolume(sp, i, Node[i].newDepth);
     }
 
     // --- update nodal inflow/outflow at ends of each link
@@ -507,7 +507,7 @@ void initLinks(SWMM_Project *sp, int routingModel)
 
 //=============================================================================
 
-double getLinkInflow(int j, double dt)
+double getLinkInflow(SWMM_Project *sp, int j, double dt)
 //
 //  Input:   j  = link index
 //           dt = routing time step (sec)
@@ -520,7 +520,7 @@ double getLinkInflow(int j, double dt)
     double q;
     if ( Link[j].type == CONDUIT ||
          Link[j].type == PUMP ||
-         Node[n1].type == STORAGE ) q = link_getInflow(j);
+         Node[n1].type == STORAGE ) q = link_getInflow(sp, j);
     else q = 0.0;
     return node_getMaxOutflow(n1, q, dt);
 }
@@ -582,7 +582,7 @@ void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
 
         // --- update node's volume & depth 
         Node[i].newVolume = v2;
-        d2 = node_getDepth(i, v2);
+        d2 = node_getDepth(sp, i, v2);
         Node[i].newDepth = d2;
 
         // --- use under-relaxation to estimate new depth value
@@ -619,7 +619,7 @@ double getStorageOutflow(SWMM_Project *sp, int i, int j, int links[], double dt)
     {
         m = links[k];
         if ( Link[m].node1 != i ) break;
-        outflow += getLinkInflow(m, dt);
+        outflow += getLinkInflow(sp, m, dt);
     }
     return outflow;        
 }
@@ -668,7 +668,7 @@ void setNewNodeState(SWMM_Project *sp, int j, double dt)
     // --- compute a depth from volume
     //     (depths at upstream nodes are subsequently adjusted in
     //     setNewLinkState to reflect depths in connected conduit)
-    Node[j].newDepth = node_getDepth(j, Node[j].newVolume);
+    Node[j].newDepth = node_getDepth(sp, j, Node[j].newVolume);
 }
 
 //=============================================================================

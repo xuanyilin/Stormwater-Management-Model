@@ -111,7 +111,7 @@ static void   getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt);
 static void   getFluxes(SWMM_Project *sp, double upperVolume, double lowerDepth);
 static void   getEvapRates(double theta, double upperDepth);
 static double getUpperPerc(double theta, double upperDepth);
-static double getGWFlow(double lowerDepth);
+static double getGWFlow(SWMM_Project *sp, double lowerDepth);
 static void   updateMassBal(double area,  double tStep);
 
 // Used to process custom GW outflow equations
@@ -120,7 +120,7 @@ static double getVariableValue(SWMM_Project *sp, int varIndex);
 
 //=============================================================================
 
-int gwater_readAquiferParams(int j, char* tok[], int ntoks)
+int gwater_readAquiferParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = aquifer index
 //           tok[] = array of string tokens
@@ -165,14 +165,14 @@ int gwater_readAquiferParams(int j, char* tok[], int ntoks)
     Aquifer[j].porosity       = x[0];
     Aquifer[j].wiltingPoint   = x[1];
     Aquifer[j].fieldCapacity  = x[2];
-    Aquifer[j].conductivity   = x[3] / UCF(RAINFALL);
+    Aquifer[j].conductivity   = x[3] / UCF(sp, RAINFALL);
     Aquifer[j].conductSlope   = x[4];
-    Aquifer[j].tensionSlope   = x[5] / UCF(LENGTH);
+    Aquifer[j].tensionSlope   = x[5] / UCF(sp, LENGTH);
     Aquifer[j].upperEvapFrac  = x[6];
-    Aquifer[j].lowerEvapDepth = x[7] / UCF(LENGTH);
-    Aquifer[j].lowerLossCoeff = x[8] / UCF(RAINFALL);
-    Aquifer[j].bottomElev     = x[9] / UCF(LENGTH);
-    Aquifer[j].waterTableElev = x[10] / UCF(LENGTH);
+    Aquifer[j].lowerEvapDepth = x[7] / UCF(sp, LENGTH);
+    Aquifer[j].lowerLossCoeff = x[8] / UCF(sp, RAINFALL);
+    Aquifer[j].bottomElev     = x[9] / UCF(sp, LENGTH);
+    Aquifer[j].waterTableElev = x[10] / UCF(sp, LENGTH);
     Aquifer[j].upperMoisture  = x[11];
     Aquifer[j].upperEvapPat   = p;
     return 0;
@@ -180,7 +180,7 @@ int gwater_readAquiferParams(int j, char* tok[], int ntoks)
 
 //=============================================================================
 
-int gwater_readGroundwaterParams(char* tok[], int ntoks)
+int gwater_readGroundwaterParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -227,7 +227,7 @@ int gwater_readGroundwaterParams(char* tok[], int ntoks)
         {    
             if (! getDouble(tok[m], &x[i]) ) 
                 return error_setInpError(ERR_NUMBER, tok[m]);
-            if ( i < 10 ) x[i] /= UCF(LENGTH);
+            if ( i < 10 ) x[i] /= UCF(sp, LENGTH);
         }
     }
 
@@ -243,13 +243,13 @@ int gwater_readGroundwaterParams(char* tok[], int ntoks)
     // --- populate the groundwater flow object with its parameters
     gw->aquifer    = k;
     gw->node       = n;
-    gw->surfElev   = x[0] / UCF(LENGTH);
+    gw->surfElev   = x[0] / UCF(sp, LENGTH);
     gw->a1         = x[1];
     gw->b1         = x[2];
     gw->a2         = x[3];
     gw->b2         = x[4];
     gw->a3         = x[5];
-    gw->fixedDepth = x[6] / UCF(LENGTH);
+    gw->fixedDepth = x[6] / UCF(sp, LENGTH);
     gw->nodeElev   = x[7];                       //already converted to ft.
     gw->bottomElev     = x[8];
     gw->waterTableElev = x[9];
@@ -669,16 +669,16 @@ void  getFluxes(SWMM_Project *sp, double theta, double lowerDepth)
     // --- find loss rate to deep GW
     if ( DeepFlowExpr != NULL )
         LowerLoss = mathexpr_eval(sp, DeepFlowExpr, getVariableValue) /
-                    UCF(RAINFALL);
+                    UCF(sp, RAINFALL);
     else
         LowerLoss = A.lowerLossCoeff * lowerDepth / TotalDepth;
     LowerLoss = MIN(LowerLoss, lowerDepth/Tstep);
 
     // --- find GW flow rate from lower zone to drainage system node
-    GWFlow = getGWFlow(lowerDepth);
+    GWFlow = getGWFlow(sp, lowerDepth);
     if ( LatFlowExpr != NULL )
     {
-        GWFlow += mathexpr_eval(sp, LatFlowExpr, getVariableValue) / UCF(GWFLOW);
+        GWFlow += mathexpr_eval(sp, LatFlowExpr, getVariableValue) / UCF(sp, GWFLOW);
     }
     if ( GWFlow >= 0.0 ) GWFlow = MIN(GWFlow, MaxGWFlowPos);
     else GWFlow = MAX(GWFlow, MaxGWFlowNeg);
@@ -808,7 +808,7 @@ double getUpperPerc(double theta, double upperDepth)
 
 //=============================================================================
 
-double getGWFlow(double lowerDepth)
+double getGWFlow(SWMM_Project *sp, double lowerDepth)
 //
 //  Input:   lowerDepth = depth of lower zone (ft)
 //  Output:  returns groundwater flow rate (ft/sec)
@@ -822,21 +822,21 @@ double getGWFlow(double lowerDepth)
 
     // --- compute groundwater component of flow
     if ( GW->b1 == 0.0 ) t1 = GW->a1;
-    else t1 = GW->a1 * pow( (lowerDepth - Hstar)*UCF(LENGTH), GW->b1);
+    else t1 = GW->a1 * pow( (lowerDepth - Hstar)*UCF(sp, LENGTH), GW->b1);
 
     // --- compute surface water component of flow
     if ( GW->b2 == 0.0 ) t2 = GW->a2;
     else if (Hsw > Hstar)
     {
-        t2 = GW->a2 * pow( (Hsw - Hstar)*UCF(LENGTH), GW->b2);
+        t2 = GW->a2 * pow( (Hsw - Hstar)*UCF(sp, LENGTH), GW->b2);
     }
     else t2 = 0.0;
 
     // --- compute groundwater/surface water interaction term
-    t3 = GW->a3 * lowerDepth * Hsw * UCF(LENGTH) * UCF(LENGTH);
+    t3 = GW->a3 * lowerDepth * Hsw * UCF(sp, LENGTH) * UCF(sp, LENGTH);
 
     // --- compute total groundwater flow
-    q = (t1 - t2 + t3) / UCF(GWFLOW); 
+    q = (t1 - t2 + t3) / UCF(sp, GWFLOW); 
     if ( q < 0.0 && GW->a3 != 0.0 ) q = 0.0;
     return q;
 }
@@ -868,17 +868,17 @@ double getVariableValue(SWMM_Project *sp, int varIndex)
 {
     switch (varIndex)
     {
-    case gwvHGW:  return Hgw * UCF(LENGTH);
-    case gwvHSW:  return Hsw * UCF(LENGTH);
-    case gwvHCB:  return Hstar * UCF(LENGTH);
-    case gwvHGS:  return TotalDepth * UCF(LENGTH);
-    case gwvKS:   return A.conductivity * UCF(RAINFALL);
-    case gwvK:    return HydCon * UCF(RAINFALL);                               //(5.1.010)
+    case gwvHGW:  return Hgw * UCF(sp, LENGTH);
+    case gwvHSW:  return Hsw * UCF(sp, LENGTH);
+    case gwvHCB:  return Hstar * UCF(sp, LENGTH);
+    case gwvHGS:  return TotalDepth * UCF(sp, LENGTH);
+    case gwvKS:   return A.conductivity * UCF(sp, RAINFALL);
+    case gwvK:    return HydCon * UCF(sp, RAINFALL);                               //(5.1.010)
     case gwvTHETA:return Theta;                                                //(5.1.008)
     case gwvPHI:  return A.porosity;                                           //(5.1.008)
-    case gwvFI:   return Infil * UCF(RAINFALL);                                //(5.1.008)
-    case gwvFU:   return UpperPerc * UCF(RAINFALL);                            //(5.1.008)
-    case gwvA:    return Area * UCF(LANDAREA);                                 //(5.1.008)
+    case gwvFI:   return Infil * UCF(sp, RAINFALL);                                //(5.1.008)
+    case gwvFU:   return UpperPerc * UCF(sp, RAINFALL);                            //(5.1.008)
+    case gwvA:    return Area * UCF(sp, LANDAREA);                                 //(5.1.008)
     default:      return 0.0;
     }
 }

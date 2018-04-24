@@ -47,9 +47,9 @@ static double  Lfactor;                // main channel/flood plain length
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int    setParams(int transect, char* id, double x[]);
+static int    setParams(SWMM_Project *sp, int transect, char* id, double x[]);
 static int    setManning(double n[]);
-static int    addStation(double x, double y);
+static int    addStation(SWMM_Project *sp, double x, double y);
 static double getFlow(int k, double a, double wp, int findFlow);
 static void   getGeometry(int i, int j, double y);
 static void   getSliceGeom(int k, double y, double yu, double yd, double *w,
@@ -155,7 +155,7 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
         *count = index + 1;
 
         // --- transfer parameter values to transect's properties
-        return setParams(index, id, x);
+        return setParams(sp, index, id, x);
 
       // --- GR line: station elevation & location data
       case 2:
@@ -171,7 +171,7 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
                 return error_setInpError(ERR_NUMBER, tok[i]);
             if ( ! getDouble(tok[i+1], &x[2]) )
                 return error_setInpError(ERR_NUMBER, tok[i+1]);
-            errcode = addStation(x[1], x[2]);
+            errcode = addStation(sp, x[1], x[2]);
             if ( errcode ) return errcode;
             i += 2;
         }
@@ -312,7 +312,7 @@ int  setManning(double n[])
 
 //=============================================================================
 
-int  setParams(int j, char* id, double x[])
+int  setParams(SWMM_Project *sp, int j, char* id, double x[])
 //
 //  Input:   j = transect index
 //           id = transect ID name
@@ -323,22 +323,22 @@ int  setParams(int j, char* id, double x[])
 {
     if ( j < 0 || j >= Ntransects ) return ERR_NUMBER;
     Transect[j].ID = id;                         // ID name
-    Xleftbank = x[3] / UCF(LENGTH);              // left overbank location
-    Xrightbank = x[4] / UCF(LENGTH);             // right overbank location
+    Xleftbank = x[3] / UCF(sp, LENGTH);              // left overbank location
+    Xrightbank = x[4] / UCF(sp, LENGTH);             // right overbank location
     Lfactor = x[7];                              // channel/bank length
     if ( Lfactor == 0.0 ) Lfactor = 1.0;
     Xfactor = x[8];                              // station location multiplier
     if ( Xfactor == 0.0 ) Xfactor = 1.0;
     Xleftbank *= Xfactor;                        // adjusted left bank
     Xrightbank *= Xfactor;                       // adjusted right bank
-    Yfactor = x[9] / UCF(LENGTH);                // elevation offset
+    Yfactor = x[9] / UCF(sp, LENGTH);                // elevation offset
     Nstations = 0;
     return 0;
 }
 
 //=============================================================================
 
-int  addStation(double y, double x)
+int  addStation(SWMM_Project *sp, double y, double x)
 //
 //  Input:   y = station elevation value
 //           x = station distance value
@@ -352,10 +352,10 @@ int  addStation(double y, double x)
     if ( Nstations >= MAXSTATION ) return 0;
 
     // --- add station distance, modified by distance multiplier
-    Station[Nstations] = x * Xfactor / UCF(LENGTH);
+    Station[Nstations] = x * Xfactor / UCF(sp, LENGTH);
 
     // --- add station elevation, modified by offset elevation
-    Elev[Nstations] = (y + Yfactor) / UCF(LENGTH);
+    Elev[Nstations] = (y + Yfactor) / UCF(sp, LENGTH);
 
     // --- check if station distances are non-increasing
     if ( Nstations > 1

@@ -29,11 +29,11 @@
 #include "infil.h"
 #include "exfil.h"
 
-static int  createStorageExfil(int k, double x[]);
+static int  createStorageExfil(SWMM_Project *sp, int k, double x[]);
 
 //=============================================================================
 
-int exfil_readStorageParams(int k, char* tok[], int ntoks, int n)
+int exfil_readStorageParams(SWMM_Project *sp, int k, char* tok[], int ntoks, int n)
 //
 //  Input:   k = storage unit index
 //           tok[] = array of string tokens
@@ -68,12 +68,12 @@ int exfil_readStorageParams(int k, char* tok[], int ntoks, int n)
     if ( x[1] == 0.0 ) return 0;
 
     // --- create an exfiltration object
-    return createStorageExfil(k, x);
+    return createStorageExfil(sp, k, x);
 }
 
 //=============================================================================
 
-void  exfil_initState(int k)
+void  exfil_initState(SWMM_Project *sp, int k)
 //
 //  Input:   k = storage unit index
 //  Output:  none
@@ -121,10 +121,10 @@ void  exfil_initState(int k)
 
 ////  Following code block added to release 5.1.011  ////                      //(5.1.011)
             // --- convert from user units to internal units
-            exfil->btmArea /= UCF(LENGTH) * UCF(LENGTH);
-            exfil->bankMaxArea /= UCF(LENGTH) * UCF(LENGTH);
-            exfil->bankMinDepth /= UCF(LENGTH);
-            exfil->bankMaxDepth /= UCF(LENGTH);
+            exfil->btmArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
+            exfil->bankMaxArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
+            exfil->bankMinDepth /= UCF(sp, LENGTH);
+            exfil->bankMaxDepth /= UCF(sp, LENGTH);
 ////////////////////////////////////////////////////////
 
         }
@@ -203,7 +203,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
 
 //=============================================================================
 
-int  createStorageExfil(int k, double x[])
+int  createStorageExfil(SWMM_Project *sp, int k, double x[])
 //
 //  Input:   k = index of storage unit node
 //           x = array of Green-Ampt infiltration parameters
@@ -233,8 +233,8 @@ int  createStorageExfil(int k, double x[])
     }
 
     // --- initialize the Green-Ampt parameters
-    if ( !grnampt_setParams(exfil->btmExfil, x) )
+    if ( !grnampt_setParams(sp, exfil->btmExfil, x) )
         return error_setInpError(ERR_NUMBER, "");
-    grnampt_setParams(exfil->bankExfil, x);
+    grnampt_setParams(sp, exfil->bankExfil, x);
     return 0;
 }

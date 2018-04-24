@@ -278,7 +278,7 @@ void  gage_initState(SWMM_Project *sp, int j)
 
         // --- assign units conversion factor
         //     (rain depths on interface file are in inches)
-        if ( UnitSystem == SI ) Gage[j].unitsFactor = MMperINCH;
+        if ( sp->UnitSystem == SI ) Gage[j].unitsFactor = MMperINCH;
     }
 
     // --- get first & next rainfall values
@@ -402,7 +402,7 @@ DateTime gage_getNextRainDate(int j, DateTime aDate)
 
 //=============================================================================
 
-double gage_getPrecip(int j, double *rainfall, double *snowfall)
+double gage_getPrecip(SWMM_Project *sp, int j, double *rainfall, double *snowfall)
 //
 //  Input:   j = rain gage index
 //  Output:  rainfall = rainfall rate (ft/sec)
@@ -415,9 +415,9 @@ double gage_getPrecip(int j, double *rainfall, double *snowfall)
     *snowfall = 0.0;
     if ( !IgnoreSnowmelt && Temp.ta <= Snow.snotmp )
     {
-       *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(RAINFALL);
+       *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(sp, RAINFALL);
     }
-    else *rainfall = Gage[j].rainfall / UCF(RAINFALL);
+    else *rainfall = Gage[j].rainfall / UCF(sp, RAINFALL);
     return (*rainfall) + (*snowfall);
 } 
 

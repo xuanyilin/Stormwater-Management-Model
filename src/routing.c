@@ -217,7 +217,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
                 Link[j].timeLastSet = currentDate;
 
             // --- implement the change in the link's setting
-            link_setSetting(j, routingStep);
+            link_setSetting(sp, j, routingStep);
             actionCount++;
         } 
     }
@@ -264,7 +264,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         // --- find evap. & seepage losses from storage nodes
         for (j = 0; j < sp->Nobjects[NODE]; j++)
         {
-            Node[j].losses = node_getLosses(j, routingStep); 
+            Node[j].losses = node_getLosses(sp, j, routingStep);
         }
 
         // --- add lateral inflows and evap/seepage losses at nodes

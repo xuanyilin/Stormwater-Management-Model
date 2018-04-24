@@ -78,12 +78,14 @@ static const double MIN_DELTA_Z = 0.001; // minimum elevation change for conduit
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void   link_setParams(int j, int type, int n1, int n2, int k, double x[]);
+static void   link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2,
+        int k, double x[]);
 static void   link_convertOffsets(SWMM_Project *sp, int j);
 static double link_getOffsetHeight(SWMM_Project *sp, int j, double offset,
         double elev);
 
-static int    conduit_readParams(int j, int k, char* tok[], int ntoks);
+static int    conduit_readParams(SWMM_Project *sp, int j, int k, char* tok[],
+        int ntoks);
 static void   conduit_validate(SWMM_Project *sp, int j, int k);
 static void   conduit_initState(int j, int k);
 static void   conduit_reverse(int j, int k);
@@ -91,15 +93,15 @@ static double conduit_getLength(SWMM_Project *sp, int j);
 static double conduit_getLengthFactor(SWMM_Project *sp, int j, int k,
         double roughness);
 static double conduit_getSlope(SWMM_Project *sp, int j);
-static double conduit_getInflow(int j);
+static double conduit_getInflow(SWMM_Project *sp, int j);
 static double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tstep);              //(5.1.008)
 
-static int    pump_readParams(int j, int k, char* tok[], int ntoks);
+static int    pump_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks);
 static void   pump_validate(SWMM_Project *sp, int j, int k);
 static void   pump_initState(int j, int k);
-static double pump_getInflow(int j);
+static double pump_getInflow(SWMM_Project *sp, int j);
 
-static int    orifice_readParams(int j, int k, char* tok[], int ntoks);
+static int    orifice_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks);
 static void   orifice_validate(SWMM_Project *sp, int j, int k);
 static void   orifice_setSetting(int j, double tstep);
 static double orifice_getWeirCoeff(int j, int k, double h);
@@ -107,24 +109,25 @@ static double orifice_getInflow(int j);
 static double orifice_getFlow(int j, int k, double head, double f,
               int hasFlapGate);
 
-static int    weir_readParams(int j, int k, char* tok[], int ntoks);
+static int    weir_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks);
 static void   weir_validate(SWMM_Project *sp, int j, int k);
-static void   weir_setSetting(int j);                                          //(5.1.007)
-static double weir_getInflow(int j);
+static void   weir_setSetting(SWMM_Project *sp, int j);                                          //(5.1.007)
+static double weir_getInflow(SWMM_Project *sp, int j);
 static double weir_getOpenArea(int j, double y);
-static void   weir_getFlow(int j, int k, double head, double dir,
+static void   weir_getFlow(SWMM_Project *sp, int j, int k, double head, double dir,
               int hasFlapGate, double* q1, double* q2);
 static double weir_getOrificeFlow(int j, double head, double y, double cOrif); //(5.1.007)
 static double weir_getdqdh(int k, double dir, double h, double q1, double q2);
 
-static int    outlet_readParams(int j, int k, char* tok[], int ntoks);
-static double outlet_getFlow(int k, double head);
-static double outlet_getInflow(int j);
+static int    outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[],
+        int ntoks);
+static double outlet_getFlow(SWMM_Project *sp, int k, double head);
+static double outlet_getInflow(SWMM_Project *sp, int j);
 
 
 //=============================================================================
 
-int link_readParams(int j, int type, int k, char* tok[], int ntoks)
+int link_readParams(SWMM_Project *sp, int j, int type, int k, char* tok[], int ntoks)
 //
 //  Input:   j     = link index
 //           type  = link type code
@@ -138,18 +141,18 @@ int link_readParams(int j, int type, int k, char* tok[], int ntoks)
 {
     switch ( type )
     {
-      case CONDUIT: return conduit_readParams(j, k, tok, ntoks);
-      case PUMP:    return pump_readParams(j, k, tok, ntoks);
-      case ORIFICE: return orifice_readParams(j, k, tok, ntoks);
-      case WEIR:    return weir_readParams(j, k, tok, ntoks);
-      case OUTLET:  return outlet_readParams(j, k, tok, ntoks);
+      case CONDUIT: return conduit_readParams(sp, j, k, tok, ntoks);
+      case PUMP:    return pump_readParams(sp, j, k, tok, ntoks);
+      case ORIFICE: return orifice_readParams(sp, j, k, tok, ntoks);
+      case WEIR:    return weir_readParams(sp, j, k, tok, ntoks);
+      case OUTLET:  return outlet_readParams(sp, j, k, tok, ntoks);
       default: return 0;
     }
 }
 
 //=============================================================================
 
-int link_readXsectParams(char* tok[], int ntoks)
+int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -195,7 +198,7 @@ int link_readXsectParams(char* tok[], int ntoks)
             if ( i < 0 ) return error_setInpError(ERR_NAME, tok[3]);
             Link[j].xsect.type = k;
             Link[j].xsect.transect = i;
-            Link[j].xsect.yFull = x[0] / UCF(LENGTH);
+            Link[j].xsect.yFull = x[0] / UCF(sp, LENGTH);
         }
 
         // --- parse and save geometric parameters
@@ -213,7 +216,7 @@ int link_readXsectParams(char* tok[], int ntoks)
             x[3] = 0.0;
         }
 ////
-        if ( !xsect_setParams(&Link[j].xsect, k, x, UCF(LENGTH)) )
+        if ( !xsect_setParams(&Link[j].xsect, k, x, UCF(sp, LENGTH)) )
         {
             return error_setInpError(ERR_NUMBER, "");
         }
@@ -240,7 +243,7 @@ int link_readXsectParams(char* tok[], int ntoks)
 
 //=============================================================================
 
-int link_readLossParams(char* tok[], int ntoks)
+int link_readLossParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -278,13 +281,14 @@ int link_readLossParams(char* tok[], int ntoks)
     Link[j].cLossOutlet  = x[1];
     Link[j].cLossAvg     = x[2];
     Link[j].hasFlapGate  = k;
-    Link[j].seepRate     = seepRate / UCF(RAINFALL);
+    Link[j].seepRate     = seepRate / UCF(sp, RAINFALL);
     return 0;
 }
 
 //=============================================================================
 
-void  link_setParams(int j, int type, int n1, int n2, int k, double x[])
+void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
+        double x[])
 //
 //  Input:   j   = link index
 //           type = link type code
@@ -313,28 +317,28 @@ void  link_setParams(int j, int type, int n1, int n2, int k, double x[])
     switch (type)
     {
       case CONDUIT:
-        Conduit[k].length    = x[0] / UCF(LENGTH);
+        Conduit[k].length    = x[0] / UCF(sp, LENGTH);
         Conduit[k].modLength = Conduit[k].length;
         Conduit[k].roughness = x[1];
-        Link[j].offset1      = x[2] / UCF(LENGTH);
-        Link[j].offset2      = x[3] / UCF(LENGTH);
-        Link[j].q0           = x[4] / UCF(FLOW);
-        Link[j].qLimit       = x[5] / UCF(FLOW);
+        Link[j].offset1      = x[2] / UCF(sp, LENGTH);
+        Link[j].offset2      = x[3] / UCF(sp, LENGTH);
+        Link[j].q0           = x[4] / UCF(sp, FLOW);
+        Link[j].qLimit       = x[5] / UCF(sp, FLOW);
         break;
 
       case PUMP:
         Pump[k].pumpCurve    = (int)x[0];
         Link[j].hasFlapGate  = FALSE;
         Pump[k].initSetting  = x[1];
-        Pump[k].yOn          = x[2] / UCF(LENGTH);
-        Pump[k].yOff         = x[3] / UCF(LENGTH);
+        Pump[k].yOn          = x[2] / UCF(sp, LENGTH);
+        Pump[k].yOff         = x[3] / UCF(sp, LENGTH);
         Pump[k].xMin         = 0.0;
         Pump[k].xMax         = 0.0;
         break;
 
       case ORIFICE:
         Orifice[k].type      = (int)x[0];
-        Link[j].offset1      = x[1] / UCF(LENGTH);
+        Link[j].offset1      = x[1] / UCF(sp, LENGTH);
         Link[j].offset2      = Link[j].offset1;
         Orifice[k].cDisch    = x[2];
         Link[j].hasFlapGate  = (x[3] > 0.0) ? 1 : 0;
@@ -343,20 +347,20 @@ void  link_setParams(int j, int type, int n1, int n2, int k, double x[])
 
       case WEIR:
         Weir[k].type         = (int)x[0];
-        Link[j].offset1      = x[1] / UCF(LENGTH);
+        Link[j].offset1      = x[1] / UCF(sp, LENGTH);
         Link[j].offset2      = Link[j].offset1;
         Weir[k].cDisch1      = x[2];
         Link[j].hasFlapGate  = (x[3] > 0.0) ? 1 : 0;
         Weir[k].endCon       = x[4];
         Weir[k].cDisch2      = x[5];
         Weir[k].canSurcharge = (int)x[6];                                      //(5.1.007)
-        Weir[k].roadWidth    = x[7] / UCF(LENGTH);                             //(5.1.011)
+        Weir[k].roadWidth    = x[7] / UCF(sp, LENGTH);                             //(5.1.011)
         Weir[k].roadSurface  = (int)x[8];                                      //(5.1.010)
 //      Weir[k].shape        = -(int)x[9];  //DELETED//                        //(5.1.011)
         break;
 
       case OUTLET:
-        Link[j].offset1      = x[0] / UCF(LENGTH);
+        Link[j].offset1      = x[0] / UCF(sp, LENGTH);
         Link[j].offset2      = Link[j].offset1;
         Outlet[k].qCoeff     = x[1];
         Outlet[k].qExpon     = x[2];
@@ -507,7 +511,7 @@ void link_initState(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-double  link_getInflow(int j)
+double  link_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns link flow rate (cfs)
@@ -517,12 +521,12 @@ double  link_getInflow(int j)
     if ( Link[j].setting == 0 ) return 0.0;
     switch ( Link[j].type )
     {
-      case CONDUIT: return conduit_getInflow(j);
-      case PUMP:    return pump_getInflow(j);
+      case CONDUIT: return conduit_getInflow(sp, j);
+      case PUMP:    return pump_getInflow(sp, j);
       case ORIFICE: return orifice_getInflow(j);
-      case WEIR:    return weir_getInflow(j);
-      case OUTLET:  return outlet_getInflow(j);
-      default:      return node_getOutflow(Link[j].node1, j);
+      case WEIR:    return weir_getInflow(sp, j);
+      case OUTLET:  return outlet_getInflow(sp, j);
+      default:      return node_getOutflow(sp, Link[j].node1, j);
     }
 }
 
@@ -594,7 +598,7 @@ void link_setTargetSetting(int j)
 
 //=============================================================================
 
-void link_setSetting(int j, double tstep)
+void link_setSetting(SWMM_Project *sp, int j, double tstep)
 //
 //  Input:   j = link index
 //           tstep = time step over which setting is adjusted
@@ -603,7 +607,7 @@ void link_setSetting(int j, double tstep)
 //
 {
     if ( Link[j].type == ORIFICE ) orifice_setSetting(j, tstep);
-    else if ( Link[j].type == WEIR ) weir_setSetting(j);                       //(5.1.007)
+    else if ( Link[j].type == WEIR ) weir_setSetting(sp, j);                       //(5.1.007)
     else Link[j].setting = Link[j].targetSetting;
 }
 
@@ -675,10 +679,10 @@ void link_getResults(SWMM_Project *sp, int j, double f, float x[])
         else           q = Link[j].oldFlow;
     }
 
-    y *= UCF(LENGTH);
-    v *= UCF(VOLUME);
-    q *= UCF(FLOW) * (double)Link[j].direction;
-    u *= UCF(LENGTH) * (double)Link[j].direction;
+    y *= UCF(sp, LENGTH);
+    v *= UCF(sp, VOLUME);
+    q *= UCF(sp, FLOW) * (double)Link[j].direction;
+    u *= UCF(sp, LENGTH) * (double)Link[j].direction;
     x[LINK_DEPTH]    = (float)y;
     x[LINK_FLOW]     = (float)q;
     x[LINK_VELOCITY] = (float)u;
@@ -694,7 +698,7 @@ void link_getResults(SWMM_Project *sp, int j, double f, float x[])
 
 //=============================================================================
 
-void link_setOutfallDepth(int j)
+void link_setOutfallDepth(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -731,7 +735,7 @@ void link_setOutfallDepth(int j)
     }
 
     // --- set new depth at node
-    node_setOutletDepth(n, yNorm, yCrit, z);
+    node_setOutletDepth(sp, n, yNorm, yCrit, z);
 }
 
 //=============================================================================
@@ -899,7 +903,7 @@ char  link_getFullState(double a1, double a2, double aFull)
 //                    C O N D U I T   M E T H O D S
 //=============================================================================
 
-int  conduit_readParams(int j, int k, char* tok[], int ntoks)
+int  conduit_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = link index
 //           k = conduit index
@@ -952,7 +956,7 @@ int  conduit_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to data base
     Link[j].ID = id;
-    link_setParams(j, CONDUIT, n1, n2, k, x);
+    link_setParams(sp, j, CONDUIT, n1, n2, k, x);
     return 0;
 }
 
@@ -993,7 +997,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- if force main xsection, adjust units on D-W roughness height
     if ( Link[j].xsect.type == FORCE_MAIN )
     {
-        if ( ForceMainEqn == D_W ) Link[j].xsect.rBot /= UCF(RAINDEPTH);
+        if ( ForceMainEqn == D_W ) Link[j].xsect.rBot /= UCF(sp, RAINDEPTH);
         if ( Link[j].xsect.rBot <= 0.0 )
             report_writeErrorMsg(sp, ERR_XSECT, Link[j].ID);
     }
@@ -1277,14 +1281,14 @@ void  conduit_initState(int j, int k)
 
 //=============================================================================
 
-double conduit_getInflow(int j)
+double conduit_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns flow in link (cfs)
 //  Purpose: finds inflow to conduit from upstream node.
 //
 {
-    double qIn = node_getOutflow(Link[j].node1, j);
+    double qIn = node_getOutflow(sp, Link[j].node1, j);
     if ( Link[j].qLimit > 0.0 ) qIn = MIN(qIn, Link[j].qLimit);
     return qIn;
 }
@@ -1370,7 +1374,7 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
 //                        P U M P   M E T H O D S
 //=============================================================================
 
-int  pump_readParams(int j, int k, char* tok[], int ntoks)
+int  pump_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = link index
 //           k = pump index
@@ -1431,7 +1435,7 @@ int  pump_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to pump object
     Link[j].ID = id;
-    link_setParams(j, PUMP, n1, n2, k, x);
+    link_setParams(sp, j, PUMP, n1, n2, k, x);
     return 0;
 }
 
@@ -1477,7 +1481,7 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
                     Pump[k].xMax = x;
                 }
             }
-            Link[j].qFull /= UCF(FLOW);
+            Link[j].qFull /= UCF(sp, FLOW);
        }
     }
 
@@ -1491,7 +1495,7 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
         n1 = Link[j].node1;
         if ( Node[n1].type != STORAGE )
             Node[n1].fullVolume = MAX(Node[n1].fullVolume,
-                                      Pump[k].xMax / UCF(VOLUME));
+                                      Pump[k].xMax / UCF(sp, VOLUME));
     }
 
 }
@@ -1512,7 +1516,7 @@ void  pump_initState(int j, int k)
 
 //=============================================================================
 
-double pump_getInflow(int j)
+double pump_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns pump flow (cfs)
@@ -1542,8 +1546,8 @@ double pump_getInflow(int j)
     else switch(Curve[m].curveType)
     {
       case PUMP1_CURVE:
-        vol = Node[n1].newVolume * UCF(VOLUME);
-        qIn = table_intervalLookup(&Curve[m], vol) / UCF(FLOW);
+        vol = Node[n1].newVolume * UCF(sp, VOLUME);
+        qIn = table_intervalLookup(&Curve[m], vol) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
         if ( vol < Pump[k].xMin || vol > Pump[k].xMax )
@@ -1551,8 +1555,8 @@ double pump_getInflow(int j)
         break;
 
       case PUMP2_CURVE:
-        depth = Node[n1].newDepth * UCF(LENGTH);
-        qIn = table_intervalLookup(&Curve[m], depth) / UCF(FLOW);
+        depth = Node[n1].newDepth * UCF(sp, LENGTH);
+        qIn = table_intervalLookup(&Curve[m], depth) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
         if ( depth < Pump[k].xMin || depth > Pump[k].xMax )
@@ -1565,29 +1569,29 @@ double pump_getInflow(int j)
 
 		head = MAX(head, 0.0);
 
-        qIn = table_lookup(&Curve[m], head*UCF(LENGTH)) / UCF(FLOW);
+        qIn = table_lookup(&Curve[m], head*UCF(sp, LENGTH)) / UCF(sp, FLOW);
 
         // --- compute dQ/dh (slope of pump curve) and
         //     reverse sign since flow decreases with increasing head
-    	Link[j].dqdh = -table_getSlope(&Curve[m], head*UCF(LENGTH)) *
-                       UCF(LENGTH) / UCF(FLOW);
+    	Link[j].dqdh = -table_getSlope(&Curve[m], head*UCF(sp, LENGTH)) *
+                       UCF(sp, LENGTH) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
-        head *= UCF(LENGTH);
+        head *= UCF(sp, LENGTH);
         if ( head < Pump[k].xMin || head > Pump[k].xMax )
             Link[j].flowClass = YES;
         break;
 
       case PUMP4_CURVE:
         depth = Node[n1].newDepth;
-        qIn = table_lookup(&Curve[m], depth*UCF(LENGTH)) / UCF(FLOW);
+        qIn = table_lookup(&Curve[m], depth*UCF(sp, LENGTH)) / UCF(sp, FLOW);
 
         // --- compute dQ/dh (slope of pump curve)
-        qIn1 = table_lookup(&Curve[m], (depth+dh)*UCF(LENGTH)) / UCF(FLOW);
+        qIn1 = table_lookup(&Curve[m], (depth+dh)*UCF(sp, LENGTH)) / UCF(sp, FLOW);
         Link[j].dqdh = (qIn1 - qIn) / dh;
 
         // --- check if off of pump curve
-        depth *= UCF(LENGTH);
+        depth *= UCF(sp, LENGTH);
         if ( depth < Pump[k].xMin ) Link[j].flowClass = DN_DRY;
         if ( depth > Pump[k].xMax ) Link[j].flowClass = UP_DRY;
         break;
@@ -1605,7 +1609,7 @@ double pump_getInflow(int j)
 //                    O R I F I C E   M E T H O D S
 //=============================================================================
 
-int  orifice_readParams(int j, int k, char* tok[], int ntoks)
+int  orifice_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = link index
 //           k = orifice index
@@ -1654,7 +1658,7 @@ int  orifice_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to orifice object
     Link[j].ID = id;
-    link_setParams(j, ORIFICE, n1, n2, k, x);
+    link_setParams(sp, j, ORIFICE, n1, n2, k, x);
     return 0;
 }
 
@@ -1974,7 +1978,7 @@ double orifice_getFlow(int j, int k,  double head, double f, int hasFlapGate)
 //                           W E I R   M E T H O D S
 //=============================================================================
 
-int   weir_readParams(int j, int k, char* tok[], int ntoks)
+int   weir_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = link index
 //           k = weir index
@@ -2057,7 +2061,7 @@ int   weir_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to weir object
     Link[j].ID = id;
-    link_setParams(j, WEIR, n1, n2, k, x);
+    link_setParams(sp, j, WEIR, n1, n2, k, x);
     return 0;
 }
 
@@ -2118,7 +2122,7 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
 
     // --- find flow through weir when water level equals weir height
     head = Link[j].xsect.yFull;
-    weir_getFlow(j, k, head, 1.0, FALSE, &q1, &q2);
+    weir_getFlow(sp, j, k, head, 1.0, FALSE, &q1, &q2);
     q = q1 + q2;
 ////
 
@@ -2131,7 +2135,7 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
 
 ////  New function added to release 5.1.007.  ////                             //(5.1.007)
 
-void weir_setSetting(int j)
+void weir_setSetting(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -2152,7 +2156,7 @@ void weir_setSetting(int j)
     {
         // --- find flow through weir when water level equals weir height
         h = Link[j].setting * Link[j].xsect.yFull;
-        weir_getFlow(j, k, h, 1.0, FALSE, &q1, &q2);
+        weir_getFlow(sp, j, k, h, 1.0, FALSE, &q1, &q2);
         q = q1 + q2;
 
         // --- compute equivalent orifice coeff. (for CFS flow units)
@@ -2163,7 +2167,7 @@ void weir_setSetting(int j)
 
 //=============================================================================
 
-double weir_getInflow(int j)
+double weir_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns weir flow rate (cfs)
@@ -2218,7 +2222,7 @@ double weir_getInflow(int j)
 ////  Added to release 5.1.010.  ////                                          //(5.1.010)
     // --- treat a roadway weir as a special case
     if ( Weir[k].type == ROADWAY_WEIR )
-        return roadway_getInflow(j, dir, hcrest, h1, h2);
+        return roadway_getInflow(sp, j, dir, hcrest, h1, h2);
 ////
 
     // --- adjust crest ht. for partially open weir
@@ -2273,7 +2277,7 @@ double weir_getInflow(int j)
 
     // --- use weir eqn. to find flows through central (q1)
     //     and end sections (q2) of weir
-    weir_getFlow(j, k, head, dir, Link[j].hasFlapGate, &q1, &q2);
+    weir_getFlow(sp, j, k, head, dir, Link[j].hasFlapGate, &q1, &q2);
 
     // --- apply Villemonte eqn. to correct for submergence
     if ( h2 > hcrest )
@@ -2291,7 +2295,7 @@ double weir_getInflow(int j)
 
 //=============================================================================
 
-void weir_getFlow(int j, int k,  double head, double dir, int hasFlapGate,
+void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int hasFlapGate,
                   double* q1, double* q2)
 //
 //  Input:   j    = link index
@@ -2320,8 +2324,8 @@ void weir_getFlow(int j, int k,  double head, double dir, int hasFlapGate,
     if ( head <= 0.0 ) return;
 
     // --- convert weir length & head to original units
-    length = Link[j].xsect.wMax * UCF(LENGTH);
-    h = head * UCF(LENGTH);
+    length = Link[j].xsect.wMax * UCF(sp, LENGTH);
+    h = head * UCF(sp, LENGTH);
 
 ////  Following code segment re-located.  ////                                 //(5.1.012)
     // --- reduce length when end contractions present
@@ -2366,7 +2370,7 @@ void weir_getFlow(int j, int k,  double head, double dir, int hasFlapGate,
 
       case TRAPEZOIDAL_WEIR:
         y = (1.0 - Link[j].setting) * Link[j].xsect.yFull;
-        length = xsect_getWofY(&Link[j].xsect, y) * UCF(LENGTH);
+        length = xsect_getWofY(&Link[j].xsect, y) * UCF(sp, LENGTH);
 
 ////  End contractions don't apply to trapezoidal weirs ////                   //(5.1.012)
         //length -= 0.1 * Weir[k].endCon * h;                                  //(5.1.012)
@@ -2377,7 +2381,7 @@ void weir_getFlow(int j, int k,  double head, double dir, int hasFlapGate,
     }
 
     // --- convert CMS flows to CFS
-    if ( UnitSystem == SI )
+    if ( sp->UnitSystem == SI )
     {
         *q1 /= M3perFT3;
         *q2 /= M3perFT3;
@@ -2400,7 +2404,7 @@ void weir_getFlow(int j, int k,  double head, double dir, int hasFlapGate,
 
             // --- make recursive call to this function, with hasFlapGate
             //     set to false, to find flow values at adjusted head value
-            weir_getFlow(j, k, head, dir, FALSE, q1, q2);
+            weir_getFlow(sp, j, k, head, dir, FALSE, q1, q2);
         }
     }
     Link[j].dqdh = weir_getdqdh(k, dir, head, *q1, *q2);
@@ -2500,7 +2504,7 @@ double  weir_getdqdh(int k, double dir, double h, double q1, double q2)
 //               O U T L E T    D E V I C E    M E T H O D S
 //=============================================================================
 
-int outlet_readParams(int j, int k, char* tok[], int ntoks)
+int outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 //
 //  Input:   j = link index
 //           k = outlet index
@@ -2578,13 +2582,13 @@ int outlet_readParams(int j, int k, char* tok[], int ntoks)
 
     // --- add parameters to outlet object
     Link[j].ID = id;
-    link_setParams(j, OUTLET, n1, n2, k, x);
+    link_setParams(sp, j, OUTLET, n1, n2, k, x);
     return 0;
 }
 
 //=============================================================================
 
-double outlet_getInflow(int j)
+double outlet_getInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  outlet flow rate (cfs)
@@ -2643,12 +2647,12 @@ double outlet_getInflow(int j)
     // --- otherwise use rating curve to compute flow
     Link[j].newDepth = head;
     Link[j].flowClass = SUBCRITICAL;
-    return dir * Link[j].setting * outlet_getFlow(k, head);
+    return dir * Link[j].setting * outlet_getFlow(sp, k, head);
 }
 
 //=============================================================================
 
-double outlet_getFlow(int k, double head)
+double outlet_getFlow(SWMM_Project *sp, int k, double head)
 //
 //  Input:   k    = outlet index
 //           head = head across outlet (ft)
@@ -2660,12 +2664,12 @@ double outlet_getFlow(int k, double head)
     double h;
 
     // --- convert head to original units
-    h = head * UCF(LENGTH);
+    h = head * UCF(sp, LENGTH);
 
     // --- look-up flow in rating curve table if provided
     m = Outlet[k].qCurve;
-    if ( m >= 0 ) return table_lookup(&Curve[m], h) / UCF(FLOW);
+    if ( m >= 0 ) return table_lookup(&Curve[m], h) / UCF(sp, FLOW);
 
     // --- otherwise use function to find flow
-    else return Outlet[k].qCoeff * pow(h, Outlet[k].qExpon) / UCF(FLOW);
+    else return Outlet[k].qCoeff * pow(h, Outlet[k].qExpon) / UCF(sp, FLOW);
 }

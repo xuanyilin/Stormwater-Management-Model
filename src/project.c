@@ -256,7 +256,7 @@ void project_validate(SWMM_Project *sp)
         for (i=0; i<sp->Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
 
     // --- validate dynamic wave options
-    if ( RouteModel == DW ) dynwave_validate();                                //(5.1.008)
+    if ( RouteModel == DW ) dynwave_validate(sp);                                //(5.1.008)
 
 #pragma omp parallel                                                           //(5.1.008)
 {
@@ -290,7 +290,7 @@ int  project_init(SWMM_Project *sp)
 // 
 {
     int j;
-    climate_initState();
+    climate_initState(sp);
     lid_initState(sp);
     for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
     for (j=0; j<sp->Nobjects[GAGE]; j++)     gage_initState(sp, j);
@@ -434,8 +434,8 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         m = findmatch(s2, FlowUnitWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, s2);
         FlowUnits = m;
-        if ( FlowUnits <= MGD ) UnitSystem = US;
-        else                    UnitSystem = SI;
+        if ( FlowUnits <= MGD ) sp->UnitSystem = US;
+        else                    sp->UnitSystem = SI;
         break;
 
       // --- choice of infiltration modeling method
@@ -790,7 +790,7 @@ void setDefaults(SWMM_Project *sp)
    sp->Fout.mode   = NO_FILE;
 
    // Analysis options
-   UnitSystem      = US;               // US unit system
+   sp->UnitSystem      = US;               // US unit system
    FlowUnits       = CFS;              // CFS flow units
    InfilModel      = HORTON;           // Horton infiltration method
    RouteModel      = KW;               // Kin. wave flow routing method
@@ -963,15 +963,15 @@ void createObjects(SWMM_Project *sp)
     Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
     Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
-    Outfall  = (TOutfall *)  calloc(Nnodes[OUTFALL],    sizeof(TOutfall));
-    Divider  = (TDivider *)  calloc(Nnodes[DIVIDER],    sizeof(TDivider));
-    Storage  = (TStorage *)  calloc(Nnodes[STORAGE],    sizeof(TStorage));
+    Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
+    Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
+    Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
     Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
-    Conduit  = (TConduit *)  calloc(Nlinks[CONDUIT],    sizeof(TConduit));
-    Pump     = (TPump *)     calloc(Nlinks[PUMP],       sizeof(TPump));
-    Orifice  = (TOrifice *)  calloc(Nlinks[ORIFICE],    sizeof(TOrifice));
-    Weir     = (TWeir *)     calloc(Nlinks[WEIR],       sizeof(TWeir));
-    Outlet   = (TOutlet *)   calloc(Nlinks[OUTLET],     sizeof(TOutlet));
+    Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
+    Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
+    Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
+    Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
+    Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
     Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
     Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
     Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
@@ -1092,7 +1092,7 @@ void createObjects(SWMM_Project *sp)
     for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(j);
 
     // --- initialize storage node exfiltration                                //(5.1.007)
-    for (j = 0; j < Nnodes[STORAGE]; j++) Storage[j].exfil = NULL;             //(5.1.007)
+    for (j = 0; j < sp->Nnodes[STORAGE]; j++) Storage[j].exfil = NULL;             //(5.1.007)
 
     // --- initialize link properties
     for (j = 0; j < sp->Nobjects[LINK]; j++)
@@ -1103,7 +1103,7 @@ void createObjects(SWMM_Project *sp)
         Link[j].cLossAvg     = 0.0;
         Link[j].hasFlapGate  = FALSE;
     }
-    for (j = 0; j < Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
+    for (j = 0; j < sp->Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
 
     // --- initialize reporting flags
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) Subcatch[j].rptFlag = FALSE;
@@ -1178,7 +1178,7 @@ void deleteObjects(SWMM_Project *sp)
 ////  Added for release 5.1.007.  ////                                         //(5.1.007)
 ////
     // --- free memory used for storage exfiltration
-    if ( Node ) for (j = 0; j < Nnodes[STORAGE]; j++)
+    if ( Node ) for (j = 0; j < sp->Nnodes[STORAGE]; j++)
     {
         if ( Storage[j].exfil )
         {
@@ -1190,7 +1190,7 @@ void deleteObjects(SWMM_Project *sp)
 ////
 
     // --- free memory used for outfall pollutants loads                       //(5.1.008)
-    if ( Node ) for (j = 0; j < Nnodes[OUTFALL]; j++)                          //(5.1.008)
+    if ( Node ) for (j = 0; j < sp->Nnodes[OUTFALL]; j++)                          //(5.1.008)
         FREE(Outfall[j].wRouted);                                              //(5.1.008)
 
     // --- free memory used for nodal inflows & treatment functions

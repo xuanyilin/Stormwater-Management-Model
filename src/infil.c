@@ -64,7 +64,7 @@ static double Fumax;   // saturated water volume in upper soil zone (ft)
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int    horton_setParams(THorton *infil, double p[]);
+static int    horton_setParams(SWMM_Project *sp, THorton *infil, double p[]);
 static void   horton_initState(THorton *infil);
 static void   horton_getState(THorton *infil, double x[]);
 static void   horton_setState(THorton *infil, double x[]);
@@ -135,7 +135,7 @@ void infil_delete()
 
 //=============================================================================
 
-int infil_readParams(int m, char* tok[], int ntoks)
+int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
 //
 //  Input:   m = infiltration method code
 //           tok[] = array of string tokens
@@ -182,11 +182,11 @@ int infil_readParams(int m, char* tok[], int ntoks)
     switch (m)
     {
       case HORTON:
-      case MOD_HORTON:   status = horton_setParams(&HortInfil[j], x);
+      case MOD_HORTON:   status = horton_setParams(sp, &HortInfil[j], x);
                          break;
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-                         status = grnampt_setParams(&GAInfil[j], x);
+                         status = grnampt_setParams(sp, &GAInfil[j], x);
                          break;
       case CURVE_NUMBER: status = curvenum_setParams(&CNInfil[j], x);
                          break;
@@ -298,7 +298,7 @@ double infil_getInfil(int j, int m, double tstep, double rainfall,
 
 //=============================================================================
 
-int horton_setParams(THorton *infil, double p[])
+int horton_setParams(SWMM_Project *sp, THorton *infil, double p[])
 //
 //  Input:   infil = ptr. to Horton infiltration object
 //           p[] = array of parameter values
@@ -310,8 +310,8 @@ int horton_setParams(THorton *infil, double p[])
     for (k=0; k<5; k++) if ( p[k] < 0.0 ) return FALSE;
 
     // --- max. & min. infil rates (ft/sec)
-    infil->f0   = p[0] / UCF(RAINFALL);
-    infil->fmin = p[1] / UCF(RAINFALL);
+    infil->f0   = p[0] / UCF(sp, RAINFALL);
+    infil->fmin = p[1] / UCF(sp, RAINFALL);
 
     // --- convert decay const. to 1/sec
     infil->decay = p[2] / 3600.;
@@ -323,7 +323,7 @@ int horton_setParams(THorton *infil, double p[])
     infil->regen = -log(1.0-0.98) / p[3] / SECperDAY;
 
     // --- optional max. infil. capacity (ft) (p[4] = 0 if no value supplied)
-    infil->Fmax = p[4] / UCF(RAINDEPTH);
+    infil->Fmax = p[4] / UCF(sp, RAINDEPTH);
     if ( infil->f0 < infil->fmin ) return FALSE;
     return TRUE;
 }
@@ -532,7 +532,7 @@ double modHorton_getInfil(THorton *infil, double tstep, double irate,
 
 //=============================================================================
 
-int grnampt_setParams(TGrnAmpt *infil, double p[])
+int grnampt_setParams(SWMM_Project *sp, TGrnAmpt *infil, double p[])
 //
 //  Input:   infil = ptr. to Green-Ampt infiltration object
 //           p[] = array of parameter values
@@ -543,8 +543,8 @@ int grnampt_setParams(TGrnAmpt *infil, double p[])
     double ksat;                       // sat. hyd. conductivity in in/hr
 
     if ( p[0] < 0.0 || p[1] <= 0.0 || p[2] < 0.0 ) return FALSE;               //(5.1.007)
-    infil->S      = p[0] / UCF(RAINDEPTH);   // Capillary suction head (ft)
-    infil->Ks     = p[1] / UCF(RAINFALL);    // Sat. hyd. conductivity (ft/sec)
+    infil->S      = p[0] / UCF(sp, RAINDEPTH);   // Capillary suction head (ft)
+    infil->Ks     = p[1] / UCF(sp, RAINFALL);    // Sat. hyd. conductivity (ft/sec)
     infil->IMDmax = p[2];                    // Max. init. moisture deficit
 
     // --- find depth of upper soil zone (ft) using Mein's eqn.

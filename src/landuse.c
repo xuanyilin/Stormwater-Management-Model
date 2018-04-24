@@ -43,8 +43,8 @@ static double landuse_getBuildupDays(int landuse, int pollut, double buildup);
 static double landuse_getBuildupMass(int landuse, int pollut, double days);
 static double landuse_getRunoffLoad(int landuse, int pollut, double area,
               TLandFactor landFactor[], double runoff, double tStep);
-static double landuse_getWashoffQual(int landuse, int pollut, double buildup,  //(5.1.008)
-              double runoff, double area);
+static double landuse_getWashoffQual(SWMM_Project *sp, int landuse, int pollut,
+        double buildup, double runoff, double area);
 static double landuse_getExternalBuildup(int i, int p, double buildup,
               double tStep);
 
@@ -91,7 +91,7 @@ int  landuse_readParams(int j, char* tok[], int ntoks)
 
 //=============================================================================
 
-int  landuse_readPollutParams(int j, char* tok[], int ntoks)
+int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = pollutant index
 //           tok[] = array of string tokens
@@ -172,8 +172,8 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     // --- save values for pollutant object   
     Pollut[j].ID = id;
     Pollut[j].units = k;
-    if      ( Pollut[j].units == MG ) Pollut[j].mcf = UCF(MASS);
-    else if ( Pollut[j].units == UG ) Pollut[j].mcf = UCF(MASS) / 1000.0;
+    if      ( Pollut[j].units == MG ) Pollut[j].mcf = UCF(sp, MASS);
+    else if ( Pollut[j].units == UG ) Pollut[j].mcf = UCF(sp, MASS) / 1000.0;
     else                              Pollut[j].mcf = 1.0;
     Pollut[j].pptConcen  = x[0];
     Pollut[j].gwConcen   = x[1];
@@ -280,7 +280,7 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
 
 //=============================================================================
 
-int  landuse_readWashoffParams(char* tok[], int ntoks)
+int  landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -340,7 +340,7 @@ int  landuse_readWashoffParams(char* tok[], int ntoks)
 
     // --- convert units of washoff coeff.
     if ( func == EXPON_WASHOFF  ) x[0] /= 3600.0;
-    if ( func == RATING_WASHOFF ) x[0] *= pow(UCF(FLOW), x[1]);
+    if ( func == RATING_WASHOFF ) x[0] *= pow(UCF(sp, FLOW), x[1]);
     if ( func == EMC_WASHOFF    ) x[0] *= LperFT3;
 
     // --- assign washoff parameters to washoff object
@@ -388,7 +388,7 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
 
         // --- determine area and curb length covered by land use
         f = landFactor[i].fraction;
-        fArea = f * area * UCF(LANDAREA);
+        fArea = f * area * UCF(sp, LANDAREA);
         fCurb = f * curb;
 
         // --- determine buildup of each pollutant
@@ -554,7 +554,7 @@ double landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p)
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double landuse_getWashoffLoad(int i, int p, double area,
+double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     TLandFactor landFactor[], double runoff, double vOutflow)
 //
 //  Input:   i = land use index
@@ -576,7 +576,7 @@ double landuse_getWashoffLoad(int i, int p, double area,
     // --- compute concen. of pollutant in washoff (mass/ft3)
     buildup = landFactor[i].buildup[p];
     landuseArea = landFactor[i].fraction * area;
-    washoffQual = landuse_getWashoffQual(i, p, buildup, runoff, landuseArea);
+    washoffQual = landuse_getWashoffQual(sp, i, p, buildup, runoff, landuseArea);
 
     // --- compute washoff load exported (lbs or kg) from landuse
     //     (Pollut[].mcf converts from mg (or ug) mass units to lbs (or kg)
@@ -615,8 +615,8 @@ double landuse_getWashoffLoad(int i, int p, double area,
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
-                              double area)
+double landuse_getWashoffQual(SWMM_Project *sp, int i, int p, double buildup,
+        double runoff, double area)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -647,7 +647,7 @@ double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
     {
         // --- evaluate washoff eqn. with runoff in in/hr (or mm/hr)
         //     and buildup converted from lbs (or kg) to concen. mass units
-        cWashoff = coeff * pow(runoff * UCF(RAINFALL), expon) *
+        cWashoff = coeff * pow(runoff * UCF(sp, RAINFALL), expon) *
                   buildup / Pollut[p].mcf;
         cWashoff /= runoff * area;
     }

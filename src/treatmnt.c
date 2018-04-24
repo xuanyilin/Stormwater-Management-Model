@@ -362,16 +362,16 @@ double getVariableValue(SWMM_Project *sp, int varCode)
             return Dt;                                // time step in seconds
 
           case pvFLOW:
-            return Q * UCF(FLOW);                     // flow in user's units
+            return Q * UCF(sp, FLOW);                     // flow in user's units
 
           case pvDEPTH:
             y = (Node[J].oldDepth + Node[J].newDepth) / 2.0;
-            return y * UCF(LENGTH);                   // depth in ft or m
+            return y * UCF(sp, LENGTH);                   // depth in ft or m
 
           case pvAREA:
-            a1 = node_getSurfArea(J, Node[J].oldDepth);
-            a2 = node_getSurfArea(J, Node[J].newDepth);
-            return (a1 + a2) / 2.0 * UCF(LENGTH) * UCF(LENGTH);
+            a1 = node_getSurfArea(sp, J, Node[J].oldDepth);
+            a2 = node_getSurfArea(sp, J, Node[J].newDepth);
+            return (a1 + a2) / 2.0 * UCF(sp, LENGTH) * UCF(sp, LENGTH);
             
           default: return 0.0;
         }

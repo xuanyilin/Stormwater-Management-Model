@@ -356,7 +356,7 @@ void readRouting(SWMM_Project *sp)
         // --- set link's target setting to saved setting 
         Link[i].targetSetting = x;
         link_setTargetSetting(i);
-        link_setSetting(i, 0.0);
+        link_setSetting(sp, i, 0.0);
 ////
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {

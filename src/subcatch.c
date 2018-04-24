@@ -102,7 +102,7 @@ static  char *RunoffRoutingWords[] = { w_OUTLET,  w_IMPERV, w_PERV, NULL};
 //-----------------------------------------------------------------------------
 // Function declarations
 //-----------------------------------------------------------------------------
-static void   getNetPrecip(int j, double* netPrecip, double tStep);
+static void   getNetPrecip(SWMM_Project *sp, int j, double* netPrecip, double tStep);
 static double getSubareaRunoff(SWMM_Project *sp, int subcatch, int subarea,    //(5.1.008)
         double area, double rainfall, double evap, double tStep);
 static double getSubareaInfil(int j, TSubarea* subarea, double precip,
@@ -113,7 +113,7 @@ static void   getDdDt(SWMM_Project *sp, double t, double* d, double* dddt);
 
 //=============================================================================
 
-int  subcatch_readParams(int j, char* tok[], int ntoks)
+int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = subcatchment index
 //           tok[] = array of string tokens
@@ -170,9 +170,9 @@ int  subcatch_readParams(int j, char* tok[], int ntoks)
     Subcatch[j].gage        = (int)x[0];
     Subcatch[j].outNode     = (int)x[1];
     Subcatch[j].outSubcatch = (int)x[2];
-    Subcatch[j].area        = x[3] / UCF(LANDAREA);
+    Subcatch[j].area        = x[3] / UCF(sp, LANDAREA);
     Subcatch[j].fracImperv  = MIN(x[4], 100.0) / 100.0;                        //(5.1.011)
-    Subcatch[j].width       = x[5] / UCF(LENGTH);
+    Subcatch[j].width       = x[5] / UCF(sp, LENGTH);
     Subcatch[j].slope       = x[6] / 100.0;
     Subcatch[j].curbLength  = x[7];
 
@@ -187,7 +187,7 @@ int  subcatch_readParams(int j, char* tok[], int ntoks)
 
 //=============================================================================
 
-int subcatch_readSubareaParams(char* tok[], int ntoks)
+int subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -236,8 +236,8 @@ int subcatch_readSubareaParams(char* tok[], int ntoks)
     Subcatch[j].subArea[PERV].N    = x[1];
 
     Subcatch[j].subArea[IMPERV0].dStore = 0.0;
-    Subcatch[j].subArea[IMPERV1].dStore = x[2] / UCF(RAINDEPTH);
-    Subcatch[j].subArea[PERV].dStore    = x[3] / UCF(RAINDEPTH);
+    Subcatch[j].subArea[IMPERV1].dStore = x[2] / UCF(sp, RAINDEPTH);
+    Subcatch[j].subArea[PERV].dStore    = x[3] / UCF(sp, RAINDEPTH);
 
     Subcatch[j].subArea[IMPERV0].fArea  = Subcatch[j].fracImperv * x[4] / 100.0;
     Subcatch[j].subArea[IMPERV1].fArea  = Subcatch[j].fracImperv * (1.0 - x[4] / 100.0);
@@ -681,7 +681,7 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
 
     // --- get net precip. (rainfall + snowfall + snowmelt) on the 3 types
     //     of subcatchment sub-areas and update Vinflow with it
-    getNetPrecip(j, netPrecip, tStep);
+    getNetPrecip(sp, j, netPrecip, tStep);
 
     // --- find potential evaporation rate
     if ( Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) evapRate = 0.0;
@@ -703,7 +703,7 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     //     Vpevap, VlidInfil, VlidIn, VlidOut, & VlidDrain)
     if ( Subcatch[j].lidArea > 0.0 )
     {
-        lid_getRunoff(j, tStep);
+        lid_getRunoff(sp, j, tStep);
     }
 
     // --- update groundwater levels & flows if applicable
@@ -751,7 +751,7 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
 
 //=============================================================================
 
-void getNetPrecip(int j, double* netPrecip, double tStep)
+void getNetPrecip(SWMM_Project *sp, int j, double* netPrecip, double tStep)
 {
 //
 //  Purpose: Finds combined rainfall + snowmelt on a subcatchment.
@@ -767,7 +767,7 @@ void getNetPrecip(int j, double* netPrecip, double tStep)
     k = Subcatch[j].gage;
     if ( k >= 0 )
     {
-        gage_getPrecip(k, &rainfall, &snowfall);
+        gage_getPrecip(sp, k, &rainfall, &snowfall);
     }
 
     // --- assign total precip. rate to subcatch's rainfall property
@@ -872,12 +872,12 @@ void  subcatch_getResults(SWMM_Project *sp, int j, double f, float x[])
 
     // --- retrieve snow depth
     z = ( f1 * Subcatch[j].oldSnowDepth +
-          f * Subcatch[j].newSnowDepth ) * UCF(RAINDEPTH);
+          f * Subcatch[j].newSnowDepth ) * UCF(sp, RAINDEPTH);
     x[SUBCATCH_SNOWDEPTH] = (float)z;
 
     // --- retrieve runoff and losses
-    x[SUBCATCH_EVAP] = (float)(Subcatch[j].evapLoss * UCF(EVAPRATE));
-    x[SUBCATCH_INFIL] = (float)(Subcatch[j].infilLoss * UCF(RAINFALL));
+    x[SUBCATCH_EVAP] = (float)(Subcatch[j].evapLoss * UCF(sp, EVAPRATE));
+    x[SUBCATCH_INFIL] = (float)(Subcatch[j].infilLoss * UCF(sp, RAINFALL));
     runoff = f1 * Subcatch[j].oldRunoff + f * Subcatch[j].newRunoff;
 
 ////  Following code segement added to release 5.1.008.  ////                  //(5.1.008)
@@ -892,15 +892,15 @@ void  subcatch_getResults(SWMM_Project *sp, int j, double f, float x[])
 
     // --- if runoff is really small, report it as zero
     if ( runoff < MIN_RUNOFF * Subcatch[j].area ) runoff = 0.0;                //(5.1.008)
-    x[SUBCATCH_RUNOFF] = (float)(runoff * UCF(FLOW));
+    x[SUBCATCH_RUNOFF] = (float)(runoff * UCF(sp, FLOW));
 
     // --- retrieve groundwater results
     gw = Subcatch[j].groundwater;
     if ( gw )
     {
-        z = (f1 * gw->oldFlow + f * gw->newFlow) * Subcatch[j].area * UCF(FLOW);
+        z = (f1 * gw->oldFlow + f * gw->newFlow) * Subcatch[j].area * UCF(sp, FLOW);
         x[SUBCATCH_GW_FLOW] = (float)z;
-        z = (gw->bottomElev + gw->lowerDepth) * UCF(LENGTH);                   //(5.1.012)
+        z = (gw->bottomElev + gw->lowerDepth) * UCF(sp, LENGTH);                   //(5.1.012)
         x[SUBCATCH_GW_ELEV] = (float)z;
         z = gw->theta;
         x[SUBCATCH_SOIL_MOIST] = (float)z;

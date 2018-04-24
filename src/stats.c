@@ -212,9 +212,9 @@ int  stats_open(SWMM_Project *sp)
     }
 
     // --- allocate memory for & initialize storage unit statistics
-    if ( Nnodes[STORAGE] > 0 )
+    if ( sp->Nnodes[STORAGE] > 0 )
     {
-        StorageStats = (TStorageStats *) calloc(Nnodes[STORAGE],
+        StorageStats = (TStorageStats *) calloc(sp->Nnodes[STORAGE],
                            sizeof(TStorageStats));
         if ( !StorageStats )
         {
@@ -236,16 +236,16 @@ int  stats_open(SWMM_Project *sp)
     }
 
     // --- allocate memory for & initialize outfall statistics
-    if ( Nnodes[OUTFALL] > 0 )
+    if ( sp->Nnodes[OUTFALL] > 0 )
     {
-        OutfallStats = (TOutfallStats *) calloc(Nnodes[OUTFALL],
+        OutfallStats = (TOutfallStats *) calloc(sp->Nnodes[OUTFALL],
                            sizeof(TOutfallStats));
         if ( !OutfallStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
-        else for ( j = 0; j < Nnodes[OUTFALL]; j++ )
+        else for ( j = 0; j < sp->Nnodes[OUTFALL]; j++ )
         {
             OutfallStats[j].avgFlow = 0.0;
             OutfallStats[j].maxFlow = 0.0;
@@ -267,15 +267,15 @@ int  stats_open(SWMM_Project *sp)
     }
 
     // --- allocate memory & initialize pumping statistics
-    if ( Nlinks[PUMP] > 0 ) 
+    if ( sp->Nlinks[PUMP] > 0 )
     { 
-        PumpStats = (TPumpStats *) calloc(Nlinks[PUMP], sizeof(TPumpStats));
+        PumpStats = (TPumpStats *) calloc(sp->Nlinks[PUMP], sizeof(TPumpStats));
         if ( !PumpStats ) 
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return ErrorCode;
         }
-        else for ( j = 0; j < Nlinks[PUMP]; j++ )
+        else for ( j = 0; j < sp->Nlinks[PUMP]; j++ )
         {
             PumpStats[j].utilized = 0.0;
             PumpStats[j].minFlow  = 0.0;
@@ -322,7 +322,7 @@ void  stats_close(SWMM_Project *sp)
     FREE(StorageStats); 
     if ( OutfallStats )
     {
-        for ( j=0; j<Nnodes[OUTFALL]; j++ )
+        for ( j=0; j<sp->Nnodes[OUTFALL]; j++ )
             FREE(OutfallStats[j].totalLoad);
         FREE(OutfallStats);
     }

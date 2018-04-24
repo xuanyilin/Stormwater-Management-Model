@@ -57,7 +57,7 @@ static int  readOption(SWMM_Project *sp, char* line);
 static int  readTitle(SWMM_Project *sp, char* line);
 static int  readControl(SWMM_Project *sp, char* tok[], int ntoks);
 static int  readNode(SWMM_Project *sp, int type);
-static int  readLink(int type);
+static int  readLink(SWMM_Project *sp, int type);
 static int  readEvent(char* tok[], int ntoks);                                 //(5.1.011)
 
 //=============================================================================
@@ -82,8 +82,8 @@ int input_countObjects(SWMM_Project *sp)
     if ( ErrorCode ) return ErrorCode;
     error_setInpError(0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++) sp->Nobjects[i] = 0;
-    for (i = 0; i < MAX_NODE_TYPES; i++) Nnodes[i] = 0;
-    for (i = 0; i < MAX_LINK_TYPES; i++) Nlinks[i] = 0;
+    for (i = 0; i < MAX_NODE_TYPES; i++) sp->Nnodes[i] = 0;
+    for (i = 0; i < MAX_LINK_TYPES; i++) sp->Nlinks[i] = 0;
 
     // --- make pass through data file counting number of each object
     while ( fgets(line, MAXLINE, sp->Finp.file) != NULL )
@@ -151,7 +151,7 @@ int input_readData(SWMM_Project *sp)
 
     // --- initialize working item count arrays
     //     (final counts in Mobjects, Mnodes & Mlinks should
-    //      match those in sp->Nobjects, Nnodes and Nlinks).
+    //      match those in sp->Nobjects, sp->Nnodes and sp->Nlinks).
     if ( ErrorCode ) return ErrorCode;
     error_setInpError(0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++)  Mobjects[i] = 0;
@@ -296,63 +296,63 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
-        Nnodes[JUNCTION]++;
+        sp->Nnodes[JUNCTION]++;
         break;
 
       case s_OUTFALL:
         if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
-        Nnodes[OUTFALL]++;
+        sp->Nnodes[OUTFALL]++;
         break;
 
       case s_STORAGE:
         if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
-        Nnodes[STORAGE]++;
+        sp->Nnodes[STORAGE]++;
         break;
 
       case s_DIVIDER:
         if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
-        Nnodes[DIVIDER]++;
+        sp->Nnodes[DIVIDER]++;
         break;
 
       case s_CONDUIT:
         if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
-        Nlinks[CONDUIT]++;
+        sp->Nlinks[CONDUIT]++;
         break;
 
       case s_PUMP:
         if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
-        Nlinks[PUMP]++;
+        sp->Nlinks[PUMP]++;
         break;
 
       case s_ORIFICE:
         if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
-        Nlinks[ORIFICE]++;
+        sp->Nlinks[ORIFICE]++;
         break;
 
       case s_WEIR:
         if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
-        Nlinks[WEIR]++;
+        sp->Nlinks[WEIR]++;
         break;
 
       case s_OUTLET:
         if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
-        Nlinks[OUTLET]++;
+        sp->Nlinks[OUTLET]++;
         break;
 
       case s_POLLUTANT:
@@ -470,30 +470,30 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
 
       case s_SUBCATCH:
         j = Mobjects[SUBCATCH];
-        err = subcatch_readParams(j, Tok, Ntokens);
+        err = subcatch_readParams(sp, j, Tok, Ntokens);
         Mobjects[SUBCATCH]++;
         return err;
 
       case s_SUBAREA:
-        return subcatch_readSubareaParams(Tok, Ntokens);
+        return subcatch_readSubareaParams(sp, Tok, Ntokens);
 
       case s_INFIL:
-        return infil_readParams(InfilModel, Tok, Ntokens);
+        return infil_readParams(sp, InfilModel, Tok, Ntokens);
 
       case s_AQUIFER:
         j = Mobjects[AQUIFER];
-        err = gwater_readAquiferParams(j, Tok, Ntokens);
+        err = gwater_readAquiferParams(sp, j, Tok, Ntokens);
         Mobjects[AQUIFER]++;
         return err;
 
       case s_GROUNDWATER:
-        return gwater_readGroundwaterParams(Tok, Ntokens);
+        return gwater_readGroundwaterParams(sp, Tok, Ntokens);
 
       case s_GWF:
         return gwater_readFlowExpression(sp, Tok, Ntokens);
 
       case s_SNOWMELT:
-        return snow_readMeltParams(Tok, Ntokens);
+        return snow_readMeltParams(sp, Tok, Ntokens);
 
       case s_JUNCTION:
         return readNode(sp, JUNCTION);
@@ -508,32 +508,32 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return readNode(sp, DIVIDER);
 
       case s_CONDUIT:
-        return readLink(CONDUIT);
+        return readLink(sp, CONDUIT);
 
       case s_PUMP:
-        return readLink(PUMP);
+        return readLink(sp, PUMP);
 
       case s_ORIFICE:
-        return readLink(ORIFICE);
+        return readLink(sp, ORIFICE);
 
       case s_WEIR:
-        return readLink(WEIR);
+        return readLink(sp, WEIR);
 
       case s_OUTLET:
-        return readLink(OUTLET);
+        return readLink(sp, OUTLET);
 
       case s_XSECTION:
-        return link_readXsectParams(Tok, Ntokens);
+        return link_readXsectParams(sp, Tok, Ntokens);
 
       case s_TRANSECT:
         return transect_readParams(sp, &Mobjects[TRANSECT], Tok, Ntokens);
 
       case s_LOSSES:
-        return link_readLossParams(Tok, Ntokens);
+        return link_readLossParams(sp, Tok, Ntokens);
 
       case s_POLLUTANT:
         j = Mobjects[POLLUT];
-        err = landuse_readPollutParams(j, Tok, Ntokens);
+        err = landuse_readPollutParams(sp, j, Tok, Ntokens);
         Mobjects[POLLUT]++;
         return err;
 
@@ -547,7 +547,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return landuse_readBuildupParams(Tok, Ntokens);
 
       case s_WASHOFF:
-        return landuse_readWashoffParams(Tok, Ntokens);
+        return landuse_readWashoffParams(sp, Tok, Ntokens);
 
       case s_COVERAGE:
         return subcatch_readLanduseParams(Tok, Ntokens);
@@ -556,13 +556,13 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return inflow_readExtInflow(sp, Tok, Ntokens);
 
       case s_DWF:
-        return inflow_readDwfInflow(Tok, Ntokens);
+        return inflow_readDwfInflow(sp, Tok, Ntokens);
 
       case s_PATTERN:
         return inflow_readDwfPattern(Tok, Ntokens);
 
       case s_RDII:
-        return rdii_readRdiiInflow(Tok, Ntokens);
+        return rdii_readRdiiInflow(sp, Tok, Ntokens);
 
       case s_UNITHYD:
         return rdii_readUnitHydParams(Tok, Ntokens);
@@ -589,10 +589,10 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return iface_readFileParams(sp, Tok, Ntokens);
 
       case s_LID_CONTROL:
-        return lid_readProcParams(Tok, Ntokens);
+        return lid_readProcParams(sp, Tok, Ntokens);
 
       case s_LID_USAGE:
-        return lid_readGroupParams(Tok, Ntokens);
+        return lid_readGroupParams(sp, Tok, Ntokens);
 
       case s_EVENT:
         return readEvent(Tok, Ntokens);                                        //(5.1.011)
@@ -699,7 +699,7 @@ int readNode(SWMM_Project *sp, int type)
 
 //=============================================================================
 
-int readLink(int type)
+int readLink(SWMM_Project *sp, int type)
 //
 //  Input:   type = type of link
 //  Output:  returns error code
@@ -708,7 +708,7 @@ int readLink(int type)
 {
     int j = Mobjects[LINK];
     int k = Mlinks[type];
-    int err = link_readParams(j, type, k, Tok, Ntokens);
+    int err = link_readParams(sp, j, type, k, Tok, Ntokens);
     Mobjects[LINK]++;
     Mlinks[type]++;
     return err;

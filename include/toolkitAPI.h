@@ -313,6 +313,8 @@ void DLLEXPORT swmm_getAPIError(int errcode, char *s);
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationUnit(int type, int *value);
+int DLLEXPORT swmm_getSimulationUnit_project(SWMM_Project *sp, int type,
+        int *value);
 
 /**
  @brief Gets Simulation Analysis Setting
@@ -556,6 +558,8 @@ int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
  @return Error code
 */
 int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value);
+int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_Project *sp, int index,
+        double *value);
 
 /**
  @brief Get a storage statistics.
@@ -651,7 +655,8 @@ void DLLEXPORT swmm_freeSubcatchStats(SM_SubcatchStats *subcatchStats);
  @return Error code
 */
 int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot);
-
+int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_Project *sp,
+        SM_RoutingTotals *routingTot);
 /**
  @brief Get system runoff statistics.
  @param[out] runoffTot The system Runoff Stats struct (see @ref SM_RunoffTotals). 
@@ -659,6 +664,8 @@ int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot);
  @return Error code
 */
 int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot);
+int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_Project *sp,
+        SM_RunoffTotals *runoffTot);
 
 //-------------------------------
 // Setters API

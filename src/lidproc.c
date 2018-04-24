@@ -142,20 +142,20 @@ static double     Xold[MAX_LAYERS];  // previous moisture level in LID layers  /
 //-----------------------------------------------------------------------------
 // Local Functions
 //-----------------------------------------------------------------------------
-static void   barrelFluxRates(double x[], double f[]);
-static void   biocellFluxRates(double x[], double f[]);
-static void   greenRoofFluxRates(double x[], double f[]);
-static void   pavementFluxRates(double x[], double f[]);
-static void   trenchFluxRates(double x[], double f[]);
-static void   swaleFluxRates(double x[], double f[]);
-static void   roofFluxRates(double x[], double f[]);                           //(5.1.008)
+static void   barrelFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   biocellFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   greenRoofFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   pavementFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   trenchFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   swaleFluxRates(SWMM_Project *sp, double x[], double f[]);
+static void   roofFluxRates(SWMM_Project *sp, double x[], double f[]);                           //(5.1.008)
 
 static double getSurfaceOutflowRate(double depth);
 static double getSurfaceOverflowRate(double* surfaceDepth);
 static double getPavementPermRate(void);
 static double getSoilPercRate(double theta);                                   //(5.1.007)
 static double getStorageExfilRate(void);                                       //(5.1.011)
-static double getStorageDrainRate(double storageDepth, double soilTheta,       //(5.1.011)
+static double getStorageDrainRate(SWMM_Project *sp, double storageDepth, double soilTheta,       //(5.1.011)
               double paveDepth, double surfaceDepth);                          //(5.1.011)
 static double getDrainMatOutflow(double depth);
 static void   getEvapRates(double surfaceVol, double paveVol,                  //(5.1.008)
@@ -165,10 +165,10 @@ static void   updateWaterBalance(TLidUnit *lidUnit, double inflow,
                                  double evap, double infil, double surfFlow,
                                  double drainFlow, double storage);
 
-static int    modpuls_solve(int n, double* x, double* xOld, double* xPrev,
-                            double* xMin, double* xMax, double* xTol,
-                            double* qOld, double* q, double dt, double omega,  //(5.1.007)
-                            void (*derivs)(double*, double*));
+static int    modpuls_solve(SWMM_Project *sp, int n, double* x, double* xOld,
+        double* xPrev, double* xMin, double* xMax, double* xTol, double* qOld,
+        double* q, double dt, double omega,  //(5.1.007)
+        void (*derivs)(SWMM_Project*, double*, double*));
 
 
 //=============================================================================
@@ -194,10 +194,9 @@ void lidproc_initWaterBalance(TLidUnit *lidUnit, double initVol)
 
 ////  This function was modified for release 5.1.008.  ////                    //(5.1.008)
 
-double lidproc_getOutflow(TLidUnit* lidUnit, TLidProc* lidProc, double inflow,
-                          double evap, double infil, double maxInfil,
-                          double tStep, double* lidEvap,
-                          double* lidInfil, double* lidDrain)
+double lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidProc,
+        double inflow, double evap, double infil, double maxInfil, double tStep,
+        double* lidEvap, double* lidInfil, double* lidDrain)
 //
 //  Purpose: computes runoff outflow from a single LID unit.
 //  Input:   lidUnit  = ptr. to specific LID unit being analyzed
@@ -228,7 +227,7 @@ double lidproc_getOutflow(TLidUnit* lidUnit, TLidProc* lidProc, double inflow,
     double omega = 0.0;          // integration time weighting
 
     //... define a pointer to function that computes flux rates through the LID
-    void (*fluxRates) (double *, double *) = NULL;
+    void (*fluxRates) (SWMM_Project*, double *, double *) = NULL;
 
     //... save references to the LID process and LID unit
     theLidProc = lidProc;
@@ -314,7 +313,7 @@ double lidproc_getOutflow(TLidUnit* lidUnit, TLidProc* lidProc, double inflow,
     }
 
     //... update moisture levels and flux rates over the time step
-    i = modpuls_solve(MAX_LAYERS, x, xOld, xPrev, xMin, xMax, xTol,
+    i = modpuls_solve(sp, MAX_LAYERS, x, xOld, xPrev, xMin, xMax, xTol,
                      fOld, f, tStep, omega, fluxRates);
 
 /** For debugging only ********************************************
@@ -465,7 +464,7 @@ void lidproc_saveResults(TLidUnit* lidUnit, double ucfRainfall, double ucfRainDe
 
 ////  New function for release 5.1.008.  ////                                  //(5.1.008)
 
-void roofFluxRates(double x[], double f[])
+void roofFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates for roof disconnection.
 //  Input:   x = vector of storage levels
@@ -480,7 +479,7 @@ void roofFluxRates(double x[], double f[])
     if ( theLidProc->surface.alpha > 0.0 )
       SurfaceOutflow = getSurfaceOutflowRate(surfaceDepth);
     else getSurfaceOverflowRate(&surfaceDepth);
-    StorageDrain = MIN(theLidProc->drain.coeff/UCF(RAINFALL), SurfaceOutflow);
+    StorageDrain = MIN(theLidProc->drain.coeff/UCF(sp, RAINFALL), SurfaceOutflow);
     SurfaceOutflow -= StorageDrain;
     f[SURF] = (SurfaceInflow - SurfaceEvap - StorageDrain - SurfaceOutflow);
 }
@@ -489,7 +488,7 @@ void roofFluxRates(double x[], double f[])
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void greenRoofFluxRates(double x[], double f[])
+void greenRoofFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates from the layers of a green roof.
 //  Input:   x = vector of storage levels
@@ -589,7 +588,7 @@ void greenRoofFluxRates(double x[], double f[])
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void biocellFluxRates(double x[], double f[])
+void biocellFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates from the layers of a bio-retention cell LID.
 //  Input:   x = vector of storage levels
@@ -644,7 +643,7 @@ void biocellFluxRates(double x[], double f[])
     StorageDrain = 0.0;
     if ( theLidProc->drain.coeff > 0.0 )
     {
-        StorageDrain = getStorageDrainRate(storageDepth, soilTheta, 0.0,
+        StorageDrain = getStorageDrainRate(sp, storageDepth, soilTheta, 0.0,
                                            surfaceDepth);
     }
 
@@ -737,7 +736,7 @@ void biocellFluxRates(double x[], double f[])
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void trenchFluxRates(double x[], double f[])
+void trenchFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates from the layers of an infiltration trench LID.
 //  Input:   x = vector of storage levels
@@ -782,7 +781,7 @@ void trenchFluxRates(double x[], double f[])
     StorageDrain = 0.0;
     if ( theLidProc->drain.coeff > 0.0 )
     {
-        StorageDrain = getStorageDrainRate(storageDepth, 0.0, 0.0, surfaceDepth);
+        StorageDrain = getStorageDrainRate(sp, storageDepth, 0.0, 0.0, surfaceDepth);
     }
 
     //... limit storage exfiltration by available storage volume
@@ -827,7 +826,7 @@ void trenchFluxRates(double x[], double f[])
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void pavementFluxRates(double x[], double f[])
+void pavementFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates for the layers of a porous pavement LID.
 //  Input:   x = vector of storage levels
@@ -907,7 +906,7 @@ void pavementFluxRates(double x[], double f[])
     StorageDrain = 0.0;
     if ( theLidProc->drain.coeff > 0.0 )
     {
-        StorageDrain = getStorageDrainRate(storageDepth, soilTheta, paveDepth,
+        StorageDrain = getStorageDrainRate(sp, storageDepth, soilTheta, paveDepth,
                                            surfaceDepth);
     }
 
@@ -1059,7 +1058,7 @@ void pavementFluxRates(double x[], double f[])
 
 //=============================================================================
 
-void swaleFluxRates(double x[], double f[])
+void swaleFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates from a vegetative swale LID.
 //  Input:   x = vector of storage levels
@@ -1176,7 +1175,7 @@ void swaleFluxRates(double x[], double f[])
 
 ////  This function was re-written for release 5.1.007.  ////                  //(5.1.007)
 
-void barrelFluxRates(double x[], double f[])
+void barrelFluxRates(SWMM_Project *sp, double x[], double f[])
 //
 //  Purpose: computes flux rates for a rain barrel LID.
 //  Input:   x = vector of storage levels
@@ -1205,7 +1204,7 @@ void barrelFluxRates(double x[], double f[])
 	    head = storageDepth - theLidProc->drain.offset;
 		if ( head > 0.0 )
 	    {
-	        StorageDrain = getStorageDrainRate(storageDepth, 0.0, 0.0, 0.0);
+	        StorageDrain = getStorageDrainRate(sp, storageDepth, 0.0, 0.0, 0.0);
 		    maxValue = (head/Tstep);
 			StorageDrain = MIN(StorageDrain, maxValue);
 		}
@@ -1329,8 +1328,8 @@ double getStorageExfilRate()                                                   /
 
 ////  This function was modified for release 5.1.011.  ////                    //(5.1.011)
 
-double  getStorageDrainRate(double storageDepth, double soilTheta, 
-                            double paveDepth, double surfaceDepth)
+double  getStorageDrainRate(SWMM_Project *sp, double storageDepth,
+        double soilTheta, double paveDepth, double surfaceDepth)
 //
 //  Purpose: computes underdrain flow rate in a LID's storage layer.
 //  Input:   storageDepth = depth of water in storage layer (ft)
@@ -1390,10 +1389,10 @@ double  getStorageDrainRate(double storageDepth, double soilTheta,
     //     (head in inches or mm, flow rate in in/hr or mm/hr)
     if ( head > ZERO )
     {
-        head *= UCF(RAINDEPTH);
+        head *= UCF(sp, RAINDEPTH);
         outflow = theLidProc->drain.coeff *
                   pow(head, theLidProc->drain.expon);
-        outflow /= UCF(RAINFALL);
+        outflow /= UCF(sp, RAINFALL);
     }
     return outflow;
 }
@@ -1511,10 +1510,10 @@ void updateWaterBalance(TLidUnit *lidUnit, double inflow, double evap,
 
 //=============================================================================
 
-int modpuls_solve(int n, double* x, double* xOld, double* xPrev,
+int modpuls_solve(SWMM_Project *sp, int n, double* x, double* xOld, double* xPrev,
                   double* xMin, double* xMax, double* xTol,
                   double* qOld, double* q, double dt, double omega,            //(5.1.007)
-                  void (*derivs)(double*, double*))
+                  void (*derivs)(SWMM_Project*, double*, double*))
 //
 //  Purpose: solves system of equations dx/dt = q(x) for x at end of time step
 //           dt using a modified Puls method.
@@ -1553,7 +1552,7 @@ int modpuls_solve(int n, double* x, double* xOld, double* xPrev,
     {
         //... compute flux rates for current state levels
         canStop = 1;
-        derivs(x, q);
+        derivs(sp, x, q);
 
         //... update state levels based on current flux rates
         for (i=0; i<n; i++)

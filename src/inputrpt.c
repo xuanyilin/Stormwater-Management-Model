@@ -131,8 +131,8 @@ void inputrpt_writeInput(SWMM_Project *sp)
         for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
         {
             fprintf(sp->Frpt.file,"\n  %-20s %10.2f%10.2f%10.2f%10.4f %-20s ",
-                Subcatch[i].ID, Subcatch[i].area*UCF(LANDAREA),
-                Subcatch[i].width*UCF(LENGTH),  Subcatch[i].fracImperv*100.0,
+                Subcatch[i].ID, Subcatch[i].area*UCF(sp, LANDAREA),
+                Subcatch[i].width*UCF(sp, LENGTH),  Subcatch[i].fracImperv*100.0,
                 Subcatch[i].slope*100.0, Gage[Subcatch[i].gage].ID);
             if ( Subcatch[i].outNode >= 0 )
             {
@@ -164,9 +164,9 @@ void inputrpt_writeInput(SWMM_Project *sp)
         {
             fprintf(sp->Frpt.file, "\n  %-20s %-16s%10.2f%10.2f%10.1f", Node[i].ID,
                 NodeTypeWords[Node[i].type-JUNCTION],
-                Node[i].invertElev*UCF(LENGTH),
-                Node[i].fullDepth*UCF(LENGTH),
-                Node[i].pondedArea*UCF(LENGTH)*UCF(LENGTH));
+                Node[i].invertElev*UCF(sp, LENGTH),
+                Node[i].fullDepth*UCF(sp, LENGTH),
+                Node[i].pondedArea*UCF(sp, LENGTH)*UCF(sp, LENGTH));
             if ( Node[i].extInflow || Node[i].dwfInflow || Node[i].rdiiInflow )
             {
                 fprintf(sp->Frpt.file, "    Yes");
@@ -210,7 +210,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
             {
                 k = Link[i].subIndex;
                 fprintf(sp->Frpt.file, "%10.1f%10.4f%10.4f",
-                    Conduit[k].length*UCF(LENGTH),
+                    Conduit[k].length*UCF(sp, LENGTH),
                     Conduit[k].slope*100.0*Link[i].direction,
                     Conduit[k].roughness);
             }
@@ -241,12 +241,12 @@ void inputrpt_writeInput(SWMM_Project *sp)
                 else fprintf(sp->Frpt.file, "%-16s ",
                     XsectTypeWords[Link[i].xsect.type]);
                 fprintf(sp->Frpt.file, "%8.2f %8.2f %8.2f %8.2f      %3d %8.2f",
-                    Link[i].xsect.yFull*UCF(LENGTH),
-                    Link[i].xsect.aFull*UCF(LENGTH)*UCF(LENGTH),
-                    Link[i].xsect.rFull*UCF(LENGTH),
-                    Link[i].xsect.wMax*UCF(LENGTH),
+                    Link[i].xsect.yFull*UCF(sp, LENGTH),
+                    Link[i].xsect.aFull*UCF(sp, LENGTH)*UCF(sp, LENGTH),
+                    Link[i].xsect.rFull*UCF(sp, LENGTH),
+                    Link[i].xsect.wMax*UCF(sp, LENGTH),
                     Conduit[k].barrels,
-                    Link[i].qFull*UCF(FLOW));
+                    Link[i].qFull*UCF(sp, FLOW));
             }
         }
     }

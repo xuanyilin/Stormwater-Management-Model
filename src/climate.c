@@ -127,22 +127,22 @@ static void readDLY0204FileLine(SWMM_Project *sp, int *year, int *month);
 static void readFileValues(SWMM_Project *sp);
 
 static void setNextEvapDate(DateTime thedate);                                 //(5.1.008)
-static void setEvap(DateTime theDate);
+static void setEvap(SWMM_Project *sp, DateTime theDate);
 static void setTemp(SWMM_Project *sp, DateTime theDate);
-static void setWind(DateTime theDate);
+static void setWind(SWMM_Project *sp, DateTime theDate);
 static void updateTempTimes(int day);
 static void updateTempMoveAve(double tmin, double tmax);                       //(5.1.010)
-static double getTempEvap(int day, double ta, double tr);                      //(5.1.010)
+static double getTempEvap(SWMM_Project *sp, int day, double ta, double tr);                      //(5.1.010)
 
 static void updateFileValues(SWMM_Project *sp, DateTime theDate);
-static void parseUserFileLine(void);
-static void parseTD3200FileLine(void);
-static void parseDLY0204FileLine(void);
-static void setTD3200FileValues(int param);
+static void parseUserFileLine(SWMM_Project *sp);
+static void parseTD3200FileLine(SWMM_Project *sp);
+static void parseDLY0204FileLine(SWMM_Project *sp);
+static void setTD3200FileValues(SWMM_Project *sp, int param);
 
 static int  isGhcndFormat(char* line);                                         //(5.1.007)
-static void readGhcndFileLine(int *year, int *month);                          //(5.1.007)
-static void parseGhcndFileLine(void);                                          //(5.1.007)
+static void readGhcndFileLine(SWMM_Project *sp, int *year, int *month);                          //(5.1.007)
+static void parseGhcndFileLine(SWMM_Project *sp);                                          //(5.1.007)
 
 //=============================================================================
 
@@ -234,11 +234,11 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
                 return error_setInpError(ERR_NUMBER, tok[i]);
         }
         // --- convert deg. C to deg. F for snowfall temperature
-        if ( UnitSystem == SI ) x[0] = 9./5.*x[0] + 32.0;
+        if ( sp->UnitSystem == SI ) x[0] = 9./5.*x[0] + 32.0;
         Snow.snotmp = x[0];
         Snow.tipm   = x[1];
         Snow.rnm    = x[2];
-        Temp.elev   = x[3] / UCF(LENGTH);
+        Temp.elev   = x[3] / UCF(sp, LENGTH);
         Temp.anglat = x[4];
         Temp.dtlong = x[5] / 60.0;
         break;
@@ -471,8 +471,8 @@ void climate_validate(SWMM_Project *sp)
     // --- convert units of monthly temperature & evap adjustments             //(5.1.007)
     for (i = 0; i < 12; i++)
     {
-        if (UnitSystem == SI) Adjust.temp[i] *= 9.0/5.0;
-        Adjust.evap[i] /= UCF(EVAPRATE);
+        if (sp->UnitSystem == SI) Adjust.temp[i] *= 9.0/5.0;
+        Adjust.evap[i] /= UCF(sp, EVAPRATE);
     }
 }
 
@@ -547,7 +547,7 @@ void climate_openFile(SWMM_Project *sp)
 
 ////  This function was re-written for release 5.1.008.  ////                  //(5.1.008)
 
-void climate_initState()
+void climate_initState(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -571,7 +571,7 @@ void climate_initState()
         {  
             setNextEvapDate(StartDate);
         }
-        Evap.rate = NextEvapRate / UCF(EVAPRATE);
+        Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
 
         // --- find the next time evaporation rates change after this
         setNextEvapDate(NextEvapDate); 
@@ -601,8 +601,8 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
 {
     if ( sp->Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
     if ( Temp.dataSource != NO_TEMP ) setTemp(sp, theDate);
-    setEvap(theDate);
-    setWind(theDate);
+    setEvap(sp, theDate);
+    setWind(sp, theDate);
     Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
     Adjust.hydconFactor = Adjust.hydcon[datetime_monthOfYear(theDate)-1];      //(5.1.008)
     setNextEvapDate(theDate);                                                  //(5.1.008)
@@ -773,7 +773,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
             if ( Evap.type == TEMPERATURE_EVAP )
             {
                 updateTempMoveAve(Tmin, Tmax);                                 //(5.1.010)
-                FileValue[EVAP] = getTempEvap(day, Tma.tAve, Tma.tRng);        //(5.1.010)
+                FileValue[EVAP] = getTempEvap(sp, day, Tma.tAve, Tma.tRng);        //(5.1.010)
             }
         }
 
@@ -811,7 +811,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
             Temp.ta = table_tseriesLookup(&Tseries[k], theDate, TRUE);
 
             // --- convert from deg. C to deg. F if need be
-            if ( UnitSystem == SI )
+            if ( sp->UnitSystem == SI )
             {
                 Temp.ta = (9./5.) * Temp.ta + 32.0;
             }
@@ -827,7 +827,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
 
 //=============================================================================
 
-void setEvap(DateTime theDate)
+void setEvap(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = simulation date
 //  Output:  none
@@ -840,25 +840,25 @@ void setEvap(DateTime theDate)
     switch ( Evap.type )
     {
       case CONSTANT_EVAP:
-        Evap.rate = Evap.monthlyEvap[0] / UCF(EVAPRATE);
+        Evap.rate = Evap.monthlyEvap[0] / UCF(sp, EVAPRATE);
         break;
 
       case MONTHLY_EVAP:
-        Evap.rate = Evap.monthlyEvap[mon-1] / UCF(EVAPRATE);
+        Evap.rate = Evap.monthlyEvap[mon-1] / UCF(sp, EVAPRATE);
         break;
 
       case TIMESERIES_EVAP:
         if ( theDate >= NextEvapDate )
-            Evap.rate = NextEvapRate / UCF(EVAPRATE);
+            Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
         break;
 
       case FILE_EVAP:
-        Evap.rate = FileValue[EVAP] / UCF(EVAPRATE);
+        Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
         Evap.rate *= Evap.panCoeff[mon-1];
         break;
 
       case TEMPERATURE_EVAP:
-        Evap.rate = FileValue[EVAP] / UCF(EVAPRATE);
+        Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
         break;
 
       default: Evap.rate = 0.0;
@@ -878,7 +878,7 @@ void setEvap(DateTime theDate)
 
 //=============================================================================
 
-void setWind(DateTime theDate)
+void setWind(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = simulation date
 //  Output:  none
@@ -891,7 +891,7 @@ void setWind(DateTime theDate)
     {
       case MONTHLY_WIND:
         datetime_decodeDate(theDate, &yr, &mon, &day);
-        Wind.ws = Wind.aws[mon-1] / UCF(WINDSPEED);
+        Wind.ws = Wind.aws[mon-1] / UCF(sp, WINDSPEED);
         break;
 
       case FILE_WIND:
@@ -938,7 +938,7 @@ void updateTempTimes(int day)
 
 ////  This function was modified for release 5.1.010.  ////                    //(5.1.010)
 
-double getTempEvap(int day, double tave, double trng)
+double getTempEvap(SWMM_Project *sp, int day, double tave, double trng)
 //
 //  Input:   day = day of year
 //           tave = 7-day average temperature (deg F)
@@ -961,7 +961,7 @@ double getTempEvap(int day, double tave, double trng)
                  cos(phi)*cos(del)*sin(omega));
     double e = 0.0023*ra/lamda*sqrt(tr)*(ta+17.8);    //evap. rate (mm/day)
     if ( e < 0.0 ) e = 0.0;
-    if ( UnitSystem == US ) e /= MMperINCH;           //evap rate (in/day)
+    if ( sp->UnitSystem == US ) e /= MMperINCH;           //evap rate (in/day)
     return e;
 }
 
@@ -1033,7 +1033,7 @@ void readFileLine(SWMM_Project *sp, int *y, int *m)
     case  USER_PREPARED: readUserFileLine(sp, y, m);   break;
     case  TD3200:        readTD3200FileLine(sp, y, m);  break;
     case  DLY0204:       readDLY0204FileLine(sp, y, m); break;
-    case  GHCND:         readGhcndFileLine(y, m);   break;                      //(5.1.007)
+    case  GHCND:         readGhcndFileLine(sp, y, m);   break;                      //(5.1.007)
     }
 }
 
@@ -1151,10 +1151,10 @@ void readFileValues(SWMM_Project *sp)
         // --- parse climate values from file line
         switch (FileFormat)
         {
-        case  USER_PREPARED: parseUserFileLine();   break;
-        case  TD3200:        parseTD3200FileLine();  break;
-        case  DLY0204:       parseDLY0204FileLine(); break;
-        case  GHCND:         parseGhcndFileLine();   break;                    //(5.1.007)
+        case  USER_PREPARED: parseUserFileLine(sp);   break;
+        case  TD3200:        parseTD3200FileLine(sp);  break;
+        case  DLY0204:       parseDLY0204FileLine(sp); break;
+        case  GHCND:         parseGhcndFileLine(sp);   break;                    //(5.1.007)
         }
         strcpy(FileLine, "");
     }
@@ -1162,7 +1162,7 @@ void readFileValues(SWMM_Project *sp)
 
 //=============================================================================
 
-void parseUserFileLine()
+void parseUserFileLine(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1189,7 +1189,7 @@ void parseUserFileLine()
     if ( strlen(s0) > 0 && *s0 != '*' )
     {
         x = atof(s0);
-        if ( UnitSystem == SI ) x = 9./5.*x + 32.0;
+        if ( sp->UnitSystem == SI ) x = 9./5.*x + 32.0;
         FileData[TMAX][d] =  x;
     }
 
@@ -1197,7 +1197,7 @@ void parseUserFileLine()
     if ( strlen(s1) > 0 && *s1 != '*' )
     {
         x = atof(s1);
-        if ( UnitSystem == SI ) x = 9./5.*x + 32.0;
+        if ( sp->UnitSystem == SI ) x = 9./5.*x + 32.0;
         FileData[TMIN][d] =  x;
     }
 
@@ -1210,7 +1210,7 @@ void parseUserFileLine()
 
 //=============================================================================
 
-void parseTD3200FileLine()
+void parseTD3200FileLine(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1226,13 +1226,13 @@ void parseTD3200FileLine()
     // --- see if parameter is temperature, evaporation or wind speed
     for (i=0; i<MAXCLIMATEVARS; i++)
     {
-        if (strcmp(param, ClimateVarWords[i]) == 0 ) setTD3200FileValues(i);
+        if (strcmp(param, ClimateVarWords[i]) == 0 ) setTD3200FileValues(sp, i);
     }
 }
 
 //=============================================================================
 
-void setTD3200FileValues(int i)
+void setTD3200FileValues(SWMM_Project *sp, int i)
 //
 //  Input:   i = climate variable code
 //  Output:  none
@@ -1284,7 +1284,7 @@ void setTD3200FileValues(int i)
                     x /= 100.0;
 
                     // --- convert to mm if using SI units
-                    if ( UnitSystem == SI ) x *= MMperINCH;
+                    if ( sp->UnitSystem == SI ) x *= MMperINCH;
                 }
 
                 // --- convert wind speed from miles/day to miles/hour
@@ -1299,7 +1299,7 @@ void setTD3200FileValues(int i)
 
 //=============================================================================
 
-void parseDLY0204FileLine()
+void parseDLY0204FileLine(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1353,7 +1353,7 @@ void parseDLY0204FileLine()
             case EVAP:
                 // --- convert from 0.1 mm to inches or mm
                 x = atof(value) / 10.0;
-                if ( UnitSystem == US ) x /= MMperINCH;
+                if ( sp->UnitSystem == US ) x /= MMperINCH;
                 break;
 			default: return;
             }
@@ -1412,7 +1412,7 @@ int isGhcndFormat(char* line)
 
 ////  This function was added to release 5.1.007.  ////                        //(5.1.007)
 
-void readGhcndFileLine(int* y, int* m)
+void readGhcndFileLine(SWMM_Project *sp, int* y, int* m)
 //
 //  Input:   none
 //  Output:  y = year
@@ -1432,7 +1432,7 @@ void readGhcndFileLine(int* y, int* m)
 
 ////  This function was added to release 5.1.007.  ////                        //(5.1.007)
 
-void parseGhcndFileLine()
+void parseGhcndFileLine(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1475,7 +1475,7 @@ void parseGhcndFileLine()
             if ( abs(v) < 9999 )
             {
                 x = (double)v * 0.1;
-                if ( UnitSystem == US ) x /= MMperINCH;
+                if ( sp->UnitSystem == US ) x /= MMperINCH;
                 FileData[EVAP][d] = x;
             }
         }

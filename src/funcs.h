@@ -138,7 +138,7 @@ int      climate_readEvapParams(char* tok[], int ntoks);
 int      climate_readAdjustments(char* tok[], int ntoks);                      //(5.1.007)
 void     climate_validate(SWMM_Project *sp);
 void     climate_openFile(SWMM_Project *sp);
-void     climate_initState(void);
+void     climate_initState(SWMM_Project *sp);
 void     climate_setState(SWMM_Project *sp, DateTime aDate);
 DateTime climate_getNextEvapDate(void);                                        //(5.1.008)
 
@@ -151,7 +151,7 @@ void    rain_close(SWMM_Project *sp);
 //-----------------------------------------------------------------------------
 //   Snowmelt Processing Methods
 //-----------------------------------------------------------------------------
-int     snow_readMeltParams(char* tok[], int ntoks);
+int     snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     snow_createSnowpack(int subcacth, int snowIndex);
 
 void    snow_validateSnowmelt(SWMM_Project *sp, int snowIndex);
@@ -162,7 +162,7 @@ void    snow_getState(int subcatch, int subArea, double x[]);
 void    snow_setState(int subcatch, int subArea, double x[]);
 
 void    snow_setMeltCoeffs(int snowIndex, double season);
-void    snow_plowSnow(int subcatch, double tStep);
+void    snow_plowSnow(SWMM_Project *sp, int subcatch, double tStep);
 double  snow_getSnowMelt(int subcatch, double rainfall, double snowfall,
         double tStep, double netPrecip[]);
 double  snow_getSnowCover(int subcatch);
@@ -198,8 +198,8 @@ void    output_readLinkResults(SWMM_Project *sp, int period, int link);
 //-----------------------------------------------------------------------------
 //   Groundwater Methods
 //-----------------------------------------------------------------------------
-int     gwater_readAquiferParams(int aquifer, char* tok[], int ntoks);
-int     gwater_readGroundwaterParams(char* tok[], int ntoks);
+int     gwater_readAquiferParams(SWMM_Project *sp, int aquifer, char* tok[], int ntoks);
+int     gwater_readGroundwaterParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks);
 void    gwater_deleteFlowExpression(int subcatch);
 
@@ -217,7 +217,7 @@ double  gwater_getVolume(int subcatch);
 //-----------------------------------------------------------------------------
 //   RDII Methods
 //-----------------------------------------------------------------------------
-int     rdii_readRdiiInflow(char* tok[], int ntoks);
+int     rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks);
 void    rdii_deleteRdiiInflow(int node);
 void    rdii_initUnitHyd(int unitHyd);
 int     rdii_readUnitHydParams(char* tok[], int ntoks);
@@ -230,16 +230,16 @@ void    rdii_getRdiiFlow(int index, int* node, double* q);
 //   Landuse Methods
 //-----------------------------------------------------------------------------
 int     landuse_readParams(int landuse, char* tok[], int ntoks);
-int     landuse_readPollutParams(int pollut, char* tok[], int ntoks);
+int     landuse_readPollutParams(SWMM_Project *sp, int pollut, char* tok[], int ntoks);
 int     landuse_readBuildupParams(char* tok[], int ntoks);
-int     landuse_readWashoffParams(char* tok[], int ntoks);
+int     landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
         double* initBuildup, double area, double curb);
 double  landuse_getBuildup(int landuse, int pollut, double area, double curb,
         double buildup, double tStep);
 
-double  landuse_getWashoffLoad(int landuse, int p, double area,                //(5.1.008)
+double  landuse_getWashoffLoad(SWMM_Project *sp, int landuse, int p, double area,                //(5.1.008)
         TLandFactor landFactor[], double runoff, double vOutflow);             //(5.1.008)
 double  landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p);
 double  landuse_getCoPollutLoad(int p, double washoff[]);
@@ -257,7 +257,7 @@ void    toposort_sortLinks(SWMM_Project *sp, int links[]);
 int     kinwave_execute(SWMM_Project *sp, int link, double* qin, double* qout,
         double tStep);
 
-void    dynwave_validate(void);                                                //(5.1.008)
+void    dynwave_validate(SWMM_Project *sp);                                                //(5.1.008)
 void    dynwave_init(SWMM_Project *sp);
 void    dynwave_close(void);
 double  dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep);
@@ -330,15 +330,16 @@ int      gage_readParams(int gage, char* tok[], int ntoks);
 void     gage_validate(SWMM_Project *sp, int gage);
 void     gage_initState(SWMM_Project *sp, int gage);
 void     gage_setState(SWMM_Project *sp, int gage, DateTime aDate);
-double   gage_getPrecip(int gage, double *rainfall, double *snowfall);
+double   gage_getPrecip(SWMM_Project *sp, int gage, double *rainfall,
+        double *snowfall);
 void     gage_setReportRainfall(int gage, DateTime aDate);
 DateTime gage_getNextRainDate(int gage, DateTime aDate);
 
 //-----------------------------------------------------------------------------
 //   Subcatchment Methods
 //-----------------------------------------------------------------------------
-int     subcatch_readParams(int subcatch, char* tok[], int ntoks);
-int     subcatch_readSubareaParams(char* tok[], int ntoks);
+int     subcatch_readParams(SWMM_Project *sp, int subcatch, char* tok[], int ntoks);
+int     subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     subcatch_readLanduseParams(char* tok[], int ntoks);
 int     subcatch_readInitBuildup(char* tok[], int ntoks);
 
@@ -380,17 +381,17 @@ void    node_initInflow(int node, double tStep);
 void    node_setOldHydState(int node);
 void    node_setOldQualState(SWMM_Project *sp, int node);
 
-void    node_setOutletDepth(int node, double yNorm, double yCrit, double z);
+void    node_setOutletDepth(SWMM_Project *sp, int node, double yNorm, double yCrit, double z);
 void    node_setDividerCutoff(int node, int link);
 
-double  node_getSurfArea(int node, double depth);
-double  node_getDepth(int node, double volume);
-double  node_getVolume(int node, double depth);
+double  node_getSurfArea(SWMM_Project *sp, int node, double depth);
+double  node_getDepth(SWMM_Project *sp, int node, double volume);
+double  node_getVolume(SWMM_Project *sp, int node, double depth);
 //double  node_getPondedDepth(int node, double volume); removed                //(5.1.008)
-double  node_getPondedArea(int node, double depth);
+double  node_getPondedArea(SWMM_Project *sp, int node, double depth);
 
-double  node_getOutflow(int node, int link);
-double  node_getLosses(int node, double tStep);
+double  node_getOutflow(SWMM_Project *sp, int node, int link);
+double  node_getLosses(SWMM_Project *sp, int node, double tStep);
 double  node_getMaxOutflow(int node, double q, double tStep);
 double  node_getSystemOutflow(int node, int *isFlooded);
 void    node_getResults(SWMM_Project *sp, int node, double wt, float x[]);
@@ -399,7 +400,7 @@ void    node_getResults(SWMM_Project *sp, int node, double wt, float x[]);
 //   Conveyance System Inflow Methods
 //-----------------------------------------------------------------------------
 int     inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks);
-int     inflow_readDwfInflow(char* tok[], int ntoks);
+int     inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks);
 int     inflow_readDwfPattern(char* tok[], int ntoks);
 int     inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type,
 						int tSeries, int basePat, double cf, 
@@ -438,9 +439,10 @@ void    hotstart_close(SWMM_Project *sp);
 //-----------------------------------------------------------------------------
 //   Conveyance System Link Methods
 //-----------------------------------------------------------------------------
-int     link_readParams(int link, int type, int subIndex, char* tok[], int ntoks);
-int     link_readXsectParams(char* tok[], int ntoks);
-int     link_readLossParams(char* tok[], int ntoks);
+int     link_readParams(SWMM_Project *sp, int link, int type, int subIndex,
+            char* tok[], int ntoks);
+int     link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks);
+int     link_readLossParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    link_validate(SWMM_Project *sp, int link);
 void    link_initState(SWMM_Project *sp, int link);
@@ -448,11 +450,11 @@ void    link_setOldHydState(int link);
 void    link_setOldQualState(SWMM_Project *sp, int link);
 
 void    link_setTargetSetting(int j);
-void    link_setSetting(int j, double tstep);
+void    link_setSetting(SWMM_Project *sp, int j, double tstep);
 int     link_setFlapGate(int link, int n1, int n2, double q);
 
-double  link_getInflow(int link);
-void    link_setOutfallDepth(int link);
+double  link_getInflow(SWMM_Project *sp, int link);
+void    link_setOutfallDepth(SWMM_Project *sp, int link);
 double  link_getLength(SWMM_Project *sp, int link);
 double  link_getYcrit(int link, double q);
 double  link_getYnorm(int link, double q);
@@ -487,8 +489,8 @@ double  xsect_getYcrit(TXsect* xsect, double q);
 //   Culvert/Roadway Methods                                                   //(5.1.010)
 //-----------------------------------------------------------------------------
 double  culvert_getInflow(int link, double q, double h);
-double  roadway_getInflow(int link, double dir, double hcrest, double h1,
-        double h2);                                                            //(5.1.010)
+double  roadway_getInflow(SWMM_Project *sp, int link, double dir, double hcrest,
+        double h1, double h2);                                                 //(5.1.010)
 
 //-----------------------------------------------------------------------------
 //   Force Main Methods
@@ -551,7 +553,7 @@ double  table_tseriesLookup(TTable* table, double t, char extend);
 //-----------------------------------------------------------------------------
 //   Utility Methods
 //-----------------------------------------------------------------------------
-double   UCF(int quantity);                   // units conversion factor
+double   UCF(SWMM_Project *sp, int quantity);                   // units conversion factor
 int      getInt(char *s, int *y);             // get integer from string
 int      getFloat(char *s, float *y);         // get float from string
 int      getDouble(char *s, double *y);       // get double from string

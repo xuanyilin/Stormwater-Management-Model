@@ -348,8 +348,8 @@ void report_writeOptions(SWMM_Project *sp)
 		fprintf(sp->Frpt.file, "\n  Maximum Trials ........... %d", MaxTrials);
         fprintf(sp->Frpt.file, "\n  Number of Threads ........ %d", NumThreads);   //(5.1.008)
 		fprintf(sp->Frpt.file, "\n  Head Tolerance ........... %.6f ",
-            HeadTol*UCF(LENGTH));                                              //(5.1.008)
-		if ( UnitSystem == US ) fprintf(sp->Frpt.file, "ft");
+            HeadTol*UCF(sp, LENGTH));                                              //(5.1.008)
+		if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "ft");
 		else                    fprintf(sp->Frpt.file, "m");
 		}
     }
@@ -411,14 +411,14 @@ void report_writeRdiiStats(SWMM_Project *sp, double rainVol, double rdiiVol)
     double ratio;
     double ucf1, ucf2;
 
-    ucf1 = UCF(LENGTH) * UCF(LANDAREA);
-    if ( UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
+    ucf1 = UCF(sp, LENGTH) * UCF(sp, LANDAREA);
+    if ( sp->UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
     else                   ucf2 = MLDperCFS / SECperDAY;
 
     WRITE("");
     fprintf(sp->Frpt.file,
     "\n  **********************           Volume        Volume");
-    if ( UnitSystem == US) fprintf(sp->Frpt.file,
+    if ( sp->UnitSystem == US) fprintf(sp->Frpt.file,
     "\n  Rainfall Dependent I/I        acre-feet      10^6 gal");
     else fprintf(sp->Frpt.file,
     "\n  Rainfall Dependent I/I        hectare-m      10^6 ltr");
@@ -507,7 +507,7 @@ void report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
 
     fprintf(sp->Frpt.file,
     "\n  **************************        Volume         Depth");
-    if ( UnitSystem == US) fprintf(sp->Frpt.file,
+    if ( sp->UnitSystem == US) fprintf(sp->Frpt.file,
     "\n  Runoff Quantity Continuity     acre-feet        inches");
     else fprintf(sp->Frpt.file,
     "\n  Runoff Quantity Continuity     hectare-m            mm");
@@ -517,63 +517,63 @@ void report_writeRunoffError(SWMM_Project *sp, TRunoffTotals* totals,
     if ( totals->initStorage > 0.0 )
     {
         fprintf(sp->Frpt.file, "\n  Initial LID Storage ......%14.3f%14.3f",
-            totals->initStorage * UCF(LENGTH) * UCF(LANDAREA),
-            totals->initStorage / totalArea * UCF(RAINDEPTH));
+            totals->initStorage * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->initStorage / totalArea * UCF(sp, RAINDEPTH));
     }
 
     if ( sp->Nobjects[SNOWMELT] > 0 )
     {
         fprintf(sp->Frpt.file, "\n  Initial Snow Cover .......%14.3f%14.3f",
-            totals->initSnowCover * UCF(LENGTH) * UCF(LANDAREA),
-            totals->initSnowCover / totalArea * UCF(RAINDEPTH));
+            totals->initSnowCover * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->initSnowCover / totalArea * UCF(sp, RAINDEPTH));
     }
 
     fprintf(sp->Frpt.file, "\n  Total Precipitation ......%14.3f%14.3f",
-            totals->rainfall * UCF(LENGTH) * UCF(LANDAREA),
-            totals->rainfall / totalArea * UCF(RAINDEPTH));
+            totals->rainfall * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->rainfall / totalArea * UCF(sp, RAINDEPTH));
 
 ////  Following code segment added to release 5.1.008.  ////                   //(5.1.008)
     if ( totals->runon > 0.0 )
     {
         fprintf(sp->Frpt.file, "\n  Outfall Runon ............%14.3f%14.3f",
-            totals->runon * UCF(LENGTH) * UCF(LANDAREA),
-            totals->runon / totalArea * UCF(RAINDEPTH));
+            totals->runon * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->runon / totalArea * UCF(sp, RAINDEPTH));
     }
 ////
 
     fprintf(sp->Frpt.file, "\n  Evaporation Loss .........%14.3f%14.3f",
-            totals->evap * UCF(LENGTH) * UCF(LANDAREA),
-            totals->evap / totalArea * UCF(RAINDEPTH));
+            totals->evap * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->evap / totalArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Infiltration Loss ........%14.3f%14.3f",
-            totals->infil * UCF(LENGTH) * UCF(LANDAREA),
-            totals->infil / totalArea * UCF(RAINDEPTH));
+            totals->infil * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->infil / totalArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Surface Runoff ...........%14.3f%14.3f",
-            totals->runoff * UCF(LENGTH) * UCF(LANDAREA),
-            totals->runoff / totalArea * UCF(RAINDEPTH));
+            totals->runoff * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->runoff / totalArea * UCF(sp, RAINDEPTH));
 
 ////  Following code segment added to release 5.1.008.  ////                   //(5.1.008)
     if ( totals->drains > 0.0 )
     {
         fprintf(sp->Frpt.file, "\n  LID Drainage .............%14.3f%14.3f",
-            totals->drains * UCF(LENGTH) * UCF(LANDAREA),
-            totals->drains / totalArea * UCF(RAINDEPTH));
+            totals->drains * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->drains / totalArea * UCF(sp, RAINDEPTH));
     }
 
     if ( sp->Nobjects[SNOWMELT] > 0 )
     {
         fprintf(sp->Frpt.file, "\n  Snow Removed .............%14.3f%14.3f",
-            totals->snowRemoved * UCF(LENGTH) * UCF(LANDAREA),
-            totals->snowRemoved / totalArea * UCF(RAINDEPTH));
+            totals->snowRemoved * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->snowRemoved / totalArea * UCF(sp, RAINDEPTH));
         fprintf(sp->Frpt.file, "\n  Final Snow Cover .........%14.3f%14.3f",
-            totals->finalSnowCover * UCF(LENGTH) * UCF(LANDAREA),
-            totals->finalSnowCover / totalArea * UCF(RAINDEPTH));
+            totals->finalSnowCover * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->finalSnowCover / totalArea * UCF(sp, RAINDEPTH));
     }
 
     fprintf(sp->Frpt.file, "\n  Final Storage ............%14.3f%14.3f",           //(5.1.008)
-            totals->finalStorage * UCF(LENGTH) * UCF(LANDAREA),
-            totals->finalStorage / totalArea * UCF(RAINDEPTH));
+            totals->finalStorage * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->finalStorage / totalArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Continuity Error (%%) .....%14.3f",
             totals->pctError);
@@ -629,7 +629,7 @@ void report_LoadingErrors(SWMM_Project *sp, int p1, int p2, TLoadingTotals* tota
     fprintf(sp->Frpt.file, "\n  Runoff Quality Continuity ");
     for (p = p1; p <= p2; p++)
     {
-        i = UnitSystem;
+        i = sp->UnitSystem;
         if ( Pollut[p].units == COUNT ) i = 2;
         strcpy(units, LoadUnitsWords[i]);
         fprintf(sp->Frpt.file, "%14s", units);
@@ -702,39 +702,39 @@ void report_writeGwaterError(SWMM_Project *sp, TGwaterTotals* totals,
     WRITE("");
     fprintf(sp->Frpt.file,
     "\n  **************************        Volume         Depth");
-    if ( UnitSystem == US) fprintf(sp->Frpt.file,
+    if ( sp->UnitSystem == US) fprintf(sp->Frpt.file,
     "\n  Groundwater Continuity         acre-feet        inches");
     else fprintf(sp->Frpt.file,
     "\n  Groundwater Continuity         hectare-m            mm");
     fprintf(sp->Frpt.file,
     "\n  **************************     ---------       -------");
     fprintf(sp->Frpt.file, "\n  Initial Storage ..........%14.3f%14.3f",
-            totals->initStorage * UCF(LENGTH) * UCF(LANDAREA),
-            totals->initStorage / gwArea * UCF(RAINDEPTH));
+            totals->initStorage * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->initStorage / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Infiltration .............%14.3f%14.3f",
-            totals->infil * UCF(LENGTH) * UCF(LANDAREA),
-            totals->infil / gwArea * UCF(RAINDEPTH));
+            totals->infil * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->infil / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Upper Zone ET ............%14.3f%14.3f",
-            totals->upperEvap * UCF(LENGTH) * UCF(LANDAREA),
-            totals->upperEvap / gwArea * UCF(RAINDEPTH));
+            totals->upperEvap * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->upperEvap / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Lower Zone ET ............%14.3f%14.3f",
-            totals->lowerEvap * UCF(LENGTH) * UCF(LANDAREA),
-            totals->lowerEvap / gwArea * UCF(RAINDEPTH));
+            totals->lowerEvap * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->lowerEvap / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Deep Percolation .........%14.3f%14.3f",
-            totals->lowerPerc * UCF(LENGTH) * UCF(LANDAREA),
-            totals->lowerPerc / gwArea * UCF(RAINDEPTH));
+            totals->lowerPerc * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->lowerPerc / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Groundwater Flow .........%14.3f%14.3f",
-            totals->gwater * UCF(LENGTH) * UCF(LANDAREA),
-            totals->gwater / gwArea * UCF(RAINDEPTH));
+            totals->gwater * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->gwater / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Final Storage ............%14.3f%14.3f",
-            totals->finalStorage * UCF(LENGTH) * UCF(LANDAREA),
-            totals->finalStorage / gwArea * UCF(RAINDEPTH));
+            totals->finalStorage * UCF(sp, LENGTH) * UCF(sp, LANDAREA),
+            totals->finalStorage / gwArea * UCF(sp, RAINDEPTH));
 
     fprintf(sp->Frpt.file, "\n  Continuity Error (%%) .....%14.3f",
             totals->pctError);
@@ -752,14 +752,14 @@ void report_writeFlowError(SWMM_Project *sp, TRoutingTotals *totals)
 {
     double ucf1, ucf2;
 
-    ucf1 = UCF(LENGTH) * UCF(LANDAREA);
-    if ( UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
+    ucf1 = UCF(sp, LENGTH) * UCF(sp, LANDAREA);
+    if ( sp->UnitSystem == US) ucf2 = MGDperCFS / SECperDAY;
     else                   ucf2 = MLDperCFS / SECperDAY;
 
     WRITE("");
     fprintf(sp->Frpt.file,
     "\n  **************************        Volume        Volume");
-    if ( UnitSystem == US) fprintf(sp->Frpt.file,
+    if ( sp->UnitSystem == US) fprintf(sp->Frpt.file,
     "\n  Flow Routing Continuity        acre-feet      10^6 gal");
     else fprintf(sp->Frpt.file,
     "\n  Flow Routing Continuity        hectare-m      10^6 ltr");
@@ -843,7 +843,7 @@ void report_QualErrors(SWMM_Project *sp, int p1, int p2,
     fprintf(sp->Frpt.file, "\n  Quality Routing Continuity");
     for (p = p1; p <= p2; p++)
     {
-        i = UnitSystem;
+        i = sp->UnitSystem;
         if ( Pollut[p].units == COUNT ) i = 2;
         strcpy(units, LoadUnitsWords[i]);
         fprintf(sp->Frpt.file, "%14s", units);
@@ -1180,18 +1180,18 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
         fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
 
     // --- print second line of column headings
-    if ( UnitSystem == US ) fprintf(sp->Frpt.file,
+    if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
     "\n                            in/hr     in/hr %9s", FlowUnitWords[FlowUnits]);
     else fprintf(sp->Frpt.file,
     "\n                            mm/hr     mm/hr %9s", FlowUnitWords[FlowUnits]);
     if ( hasSnowmelt )
     {
-        if ( UnitSystem == US ) fprintf(sp->Frpt.file, "      inches");
+        if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "      inches");
         else                    fprintf(sp->Frpt.file, "     mmeters");
     }
     if ( hasGwater )
     {
-        if ( UnitSystem == US )
+        if ( sp->UnitSystem == US )
             fprintf(sp->Frpt.file, "      feet %9s", FlowUnitWords[FlowUnits]);
         else
             fprintf(sp->Frpt.file, "    meters %9s", FlowUnitWords[FlowUnits]);
@@ -1277,7 +1277,7 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
     "\n                           Inflow  Flooding     Depth      Head");
     if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
-    if ( UnitSystem == US) strcpy(lengthUnits, "feet");
+    if ( sp->UnitSystem == US) strcpy(lengthUnits, "feet");
     else strcpy(lengthUnits, "meters");
     fprintf(sp->Frpt.file,
     "\n  Date        Time      %9s %9s %9s %9s",
@@ -1357,7 +1357,7 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
     if ( !IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
 
-    if ( UnitSystem == US )
+    if ( sp->UnitSystem == US )
         fprintf(sp->Frpt.file,
         "\n  Date        Time     %10s    ft/sec      feet   Setting ",
         FlowUnitWords[FlowUnits]);

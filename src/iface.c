@@ -301,7 +301,7 @@ void iface_saveOutletResults(SWMM_Project *sp, DateTime reportDate, FILE* file)
         // --- write node ID, date, flow, and quality to file
         fprintf(file, "\n%-16s", Node[i].ID);
         fprintf(file, "%s", theDate);
-        fprintf(file, " %-10f", Node[i].inflow * UCF(FLOW));
+        fprintf(file, " %-10f", Node[i].inflow * UCF(sp, FLOW));
         for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
         {
             fprintf(file, " %-10f", Node[i].newQual[p]);

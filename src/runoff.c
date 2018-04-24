@@ -243,7 +243,7 @@ void runoff_execute(SWMM_Project *sp)
     {
         if ( Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
         subcatch_getRunon(sp, j);
-        if ( !IgnoreSnowmelt ) snow_plowSnow(j, runoffStep);
+        if ( !IgnoreSnowmelt ) snow_plowSnow(sp, j, runoffStep);
     }
     
     // --- determine runoff and pollutant buildup/washoff in each subcatchment
@@ -446,19 +446,19 @@ void  runoff_readFromFile(SWMM_Project *sp)
         // --- extract hydrologic results, converting units where necessary
         //     (results were saved to file in user's units)
         Subcatch[j].newSnowDepth = SubcatchResults[SUBCATCH_SNOWDEPTH] /
-                                   UCF(RAINDEPTH);
+                                   UCF(sp, RAINDEPTH);
         Subcatch[j].evapLoss     = SubcatchResults[SUBCATCH_EVAP] /
-                                   UCF(RAINFALL);
+                                   UCF(sp, RAINFALL);
         Subcatch[j].infilLoss    = SubcatchResults[SUBCATCH_INFIL] /
-                                   UCF(RAINFALL);
+                                   UCF(sp, RAINFALL);
         Subcatch[j].newRunoff    = SubcatchResults[SUBCATCH_RUNOFF] /
-                                   UCF(FLOW);
+                                   UCF(sp, FLOW);
         gw = Subcatch[j].groundwater;
         if ( gw )
         {
-            gw->newFlow    = SubcatchResults[SUBCATCH_GW_FLOW] / UCF(FLOW);
+            gw->newFlow    = SubcatchResults[SUBCATCH_GW_FLOW] / UCF(sp, FLOW);
             gw->lowerDepth = Aquifer[gw->aquifer].bottomElev -
-                             (SubcatchResults[SUBCATCH_GW_ELEV] / UCF(LENGTH));
+                             (SubcatchResults[SUBCATCH_GW_ELEV] / UCF(sp, LENGTH));
             gw->theta      = SubcatchResults[SUBCATCH_SOIL_MOIST];
         }
 
@@ -499,7 +499,7 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
     double w;
 
     // --- examine each outfall node
-    for (i = 0; i < Nnodes[OUTFALL]; i++)
+    for (i = 0; i < sp->Nnodes[OUTFALL]; i++)
     {
         // --- ignore node if outflow not re-routed onto a subcatchment
         k = Outfall[i].routeTo;

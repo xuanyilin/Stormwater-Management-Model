@@ -77,7 +77,8 @@ static double getY(double x, const double table[][2], const int n);
 
 //=============================================================================
 
-double roadway_getInflow(int j,          // link index
+double roadway_getInflow(SWMM_Project *sp,
+                         int j,          // link index
                          double dir,     // flow direction (+1 or -1)
                          double hRoad,   // road elev. (ft)
                          double h1,      // upstream head (ft)
@@ -102,7 +103,7 @@ double roadway_getInflow(int j,          // link index
 
     // --- user-supplied discharge coeff.
     cD = Weir[k].cDisch1;
-    if ( UnitSystem == SI ) cD = cD / 0.552;
+    if ( sp->UnitSystem == SI ) cD = cD / 0.552;
 
     // --- check if there's enough info to use a variable cD value
     useVariableCd = FALSE;

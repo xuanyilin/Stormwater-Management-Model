@@ -46,7 +46,7 @@ enum SnowKeywords {SNOW_PLOWABLE, SNOW_IMPERV, SNOW_PERV, SNOW_REMOVAL};
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static void   setMeltParams(int i, int k, double x[]);
+static void   setMeltParams(SWMM_Project *sp, int i, int k, double x[]);
 static double getRainmelt(double rainfall);
 static double getArealDepletion(TSnowpack* snowpack, int i, double snowfall,
               double tStep);
@@ -63,7 +63,7 @@ static void   updateColdContent(TSnowpack* snowpack, int i, double asc,
 
 //=============================================================================
 
-int snow_readMeltParams(char* tok[], int ntoks)
+int snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -115,7 +115,7 @@ int snow_readMeltParams(char* tok[], int ntoks)
     }
 
     // --- save snow melt parameters
-    setMeltParams(j, k, x);
+    setMeltParams(sp, j, k, x);
     return 0;
 }
 
@@ -285,7 +285,7 @@ void snow_setState(int i, int j, double x[])
 
 //=============================================================================
 
-void setMeltParams(int j, int k, double x[])
+void setMeltParams(SWMM_Project *sp, int j, int k, double x[])
 //
 //  Input:   j = snowmelt parameter set index
 //           k = data category index
@@ -300,34 +300,34 @@ void setMeltParams(int j, int k, double x[])
     if ( k >= SNOW_PLOWABLE && k <= SNOW_PERV )
     {
         // --- min/max melt coeffs.
-        Snowmelt[j].dhmin[k]     = x[0] * UCF(TEMPERATURE) / UCF(RAINFALL);
-        Snowmelt[j].dhmax[k]     = x[1] * UCF(TEMPERATURE) / UCF(RAINFALL); 
+        Snowmelt[j].dhmin[k]     = x[0] * UCF(sp, TEMPERATURE) / UCF(sp, RAINFALL);
+        Snowmelt[j].dhmax[k]     = x[1] * UCF(sp, TEMPERATURE) / UCF(sp, RAINFALL); 
 
         // --- base melt temp (deg F)
         Snowmelt[j].tbase[k]     = x[2];
-        if ( UnitSystem == SI )
+        if ( sp->UnitSystem == SI )
             Snowmelt[j].tbase[k] =  (9./5.) * Snowmelt[j].tbase[k] + 32.0;
 
         // --- free water fractions
         Snowmelt[j].fwfrac[k]    = x[3];
 
         // --- initial snow depth & free water depth
-        Snowmelt[j].wsnow[k]     = x[4] / UCF(RAINDEPTH);
+        Snowmelt[j].wsnow[k]     = x[4] / UCF(sp, RAINDEPTH);
         x[5] = MIN(x[5], (x[3]*x[4]));
-        Snowmelt[j].fwnow[k]     = x[5] / UCF(RAINDEPTH);
+        Snowmelt[j].fwnow[k]     = x[5] / UCF(sp, RAINDEPTH);
 
         // --- fraction of impervious area that is plowable
         if ( k == SNOW_PLOWABLE ) Snowmelt[j].snn = x[6];
 
         // --- min. depth for 100% areal coverage on remaining
         //     impervious area or total pervious area
-        else Snowmelt[j].si[k] = x[6] / UCF(RAINDEPTH);
+        else Snowmelt[j].si[k] = x[6] / UCF(sp, RAINDEPTH);
     }
 
     // --- removal parameters
     else if ( k == SNOW_REMOVAL )
     {
-        Snowmelt[j].weplow = x[0] / UCF(RAINDEPTH);
+        Snowmelt[j].weplow = x[0] / UCF(sp, RAINDEPTH);
         for (i=0; i<=4; i++) Snowmelt[j].sfrac[i] = x[i+1];
         if ( x[6] >= 0.0 ) Snowmelt[j].toSubcatch = (int)(x[6] + 0.01);
         else               Snowmelt[j].toSubcatch = -1;
@@ -355,7 +355,7 @@ void snow_setMeltCoeffs(int j, double s)
 
 //=============================================================================
 
-void snow_plowSnow(int j, double tStep)
+void snow_plowSnow(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j     = subcatchment index
 //           tStep = time step (sec)
@@ -377,7 +377,7 @@ void snow_plowSnow(int j, double tStep)
     if ( !snowpack ) return;
 
     // --- see if there's any snowfall
-    gage_getPrecip(Subcatch[j].gage, &rainfall, &snowfall);
+    gage_getPrecip(sp, Subcatch[j].gage, &rainfall, &snowfall);
 
     // --- add snowfall to snow pack
     for (i=SNOW_PLOWABLE; i<=SNOW_PERV; i++)

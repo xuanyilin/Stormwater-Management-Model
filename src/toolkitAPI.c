@@ -147,6 +147,11 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
 }
 
 int DLLEXPORT  swmm_getSimulationUnit(int type, int *value)
+{
+    return swmm_getSimulationUnit_project(_defaultProject, type, value);
+}
+
+int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_Project *sp, int type, int *value)
 //
 // Input:   type = simulation unit type
 // Output:  enum representation of units
@@ -164,11 +169,11 @@ int DLLEXPORT  swmm_getSimulationUnit(int type, int *value)
         switch(type)
         {
             // System Unit (enum.h UnitsType)
-            case SM_SYSTEMUNIT:  *value = UnitSystem; break;
+            case SM_SYSTEMUNIT:  *value = sp->UnitSystem; break;
             // Flow Unit (enum.h FlowUnitsType)
             case SM_FLOWUNIT:  *value = FlowUnits; break;
             // Concentration Unit
-            //case 2:  *value = UnitSystem; break;
+            //case 2:  *value = sp->UnitSystem; break;
             // Type not available
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
@@ -503,15 +508,15 @@ int DLLEXPORT swmm_getNodeParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_INVERTEL:
-                *value = Node[index].invertElev * UCF(LENGTH); break;
+                *value = Node[index].invertElev * UCF(sp, LENGTH); break;
             case SM_FULLDEPTH:
-                *value = Node[index].fullDepth * UCF(LENGTH); break;
+                *value = Node[index].fullDepth * UCF(sp, LENGTH); break;
             case SM_SURCHDEPTH:
-                *value = Node[index].surDepth * UCF(LENGTH); break;
+                *value = Node[index].surDepth * UCF(sp, LENGTH); break;
             case SM_PONDAREA:
-                *value = Node[index].pondedArea * UCF(LENGTH) * UCF(LENGTH); break;
+                *value = Node[index].pondedArea * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_INITDEPTH:
-                *value = Node[index].initDepth * UCF(LENGTH); break;
+                *value = Node[index].initDepth * UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -552,15 +557,15 @@ int DLLEXPORT swmm_setNodeParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_INVERTEL:
-                Node[index].invertElev = value / UCF(LENGTH); break;
+                Node[index].invertElev = value / UCF(sp, LENGTH); break;
             case SM_FULLDEPTH:
-                Node[index].fullDepth = value / UCF(LENGTH); break;
+                Node[index].fullDepth = value / UCF(sp, LENGTH); break;
             case SM_SURCHDEPTH:
-                Node[index].surDepth = value / UCF(LENGTH); break;
+                Node[index].surDepth = value / UCF(sp, LENGTH); break;
             case SM_PONDAREA:
-                Node[index].pondedArea = value / ( UCF(LENGTH) * UCF(LENGTH) ); break;
+                Node[index].pondedArea = value / ( UCF(sp, LENGTH) * UCF(sp, LENGTH) ); break;
             case SM_INITDEPTH:
-                Node[index].initDepth = value / UCF(LENGTH); break;
+                Node[index].initDepth = value / UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -598,13 +603,13 @@ int DLLEXPORT swmm_getLinkParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_OFFSET1:
-                *value = Link[index].offset1 * UCF(LENGTH); break;
+                *value = Link[index].offset1 * UCF(sp, LENGTH); break;
             case SM_OFFSET2:
-                *value = Link[index].offset2 * UCF(LENGTH); break;
+                *value = Link[index].offset2 * UCF(sp, LENGTH); break;
             case SM_INITFLOW:
-                *value = Link[index].q0 * UCF(FLOW); break;
+                *value = Link[index].q0 * UCF(sp, FLOW); break;
             case SM_FLOWLIMIT:
-                *value = Link[index].qLimit * UCF(FLOW); break;
+                *value = Link[index].qLimit * UCF(sp, FLOW); break;
             case SM_INLETLOSS:
                 *value = Link[index].cLossInlet; break;
             case SM_OUTLETLOSS:
@@ -652,18 +657,18 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_Project *sp, int index, int Param, 
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
-                Link[index].offset1 = value / UCF(LENGTH); break;
+                Link[index].offset1 = value / UCF(sp, LENGTH); break;
             case SM_OFFSET2:
                 // Check if Simulation is Running
                 if(swmm_IsStartedFlag() == TRUE)
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
-                Link[index].offset2 = value / UCF(LENGTH); break;
+                Link[index].offset2 = value / UCF(sp, LENGTH); break;
             case SM_INITFLOW:
-                Link[index].q0 = value / UCF(FLOW); break;
+                Link[index].q0 = value / UCF(sp, FLOW); break;
             case SM_FLOWLIMIT:
-                Link[index].qLimit = value / UCF(FLOW); break;
+                Link[index].qLimit = value / UCF(sp, FLOW); break;
 //            case SM_INLETLOSS:
 //                Link[index].cLossInlet; break;
 //            case SM_OUTLETLOSS:
@@ -708,15 +713,15 @@ int DLLEXPORT swmm_getSubcatchParam_project(SWMM_Project *sp, int index, int Par
         switch(Param)
         {
             case SM_WIDTH:
-                *value = Subcatch[index].width * UCF(LENGTH); break;
+                *value = Subcatch[index].width * UCF(sp, LENGTH); break;
             case SM_AREA:
-                *value = Subcatch[index].area * UCF(LANDAREA); break;
+                *value = Subcatch[index].area * UCF(sp, LANDAREA); break;
             case SM_FRACIMPERV:
                 *value = Subcatch[index].fracImperv; break;
             case SM_SLOPE:
                 *value = Subcatch[index].slope; break;
             case SM_CURBLEN:
-                *value = Subcatch[index].curbLength * UCF(LENGTH); break;
+                *value = Subcatch[index].curbLength * UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -757,15 +762,15 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
         switch(Param)
         {
             case SM_WIDTH:
-                Subcatch[index].width = value / UCF(LENGTH); break;
+                Subcatch[index].width = value / UCF(sp, LENGTH); break;
             case SM_AREA:
-                Subcatch[index].area = value / UCF(LANDAREA); break;
+                Subcatch[index].area = value / UCF(sp, LANDAREA); break;
             case SM_FRACIMPERV:
                 Subcatch[index].fracImperv; break;
             case SM_SLOPE:
                 Subcatch[index].slope; break;
             case SM_CURBLEN:
-                Subcatch[index].curbLength = value / UCF(LENGTH); break;
+                Subcatch[index].curbLength = value / UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -885,22 +890,22 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_Project *sp, int index, int type, 
         switch (type)
         {
             case SM_TOTALINFLOW:
-                *result = Node[index].inflow * UCF(FLOW); break;
+                *result = Node[index].inflow * UCF(sp, FLOW); break;
             case SM_TOTALOUTFLOW:
-                *result = Node[index].outflow * UCF(FLOW); break;
+                *result = Node[index].outflow * UCF(sp, FLOW); break;
             case SM_LOSSES:
-                *result = Node[index].losses * UCF(FLOW); break;
+                *result = Node[index].losses * UCF(sp, FLOW); break;
             case SM_NODEVOL:
-                *result = Node[index].newVolume * UCF(VOLUME); break;
+                *result = Node[index].newVolume * UCF(sp, VOLUME); break;
             case SM_NODEFLOOD:
-                *result = Node[index].overflow * UCF(FLOW); break;
+                *result = Node[index].overflow * UCF(sp, FLOW); break;
             case SM_NODEDEPTH:
-                *result = Node[index].newDepth * UCF(LENGTH); break;
+                *result = Node[index].newDepth * UCF(sp, LENGTH); break;
             case SM_NODEHEAD:
                 *result = (Node[index].newDepth
-                            + Node[index].invertElev) * UCF(LENGTH); break;
+                            + Node[index].invertElev) * UCF(sp, LENGTH); break;
             case SM_LATINFLOW:
-                *result = Node[index].newLatFlow * UCF(FLOW); break;
+                *result = Node[index].newLatFlow * UCF(sp, FLOW); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -936,15 +941,15 @@ int DLLEXPORT swmm_getLinkResult_project(SWMM_Project *sp, int index, int type, 
         switch (type)
         {
             case SM_LINKFLOW:
-                *result = Link[index].newFlow * UCF(FLOW) ; break;
+                *result = Link[index].newFlow * UCF(sp, FLOW) ; break;
             case SM_LINKDEPTH:
-                *result = Link[index].newDepth * UCF(LENGTH); break;
+                *result = Link[index].newDepth * UCF(sp, LENGTH); break;
             case SM_LINKVOL:
-                *result = Link[index].newVolume * UCF(VOLUME); break;
+                *result = Link[index].newVolume * UCF(sp, VOLUME); break;
             case SM_USSURFAREA:
-                *result = Link[index].surfArea1 * UCF(LENGTH) * UCF(LENGTH); break;
+                *result = Link[index].surfArea1 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_DSSURFAREA:
-                *result = Link[index].surfArea2 * UCF(LENGTH) * UCF(LENGTH); break;
+                *result = Link[index].surfArea2 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_SETTING:
                 *result = Link[index].setting; break;
             case SM_TARGETSETTING:
@@ -986,17 +991,17 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int ty
         switch (type)
         {
             case SM_SUBCRAIN:
-                *result = Subcatch[index].rainfall * UCF(RAINFALL); break;
+                *result = Subcatch[index].rainfall * UCF(sp, RAINFALL); break;
             case SM_SUBCEVAP:
-                *result = Subcatch[index].evapLoss * UCF(EVAPRATE); break;
+                *result = Subcatch[index].evapLoss * UCF(sp, EVAPRATE); break;
             case SM_SUBCINFIL:
-                *result = Subcatch[index].infilLoss * UCF(RAINFALL); break;
+                *result = Subcatch[index].infilLoss * UCF(sp, RAINFALL); break;
             case SM_SUBCRUNON:
-                *result = Subcatch[index].runon * UCF(FLOW); break;
+                *result = Subcatch[index].runon * UCF(sp, FLOW); break;
             case SM_SUBCRUNOFF:
-                *result = Subcatch[index].newRunoff * UCF(FLOW); break;
+                *result = Subcatch[index].newRunoff * UCF(sp, FLOW); break;
             case SM_SUBCSNOW:
-                *result = Subcatch[index].newSnowDepth * UCF(RAINDEPTH); break;
+                *result = Subcatch[index].newSnowDepth * UCF(sp, RAINDEPTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -1018,25 +1023,25 @@ int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
     if (errorcode == 0)
     {
         // Current Average Depth
-        nodeStats->avgDepth *= (UCF(LENGTH) / (double)sp->StepCount);
+        nodeStats->avgDepth *= (UCF(sp, LENGTH) / (double)sp->StepCount);
         // Current Maximum Depth
-        nodeStats->maxDepth *= UCF(LENGTH);
+        nodeStats->maxDepth *= UCF(sp, LENGTH);
         // Current Maximum Lateral Inflow
-        nodeStats->maxLatFlow *= UCF(FLOW);
+        nodeStats->maxLatFlow *= UCF(sp, FLOW);
         // Current Maximum Inflow
-        nodeStats->maxInflow *= UCF(FLOW);
+        nodeStats->maxInflow *= UCF(sp, FLOW);
         // Cumulative Lateral Inflow
-        nodeStats->totLatFlow *= UCF(VOLUME);
+        nodeStats->totLatFlow *= UCF(sp, VOLUME);
         // Time Courant Critical (hrs)
         nodeStats->timeCourantCritical /= 3600.0;
         // Cumulative Flooded Volume
-        nodeStats->volFlooded *= UCF(VOLUME);
+        nodeStats->volFlooded *= UCF(sp, VOLUME);
         // Time Flooded (hrs)
         nodeStats->timeFlooded /= 3600.0;
         // Current Maximum Overflow
-        nodeStats->maxOverflow *= UCF(FLOW);
+        nodeStats->maxOverflow *= UCF(sp, FLOW);
         // Current Maximum Ponding Volume
-        nodeStats->maxPondedVol *= UCF(VOLUME);
+        nodeStats->maxPondedVol *= UCF(sp, VOLUME);
         // Time Surcharged
         nodeStats->timeSurcharged /= 3600.0;
     }
@@ -1044,6 +1049,11 @@ int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
 }
 
 int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value)
+{
+    return swmm_getNodeTotalInflow_project(_defaultProject, index, value);
+}
+
+int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_Project *sp, int index, double *value)
 //
 // Input:   Node Index
 // Output:  Node Total inflow Volume.
@@ -1055,7 +1065,7 @@ int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value)
 
     if (errorcode == 0)
     {
-        *value *= UCF(VOLUME);
+        *value *= UCF(sp, VOLUME);
     }
 
     return(errorcode);
@@ -1076,17 +1086,17 @@ int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
     if (errorcode == 0)
     {
         // Initial Volume
-        storageStats->initVol *= UCF(VOLUME);
+        storageStats->initVol *= UCF(sp, VOLUME);
         // Current Average Volume
-        storageStats->avgVol *= (UCF(VOLUME) / (double)sp->StepCount);
+        storageStats->avgVol *= (UCF(sp, VOLUME) / (double)sp->StepCount);
         // Current Maximum Volume
-        storageStats->maxVol *= UCF(VOLUME);
+        storageStats->maxVol *= UCF(sp, VOLUME);
         // Current Maximum Flow
-        storageStats->maxFlow *= UCF(FLOW);
+        storageStats->maxFlow *= UCF(sp, FLOW);
         // Current Evaporation Volume
-        storageStats->evapLosses *= UCF(VOLUME);
+        storageStats->evapLosses *= UCF(sp, VOLUME);
         // Current Exfiltration Volume
-        storageStats->exfilLosses *= UCF(VOLUME);
+        storageStats->exfilLosses *= UCF(sp, VOLUME);
     }
 
     return (errorcode);
@@ -1115,14 +1125,14 @@ int DLLEXPORT swmm_getOutfallStats_project(SWMM_Project *sp, int index,
         // Current Average Flow
         if ( outfallStats->totalPeriods > 0 )
         {
-            outfallStats->avgFlow *= (UCF(FLOW) / (double)outfallStats->totalPeriods);
+            outfallStats->avgFlow *= (UCF(sp, FLOW) / (double)outfallStats->totalPeriods);
         }
         else
         {
             outfallStats->avgFlow *= 0.0;
         }
         // Current Maximum Flow
-        outfallStats->maxFlow *= UCF(FLOW);
+        outfallStats->maxFlow *= UCF(sp, FLOW);
         // Convert Mass Units
         if (sp->Nobjects[POLLUT] > 0)
         {
@@ -1166,11 +1176,11 @@ int DLLEXPORT swmm_getLinkStats_project(SWMM_Project *sp, int index,
     if (errorcode == 0)
     {
         // Cumulative Maximum Flowrate
-        linkStats->maxFlow *= UCF(FLOW);
+        linkStats->maxFlow *= UCF(sp, FLOW);
         // Cumulative Maximum Velocity
-        linkStats->maxVeloc *= UCF(LENGTH);
+        linkStats->maxVeloc *= UCF(sp, LENGTH);
         // Cumulative Maximum Depth
-        linkStats->maxDepth *= UCF(LENGTH);
+        linkStats->maxDepth *= UCF(sp, LENGTH);
         // Cumulative Time Normal Flow
         linkStats->timeNormalFlow /= 3600.0;
         // Cumulative Time Inlet Control
@@ -1209,20 +1219,20 @@ int DLLEXPORT swmm_getPumpStats_project(SWMM_Project *sp, int index,
     if (errorcode == 0)
     {
         // Cumulative Minimum Flow
-        pumpStats->minFlow *= UCF(FLOW);
+        pumpStats->minFlow *= UCF(sp, FLOW);
         // Cumulative Average Flow
         if (pumpStats->totalPeriods > 0)
         {
-            pumpStats->avgFlow *= (UCF(FLOW) / (double)pumpStats->totalPeriods);
+            pumpStats->avgFlow *= (UCF(sp, FLOW) / (double)pumpStats->totalPeriods);
         }
         else
         {
             pumpStats->avgFlow *= 0.0;
         }
         // Cumulative Maximum Flow
-        pumpStats->maxFlow *= UCF(FLOW);
+        pumpStats->maxFlow *= UCF(sp, FLOW);
         // Cumulative Pumping Volume
-        pumpStats->volume *= UCF(VOLUME);
+        pumpStats->volume *= UCF(sp, VOLUME);
     }
 
     return (errorcode);
@@ -1250,22 +1260,22 @@ int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
         double a = Subcatch[index].area;
 
         // Cumulative Runon Volume
-        subcatchStats->runon *= (UCF(RAINDEPTH) / a);
+        subcatchStats->runon *= (UCF(sp, RAINDEPTH) / a);
         // Cumulative Infiltration Volume
-        subcatchStats->infil *= (UCF(RAINDEPTH) / a);
+        subcatchStats->infil *= (UCF(sp, RAINDEPTH) / a);
         // Cumulative Runoff Volume
-        subcatchStats->runoff *= (UCF(RAINDEPTH) / a);
+        subcatchStats->runoff *= (UCF(sp, RAINDEPTH) / a);
         // Maximum Runoff Rate
-        subcatchStats->maxFlow *= UCF(FLOW);
+        subcatchStats->maxFlow *= UCF(sp, FLOW);
         // Cumulative Rainfall Depth
-        subcatchStats->precip *= (UCF(RAINDEPTH) / a);
+        subcatchStats->precip *= (UCF(sp, RAINDEPTH) / a);
         // Cumulative Evaporation Volume
-        subcatchStats->evap *= (UCF(RAINDEPTH) / a);
+        subcatchStats->evap *= (UCF(sp, RAINDEPTH) / a);
 
         if (sp->Nobjects[POLLUT] > 0)
         {
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                subcatchStats->surfaceBuildup[p] /= (a * UCF(LANDAREA));
+                subcatchStats->surfaceBuildup[p] /= (a * UCF(sp, LANDAREA));
 
             if (Pollut[p].units == COUNT)
             {
@@ -1290,6 +1300,12 @@ void DLLEXPORT swmm_freeSubcatchStats(SM_SubcatchStats *subcatchStats)
 }
 
 int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot)
+{
+    return swmm_getSystemRoutingStats_project(_defaultProject, routingTot);
+}
+
+int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_Project *sp,
+        SM_RoutingTotals *routingTot)
 //
 // Output:  System Routing Totals Structure (SM_RoutingTotals)
 // Return:  API Error
@@ -1300,23 +1316,23 @@ int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot)
     if (errorcode == 0)
     {
         // Cumulative Dry Weather Inflow Volume
-        routingTot->dwInflow *= UCF(VOLUME);
+        routingTot->dwInflow *= UCF(sp, VOLUME);
         // Cumulative Wet Weather Inflow Volume
-        routingTot->wwInflow *= UCF(VOLUME);
+        routingTot->wwInflow *= UCF(sp, VOLUME);
         // Cumulative Groundwater Inflow Volume
-        routingTot->gwInflow *= UCF(VOLUME);
+        routingTot->gwInflow *= UCF(sp, VOLUME);
         // Cumulative I&I Inflow Volume
-        routingTot->iiInflow *= UCF(VOLUME);
+        routingTot->iiInflow *= UCF(sp, VOLUME);
         // Cumulative External Inflow Volume
-        routingTot->exInflow *= UCF(VOLUME);
+        routingTot->exInflow *= UCF(sp, VOLUME);
         // Cumulative Flooding Volume
-        routingTot->flooding *= UCF(VOLUME);
+        routingTot->flooding *= UCF(sp, VOLUME);
         // Cumulative Outflow Volume
-        routingTot->outflow  *= UCF(VOLUME);
+        routingTot->outflow  *= UCF(sp, VOLUME);
         // Cumulative Evaporation Loss
-        routingTot->evapLoss *= UCF(VOLUME);
+        routingTot->evapLoss *= UCF(sp, VOLUME);
         // Cumulative Seepage Loss
-        routingTot->seepLoss *= UCF(VOLUME);
+        routingTot->seepLoss *= UCF(sp, VOLUME);
         // Continuity Error
         routingTot->pctError *= 100;
     }
@@ -1325,6 +1341,11 @@ int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot)
 }
 
 int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot)
+{
+    return swmm_getSystemRunoffStats_project(_defaultProject, runoffTot);
+}
+
+int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_Project *sp, SM_RunoffTotals *runoffTot)
 //
 // Output:  System Runoff Totals Structure (SM_RunoffTotals)
 // Return:  API Error
@@ -1336,23 +1357,23 @@ int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot)
     {
         double TotalArea = massbal_getTotalArea();
         // Cumulative Rainfall Volume
-        runoffTot->rainfall *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->rainfall *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Evaporation Volume
-        runoffTot->evap *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->evap *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Infiltration Volume
-        runoffTot->infil *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->infil *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Runoff Volume
-        runoffTot->runoff *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->runoff *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Runon Volume
-        runoffTot->runon *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->runon *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Drain Volume
-        runoffTot->drains *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->drains *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Snow Removed Volume
-        runoffTot->snowRemoved *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->snowRemoved *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Initial Storage Volume
-        runoffTot->initStorage *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->initStorage *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Initial Snow Cover Volume
-        runoffTot->initSnowCover *= (UCF(RAINDEPTH) / TotalArea);
+        runoffTot->initSnowCover *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Continuity Error
         runoffTot->pctError *= 100;
     }
@@ -1389,7 +1410,7 @@ int DLLEXPORT swmm_getGagePrecip_project(SWMM_Project *sp, int index,
     // Read the rainfall value
     else
     {
-        *total = gage_getPrecip(index, rainfall, snowfall);
+        *total = gage_getPrecip(sp, index, rainfall, snowfall);
     }
     return(errcode);
 }
@@ -1423,7 +1444,7 @@ int DLLEXPORT swmm_setGagePrecip_project(SWMM_Project *sp, int index, double val
         {
             Gage[index].dataSource = RAIN_API;
         }
-	    Gage[index].externalRain = value * UCF(RAINFALL);
+	    Gage[index].externalRain = value * UCF(sp, RAINFALL);
     }
     return(errcode);
 }
@@ -1467,7 +1488,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         Link[index].targetSetting = targetSetting;
 
         // Use internal function to apply the new setting
-        link_setSetting(index, 0.0);
+        link_setSetting(sp, index, 0.0);
 
         // Add control action to RPT file if desired flagged
         if (sp->RptFlags.controls)
@@ -1581,7 +1602,7 @@ int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double s
             // Change Boundary Conditions Setting Type
             Outfall[k].type = STAGED_OUTFALL;
         }
-        Outfall[k].outfallStage = stage / UCF(LENGTH);
+        Outfall[k].outfallStage = stage / UCF(sp, LENGTH);
     }
     return(errcode);
 }

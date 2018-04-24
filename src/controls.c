@@ -168,8 +168,8 @@ int    getPremiseVariable(char* tok[], int* k, struct TVariable* v);
 int    getPremiseValue(char* token, int attrib, double* value);
 int    addAction(int r, char* Tok[], int nToks);
 
-int    evaluatePremise(struct TPremise* p, double tStep);
-double getVariableValue(struct TVariable v);
+int    evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep);
+double getVariableValue(SWMM_Project *sp, struct TVariable v);
 int    compareTimes(double lhsValue, int relation, double rhsValue,
        double halfStep);
 int    compareValues(double lhsValue, int relation, double rhsValue);
@@ -320,12 +320,12 @@ int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
             if ( p->type == r_OR )
             {
                 if ( result == FALSE )
-                    result = evaluatePremise(p, tStep);
+                    result = evaluatePremise(sp, p, tStep);
             }
             else
             {
                 if ( result == FALSE ) break;
-                result = evaluatePremise(p, tStep);
+                result = evaluatePremise(sp, p, tStep);
             }
             p = p->next;
         }    
@@ -961,7 +961,7 @@ int executeActionList(SWMM_Project *sp, DateTime currentTime)
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-int evaluatePremise(struct TPremise* p, double tStep)
+int evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep)
 //
 //  Input:   p = a control rule premise condition
 //           tStep = current time step (days)
@@ -972,8 +972,8 @@ int evaluatePremise(struct TPremise* p, double tStep)
     double lhsValue, rhsValue;
     int    result = FALSE;
 
-    lhsValue = getVariableValue(p->lhsVar);
-    if ( p->value == MISSING ) rhsValue = getVariableValue(p->rhsVar);
+    lhsValue = getVariableValue(sp, p->lhsVar);
+    if ( p->value == MISSING ) rhsValue = getVariableValue(sp, p->rhsVar);
     else                       rhsValue = p->value;
     if ( lhsValue == MISSING || rhsValue == MISSING ) return FALSE;
     switch (p->lhsVar.attribute)
@@ -993,7 +993,7 @@ int evaluatePremise(struct TPremise* p, double tStep)
 
 //=============================================================================
 
-double getVariableValue(struct TVariable v)
+double getVariableValue(SWMM_Project *sp, struct TVariable v)
 {
     int i = v.node;
     int j = v.link;
@@ -1030,25 +1030,25 @@ double getVariableValue(struct TVariable v)
 
       case r_FLOW:
         if ( j < 0 ) return MISSING;
-        else return Link[j].direction*Link[j].newFlow*UCF(FLOW);
+        else return Link[j].direction*Link[j].newFlow*UCF(sp, FLOW);
 
       case r_DEPTH:
-        if ( j >= 0 ) return Link[j].newDepth*UCF(LENGTH);
+        if ( j >= 0 ) return Link[j].newDepth*UCF(sp, LENGTH);
         else if ( i >= 0 )
-            return Node[i].newDepth*UCF(LENGTH);
+            return Node[i].newDepth*UCF(sp, LENGTH);
         else return MISSING;
 
       case r_HEAD:
         if ( i < 0 ) return MISSING;
-        return (Node[i].newDepth + Node[i].invertElev) * UCF(LENGTH);
+        return (Node[i].newDepth + Node[i].invertElev) * UCF(sp, LENGTH);
 
       case r_VOLUME:                                                           //(5.1.008)
         if ( i < 0 ) return MISSING;
-        return (Node[i].newVolume * UCF(VOLUME));
+        return (Node[i].newVolume * UCF(sp, VOLUME));
 
       case r_INFLOW:
         if ( i < 0 ) return MISSING;
-        else return Node[i].newLatFlow*UCF(FLOW);
+        else return Node[i].newLatFlow*UCF(sp, FLOW);
 
 ////  This section added to release 5.1.010.  ////                             //(5.1.010)
       case r_TIMEOPEN:

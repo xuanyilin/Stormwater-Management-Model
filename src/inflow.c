@@ -158,7 +158,7 @@ int inflow_validate(SWMM_Project *sp, int param, int type, int tseries, int base
 		// --- assign type & cf values for a FLOW inflow
 		if ( type == FLOW_INFLOW )
 		{
-			*cf = 1.0/UCF(FLOW);
+			*cf = 1.0/UCF(sp, FLOW);
 		}
 		// --- include LperFT3 term in conversion factor for MASS_INFLOW
 		else if ( type == MASS_INFLOW ) 
@@ -280,7 +280,7 @@ double inflow_getExtInflow(TExtInflow* inflow, DateTime aDate)
 
 //=============================================================================
 
-int inflow_readDwfInflow(char* tok[], int ntoks)
+int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -315,7 +315,7 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
     // --- get avg. value of DWF inflow
     if ( !getDouble(tok[2], &x) )
         return error_setInpError(ERR_NUMBER, tok[2]);
-    if ( k == -1 ) x /= UCF(FLOW);
+    if ( k == -1 ) x /= UCF(sp, FLOW);
 
     // --- get time patterns assigned to the inflow
     for (i=0; i<4; i++) pats[i] = -1;

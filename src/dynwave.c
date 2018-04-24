@@ -91,13 +91,13 @@ static void   findLimitedLinks(SWMM_Project *sp);
 
 static void   findLinkFlows(SWMM_Project *sp, double dt);
 static int    isTrueConduit(int link);
-static void   findNonConduitFlow(int link, double dt);
+static void   findNonConduitFlow(SWMM_Project *sp, int link, double dt);
 static void   findNonConduitSurfArea(int link);
 static double getModPumpFlow(int link, double q, double dt);
 static void   updateNodeFlows(int link);
 
 static int    findNodeDepths(SWMM_Project *sp, double dt);
-static void   setNodeDepth(int node, double dt);
+static void   setNodeDepth(SWMM_Project *sp, int node, double dt);
 static double getFloodedDepth(int node, int canPond, double dV, double yNew,
               double yMax, double dt);
 
@@ -169,7 +169,7 @@ void  dynwave_close()
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void dynwave_validate()
+void dynwave_validate(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -179,9 +179,9 @@ void dynwave_validate()
     if ( MinRouteStep > RouteStep ) MinRouteStep = RouteStep;
     if ( MinRouteStep < MINTIMESTEP ) MinRouteStep = MINTIMESTEP;
 	if ( MinSurfArea == 0.0 ) MinSurfArea = DEFAULT_SURFAREA;
-	else MinSurfArea /= UCF(LENGTH) * UCF(LENGTH);
+	else MinSurfArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
     if ( HeadTol == 0.0 ) HeadTol = DEFAULT_HEADTOL;
-    else HeadTol /= UCF(LENGTH);
+    else HeadTol /= UCF(sp, LENGTH);
 	if ( MaxTrials == 0 ) MaxTrials = DEFAULT_MAXTRIALS;
 }
 
@@ -274,7 +274,7 @@ void   initRoutingStep(SWMM_Project *sp)
     }
 
     // --- a2 preserves conduit area from solution at last time step
-    for ( i = 0; i < Nlinks[CONDUIT]; i++) Conduit[i].a2 = Conduit[i].a1;
+    for ( i = 0; i < sp->Nlinks[CONDUIT]; i++) Conduit[i].a2 = Conduit[i].a1;
 }
 
 //=============================================================================
@@ -293,11 +293,11 @@ void initNodeStates(SWMM_Project *sp)
         // --- initialize nodal surface area
         if ( AllowPonding )
         {
-            Xnode[i].newSurfArea = node_getPondedArea(i, Node[i].newDepth);
+            Xnode[i].newSurfArea = node_getPondedArea(sp, i, Node[i].newDepth);
         }
         else
         {
-            Xnode[i].newSurfArea = node_getSurfArea(i, Node[i].newDepth);
+            Xnode[i].newSurfArea = node_getSurfArea(sp, i, Node[i].newDepth);
         }
         if ( Xnode[i].newSurfArea < MinSurfArea )
         {
@@ -395,7 +395,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     {
         if ( !isTrueConduit(i) )
         {	
-            if ( !Link[i].bypassed ) findNonConduitFlow(i, dt);
+            if ( !Link[i].bypassed ) findNonConduitFlow(sp, i, dt);
             updateNodeFlows(i);
         }
     }
@@ -410,7 +410,7 @@ int isTrueConduit(int j)
 
 //=============================================================================
 
-void findNonConduitFlow(int i, double dt)
+void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
 //
 //  Input:   i = link index
 //           dt = time step (sec)
@@ -427,7 +427,7 @@ void findNonConduitFlow(int i, double dt)
 
     // --- get new inflow to link from its upstream node
     //     (link_getInflow returns 0 if flap gate closed or pump is offline)
-    qNew = link_getInflow(i);
+    qNew = link_getInflow(sp, i);
     if ( Link[i].type == PUMP ) qNew = getModPumpFlow(i, qNew, dt);
 
     // --- find surface area at each end of link
@@ -582,7 +582,7 @@ int findNodeDepths(SWMM_Project *sp, double dt)
     double yOld;        // previous node depth (ft)
 
     // --- compute outfall depths based on flow in connecting link
-    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(i);
+    for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(sp, i);
 
     // --- compute new depth for all non-outfall nodes and determine if
     //     depth change from previous iteration is below tolerance
@@ -594,7 +594,7 @@ int findNodeDepths(SWMM_Project *sp, double dt)
     {
         if ( Node[i].type == OUTFALL ) continue;
         yOld = Node[i].newDepth;
-        setNodeDepth(i, dt);
+        setNodeDepth(sp, i, dt);
         Xnode[i].converged = TRUE;
         if ( fabs(yOld - Node[i].newDepth) > HeadTol )
         {
@@ -608,7 +608,7 @@ int findNodeDepths(SWMM_Project *sp, double dt)
 
 //=============================================================================
 
-void setNodeDepth(int i, double dt)
+void setNodeDepth(SWMM_Project *sp, int i, double dt)
 //
 //  Input:   i  = node index
 //           dt = time step (sec)
@@ -708,7 +708,7 @@ void setNodeDepth(int i, double dt)
     {
         yNew = getFloodedDepth(i, canPond, dV, yNew, yMax, dt);
     }
-    else Node[i].newVolume = node_getVolume(i, yNew);
+    else Node[i].newVolume = node_getVolume(sp, i, yNew);
 
     // --- compute change in depth w.r.t. time
     Xnode[i].dYdT = fabs(yNew - yOld) / dt;

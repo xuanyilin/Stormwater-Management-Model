@@ -881,7 +881,7 @@ int  DLLEXPORT swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen)
 //   General purpose functions
 //=============================================================================
 
-double UCF(int u)
+double UCF(SWMM_Project *sp, int u)
 //
 //  Input:   u = integer code of quantity being converted
 //  Output:  returns a units conversion factor
@@ -889,7 +889,7 @@ double UCF(int u)
 //           units to user's units
 //
 {
-    if ( u < FLOW ) return Ucf[u][UnitSystem];
+    if ( u < FLOW ) return Ucf[u][sp->UnitSystem];
     else            return Qcf[FlowUnits];
 }
 

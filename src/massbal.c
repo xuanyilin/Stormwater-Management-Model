@@ -705,7 +705,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
 
 //=============================================================================
 
-void massbal_getSysFlows(double f, double sysFlows[])
+void massbal_getSysFlows(SWMM_Project *sp, double f, double sysFlows[])
 //
 //  Input:   f = time weighting factor
 //  Output:  sysFlows = array of total system flows
@@ -714,19 +714,19 @@ void massbal_getSysFlows(double f, double sysFlows[])
 {
     double f1 = 1.0 - f;
     sysFlows[SYS_DWFLOW] = (f1 * OldStepFlowTotals.dwInflow +
-                             f * StepFlowTotals.dwInflow) * UCF(FLOW);
+                             f * StepFlowTotals.dwInflow) * UCF(sp, FLOW);
     sysFlows[SYS_GWFLOW] = (f1 * OldStepFlowTotals.gwInflow +
-                             f * StepFlowTotals.gwInflow) * UCF(FLOW);
+                             f * StepFlowTotals.gwInflow) * UCF(sp, FLOW);
     sysFlows[SYS_IIFLOW] = (f1 * OldStepFlowTotals.iiInflow +
-                             f * StepFlowTotals.iiInflow) * UCF(FLOW);
+                             f * StepFlowTotals.iiInflow) * UCF(sp, FLOW);
     sysFlows[SYS_EXFLOW] = (f1 * OldStepFlowTotals.exInflow +
-                             f * StepFlowTotals.exInflow) * UCF(FLOW);
+                             f * StepFlowTotals.exInflow) * UCF(sp, FLOW);
     sysFlows[SYS_FLOODING] = (f1 * OldStepFlowTotals.flooding +
-                               f * StepFlowTotals.flooding) * UCF(FLOW);
+                               f * StepFlowTotals.flooding) * UCF(sp, FLOW);
     sysFlows[SYS_OUTFLOW] = (f1 * OldStepFlowTotals.outflow +
-                              f * StepFlowTotals.outflow) * UCF(FLOW);
+                              f * StepFlowTotals.outflow) * UCF(sp, FLOW);
     sysFlows[SYS_STORAGE] = (f1 * OldStepFlowTotals.finalStorage +
-                              f * StepFlowTotals.finalStorage) * UCF(VOLUME);
+                              f * StepFlowTotals.finalStorage) * UCF(sp, VOLUME);
 }
 
 //=============================================================================
@@ -1012,7 +1012,7 @@ double massbal_getQualError(SWMM_Project *sp)
         }
         else
         {
-            cf = cf * UCF(MASS);
+            cf = cf * UCF(sp, MASS);
             if ( Pollut[p].units == UG ) cf /= 1000.0;
             QualTotals[p].dwInflow     *= cf;
             QualTotals[p].wwInflow     *= cf; 

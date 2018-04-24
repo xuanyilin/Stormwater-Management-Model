@@ -192,7 +192,7 @@ int output_open(SWMM_Project *sp)
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
          if ( !Subcatch[j].rptFlag ) continue;
-         SubcatchResults[0] = (REAL4)(Subcatch[j].area * UCF(LANDAREA));
+         SubcatchResults[0] = (REAL4)(Subcatch[j].area * UCF(sp, LANDAREA));
          fwrite(&SubcatchResults[0], sizeof(REAL4), 1, sp->Fout.file);
     }
 
@@ -209,8 +209,8 @@ int output_open(SWMM_Project *sp)
     {
         if ( !Node[j].rptFlag ) continue;
         k = Node[j].type;
-        NodeResults[0] = (REAL4)(Node[j].invertElev * UCF(LENGTH));
-        NodeResults[1] = (REAL4)(Node[j].fullDepth * UCF(LENGTH));
+        NodeResults[0] = (REAL4)(Node[j].invertElev * UCF(sp, LENGTH));
+        NodeResults[1] = (REAL4)(Node[j].fullDepth * UCF(sp, LENGTH));
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
         fwrite(NodeResults, sizeof(REAL4), 2, sp->Fout.file);
     }
@@ -239,8 +239,8 @@ int output_open(SWMM_Project *sp)
         }
         else
         {
-            LinkResults[0] = (REAL4)(Link[j].offset1 * UCF(LENGTH));
-            LinkResults[1] = (REAL4)(Link[j].offset2 * UCF(LENGTH));
+            LinkResults[0] = (REAL4)(Link[j].offset1 * UCF(sp, LENGTH));
+            LinkResults[1] = (REAL4)(Link[j].offset2 * UCF(sp, LENGTH));
             if ( Link[j].direction < 0 )
             {
                 x = LinkResults[0];
@@ -248,11 +248,11 @@ int output_open(SWMM_Project *sp)
                 LinkResults[1] = x;
             }
             if ( k == OUTLET ) LinkResults[2] = 0.0f;
-            else LinkResults[2] = (REAL4)(Link[j].xsect.yFull * UCF(LENGTH));
+            else LinkResults[2] = (REAL4)(Link[j].xsect.yFull * UCF(sp, LENGTH));
             if ( k == CONDUIT )
             {
                 m = Link[j].subIndex;
-                LinkResults[3] = (REAL4)(Conduit[m].length * UCF(LENGTH));
+                LinkResults[3] = (REAL4)(Conduit[m].length * UCF(sp, LENGTH));
             }
             else LinkResults[3] = 0.0f;
         }
@@ -525,7 +525,7 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
             fwrite(SubcatchResults, sizeof(REAL4), NsubcatchResults, file);
 
         // --- update system-wide results
-        area = Subcatch[j].area * UCF(LANDAREA);
+        area = Subcatch[j].area * UCF(sp, LANDAREA);
         totalArea += (REAL4)area;
         SysResults[SYS_RAINFALL] +=
             (REAL4)(SubcatchResults[SUBCATCH_RAINFALL] * area);
@@ -534,18 +534,18 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
         SysResults[SYS_EVAP] +=
             (REAL4)(SubcatchResults[SUBCATCH_EVAP] * area);
         if ( Subcatch[j].groundwater ) SysResults[SYS_EVAP] += 
-            (REAL4)(Subcatch[j].groundwater->evapLoss * UCF(EVAPRATE) * area);
+            (REAL4)(Subcatch[j].groundwater->evapLoss * UCF(sp, EVAPRATE) * area);
         SysResults[SYS_INFIL] +=
             (REAL4)(SubcatchResults[SUBCATCH_INFIL] * area);
         SysResults[SYS_RUNOFF] += (REAL4)SubcatchResults[SUBCATCH_RUNOFF];
     }
 
     // --- normalize system-wide results to catchment area
-    if ( UnitSystem == SI ) f = (5./9.) * (Temp.ta - 32.0);
+    if ( sp->UnitSystem == SI ) f = (5./9.) * (Temp.ta - 32.0);
     else f = Temp.ta;
     SysResults[SYS_TEMPERATURE] = (REAL4)f;
     
-    f = Evap.rate * UCF(EVAPRATE);                                             //(5.1.010)
+    f = Evap.rate * UCF(sp, EVAPRATE);                                             //(5.1.010)
     SysResults[SYS_PET] = (REAL4)f;                                            //(5.1.010)
 
     if ( totalArea > 0.0 )                                                     //(5.1.008)
@@ -588,12 +588,12 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
     }
 
     // --- update system-wide flows 
-    SysResults[SYS_FLOODING] = (REAL4) (StepFlowTotals.flooding * UCF(FLOW));
-    SysResults[SYS_OUTFLOW]  = (REAL4) (StepFlowTotals.outflow * UCF(FLOW));
-    SysResults[SYS_DWFLOW] = (REAL4)(StepFlowTotals.dwInflow * UCF(FLOW));
-    SysResults[SYS_GWFLOW] = (REAL4)(StepFlowTotals.gwInflow * UCF(FLOW));
-    SysResults[SYS_IIFLOW] = (REAL4)(StepFlowTotals.iiInflow * UCF(FLOW));
-    SysResults[SYS_EXFLOW] = (REAL4)(StepFlowTotals.exInflow * UCF(FLOW));
+    SysResults[SYS_FLOODING] = (REAL4) (StepFlowTotals.flooding * UCF(sp, FLOW));
+    SysResults[SYS_OUTFLOW]  = (REAL4) (StepFlowTotals.outflow * UCF(sp, FLOW));
+    SysResults[SYS_DWFLOW] = (REAL4)(StepFlowTotals.dwInflow * UCF(sp, FLOW));
+    SysResults[SYS_GWFLOW] = (REAL4)(StepFlowTotals.gwInflow * UCF(sp, FLOW));
+    SysResults[SYS_IIFLOW] = (REAL4)(StepFlowTotals.iiInflow * UCF(sp, FLOW));
+    SysResults[SYS_EXFLOW] = (REAL4)(StepFlowTotals.exInflow * UCF(sp, FLOW));
     SysResults[SYS_INFLOW] = SysResults[SYS_RUNOFF] +
                              SysResults[SYS_DWFLOW] +
                              SysResults[SYS_GWFLOW] +
@@ -627,7 +627,7 @@ void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
             fwrite(LinkResults, sizeof(REAL4), NlinkResults, file);
 
         // --- update system-wide results
-        z = ((1.0-f)*Link[j].oldVolume + f*Link[j].newVolume) * UCF(VOLUME);
+        z = ((1.0-f)*Link[j].oldVolume + f*Link[j].newVolume) * UCF(sp, VOLUME);
         SysResults[SYS_STORAGE] += (REAL4)z;
     }
 }

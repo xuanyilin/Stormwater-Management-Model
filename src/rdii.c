@@ -132,7 +132,7 @@ static void   getUnitHydRdii(SWMM_Project *sp, DateTime currentDate);
 static double getUnitHydConvol(int j, int k, int gageInterval);
 static double getUnitHydOrd(int j, int m, int k, double t);
 
-static int    getNodeRdii(void);
+static int    getNodeRdii(SWMM_Project *sp);
 static void   saveRdiiFlows(SWMM_Project *sp, DateTime currentDate);
 static void   closeRdiiProcessor(SWMM_Project *sp);
 static void   freeRdiiMemory(SWMM_Project *sp);
@@ -149,7 +149,7 @@ static void  readRdiiTextFlows(SWMM_Project *sp);
 //                   Management of RDII-Related Data
 //=============================================================================
 
-int rdii_readRdiiInflow(char* tok[], int ntoks)
+int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -186,7 +186,7 @@ int rdii_readRdiiInflow(char* tok[], int ntoks)
 
     // --- assign UH & area to inflow object
     inflow->unitHyd = k;
-    inflow->area = a / UCF(LANDAREA);
+    inflow->area = a / UCF(sp, LANDAREA);
 
     // --- assign inflow object to node
     Node[j].rdiiInflow = inflow;
@@ -767,7 +767,7 @@ void createRdiiFile(SWMM_Project *sp)
             getUnitHydRdii(sp, currentDate);
 
             // --- find RDII at all nodes
-            hasRdii = getNodeRdii();
+            hasRdii = getNodeRdii(sp);
 
             // --- save RDII at all nodes to file for current date
             if ( hasRdii ) saveRdiiFlows(sp, currentDate);
@@ -1196,7 +1196,7 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
             rainDepth = Gage[g].rainfall * (double)rainInterval / 3600.0;
 
             // --- update amount of total rainfall volume (ft3)
-            TotalRainVol += rainDepth / UCF(RAINDEPTH) * UHGroup[j].area;
+            TotalRainVol += rainDepth / UCF(sp, RAINDEPTH) * UHGroup[j].area;
 
             // --- compute rainfall excess for each UH in the group
             for (k=0; k<3; k++)
@@ -1439,7 +1439,7 @@ double getUnitHydOrd(int h, int m, int k, double t)
 
 //=============================================================================
 
-int getNodeRdii()
+int getNodeRdii(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns TRUE if any node has RDII inflow, FALSE if not
@@ -1460,7 +1460,7 @@ int getNodeRdii()
 
         // --- apply node's sewer area to UH RDII to get node RDII in CFS
         i = Node[j].rdiiInflow->unitHyd;
-        rdii = UHGroup[i].rdii * Node[j].rdiiInflow->area / UCF(RAINFALL);
+        rdii = UHGroup[i].rdii * Node[j].rdiiInflow->area / UCF(sp, RAINFALL);
         if ( rdii < ZERO_RDII ) rdii = 0.0;
         else hasRdii = TRUE;
 

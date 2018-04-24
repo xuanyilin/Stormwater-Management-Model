@@ -103,7 +103,7 @@ void surfqual_getBuildup(SWMM_Project *sp, int j, double tStep)
         if ( f == 0.0 ) continue;
 
         // --- get land area (in acres or hectares) & curb length
-        area = f * Subcatch[j].area * UCF(LANDAREA);
+        area = f * Subcatch[j].area * UCF(sp, LANDAREA);
         curb = f * Subcatch[j].curbLength;
 
         // --- examine each pollutant
@@ -406,7 +406,7 @@ void  findWashoffLoads(SWMM_Project *sp, int j, double runoff)
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 OutflowLoad[p] += landuse_getWashoffLoad(
-                    i, p, area, Subcatch[j].landFactor, runoff, Voutflow);
+                    sp, i, p, area, Subcatch[j].landFactor, runoff, Voutflow);
             }
         }
     }

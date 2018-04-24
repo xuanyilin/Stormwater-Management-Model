@@ -187,8 +187,8 @@ typedef struct
 void     lid_create(int lidCount, int subcatchCount);
 void     lid_delete(void);
 
-int      lid_readProcParams(char* tok[], int ntoks);
-int      lid_readGroupParams(char* tok[], int ntoks);
+int      lid_readProcParams(SWMM_Project *sp, char* tok[], int ntoks);
+int      lid_readGroupParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void     lid_validate(SWMM_Project *sp);
 void     lid_initState(SWMM_Project *sp);
@@ -206,7 +206,7 @@ void     lid_addDrainLoads(SWMM_Project *sp, int subcatch, double c[], double tS
 void     lid_addDrainRunon(SWMM_Project *sp, int subcatch);                                      //(5.1.008)
 void     lid_addDrainInflow(SWMM_Project *sp, int subcatch, double f);                           //(5.1.008)
 
-void     lid_getRunoff(int subcatch, double tStep);                            //(5.1.008)
+void     lid_getRunoff(SWMM_Project *sp, int subcatch, double tStep);                            //(5.1.008)
 
 void     lid_writeSummary(SWMM_Project *sp);
 void     lid_writeWaterBalance(SWMM_Project *sp);
@@ -215,7 +215,7 @@ void     lid_writeWaterBalance(SWMM_Project *sp);
 
 void     lidproc_initWaterBalance(TLidUnit *lidUnit, double initVol);
 
-double   lidproc_getOutflow(TLidUnit* lidUnit, TLidProc* lidProc,
+double   lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidProc,
          double inflow, double evap, double infil, double maxInfil,            //(5.1.008)
          double tStep, double* lidEvap, double* lidInfil, double* lidDrain);   //(5.1.008)
 
