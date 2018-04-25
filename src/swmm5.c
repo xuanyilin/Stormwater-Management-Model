@@ -209,6 +209,8 @@ int  main(int argc, char *argv[])
     time_t start;
     double runTime;
 
+    int errorcode = 0;
+
     // Fetch SWMM Engine Version
     getSemVersion(SEMVERSION);
 
@@ -261,14 +263,15 @@ int  main(int argc, char *argv[])
 		writecon(msg);
 
         // --- run SWMM
-        swmm_run(inputFile, reportFile, binaryFile);
+        errorcode = swmm_run(inputFile, reportFile, binaryFile);
 
         // Display closing status on console
         runTime = difftime(time(0), start);
         sprintf(msg, "\n\n... EPA-SWMM completed in %.2f seconds.", runTime);
         writecon(msg);
-        if      ( swmm_getError() )   writecon(FMT03);
-        else if ( swmm_getWarnings() ) writecon(FMT04);                         //(5.1.011)
+
+        if      ( errorcode )   writecon(FMT03);
+//        else if ( swmm_getWarnings() ) writecon(FMT04);                         //(5.1.011)
         else                    writecon(FMT05);
     }
 
@@ -883,6 +886,45 @@ int  DLLEXPORT swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen)
     if ( errMsgLen > 0 && errMsg[0] == '\n' ) errMsg[0] = ' ';
 
     return error_getCode(sp->ErrorCode);                                           //(5.1.011)
+}
+
+
+void DLLEXPORT   swmm_clearError(void)
+{
+    swmm_clearError_project(_defaultProject);
+}
+
+void DLLEXPORT   swmm_clearError_project(SWMM_Project *sp)
+//
+//  Purpose: sets error code to zero
+//
+{
+    sp->ErrorCode = 0;
+}
+
+int  DLLEXPORT   swmm_checkError(char** msg_buffer)
+{
+    return swmm_checkError_project(_defaultProject, msg_buffer);
+}
+
+int  DLLEXPORT   swmm_checkError_project(SWMM_Project *sp, char** msg_buffer)
+//
+//  Purpose: retrieves the descriptive error code number and text
+//      associated with an error condition
+//
+{
+    char *temp = NULL;
+
+    if ( sp->ErrorCode ) {
+
+        temp = (char*) calloc(ERR_MAXMSGLEN, sizeof(char));
+
+        strncpy(temp, error_getMsg(sp->ErrorCode), ERR_MAXMSGLEN);
+    }
+
+    *msg_buffer = temp;
+
+    return error_getCode(sp->ErrorCode);
 }
 
 //=============================================================================

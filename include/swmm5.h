@@ -150,10 +150,18 @@ void DLLEXPORT   swmm_getSemVersion(char* semver);
 void DLLEXPORT   swmm_getVersionInfo(char* major, char* minor, char* patch);
 
 int  DLLEXPORT   swmm_getError(char* errMsg, int msgLen);
-int  DLLEXPORT   swmm_getError_project(SWMM_Project *sp, char* errMsg, int msgLen);                      //(5.1.011)
+int  DLLEXPORT   swmm_getError_project(SWMM_Project *sp, char* errMsg,
+        int msgLen);                                                           //(5.1.011)
 
 int  DLLEXPORT   swmm_getWarnings(void);                                       //(5.1.011)
 int  DLLEXPORT   swmm_getWarnings_project(SWMM_Project *sp);
+
+
+void DLLEXPORT   swmm_clearError(void);
+void DLLEXPORT   swmm_clearError_project(SWMM_Project *sp);
+
+int  DLLEXPORT   swmm_checkError(char** msg_buffer);
+int  DLLEXPORT   swmm_checkError_project(SWMM_Project *sp, char** msg_buffer);
 
 int  swmm_IsOpenFlag(void);
 int  swmm_IsStartedFlag(void);

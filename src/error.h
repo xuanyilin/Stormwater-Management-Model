@@ -13,6 +13,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#define ERR_MAXMSGLEN 256
 
 enum  ErrorType {
 
