@@ -72,7 +72,7 @@ typedef struct
 //-----------------------------------------------------------------------------
 //  Shared variables
 //-----------------------------------------------------------------------------
-// Temperature variables
+// sp->Temperature variables
 static double    Tmin;                 // min. daily temperature (deg F)
 static double    Tmax;                 // max. daily temperature (deg F)
 static double    Trng;                 // 1/2 range of daily temperatures
@@ -130,7 +130,7 @@ static void setNextEvapDate(SWMM_Project *sp, DateTime thedate);                
 static void setEvap(SWMM_Project *sp, DateTime theDate);
 static void setTemp(SWMM_Project *sp, DateTime theDate);
 static void setWind(SWMM_Project *sp, DateTime theDate);
-static void updateTempTimes(int day);
+static void updateTempTimes(SWMM_Project *sp, int day);
 static void updateTempMoveAve(double tmin, double tmax);                       //(5.1.010)
 static double getTempEvap(SWMM_Project *sp, int day, double ta, double tr);                      //(5.1.010)
 
@@ -178,29 +178,29 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
 
         // --- record the time series as being the data source for temperature
-        Temp.dataSource = TSERIES_TEMP;
-        Temp.tSeries = i;
+        sp->Temp.dataSource = TSERIES_TEMP;
+        sp->Temp.tSeries = i;
         Tseries[i].refersTo = TSERIES_TEMP;
         break;
 
       case 1: // Climate file
         // --- record file as being source of temperature data
         if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-        Temp.dataSource = FILE_TEMP;
+        sp->Temp.dataSource = FILE_TEMP;
 
         // --- save name and usage mode of external climate file
         sp->Fclimate.mode = USE_FILE;
         sstrncpy(sp->Fclimate.name, tok[1], MAXFNAME);
 
         // --- save starting date to read from file if one is provided
-        Temp.fileStartDate = NO_DATE;
+        sp->Temp.fileStartDate = NO_DATE;
         if ( ntoks > 2 )
         {
             if ( *tok[2] != '*')
             {
                 if ( !datetime_strToDate(tok[2], &aDate) )
                     return error_setInpError(ERR_DATETIME, tok[2]);
-                Temp.fileStartDate = aDate;
+                sp->Temp.fileStartDate = aDate;
             }
         }
         break;
@@ -238,9 +238,9 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         Snow.snotmp = x[0];
         Snow.tipm   = x[1];
         Snow.rnm    = x[2];
-        Temp.elev   = x[3] / UCF(sp, LENGTH);
-        Temp.anglat = x[4];
-        Temp.dtlong = x[5] / 60.0;
+        sp->Temp.elev   = x[3] / UCF(sp, LENGTH);
+        sp->Temp.anglat = x[4];
+        sp->Temp.dtlong = x[5] / 60.0;
         break;
 
       case 4:  // Areal Depletion Curve data
@@ -457,16 +457,16 @@ void climate_validate(SWMM_Project *sp)
          Snow.rnm  > 1.0 ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
 
     // --- latitude should be between -90 & 90 degrees
-    a = Temp.anglat;
+    a = sp->Temp.anglat;
     if ( a <= -89.99 ||
          a >= 89.99  ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
-    else Temp.tanAnglat = tan(a * PI / 180.0);
+    else sp->Temp.tanAnglat = tan(a * PI / 180.0);
 
     // --- compute psychrometric constant
-    z = Temp.elev / 1000.0;
+    z = sp->Temp.elev / 1000.0;
     if ( z <= 0.0 ) pa = 29.9;
     else  pa = 29.9 - 1.02*z + 0.0032*pow(z, 2.4); // atmos. pressure
-    Temp.gamma = 0.000359 * pa;
+    sp->Temp.gamma = 0.000359 * pa;
 
     // --- convert units of monthly temperature & evap adjustments             //(5.1.007)
     for (i = 0; i < 12; i++)
@@ -495,9 +495,9 @@ void climate_openFile(SWMM_Project *sp)
     }
 
     // --- initialize values of file's climate variables
-    //     (Temp.ta was previously initialized in project.c)
-    FileValue[TMIN] = Temp.ta;
-    FileValue[TMAX] = Temp.ta;
+    //     (sp->Temp.ta was previously initialized in project.c)
+    FileValue[TMIN] = sp->Temp.ta;
+    FileValue[TMAX] = sp->Temp.ta;
     FileValue[EVAP] = 0.0;
     FileValue[WIND] = 0.0;
 
@@ -513,10 +513,10 @@ void climate_openFile(SWMM_Project *sp)
     //     month/year or at start of simulation period.
     rewind(sp->Fclimate.file);
     strcpy(FileLine, "");
-    if ( Temp.fileStartDate == NO_DATE )
+    if ( sp->Temp.fileStartDate == NO_DATE )
         datetime_decodeDate(sp->StartDate, &FileYear, &FileMonth, &FileDay);
     else
-        datetime_decodeDate(Temp.fileStartDate, &FileYear, &FileMonth, &FileDay);
+        datetime_decodeDate(sp->Temp.fileStartDate, &FileYear, &FileMonth, &FileDay);
     while ( !feof(sp->Fclimate.file) )
     {
         strcpy(FileLine, "");
@@ -555,7 +555,7 @@ void climate_initState(SWMM_Project *sp)
 //
 {
     LastDay = NO_DATE;
-    Temp.tmax = MISSING;
+    sp->Temp.tmax = MISSING;
     Snow.removed = 0.0;
     NextEvapDate = sp->StartDate;
     NextEvapRate = 0.0;
@@ -600,7 +600,7 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
 //
 {
     if ( sp->Fclimate.mode == USE_FILE ) updateFileValues(sp, theDate);
-    if ( Temp.dataSource != NO_TEMP ) setTemp(sp, theDate);
+    if ( sp->Temp.dataSource != NO_TEMP ) setTemp(sp, theDate);
     setEvap(sp, theDate);
     setWind(sp, theDate);
     Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
@@ -759,7 +759,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
     {
         // --- update min. & max. temps & their time of day
         day = datetime_dayOfYear(theDate);
-        if ( Temp.dataSource == FILE_TEMP )
+        if ( sp->Temp.dataSource == FILE_TEMP )
         {
             Tmin = FileValue[TMIN] + Adjust.temp[mon-1];                       //(5.1.007)
             Tmax = FileValue[TMAX] + Adjust.temp[mon-1];                       //(5.1.007)
@@ -769,7 +769,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
                 Tmin = Tmax;
                 Tmax = tmp;
             }
-            updateTempTimes(day);
+            updateTempTimes(sp, day);
             if ( Evap.type == TEMPERATURE_EVAP )
             {
                 updateTempMoveAve(Tmin, Tmax);                                 //(5.1.010)
@@ -790,39 +790,39 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
 
     // --- for min/max daily temps. from climate file,
     //     compute hourly temp. by sinusoidal interp.
-    if ( Temp.dataSource == FILE_TEMP )
+    if ( sp->Temp.dataSource == FILE_TEMP )
     {
         hour = (theDate - theDay) * 24.0;
         if ( hour < Hrsr )
-            Temp.ta = Tmin + Trng1/2.0 * sin(PI/Dydif * (Hrsr - hour));
+            sp->Temp.ta = Tmin + Trng1/2.0 * sin(PI/Dydif * (Hrsr - hour));
         else if ( hour >= Hrsr && hour <= Hrss )
-            Temp.ta = Tave + Trng * sin(PI/Dhrdy * (Hrday - hour));
+            sp->Temp.ta = Tave + Trng * sin(PI/Dhrdy * (Hrday - hour));
         else
-            Temp.ta = Tmax - Trng * sin(PI/Dydif * (hour - Hrss));
+            sp->Temp.ta = Tmax - Trng * sin(PI/Dydif * (hour - Hrss));
     }
 
     // --- for user-supplied temperature time series,
     //     get temperature value from time series
-    if ( Temp.dataSource == TSERIES_TEMP )
+    if ( sp->Temp.dataSource == TSERIES_TEMP )
     {
-        k = Temp.tSeries;
+        k = sp->Temp.tSeries;
         if ( k >= 0)
         {
-            Temp.ta = table_tseriesLookup(&Tseries[k], theDate, TRUE);
+            sp->Temp.ta = table_tseriesLookup(&Tseries[k], theDate, TRUE);
 
             // --- convert from deg. C to deg. F if need be
             if ( sp->UnitSystem == SI )
             {
-                Temp.ta = (9./5.) * Temp.ta + 32.0;
+                sp->Temp.ta = (9./5.) * sp->Temp.ta + 32.0;
             }
 
             // --- apply climate change adjustment factor                      //(5.1.007)
-            Temp.ta += Adjust.temp[mon-1];                                     //(5.1.007)
+            sp->Temp.ta += Adjust.temp[mon-1];                                     //(5.1.007)
         }
     }
 
     // --- compute saturation vapor pressure
-    Temp.ea = 8.1175e6 * exp(-7701.544 / (Temp.ta + 405.0265) );
+    sp->Temp.ea = 8.1175e6 * exp(-7701.544 / (sp->Temp.ta + 405.0265) );
 }
 
 //=============================================================================
@@ -904,7 +904,7 @@ void setWind(SWMM_Project *sp, DateTime theDate)
 
 //=============================================================================
 
-void updateTempTimes(int day)
+void updateTempTimes(SWMM_Project *sp, int day)
 //
 //  Input:   day = day of year
 //  Output:  none
@@ -917,21 +917,21 @@ void updateTempTimes(int day)
     double arg;
 
     decl  = 0.40928*cos(0.017202*(172.0-day));
-    arg = -tan(decl)*Temp.tanAnglat;
+    arg = -tan(decl)*sp->Temp.tanAnglat;
     if      ( arg <= -1.0 ) arg = PI;
     else if ( arg >= 1.0 )  arg = 0.0;
     else                    arg = acos(arg);
     hrang = 3.8197 * arg;
-    Hrsr  = 12.0 - hrang + Temp.dtlong;
-    Hrss  = 12.0 + hrang + Temp.dtlong - 3.0;
+    Hrsr  = 12.0 - hrang + sp->Temp.dtlong;
+    Hrss  = 12.0 + hrang + sp->Temp.dtlong - 3.0;
     Dhrdy = Hrsr - Hrss;
     Dydif = 24.0 + Hrsr - Hrss;
     Hrday = (Hrsr + Hrss) / 2.0;
     Tave  = (Tmin + Tmax) / 2.0;
     Trng  = (Tmax - Tmin) / 2.0;
-    if ( Temp.tmax == MISSING ) Trng1 = Tmax - Tmin;
-    else                        Trng1 = Temp.tmax - Tmin;
-    Temp.tmax = Tmax;
+    if ( sp->Temp.tmax == MISSING ) Trng1 = Tmax - Tmin;
+    else                        Trng1 = sp->Temp.tmax - Tmin;
+    sp->Temp.tmax = Tmax;
 }
 
 //=============================================================================
@@ -953,7 +953,7 @@ double getTempEvap(SWMM_Project *sp, int day, double tave, double trng)
     double tr = trng*5.0/9.0;                    //temperature range (deg C)
     double lamda = 2.50 - 0.002361 * ta;         //latent heat of vaporization
     double dr = 1.0 + 0.033*cos(a*day);          //relative earth-sun distance
-    double phi = Temp.anglat*2.0*PI/360.0;       //latitude angle (rad)
+    double phi = sp->Temp.anglat*2.0*PI/360.0;       //latitude angle (rad)
     double del = 0.4093*sin(a*(284+day));        //solar declination angle (rad)
     double omega = acos(-tan(phi)*tan(del));     //sunset hour angle (rad)
     double ra = 37.6*dr*                         //extraterrestrial radiation

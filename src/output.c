@@ -541,8 +541,8 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     }
 
     // --- normalize system-wide results to catchment area
-    if ( sp->UnitSystem == SI ) f = (5./9.) * (Temp.ta - 32.0);
-    else f = Temp.ta;
+    if ( sp->UnitSystem == SI ) f = (5./9.) * (sp->Temp.ta - 32.0);
+    else f = sp->Temp.ta;
     SysResults[SYS_TEMPERATURE] = (REAL4)f;
     
     f = Evap.rate * UCF(sp, EVAPRATE);                                             //(5.1.010)

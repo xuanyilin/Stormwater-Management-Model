@@ -712,7 +712,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         sp->LatFlowTol /= 100.0;
         break;
 
-      case TEMPDIR: // Temporary Directory
+      case TEMPDIR: // sp->Temporary Directory
         sstrncpy(sp->TempDir, s2, MAXFNAME);
         break;
 
@@ -849,14 +849,14 @@ void setDefaults(SWMM_Project *sp)
    sp->RptFlags.links         = FALSE;
    sp->RptFlags.nodeStats     = FALSE;
 
-   // Temperature data
-   Temp.dataSource  = NO_TEMP;
-   Temp.tSeries     = -1;
-   Temp.ta          = 70.0;
-   Temp.elev        = 0.0;
-   Temp.anglat      = 40.0;
-   Temp.dtlong      = 0.0;
-   Temp.tmax        = MISSING;
+   // sp->Temperature data
+   sp->Temp.dataSource  = NO_TEMP;
+   sp->Temp.tSeries     = -1;
+   sp->Temp.ta          = 70.0;
+   sp->Temp.elev        = 0.0;
+   sp->Temp.anglat      = 40.0;
+   sp->Temp.dtlong      = 0.0;
+   sp->Temp.tmax        = MISSING;
 
    // Wind speed data
    Wind.type = MONTHLY_WIND;

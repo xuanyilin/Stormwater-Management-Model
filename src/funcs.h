@@ -163,8 +163,8 @@ void    snow_setState(int subcatch, int subArea, double x[]);
 
 void    snow_setMeltCoeffs(int snowIndex, double season);
 void    snow_plowSnow(SWMM_Project *sp, int subcatch, double tStep);
-double  snow_getSnowMelt(int subcatch, double rainfall, double snowfall,
-        double tStep, double netPrecip[]);
+double  snow_getSnowMelt(SWMM_Project *sp, int subcatch, double rainfall,
+        double snowfall, double tStep, double netPrecip[]);
 double  snow_getSnowCover(int subcatch);
 
 //-----------------------------------------------------------------------------

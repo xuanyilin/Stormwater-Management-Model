@@ -779,7 +779,7 @@ void getNetPrecip(SWMM_Project *sp, int j, double* netPrecip, double tStep)
     if ( Subcatch[j].snowpack && !sp->IgnoreSnowmelt )
     {
         Subcatch[j].newSnowDepth = 
-            snow_getSnowMelt(j, rainfall, snowfall, tStep, netPrecip);
+            snow_getSnowMelt(sp, j, rainfall, snowfall, tStep, netPrecip);
     }
 
     // --- otherwise netPrecip is just sum of rainfall & snowfall

@@ -413,7 +413,7 @@ double gage_getPrecip(SWMM_Project *sp, int j, double *rainfall, double *snowfal
 {
     *rainfall = 0.0;
     *snowfall = 0.0;
-    if ( !sp->IgnoreSnowmelt && Temp.ta <= Snow.snotmp )
+    if ( !sp->IgnoreSnowmelt && sp->Temp.ta <= Snow.snotmp )
     {
        *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(sp, RAINFALL);
     }
