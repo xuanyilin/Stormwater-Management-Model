@@ -657,7 +657,7 @@ void execRouting(SWMM_Project *sp)                                              
         }
 
         // --- if no runoff analysis, update climate state (for evaporation)
-        else climate_setState(sp, getDateTime(NewRoutingTime));
+        else climate_setState(sp, getDateTime(sp, NewRoutingTime));
   
         // --- route flows & pollutants through drainage system                //(5.1.008)
         //     (while updating NewRoutingTime)                                 //(5.1.008)
@@ -1026,7 +1026,7 @@ char* getTempFileName(SWMM_Project *sp, char* fname)
 
 //=============================================================================
 
-void getElapsedTime(DateTime aDate, int* days, int* hrs, int* mins)
+void getElapsedTime(SWMM_Project *sp, DateTime aDate, int* days, int* hrs, int* mins)
 //
 //  Input:   aDate = simulation calendar date + time
 //  Output:  days, hrs, mins = elapsed days, hours & minutes for aDate
@@ -1035,7 +1035,7 @@ void getElapsedTime(DateTime aDate, int* days, int* hrs, int* mins)
 {
     DateTime x;
     int secs;
-    x = aDate - StartDateTime;
+    x = aDate - sp->StartDateTime;
     if ( x <= 0.0 )
     {
         *days = 0;
@@ -1051,7 +1051,7 @@ void getElapsedTime(DateTime aDate, int* days, int* hrs, int* mins)
 
 //=============================================================================
 
-DateTime getDateTime(double elapsedMsec)
+DateTime getDateTime(SWMM_Project *sp, double elapsedMsec)
 //
 //  Input:   elapsedMsec = elapsed milliseconds
 //  Output:  returns date/time value
@@ -1059,7 +1059,7 @@ DateTime getDateTime(double elapsedMsec)
 //           simulation time.
 //
 {
-    return datetime_addSeconds(StartDateTime, (elapsedMsec+1)/1000.0);
+    return datetime_addSeconds(sp->StartDateTime, (elapsedMsec+1)/1000.0);
 }
 
 //=============================================================================

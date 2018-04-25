@@ -487,6 +487,8 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
 int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
                                          int *day, int *hour, int *minute,
                                          int *seconds);
+int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_Project *sp, int timetype,
+        int *year, int *month, int *day, int *hours, int *minutes, int *seconds);
 
 /**
  @brief Set simulation datetime information.
@@ -509,6 +511,7 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
  @return Error code
 */
 int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr);
+int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_Project *sp, char *dtimestr);
 
 /**
  @brief Get a result value for specified node.

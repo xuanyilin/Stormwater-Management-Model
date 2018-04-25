@@ -126,7 +126,7 @@ static void readTD3200FileLine(SWMM_Project *sp, int *year, int *month);
 static void readDLY0204FileLine(SWMM_Project *sp, int *year, int *month);
 static void readFileValues(SWMM_Project *sp);
 
-static void setNextEvapDate(DateTime thedate);                                 //(5.1.008)
+static void setNextEvapDate(SWMM_Project *sp, DateTime thedate);                                 //(5.1.008)
 static void setEvap(SWMM_Project *sp, DateTime theDate);
 static void setTemp(SWMM_Project *sp, DateTime theDate);
 static void setWind(SWMM_Project *sp, DateTime theDate);
@@ -514,7 +514,7 @@ void climate_openFile(SWMM_Project *sp)
     rewind(sp->Fclimate.file);
     strcpy(FileLine, "");
     if ( Temp.fileStartDate == NO_DATE )
-        datetime_decodeDate(StartDate, &FileYear, &FileMonth, &FileDay);
+        datetime_decodeDate(sp->StartDate, &FileYear, &FileMonth, &FileDay);
     else
         datetime_decodeDate(Temp.fileStartDate, &FileYear, &FileMonth, &FileDay);
     while ( !feof(sp->Fclimate.file) )
@@ -557,7 +557,7 @@ void climate_initState(SWMM_Project *sp)
     LastDay = NO_DATE;
     Temp.tmax = MISSING;
     Snow.removed = 0.0;
-    NextEvapDate = StartDate;
+    NextEvapDate = sp->StartDate;
     NextEvapRate = 0.0;
 
     // --- initialize variables for time series evaporation
@@ -567,14 +567,14 @@ void climate_initState(SWMM_Project *sp)
         //     time series whose date <= the simulation start date
         table_getFirstEntry(&Tseries[Evap.tSeries],
                             &NextEvapDate, &NextEvapRate);
-        if ( NextEvapDate < StartDate )
+        if ( NextEvapDate < sp->StartDate )
         {  
-            setNextEvapDate(StartDate);
+            setNextEvapDate(sp, sp->StartDate);
         }
         Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
 
         // --- find the next time evaporation rates change after this
-        setNextEvapDate(NextEvapDate); 
+        setNextEvapDate(sp, NextEvapDate);
     }
 
 ////  Following section added to release 5.1.010.  ////                        //(5.1.010)
@@ -605,7 +605,7 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
     setWind(sp, theDate);
     Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
     Adjust.hydconFactor = Adjust.hydcon[datetime_monthOfYear(theDate)-1];      //(5.1.008)
-    setNextEvapDate(theDate);                                                  //(5.1.008)
+    setNextEvapDate(sp, theDate);                                              //(5.1.008)
 }
 
 //=============================================================================
@@ -626,7 +626,7 @@ DateTime climate_getNextEvapDate()
 
 ////  Modified from what was previously named climate_getNextEvap.  ////       //(5.1.008)
 
-void setNextEvapDate(DateTime theDate)
+void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
 //
 //  Input:   theDate = current simulation date
 //  Output:  sets a new value for NextEvapDate
@@ -666,7 +666,7 @@ void setNextEvapDate(DateTime theDate)
         {
             NextEvapDate = theDate + 365.;
             while ( table_getNextEntry(&Tseries[k], &d, &e) &&
-                    d <= EndDateTime )
+                    d <= sp->EndDateTime )
             {
                 if ( d >= theDate )
                 {
@@ -704,7 +704,7 @@ void updateFileValues(SWMM_Project *sp, DateTime theDate)
     int deltaDays;
 
     // --- see if a new day has begun
-    deltaDays = (int)(floor(theDate) - floor(StartDateTime));
+    deltaDays = (int)(floor(theDate) - floor(sp->StartDateTime));
     if ( deltaDays > FileElapsedDays )
     {
         // --- advance day counters

@@ -289,14 +289,14 @@ void  gage_initState(SWMM_Project *sp, int j)
                           Gage[j].startDate, Gage[j].rainInterval);
 
         // --- if rainfall record begins after start of simulation,
-        if ( Gage[j].startDate > StartDateTime )
+        if ( Gage[j].startDate > sp->StartDateTime )
         {
             // --- make next rainfall date the start of the rain record
             Gage[j].nextDate = Gage[j].startDate;
             Gage[j].nextRainfall = Gage[j].rainfall;
 
             // --- make start of current rain interval the simulation start
-            Gage[j].startDate = StartDateTime;
+            Gage[j].startDate = sp->StartDateTime;
             Gage[j].endDate = Gage[j].nextDate;
             Gage[j].rainfall = 0.0;
         }

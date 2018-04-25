@@ -1173,16 +1173,16 @@ struct SWMM_Project {
                  SysFlowTol,               // Tolerance for steady system flow
                  LatFlowTol;               // Tolerance for steady nodal inflow
 
-//   DateTime
-//                      StartDate,                // Starting date
-//                      StartTime,                // Starting time
-//                      StartDateTime,            // Starting Date+Time
-//                      EndDate,                  // Ending date
-//                      EndTime,                  // Ending time
-//                      EndDateTime,              // Ending Date+Time
-//                      ReportStartDate,          // Report start date
-//                      ReportStartTime,          // Report start time
-//                      ReportStart;              // Report start Date+Time
+   DateTime
+                 StartDate,                // Starting date
+                 StartTime,                // Starting time
+                 StartDateTime,            // Starting Date+Time
+                 EndDate,                  // Ending date
+                 EndTime,                  // Ending time
+                 EndDateTime,              // Ending Date+Time
+                 ReportStartDate,          // Report start date
+                 ReportStartTime,          // Report start time
+                 ReportStart;              // Report start Date+Time
 //
 //    EXTERN double
 //                      ReportTime,               // Current reporting time (msec)

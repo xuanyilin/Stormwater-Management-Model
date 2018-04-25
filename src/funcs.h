@@ -236,8 +236,8 @@ int     landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
         double* initBuildup, double area, double curb);
-double  landuse_getBuildup(int landuse, int pollut, double area, double curb,
-        double buildup, double tStep);
+double  landuse_getBuildup(SWMM_Project *sp, int landuse, int pollut,
+        double area, double curb, double buildup, double tStep);
 
 double  landuse_getWashoffLoad(SWMM_Project *sp, int landuse, int p, double area,                //(5.1.008)
         TLandFactor landFactor[], double runoff, double vOutflow);             //(5.1.008)
@@ -564,8 +564,8 @@ int      strcomp(char *s1, char *s2);         // case insensitive string compare
 char*    sstrncpy(char *dest, const char *src,
          size_t maxlen);                      // safe string copy
 void     writecon(char *s);                   // writes string to console
-DateTime getDateTime(double elapsedMsec);     // convert elapsed time to date
-void     getElapsedTime(DateTime aDate,       // convert elapsed date
+DateTime getDateTime(SWMM_Project *sp, double elapsedMsec);     // convert elapsed time to date
+void     getElapsedTime(SWMM_Project *sp, DateTime aDate,       // convert elapsed date
          int* days, int* hrs, int* mins);
 void     getSemVersion(char* semver);         // get semantic version
 

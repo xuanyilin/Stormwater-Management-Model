@@ -219,8 +219,8 @@ double   lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidPr
          double inflow, double evap, double infil, double maxInfil,            //(5.1.008)
          double tStep, double* lidEvap, double* lidInfil, double* lidDrain);   //(5.1.008)
 
-void     lidproc_saveResults(TLidUnit* lidUnit, double ucfRainfall,            //(5.1.011)
-         double ucfRainDepth);
+void     lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit,
+        double ucfRainfall, double ucfRainDepth);
 
 
 #endif //LID_H

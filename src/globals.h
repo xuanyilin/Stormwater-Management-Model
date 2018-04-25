@@ -118,16 +118,16 @@ EXTERN SWMM_Project *_defaultProject;
 //                  SysFlowTol,               // Tolerance for steady system flow
 //                  LatFlowTol;               // Tolerance for steady nodal inflow
 //
-EXTERN DateTime
-                  StartDate,                // Starting date
-                  StartTime,                // Starting time
-                  StartDateTime,            // Starting Date+Time
-                  EndDate,                  // Ending date
-                  EndTime,                  // Ending time
-                  EndDateTime,              // Ending Date+Time
-                  ReportStartDate,          // Report start date
-                  ReportStartTime,          // Report start time
-                  ReportStart;              // Report start Date+Time
+//EXTERN DateTime
+//                  StartDate,                // Starting date
+//                  StartTime,                // Starting time
+//                  StartDateTime,            // Starting Date+Time
+//                  EndDate,                  // Ending date
+//                  EndTime,                  // Ending time
+//                  EndDateTime,              // Ending Date+Time
+//                  ReportStartDate,          // Report start date
+//                  ReportStartTime,          // Report start time
+//                  ReportStart;              // Report start Date+Time
 
 EXTERN double
                   ReportTime,               // Current reporting time (msec)

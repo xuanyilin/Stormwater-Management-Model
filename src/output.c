@@ -336,11 +336,11 @@ int output_open(SWMM_Project *sp)
     //      make saved starting report date one reporting period
     //      prior to the date of the first reported result)
     z = (double)sp->ReportStep/86400.0;
-    if ( StartDateTime + z > ReportStart ) z = StartDateTime;
+    if ( sp->StartDateTime + z > sp->ReportStart ) z = sp->StartDateTime;
     else
     {
-        z = floor((ReportStart - StartDateTime)/z) - 1.0;
-        z = StartDateTime + z*(double)sp->ReportStep/86400.0;
+        z = floor((sp->ReportStart - sp->StartDateTime)/z) - 1.0;
+        z = sp->StartDateTime + z*(double)sp->ReportStep/86400.0;
     }
     fwrite(&z, sizeof(REAL8), 1, sp->Fout.file);
     k = sp->ReportStep;
@@ -418,10 +418,10 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
 //
 {
     int i;
-    DateTime reportDate = getDateTime(reportTime);
+    DateTime reportDate = getDateTime(sp, reportTime);
     REAL8 date;
 
-    if ( reportDate < ReportStart ) return;
+    if ( reportDate < sp->ReportStart ) return;
     for (i=0; i<MAX_SYS_RESULTS; i++) SysResults[i] = 0.0f;
     date = reportDate;
     fwrite(&date, sizeof(REAL8), 1, sp->Fout.file);
@@ -505,7 +505,7 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     double   f;
     double   area;
     REAL4    totalArea = 0.0f; 
-    DateTime reportDate = getDateTime(reportTime);
+    DateTime reportDate = getDateTime(sp, reportTime);
 
     // --- update reported rainfall at each rain gage
     for ( j=0; j<sp->Nobjects[GAGE]; j++ )

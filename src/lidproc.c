@@ -354,7 +354,8 @@ double lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidProc
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void lidproc_saveResults(TLidUnit* lidUnit, double ucfRainfall, double ucfRainDepth)
+void lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit, double ucfRainfall,
+        double ucfRainDepth)
 //
 //  Purpose: updates the mass balance for an LID unit and saves
 //           current flux rates to the LID report file.
@@ -424,7 +425,7 @@ void lidproc_saveResults(TLidUnit* lidUnit, double ucfRainfall, double ucfRainDe
         //... write the current results to a string which is saved between
         //    reporting periods
         elapsedHrs = NewRunoffTime / 1000.0 / 3600.0;
-        datetime_getTimeStamp(M_D_Y, getDateTime(NewRunoffTime), 24, timeStamp);
+        datetime_getTimeStamp(M_D_Y, getDateTime(sp, NewRunoffTime), 24, timeStamp);
         sprintf(theLidUnit->rptFile->results,
              "\n%20s\t %8.3f\t %8.3f\t %8.4f\t %8.3f\t %8.3f\t %8.3f\t %8.3f\t"
              "%8.3f\t %8.3f\t %8.3f\t %8.3f\t %8.3f\t %8.3f",

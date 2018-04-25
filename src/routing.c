@@ -157,15 +157,15 @@ double routing_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedSt
     if ( sp->NumEvents > 0 && BetweenEvents )                                      //(5.1.012)
     {
         nextTime = MIN(NewRunoffTime, ReportTime);
-        date1 = getDateTime(NewRoutingTime);
-        date2 = getDateTime(nextTime);
+        date1 = getDateTime(sp, NewRoutingTime);
+        date2 = getDateTime(sp, nextTime);
         if ( date2 > date1 && date2 < Event[NextEvent].start )
         {
             return (nextTime - NewRoutingTime) / 1000.0;
         }
         else
         {
-            date1 = getDateTime(NewRoutingTime + 1000.0 * fixedStep);
+            date1 = getDateTime(sp, NewRoutingTime + 1000.0 * fixedStep);
             if ( date1 < Event[NextEvent].start ) return fixedStep;
         }
     }
@@ -203,8 +203,8 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     for (j=0; j<sp->Nobjects[LINK]; j++) link_setTargetSetting(j);
 
     // --- find new target settings due to control rules
-    currentDate = getDateTime(NewRoutingTime);
-    controls_evaluate(sp, currentDate, currentDate - StartDateTime,
+    currentDate = getDateTime(sp, NewRoutingTime);
+    controls_evaluate(sp, currentDate, currentDate - sp->StartDateTime,
                       routingStep/SECperDAY);
 
     // --- change each link's actual setting if it differs from its target
@@ -324,7 +324,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- update summary statistics
     if ( sp->RptFlags.flowStats && sp->Nobjects[LINK] > 0 )
     {
-        stats_updateFlowStats(sp, routingStep, getDateTime(NewRoutingTime),
+        stats_updateFlowStats(sp, routingStep, getDateTime(sp, NewRoutingTime),
                               stepCount, inSteadyState);
     }
 }

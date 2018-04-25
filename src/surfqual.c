@@ -115,7 +115,7 @@ void surfqual_getBuildup(SWMM_Project *sp, int j, double tStep)
 
             // --- use land use's buildup function to update buildup amount
             oldBuildup = Subcatch[j].landFactor[i].buildup[p];        
-            newBuildup = landuse_getBuildup(i, p, area, curb, oldBuildup,
+            newBuildup = landuse_getBuildup(sp, i, p, area, curb, oldBuildup,
                          tStep);
             newBuildup = MAX(newBuildup, oldBuildup);
             Subcatch[j].landFactor[i].buildup[p] = newBuildup;

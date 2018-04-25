@@ -1755,7 +1755,7 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
     else lidUnit->dryTime += tStep;
 
     //... update LID water balance and save results
-    lidproc_saveResults(lidUnit, UCF(sp, RAINFALL), UCF(sp, RAINDEPTH));               //(5.1.011)
+    lidproc_saveResults(sp, lidUnit, UCF(sp, RAINFALL), UCF(sp, RAINDEPTH));               //(5.1.011)
 
     //... update LID group totals
     *qRunoff += lidRunoff;

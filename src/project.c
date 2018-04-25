@@ -140,17 +140,17 @@ void project_readInput(SWMM_Project *sp)
     if ( sp->ErrorCode ) return;
 
     // --- establish starting & ending date/time
-    StartDateTime = StartDate + StartTime;
-    EndDateTime   = EndDate + EndTime;
-    ReportStart   = ReportStartDate + ReportStartTime;
-    ReportStart   = MAX(ReportStart, StartDateTime);
+    sp->StartDateTime = sp->StartDate + sp->StartTime;
+    sp->EndDateTime   = sp->EndDate + sp->EndTime;
+    sp->ReportStart   = sp->ReportStartDate + sp->ReportStartTime;
+    sp->ReportStart   = MAX(sp->ReportStart, sp->StartDateTime);
 
     // --- check for valid starting & ending date/times
-    if ( EndDateTime <= StartDateTime )
+    if ( sp->EndDateTime <= sp->StartDateTime )
     {
         report_writeErrorMsg(sp, ERR_START_DATE, "");
     }
-    else if ( EndDateTime <= ReportStart )
+    else if ( sp->EndDateTime <= sp->ReportStart )
     {
         report_writeErrorMsg(sp, ERR_REPORT_DATE, "");
     }
@@ -159,7 +159,7 @@ void project_readInput(SWMM_Project *sp)
 ////  Following code segment was modified for release 5.1.009.  ////           //(5.1.009)
 ////
         // --- compute total duration of simulation in seconds
-        TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
+        TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
 
         // --- reporting step must be <= total duration
         if ( (double)sp->ReportStep > TotalDuration )
@@ -457,7 +457,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation start date
       case START_DATE:
-        if ( !datetime_strToDate(s2, &StartDate) )
+        if ( !datetime_strToDate(s2, &sp->StartDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -465,7 +465,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation start time of day
       case START_TIME:
-        if ( !datetime_strToTime(s2, &StartTime) )
+        if ( !datetime_strToTime(s2, &sp->StartTime) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -473,7 +473,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation ending date
       case END_DATE:
-        if ( !datetime_strToDate(s2, &EndDate) ) 
+        if ( !datetime_strToDate(s2, &sp->EndDate) ) 
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -481,7 +481,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation ending time of day
       case END_TIME:
-        if ( !datetime_strToTime(s2, &EndTime) )
+        if ( !datetime_strToTime(s2, &sp->EndTime) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -489,7 +489,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- reporting start date
       case REPORT_START_DATE:
-        if ( !datetime_strToDate(s2, &ReportStartDate) )
+        if ( !datetime_strToDate(s2, &sp->ReportStartDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -497,7 +497,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- reporting start time of day
       case REPORT_START_TIME:
-        if ( !datetime_strToTime(s2, &ReportStartTime) )
+        if ( !datetime_strToTime(s2, &sp->ReportStartTime) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -829,13 +829,13 @@ void setDefaults(SWMM_Project *sp)
 //   Compatibility   = SWMM4;            // Use SWMM 4 up/dn weighting method
 
    // Starting & ending date/time
-   StartDate       = datetime_encodeDate(2004, 1, 1);
-   StartTime       = datetime_encodeTime(0,0,0);
-   StartDateTime   = StartDate + StartTime;
-   EndDate         = StartDate;
-   EndTime         = 0.0;
-   ReportStartDate = NO_DATE;
-   ReportStartTime = NO_DATE;
+   sp->StartDate   = datetime_encodeDate(2004, 1, 1);
+   sp->StartTime       = datetime_encodeTime(0,0,0);
+   sp->StartDateTime   = sp->StartDate + sp->StartTime;
+   sp->EndDate         = sp->StartDate;
+   sp->EndTime         = 0.0;
+   sp->ReportStartDate = NO_DATE;
+   sp->ReportStartTime = NO_DATE;
    sp->ReportStep      = 1;
    sp->SweepEnd        = 365;
 

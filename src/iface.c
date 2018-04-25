@@ -367,9 +367,9 @@ void openFileForOutput(SWMM_Project *sp)
     }
 
     // --- if reporting starts immediately, save initial outlet values
-    if ( ReportStart == StartDateTime )
+    if ( sp->ReportStart == sp->StartDateTime )
     {
-        iface_saveOutletResults(sp, ReportStart, sp->Foutflows.file);
+        iface_saveOutletResults(sp, sp->ReportStart, sp->Foutflows.file);
     }
 }
 

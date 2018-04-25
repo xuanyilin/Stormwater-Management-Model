@@ -45,8 +45,8 @@ static double landuse_getRunoffLoad(int landuse, int pollut, double area,
               TLandFactor landFactor[], double runoff, double tStep);
 static double landuse_getWashoffQual(SWMM_Project *sp, int landuse, int pollut,
         double buildup, double runoff, double area);
-static double landuse_getExternalBuildup(int i, int p, double buildup,
-              double tStep);
+static double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p,
+        double buildup, double tStep);
 
 //=============================================================================
 
@@ -384,7 +384,7 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- initialize date when last swept
-        landFactor[i].lastSwept = StartDateTime - Landuse[i].sweepDays0;
+        landFactor[i].lastSwept = sp->StartDateTime - Landuse[i].sweepDays0;
 
         // --- determine area and curb length covered by land use
         f = landFactor[i].fraction;
@@ -401,7 +401,7 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
 
             // --- otherwise use the land use's buildup function to 
             //     compute a buildup over the antecedent dry period
-            else buildup = landuse_getBuildup(i, p, fArea, fCurb, buildup,
+            else buildup = landuse_getBuildup(sp, i, p, fArea, fCurb, buildup,
                            startDrySeconds);
             landFactor[i].buildup[p] = buildup;
         }
@@ -410,8 +410,8 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
 
 //=============================================================================
 
-double  landuse_getBuildup(int i, int p, double area, double curb, double buildup,
-                           double tStep)
+double  landuse_getBuildup(SWMM_Project *sp, int i, int p, double area,
+        double curb, double buildup, double tStep)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -443,7 +443,7 @@ double  landuse_getBuildup(int i, int p, double area, double curb, double buildu
     // --- buildup determined by loading time series
     if ( Landuse[i].buildupFunc[p].funcType == EXTERNAL_BUILDUP )
     {
-        return landuse_getExternalBuildup(i, p, buildup/perUnit, tStep) *
+        return landuse_getExternalBuildup(sp, i, p, buildup/perUnit, tStep) *
                perUnit;
     }
 
@@ -696,7 +696,8 @@ double landuse_getCoPollutLoad(int p, double washoff[])
 
 //=============================================================================
 
-double landuse_getExternalBuildup(int i, int p, double buildup, double tStep)
+double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup,
+        double tStep)
 //
 //  Input:   i = landuse index
 //           p = pollutant index
@@ -719,7 +720,7 @@ double landuse_getExternalBuildup(int i, int p, double buildup, double tStep)
     if ( ts >= 0 )
     {        
         rate = sf * table_tseriesLookup(&Tseries[ts],
-               getDateTime(NewRunoffTime), FALSE);
+               getDateTime(sp, NewRunoffTime), FALSE);
     }
 
     // --- compute buildup at end of time interval

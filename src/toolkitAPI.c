@@ -48,8 +48,15 @@ void DLLEXPORT swmm_getAPIError(int errcode, char *s)
     strcpy(s, errmsg);
 }
 
-int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month, int *day,
-                                         int *hours, int *minutes, int *seconds)
+int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
+        int *day, int *hours, int *minutes, int *seconds)
+{
+    return swmm_getSimulationDateTime_project(_defaultProject, timetype, year,
+            month, day, hours, minutes, seconds);
+}
+
+int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_Project *sp, int timetype,
+        int *year, int *month, int *day, int *hours, int *minutes, int *seconds)
 //
 // Input:   timetype = time type to return
 // Output:  year, month, day, hours, minutes, seconds = int
@@ -67,12 +74,12 @@ int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month, in
         DateTime _dtime;
         switch (timetype)
         {
-        //StartDateTime (globals.h)
-        case SM_STARTDATE: _dtime = StartDateTime; break;
-        //EndDateTime (globals.h)
-        case SM_ENDDATE: _dtime = EndDateTime;  break;
-        //ReportStart (globals.h)
-        case SM_REPORTDATE: _dtime = ReportStart;  break;
+        //sp->StartDateTime (globals.h)
+        case SM_STARTDATE: _dtime = sp->StartDateTime; break;
+        //sp->EndDateTime (globals.h)
+        case SM_ENDDATE: _dtime = sp->EndDateTime;  break;
+        //sp->ReportStart (globals.h)
+        case SM_REPORTDATE: _dtime = sp->ReportStart;  break;
         default: return(ERR_API_OUTBOUNDS);
         }
         datetime_decodeDate(_dtime, year, month, day);
@@ -86,7 +93,8 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
 {
     return swmm_setSimulationDateTime_project(_defaultProject, timetype, dtimestr);
 }
-int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype, char *dtimestr)
+int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
+        char *dtimestr)
 //
 // Input:   timetype = time type to return
 //          DateTime String
@@ -115,29 +123,29 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
 
         switch(timetype)
         {
-            //StartDateTime (globals.h)
+            //sp->StartDateTime (globals.h)
             case SM_STARTDATE:
                 project_readOption(sp, "START_DATE", theDate);
                 project_readOption(sp, "START_TIME", theTime);
-                StartDateTime = StartDate + StartTime;
-                TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
+                sp->StartDateTime = sp->StartDate + sp->StartTime;
+                TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
                 TotalDuration *= 1000.0;
                 break;
-            //EndDateTime (globals.h)
+            //sp->EndDateTime (globals.h)
             case SM_ENDDATE:
                 project_readOption(sp, "END_DATE", theDate);
                 project_readOption(sp, "END_TIME", theTime);
-                EndDateTime = EndDate + EndTime;
-                TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
+                sp->EndDateTime = sp->EndDate + sp->EndTime;
+                TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
                 TotalDuration *= 1000.0;
                 break;
-            //ReportStart (globals.h)
+            //sp->ReportStart (globals.h)
             case SM_REPORTDATE:
                 project_readOption(sp, "REPORT_START_DATE", theDate);
                 project_readOption(sp, "REPORT_START_TIME", theTime);
-                ReportStart = ReportStartDate + ReportStartTime;
+                sp->ReportStart = sp->ReportStartDate + sp->ReportStartTime;
                 break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
@@ -841,8 +849,12 @@ int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_Project *sp, int index,
 //-------------------------------
 // Active Simulation Results API
 //-------------------------------
-
 int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr)
+{
+    return swmm_getCurrentDateTimeStr_project(_defaultProject, dtimestr);
+}
+
+int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_Project *sp, char *dtimestr)
 //
 // Output:  DateTime String
 // Return:  API Error
@@ -858,7 +870,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr)
     if(swmm_IsStartedFlag() == FALSE) return(ERR_API_SIM_NRUNNING);
 
     // Fetch Current Time
-    currentTime = getDateTime(NewRoutingTime);
+    currentTime = getDateTime(sp, NewRoutingTime);
 
     // Convert To Char
     datetime_dateToStr(currentTime, theDate);
@@ -1504,7 +1516,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         // Add control action to RPT file if desired flagged
         if (sp->RptFlags.controls)
         {
-            currentTime = getDateTime(NewRoutingTime);
+            currentTime = getDateTime(sp, NewRoutingTime);
             report_writeControlAction(sp, currentTime, Link[index].ID,
                     targetSetting, _rule_);
         }

@@ -328,7 +328,7 @@ void writeNodeDepths(SWMM_Project *sp)
     {
         fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
         fprintf(sp->Frpt.file, " %-9s ", NodeTypeWords[Node[j].type]);
-        getElapsedTime(NodeStats[j].maxDepthDate, &days, &hrs, &mins);
+        getElapsedTime(sp, NodeStats[j].maxDepthDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "%7.2f  %7.2f  %7.2f  %4d  %02d:%02d  %10.2f",
             NodeStats[j].avgDepth / sp->StepCount * UCF(sp, LENGTH),
             NodeStats[j].maxDepth * UCF(sp, LENGTH),
@@ -371,7 +371,7 @@ void writeNodeFlows(SWMM_Project *sp)
     {
         fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
         fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[Node[j].type]);
-        getElapsedTime(NodeStats[j].maxInflowDate, &days1, &hrs1, &mins1);
+        getElapsedTime(sp, NodeStats[j].maxInflowDate, &days1, &hrs1, &mins1);
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxLatFlow * UCF(sp, FLOW));
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxInflow * UCF(sp, FLOW));
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days1, hrs1, mins1);
@@ -478,7 +478,7 @@ void writeNodeFlooding(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
         fprintf(sp->Frpt.file, " %7.2f ", t);
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxOverflow * UCF(sp, FLOW));
-        getElapsedTime(NodeStats[j].maxOverflowDate, &days, &hrs, &mins);
+        getElapsedTime(sp, NodeStats[j].maxOverflowDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "   %4d  %02d:%02d", days, hrs, mins);
 		fprintf(sp->Frpt.file, "%12.3f", NodeStats[j].volFlooded * Vcf);
         if ( sp->RouteModel == DW )
@@ -553,7 +553,7 @@ void writeStorageVolumes(SWMM_Project *sp)
                 avgVol*UCF(sp, VOLUME)/1000.0, pctAvgVol, pctEvapLoss, pctSeepLoss,
                 maxVol*UCF(sp, VOLUME)/1000.0, pctMaxVol);
 
-            getElapsedTime(StorageStats[k].maxVolDate, &days, &hrs, &mins);
+            getElapsedTime(sp, StorageStats[k].maxVolDate, &days, &hrs, &mins);
             fprintf(sp->Frpt.file, "    %4d  %02d:%02d  ", days, hrs, mins);
             fprintf(sp->Frpt.file, FlowFmt, StorageStats[k].maxFlow*UCF(sp, FLOW));
         }
@@ -721,7 +721,7 @@ void writeLinkFlows(SWMM_Project *sp)
         else fprintf(sp->Frpt.file, " %-7s ", LinkTypeWords[Link[j].type]);
 
         // --- print max. flow & time of occurrence
-        getElapsedTime(LinkStats[j].maxFlowDate, &days, &hrs, &mins);
+        getElapsedTime(sp, LinkStats[j].maxFlowDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, FlowFmt, LinkStats[j].maxFlow*UCF(sp, FLOW));
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days, hrs, mins);
 

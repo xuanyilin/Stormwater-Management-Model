@@ -494,7 +494,7 @@ void link_initState(SWMM_Project *sp, int j)
     Link[j].newVolume = 0.0;
     Link[j].setting   = 1.0;
     Link[j].targetSetting = 1.0;
-    Link[j].timeLastSet = StartDate;                                           //(5.1.010)
+    Link[j].timeLastSet = sp->StartDate;                                           //(5.1.010)
     Link[j].inletControl  = FALSE;
     Link[j].normalFlow    = FALSE;
     if ( Link[j].type == CONDUIT ) conduit_initState(j, Link[j].subIndex);

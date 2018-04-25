@@ -758,7 +758,7 @@ void createRdiiFile(SWMM_Project *sp)
         while ( elapsedTime <= duration && !sp->ErrorCode )
         {
             // --- compute current calendar date/time
-            currentDate = StartDateTime + elapsedTime / SECperDAY;
+            currentDate = sp->StartDateTime + elapsedTime / SECperDAY;
 
             // --- update rainfall at all rain gages
             getRainfall(sp, currentDate);
@@ -1080,7 +1080,7 @@ void initUnitHydData(SWMM_Project *sp)
     int month;                         // month index
 
     // --- initialize UHGroup entries for each Unit Hydrograph
-    month = datetime_monthOfYear(StartDateTime) - 1;
+    month = datetime_monthOfYear(sp->StartDateTime) - 1;
     for (i=0; i<sp->Nobjects[UNITHYD]; i++)
     {
         for (k=0; k<3; k++)
@@ -1097,7 +1097,7 @@ void initUnitHydData(SWMM_Project *sp)
         }
 
         // --- initialize gage date to simulation start date
-        UHGroup[i].gageDate = StartDateTime;
+        UHGroup[i].gageDate = sp->StartDateTime;
         UHGroup[i].area = 0.0;
         UHGroup[i].rdii = 0.0;
     }
@@ -1114,7 +1114,7 @@ void initUnitHydData(SWMM_Project *sp)
         UHGroup[i].isUsed = TRUE;
 
         // --- add node's sewer area to UH group's area
-        UHGroup[i].lastDate = StartDateTime;
+        UHGroup[i].lastDate = sp->StartDateTime;
         UHGroup[i].area += Node[j].rdiiInflow->area;
     }
 }

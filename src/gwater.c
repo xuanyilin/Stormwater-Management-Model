@@ -109,7 +109,7 @@ static MathExpr* DeepFlowExpr;    // user-supplied deep GW flow expression     /
 //-----------------------------------------------------------------------------
 static void   getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt);
 static void   getFluxes(SWMM_Project *sp, double upperVolume, double lowerDepth);
-static void   getEvapRates(double theta, double upperDepth);
+static void   getEvapRates(SWMM_Project *sp, double theta, double upperDepth);
 static double getUpperPerc(double theta, double upperDepth);
 static double getGWFlow(SWMM_Project *sp, double lowerDepth);
 static void   updateMassBal(double area,  double tStep);
@@ -660,7 +660,7 @@ void  getFluxes(SWMM_Project *sp, double theta, double lowerDepth)
     Theta = theta;
 
     // --- find evaporation rate from both zones
-    getEvapRates(theta, upperDepth);
+    getEvapRates(sp, theta, upperDepth);
 
     // --- find percolation rate from upper to lower zone
     UpperPerc = getUpperPerc(theta, upperDepth);
@@ -722,7 +722,7 @@ void  getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt)
 
 //=============================================================================
 
-void getEvapRates(double theta, double upperDepth)
+void getEvapRates(SWMM_Project *sp, double theta, double upperDepth)
 //
 //  Input:   theta      = moisture content of upper zone
 //           upperDepth = depth of upper zone (ft)
@@ -745,7 +745,7 @@ void getEvapRates(double theta, double upperDepth)
     p = A.upperEvapPat;
     if ( p >= 0 )
     {
-        month = datetime_monthOfYear(getDateTime(NewRunoffTime));
+        month = datetime_monthOfYear(getDateTime(sp, NewRunoffTime));
         f = Pattern[p].factor[month-1];
     }
     upperFrac *= f;

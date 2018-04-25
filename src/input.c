@@ -162,7 +162,7 @@ int input_readData(SWMM_Project *sp)
     // --- initialize starting date for all time series
     for ( i = 0; i < sp->Nobjects[TSERIES]; i++ )
     {
-        Tseries[i].lastDate = StartDate + StartTime;
+        Tseries[i].lastDate = sp->StartDate + sp->StartTime;
     }
 
     // --- read each line from input file

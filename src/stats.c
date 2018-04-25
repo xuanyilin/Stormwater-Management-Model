@@ -178,7 +178,7 @@ int  stats_open(SWMM_Project *sp)
     {
         NodeStats[j].avgDepth = 0.0;
         NodeStats[j].maxDepth = 0.0;
-        NodeStats[j].maxDepthDate = StartDateTime;
+        NodeStats[j].maxDepthDate = sp->StartDateTime;
         NodeStats[j].maxRptDepth = 0.0;                                        //(5.1.008)
         NodeStats[j].volFlooded = 0.0;
         NodeStats[j].timeFlooded = 0.0;
@@ -189,8 +189,8 @@ int  stats_open(SWMM_Project *sp)
         NodeStats[j].maxInflow = 0.0;
         NodeStats[j].maxOverflow = 0.0;
         NodeStats[j].maxPondedVol = 0.0;
-        NodeStats[j].maxInflowDate = StartDateTime;
-        NodeStats[j].maxOverflowDate = StartDateTime;
+        NodeStats[j].maxInflowDate = sp->StartDateTime;
+        NodeStats[j].maxOverflowDate = sp->StartDateTime;
     }
 
     // --- initialize link stats
@@ -231,7 +231,7 @@ int  stats_open(SWMM_Project *sp)
             StorageStats[j].maxFlow = 0.0;
             StorageStats[j].evapLosses = 0.0;
             StorageStats[j].exfilLosses = 0.0;                                 //(5.1.007)
-            StorageStats[j].maxVolDate = StartDateTime;
+            StorageStats[j].maxVolDate = sp->StartDateTime;
         }
     }
 
@@ -455,7 +455,7 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
     int   j;
 
     // --- update stats only after reporting period begins
-    if ( aDate < ReportStart ) return;
+    if ( aDate < sp->ReportStart ) return;
     SysOutfallFlow = 0.0;
 
     // --- update node & link stats

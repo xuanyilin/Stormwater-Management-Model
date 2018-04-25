@@ -319,13 +319,13 @@ void report_writeOptions(SWMM_Project *sp)
     if ( sp->Nobjects[LINK] > 0 )
     fprintf(sp->Frpt.file, "\n  Flow Routing Method ...... %s",
         RouteModelWords[sp->RouteModel]);
-    datetime_dateToStr(StartDate, str);
+    datetime_dateToStr(sp->StartDate, str);
     fprintf(sp->Frpt.file, "\n  Starting Date ............ %s", str);
-    datetime_timeToStr(StartTime, str);
+    datetime_timeToStr(sp->StartTime, str);
     fprintf(sp->Frpt.file, " %s", str);
-    datetime_dateToStr(EndDate, str);
+    datetime_dateToStr(sp->EndDate, str);
     fprintf(sp->Frpt.file, "\n  Ending Date .............. %s", str);
-    datetime_timeToStr(EndTime, str);
+    datetime_timeToStr(sp->EndTime, str);
     fprintf(sp->Frpt.file, " %s", str);
     fprintf(sp->Frpt.file, "\n  Antecedent Dry Days ...... %.1f", sp->StartDryDays);
     datetime_timeToStr(datetime_encodeTime(0, 0, sp->ReportStep), str);

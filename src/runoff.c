@@ -174,7 +174,7 @@ void runoff_execute(SWMM_Project *sp)
     oldRunoffStep = (NewRunoffTime - OldRunoffTime) / 1000.0;                  //(5.1.011)
 
     // --- convert elapsed runoff time in milliseconds to a calendar date
-    currentDate = getDateTime(NewRunoffTime);
+    currentDate = getDateTime(sp, NewRunoffTime);
 
     // --- update climatological conditions
     climate_setState(sp, currentDate);

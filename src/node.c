@@ -1321,7 +1321,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
 
       case TIMESERIES_OUTFALL:
         k = Outfall[i].stageSeries;
-        currentDate = StartDateTime + NewRoutingTime / MSECperDAY;
+        currentDate = sp->StartDateTime + NewRoutingTime / MSECperDAY;
         stage = table_tseriesLookup(&Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);
         break;
