@@ -176,12 +176,12 @@ void dynwave_validate(SWMM_Project *sp)
 //  Purpose: adjusts dynamic wave routing options.
 //
 {
-    if ( MinRouteStep > RouteStep ) MinRouteStep = RouteStep;
-    if ( MinRouteStep < MINTIMESTEP ) MinRouteStep = MINTIMESTEP;
-	if ( MinSurfArea == 0.0 ) MinSurfArea = DEFAULT_SURFAREA;
-	else MinSurfArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
-    if ( HeadTol == 0.0 ) HeadTol = DEFAULT_HEADTOL;
-    else HeadTol /= UCF(sp, LENGTH);
+    if ( sp->MinRouteStep > sp->RouteStep ) sp->MinRouteStep = sp->RouteStep;
+    if ( sp->MinRouteStep < MINTIMESTEP ) sp->MinRouteStep = MINTIMESTEP;
+	if ( sp->MinSurfArea == 0.0 ) sp->MinSurfArea = DEFAULT_SURFAREA;
+	else sp->MinSurfArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
+    if ( sp->HeadTol == 0.0 ) sp->HeadTol = DEFAULT_HEADTOL;
+    else sp->HeadTol /= UCF(sp, LENGTH);
 	if ( sp->MaxTrials == 0 ) sp->MaxTrials = DEFAULT_MAXTRIALS;
 }
 
@@ -196,14 +196,14 @@ double dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep)
 {
     // --- use user-supplied fixed step if variable step option turned off
     //     or if its smaller than the min. allowable variable time step
-    if ( CourantFactor == 0.0 ) return fixedStep;
+    if ( sp->CourantFactor == 0.0 ) return fixedStep;
     if ( fixedStep < MINTIMESTEP ) return fixedStep;
 
     // --- at start of simulation (when current variable step is zero)
     //     use the minimum allowable time step
     if ( VariableStep == 0.0 )
     {
-        VariableStep = MinRouteStep;                                           //(5.1.008)
+        VariableStep = sp->MinRouteStep;                                           //(5.1.008)
     }
 
     // --- otherwise compute variable step based on current flow solution
@@ -299,9 +299,9 @@ void initNodeStates(SWMM_Project *sp)
         {
             Xnode[i].newSurfArea = node_getSurfArea(sp, i, Node[i].newDepth);
         }
-        if ( Xnode[i].newSurfArea < MinSurfArea )
+        if ( Xnode[i].newSurfArea < sp->MinSurfArea )
         {
-            Xnode[i].newSurfArea = MinSurfArea;
+            Xnode[i].newSurfArea = sp->MinSurfArea;
         }
 
 ////  Following code section modified for release 5.1.007  ////                //(5.1.007)
@@ -596,7 +596,7 @@ int findNodeDepths(SWMM_Project *sp, double dt)
         yOld = Node[i].newDepth;
         setNodeDepth(sp, i, dt);
         Xnode[i].converged = TRUE;
-        if ( fabs(yOld - Node[i].newDepth) > HeadTol )
+        if ( fabs(yOld - Node[i].newDepth) > sp->HeadTol )
         {
             converged = FALSE;
             Xnode[i].converged = FALSE;
@@ -783,7 +783,7 @@ double getVariableStep(SWMM_Project *sp, double maxStep)
     stats_updateCriticalTimeCount(minNode, minLink);
 
     // --- don't let time step go below an absolute minimum
-    if ( tMin < MinRouteStep ) tMin = MinRouteStep;                            //(5.1.008)
+    if ( tMin < sp->MinRouteStep ) tMin = sp->MinRouteStep;                            //(5.1.008)
     return tMin;
 }
 
@@ -819,7 +819,7 @@ double getLinkStep(SWMM_Project *sp, double tMin, int *minLink)
             // --- compute time step to satisfy Courant condition
             t = Link[i].newVolume / Conduit[k].barrels / q;
             t = t * Conduit[k].modLength / link_getLength(sp, i);
-            t = t * Link[i].froude / (1.0 + Link[i].froude) * CourantFactor;
+            t = t * Link[i].froude / (1.0 + Link[i].froude) * sp->CourantFactor;
 
             // --- update critical link time step
             if ( t < tLink )

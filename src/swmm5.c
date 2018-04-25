@@ -495,10 +495,10 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         IsStartedFlag = TRUE;
 
         // --- initialize global continuity errors
-        RunoffError = 0.0;
-        GwaterError = 0.0;
-        FlowError = 0.0;
-        QualError = 0.0;
+        sp->RunoffError = 0.0;
+        sp->GwaterError = 0.0;
+        sp->FlowError = 0.0;
+        sp->QualError = 0.0;
 
         // --- open rainfall processor (creates/opens a rainfall
         //     interface file and generates any RDII flows)
@@ -630,7 +630,7 @@ void execRouting(SWMM_Project *sp)                                              
         // --- determine when next routing time occurs
         sp->StepCount++;
         if ( !DoRouting ) routingStep = MIN(sp->WetStep, sp->ReportStep);
-        else routingStep = routing_getRoutingStep(sp, sp->RouteModel, RouteStep);
+        else routingStep = routing_getRoutingStep(sp, sp->RouteModel, sp->RouteStep);
         if ( routingStep <= 0.0 )
         {
             sp->ErrorCode = ERR_TIMESTEP;
@@ -794,9 +794,9 @@ int  DLLEXPORT swmm_getMassBalErr_project(SWMM_Project *sp, float* runoffErr,
 
     if ( IsOpenFlag && !IsStartedFlag)
     {
-        *runoffErr = (float)RunoffError;
-        *flowErr   = (float)FlowError;
-        *qualErr   = (float)QualError;
+        *runoffErr = (float)sp->RunoffError;
+        *flowErr   = (float)sp->FlowError;
+        *qualErr   = (float)sp->QualError;
     }
     return 0;
 }

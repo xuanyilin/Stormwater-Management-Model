@@ -333,6 +333,7 @@ int DLLEXPORT swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationParam(int type, double *value);
+int DLLEXPORT  swmm_getSimulationParam_project(SWMM_Project *sp, int type, double *value);
 
 /**
  @brief Gets Object Count

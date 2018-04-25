@@ -1070,7 +1070,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- lengthen conduit if lengthening option is in effect
     lengthFactor = 1.0;
     if ( sp->RouteModel == DW &&
-         LengtheningStep > 0.0 &&
+         sp->LengtheningStep > 0.0 &&
          Link[j].xsect.type != DUMMY )
     {
         lengthFactor = conduit_getLengthFactor(sp, j, k, roughness);
@@ -1210,8 +1210,8 @@ double conduit_getLengthFactor(SWMM_Project *sp, int j, int k, double roughness)
             sqrt(fabs(Conduit[k].slope)) / Link[j].xsect.aFull;
 
     // --- determine ratio of Courant length to actual length
-    if ( LengtheningStep == 0.0 ) tStep = RouteStep;
-    else                          tStep = MIN(RouteStep, LengtheningStep);
+    if ( sp->LengtheningStep == 0.0 ) tStep = sp->RouteStep;
+    else                          tStep = MIN(sp->RouteStep, sp->LengtheningStep);
     ratio = (sqrt(GRAVITY*yFull) + vFull) * tStep / conduit_getLength(sp, j);
 
     // --- return max. of 1.0 and ratio
@@ -1252,10 +1252,10 @@ double conduit_getSlope(SWMM_Project *sp, int j)
     else slope = delta / sqrt(SQR(length) - SQR(delta));
 
     // -- check that slope exceeds minimum allowable slope
-    if ( MinSlope > 0.0 && slope < MinSlope )
+    if ( sp->MinSlope > 0.0 && slope < sp->MinSlope )
     {
         report_writeWarningMsg(sp, WARN05, Link[j].ID);
-        slope = MinSlope;
+        slope = sp->MinSlope;
         // keep min. slope positive for SF or KW routing
         if (sp->RouteModel == SF || sp->RouteModel == KW) return slope;
     }
@@ -1690,7 +1690,7 @@ void  orifice_validate(SWMM_Project *sp, int j, int k)
     orifice_setSetting(j, 0.0);
 
     // --- compute an equivalent length
-    Orifice[k].length = 2.0 * RouteStep * sqrt(GRAVITY * Link[j].xsect.yFull);
+    Orifice[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * Link[j].xsect.yFull);
     Orifice[k].length = MAX(200.0, Orifice[k].length);
     Orifice[k].surfArea = 0.0;
 }
@@ -2114,7 +2114,7 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
     if ( Link[j].offset1 < 0.0 ) Link[j].offset1 = 0.0;
 
     // --- compute an equivalent length
-    Weir[k].length = 2.0 * RouteStep * sqrt(GRAVITY * Link[j].xsect.yFull);
+    Weir[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * Link[j].xsect.yFull);
     Weir[k].length = MAX(200.0, Weir[k].length);
     Weir[k].surfArea = 0.0;
 

@@ -378,7 +378,7 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
 	double buildup;               // pollutant mass buildup
 
     // --- convert antecedent dry days into seconds
-    startDrySeconds = StartDryDays*SECperDAY;
+    startDrySeconds = sp->StartDryDays*SECperDAY;
 
     // --- examine each land use
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)

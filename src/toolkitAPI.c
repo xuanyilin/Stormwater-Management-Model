@@ -229,6 +229,11 @@ int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
 }
 
 int DLLEXPORT  swmm_getSimulationParam(int type, double *value)
+{
+    return swmm_getSimulationParam_project(_defaultProject, type, value);
+}
+
+int DLLEXPORT  swmm_getSimulationParam_project(SWMM_Project *sp, int type, double *value)
 //
 // Input:   type = analysis type
 // Output:  Simulation Parameter
@@ -248,33 +253,33 @@ int DLLEXPORT  swmm_getSimulationParam(int type, double *value)
         switch(type)
         {
             // Routing time step (sec)
-            case SM_ROUTESTEP: *value = RouteStep; break;
+            case SM_ROUTESTEP: *value = sp->RouteStep; break;
             // Minimum variable time step (sec)
-            case SM_MINROUTESTEP: *value = MinRouteStep; break;
+            case SM_MINROUTESTEP: *value = sp->MinRouteStep; break;
             // Time step for lengthening (sec)
-            case SM_LENGTHSTEP: *value = LengtheningStep; break;
+            case SM_LENGTHSTEP: *value = sp->LengtheningStep; break;
             // Antecedent dry days
-            case SM_STARTDRYDAYS: *value = StartDryDays; break;
+            case SM_STARTDRYDAYS: *value = sp->StartDryDays; break;
             // Courant time step factor
-            case SM_COURANTFACTOR: *value = CourantFactor; break;
+            case SM_COURANTFACTOR: *value = sp->CourantFactor; break;
             // Minimum nodal surface area
-            case SM_MINSURFAREA: *value = MinSurfArea; break;
+            case SM_MINSURFAREA: *value = sp->MinSurfArea; break;
             // Minimum conduit slope
-            case SM_MINSLOPE: *value = MinSlope; break;
+            case SM_MINSLOPE: *value = sp->MinSlope; break;
             // Runoff continuity error
-            case SM_RUNOFFERROR: *value = RunoffError; break;
+            case SM_RUNOFFERROR: *value = sp->RunoffError; break;
             // Groundwater continuity error
-            case SM_GWERROR: *value = GwaterError; break;
+            case SM_GWERROR: *value = sp->GwaterError; break;
             // Flow routing error
-            case SM_FLOWERROR: *value = FlowError; break;
+            case SM_FLOWERROR: *value = sp->FlowError; break;
             // Quality routing error
-            case SM_QUALERROR: *value = QualError; break;
+            case SM_QUALERROR: *value = sp->QualError; break;
             // DW routing head tolerance (ft)
-            case SM_HEADTOL: *value = HeadTol; break;
+            case SM_HEADTOL: *value = sp->HeadTol; break;
             // Tolerance for steady system flow
-            case SM_SYSFLOWTOL: *value = SysFlowTol; break;
+            case SM_SYSFLOWTOL: *value = sp->SysFlowTol; break;
             // Tolerance for steady nodal inflow
-            case SM_LATFLOWTOL: *value = LatFlowTol; break;
+            case SM_LATFLOWTOL: *value = sp->LatFlowTol; break;
             // Type not available
             default: errcode = ERR_API_OUTBOUNDS; break;
         }

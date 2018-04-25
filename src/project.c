@@ -168,7 +168,7 @@ void project_readInput(SWMM_Project *sp)
         }
 
         // --- reporting step can't be < routing step
-        if ( (double)sp->ReportStep < RouteStep )
+        if ( (double)sp->ReportStep < sp->RouteStep )
         {
             report_writeErrorMsg(sp, ERR_REPORT_STEP, "");
         }
@@ -241,10 +241,10 @@ void project_validate(SWMM_Project *sp)
         report_writeWarningMsg(sp, WARN06, "");
         sp->DryStep = sp->WetStep;
     }
-    if ( RouteStep > (double)sp->WetStep )
+    if ( sp->RouteStep > (double)sp->WetStep )
     {
         report_writeWarningMsg(sp, WARN07, "");
-        RouteStep = sp->WetStep;
+        sp->RouteStep = sp->WetStep;
     }
 
     // --- adjust individual reporting flags to match global reporting flag
@@ -521,8 +521,8 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- number of antecedent dry days
       case START_DRY_DAYS:
-        StartDryDays = atof(s2);
-        if ( StartDryDays < 0.0 )
+        sp->StartDryDays = atof(s2);
+        if ( sp->StartDryDays < 0.0 )
         {
             return error_setInpError(ERR_NUMBER, s2);
         }
@@ -634,16 +634,16 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         if ( k == ROUTE_STEP )
         {
             if ( tStep <= 0.0 ) return error_setInpError(ERR_NUMBER, s2);
-            RouteStep = tStep;
+            sp->RouteStep = tStep;
         }
-        else LengtheningStep = MAX(0.0, tStep);
+        else sp->LengtheningStep = MAX(0.0, tStep);
         break;
 
 ////  Following code section added to release 5.1.008.  ////                   //(5.1.008)
 
      // --- minimum variable time step for dynamic wave routing
       case MIN_ROUTE_STEP:
-        if ( !getDouble(s2, &MinRouteStep) || MinRouteStep < 0.0 )
+        if ( !getDouble(s2, &sp->MinRouteStep) || sp->MinRouteStep < 0.0 )
             return error_setInpError(ERR_NUMBER, s2);
         break;
 
@@ -658,25 +658,25 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       //     dynamic wave flow routing (value of 0 indicates that variable
       //     time step option not used)
       case VARIABLE_STEP:
-        if ( !getDouble(s2, &CourantFactor) )
+        if ( !getDouble(s2, &sp->CourantFactor) )
             return error_setInpError(ERR_NUMBER, s2);
-        if ( CourantFactor < 0.0 || CourantFactor > 2.0 )
+        if ( sp->CourantFactor < 0.0 || sp->CourantFactor > 2.0 )
             return error_setInpError(ERR_NUMBER, s2);
         break;
 
       // --- minimum surface area (ft2 or sq. meters) associated with nodes
       //     under dynamic wave flow routing 
       case MIN_SURFAREA:
-        MinSurfArea = atof(s2);
+        sp->MinSurfArea = atof(s2);
         break;
 
       // --- minimum conduit slope (%)
       case MIN_SLOPE:
-        if ( !getDouble(s2, &MinSlope) )
+        if ( !getDouble(s2, &sp->MinSlope) )
             return error_setInpError(ERR_NUMBER, s2);
-        if ( MinSlope < 0.0 || MinSlope >= 100 )
+        if ( sp->MinSlope < 0.0 || sp->MinSlope >= 100 )
             return error_setInpError(ERR_NUMBER, s2);
-        MinSlope /= 100.0;
+        sp->MinSlope /= 100.0;
         break;
 
       // --- maximum trials / time step for dynamic wave routing
@@ -688,7 +688,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- head convergence tolerance for dynamic wave routing
       case HEAD_TOL:
-        if ( !getDouble(s2, &HeadTol) )
+        if ( !getDouble(s2, &sp->HeadTol) )
         {
             return error_setInpError(ERR_NUMBER, s2);
         }
@@ -696,20 +696,20 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- steady state tolerance on system inflow - outflow
       case SYS_FLOW_TOL:
-        if ( !getDouble(s2, &SysFlowTol) )
+        if ( !getDouble(s2, &sp->SysFlowTol) )
         {
             return error_setInpError(ERR_NUMBER, s2);
         }
-        SysFlowTol /= 100.0;
+        sp->SysFlowTol /= 100.0;
         break;
 
       // --- steady state tolerance on nodal lateral inflow
       case LAT_FLOW_TOL:
-        if ( !getDouble(s2, &LatFlowTol) )
+        if ( !getDouble(s2, &sp->LatFlowTol) )
         {
             return error_setInpError(ERR_NUMBER, s2);
         }
-        LatFlowTol /= 100.0;
+        sp->LatFlowTol /= 100.0;
         break;
 
       case TEMPDIR: // Temporary Directory
@@ -800,10 +800,10 @@ void setDefaults(SWMM_Project *sp)
    sp->NormalFlowLtd   = BOTH;             // Default normal flow limitation
    sp->ForceMainEqn    = H_W;              // Hazen-Williams eqn. for force mains
    sp->LinkOffsets     = DEPTH_OFFSET;     // Use depth for link offsets
-   LengtheningStep = 0;                // No lengthening of conduits
-   CourantFactor   = 0.0;              // No variable time step 
-   MinSurfArea     = 0.0;              // Force use of default min. surface area
-   MinSlope        = 0.0;              // No user supplied minimum conduit slope //(5.1.012)
+   sp->LengtheningStep = 0;                // No lengthening of conduits
+   sp->CourantFactor   = 0.0;              // No variable time step 
+   sp->MinSurfArea     = 0.0;              // Force use of default min. surface area
+   sp->MinSlope        = 0.0;              // No user supplied minimum conduit slope //(5.1.012)
    sp->SkipSteadyState = FALSE;            // Do flow routing in steady state periods
    sp->IgnoreRainfall  = FALSE;            // Analyze rainfall/runoff
    sp->IgnoreRDII      = FALSE;            // Analyze RDII                         //(5.1.004)
@@ -813,14 +813,14 @@ void setDefaults(SWMM_Project *sp)
    sp->IgnoreQuality   = FALSE;            // Analyze water quality
    sp->WetStep         = 300;              // Runoff wet time step (secs)
    sp->DryStep         = 3600;             // Runoff dry time step (secs)
-   RouteStep       = 300.0;            // Routing time step (secs)
-   MinRouteStep    = 0.5;              // Minimum variable time step (sec)     //(5.1.008)
+   sp->RouteStep       = 300.0;            // Routing time step (secs)
+   sp->MinRouteStep    = 0.5;              // Minimum variable time step (sec)     //(5.1.008)
    sp->ReportStep      = 900;              // Reporting time step (secs)
-   StartDryDays    = 0.0;              // Antecedent dry days
+   sp->StartDryDays    = 0.0;              // Antecedent dry days
    sp->MaxTrials       = 0;                // Force use of default max. trials 
-   HeadTol         = 0.0;              // Force use of default head tolerance
-   SysFlowTol      = 0.05;             // System flow tolerance for steady state
-   LatFlowTol      = 0.05;             // Lateral flow tolerance for steady state
+   sp->HeadTol         = 0.0;              // Force use of default head tolerance
+   sp->SysFlowTol      = 0.05;             // System flow tolerance for steady state
+   sp->LatFlowTol      = 0.05;             // Lateral flow tolerance for steady state
    sp->NumThreads      = 0;                // Number of parallel threads to use
    sp->NumEvents       = 0;                // Number of detailed routing events    //(5.1.011)
 

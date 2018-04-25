@@ -293,7 +293,7 @@ int  stats_open(SWMM_Project *sp)
     MaxRunoffFlow = 0.0;
     MaxOutfallFlow = 0.0;
     SysStats.maxTimeStep = 0.0;
-    SysStats.minTimeStep = RouteStep;
+    SysStats.minTimeStep = sp->RouteStep;
     SysStats.avgTimeStep = 0.0;
     SysStats.avgStepCount = 0.0;
     SysStats.steadyStateCount = 0.0;
@@ -774,7 +774,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     }
 
     // --- stop if not using a variable time step
-    if ( sp->RouteModel != DW || CourantFactor == 0.0 ) return;
+    if ( sp->RouteModel != DW || sp->CourantFactor == 0.0 ) return;
 
     // --- find nodes most frequently Courant critical
     if ( sp->StepCount == 0 ) return;                                              //(5.1.008)

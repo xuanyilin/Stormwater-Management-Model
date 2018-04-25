@@ -1155,25 +1155,25 @@ struct SWMM_Project {
                  MaxTrials,                // Max. trials for DW routing
                  NumThreads,               // Number of parallel threads used //(5.1.008)
                  NumEvents;                // Number of detailed events       //(5.1.011)
-//                    //InSteadyState;            // System flows remain constant    //(5.1.012)
-//
-//    EXTERN double
-//                      RouteStep,                // Routing time step (sec)
-//                      MinRouteStep,             // Minimum variable time step (sec) //(5.1.008)
-//                      LengtheningStep,          // Time step for lengthening (sec)
-//                      StartDryDays,             // Antecedent dry days
-//                      CourantFactor,            // Courant time step factor
-//                      MinSurfArea,              // Minimum nodal surface area
-//                      MinSlope,                 // Minimum conduit slope
-//                      RunoffError,              // Runoff continuity error
-//                      GwaterError,              // Groundwater continuity error
-//                      FlowError,                // Flow routing error
-//                      QualError,                // Quality routing error
-//                      HeadTol,                  // DW routing head tolerance (ft)
-//                      SysFlowTol,               // Tolerance for steady system flow
-//                      LatFlowTol;               // Tolerance for steady nodal inflow
-//
-//    EXTERN DateTime
+//                 InSteadyState;            // System flows remain constant    //(5.1.012)
+
+   double
+                 RouteStep,                // Routing time step (sec)
+                 MinRouteStep,             // Minimum variable time step (sec) //(5.1.008)
+                 LengtheningStep,          // Time step for lengthening (sec)
+                 StartDryDays,             // Antecedent dry days
+                 CourantFactor,            // Courant time step factor
+                 MinSurfArea,              // Minimum nodal surface area
+                 MinSlope,                 // Minimum conduit slope
+                 RunoffError,              // Runoff continuity error
+                 GwaterError,              // Groundwater continuity error
+                 FlowError,                // Flow routing error
+                 QualError,                // Quality routing error
+                 HeadTol,                  // DW routing head tolerance (ft)
+                 SysFlowTol,               // Tolerance for steady system flow
+                 LatFlowTol;               // Tolerance for steady nodal inflow
+
+//   DateTime
 //                      StartDate,                // Starting date
 //                      StartTime,                // Starting time
 //                      StartDateTime,            // Starting Date+Time

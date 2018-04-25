@@ -281,7 +281,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         {
             if ( OldRoutingTime == 0.0
             ||   actionCount > 0
-            ||   fabs(stepFlowError) > SysFlowTol
+            ||   fabs(stepFlowError) > sp->SysFlowTol
             ||   inflowHasChanged(sp) ) inSteadyState = FALSE;
             else inSteadyState = TRUE;
         }
@@ -692,7 +692,7 @@ int  inflowHasChanged(SWMM_Project *sp)
         if      ( fabs(qOld) > TINY ) diff = (qNew / qOld) - 1.0;
         else if ( fabs(qNew) > TINY ) diff = 1.0;
         else                    diff = 0.0;
-        if ( fabs(diff) > LatFlowTol ) return TRUE;
+        if ( fabs(diff) > sp->LatFlowTol ) return TRUE;
         if ( Node[j].type == OUTFALL || Node[j].degree == 0 )
         {
             qOld = Node[j].oldFlowInflow;
@@ -700,7 +700,7 @@ int  inflowHasChanged(SWMM_Project *sp)
             if      ( fabs(qOld) > TINY ) diff = (qNew / qOld) - 1.0;
             else if ( fabs(qNew) > TINY ) diff = 1.0;
             else                          diff = 0.0;
-            if ( fabs(diff) > LatFlowTol ) return TRUE;
+            if ( fabs(diff) > sp->LatFlowTol ) return TRUE;
         }
     }
     return FALSE;

@@ -327,7 +327,7 @@ void report_writeOptions(SWMM_Project *sp)
     fprintf(sp->Frpt.file, "\n  Ending Date .............. %s", str);
     datetime_timeToStr(EndTime, str);
     fprintf(sp->Frpt.file, " %s", str);
-    fprintf(sp->Frpt.file, "\n  Antecedent Dry Days ...... %.1f", StartDryDays);
+    fprintf(sp->Frpt.file, "\n  Antecedent Dry Days ...... %.1f", sp->StartDryDays);
     datetime_timeToStr(datetime_encodeTime(0, 0, sp->ReportStep), str);
     fprintf(sp->Frpt.file, "\n  Report Time Step ......... %s", str);
     if ( sp->Nobjects[SUBCATCH] > 0 )
@@ -339,16 +339,16 @@ void report_writeOptions(SWMM_Project *sp)
     }
     if ( sp->Nobjects[LINK] > 0 )
     {
-        fprintf(sp->Frpt.file, "\n  Routing Time Step ........ %.2f sec", RouteStep);
+        fprintf(sp->Frpt.file, "\n  Routing Time Step ........ %.2f sec", sp->RouteStep);
 		if ( sp->RouteModel == DW )
 		{
 		fprintf(sp->Frpt.file, "\n  Variable Time Step ....... ");
-		if ( CourantFactor > 0.0 ) fprintf(sp->Frpt.file, "YES");
+		if ( sp->CourantFactor > 0.0 ) fprintf(sp->Frpt.file, "YES");
 		else                       fprintf(sp->Frpt.file, "NO");
 		fprintf(sp->Frpt.file, "\n  Maximum Trials ........... %d", sp->MaxTrials);
         fprintf(sp->Frpt.file, "\n  Number of Threads ........ %d", sp->NumThreads);   //(5.1.008)
 		fprintf(sp->Frpt.file, "\n  Head Tolerance ........... %.6f ",
-            HeadTol*UCF(sp, LENGTH));                                              //(5.1.008)
+            sp->HeadTol*UCF(sp, LENGTH));                                              //(5.1.008)
 		if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "ft");
 		else                    fprintf(sp->Frpt.file, "m");
 		}
@@ -965,7 +965,7 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
         WRITE("");
     }
 
-    if ( CourantFactor == 0.0 ) return;
+    if ( sp->CourantFactor == 0.0 ) return;
     WRITE("");
     WRITE("***************************");
     WRITE("Time-Step Critical Elements");

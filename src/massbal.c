@@ -113,10 +113,10 @@ int massbal_open(SWMM_Project *sp)
     int j, n;
 
     // --- initialize global continuity errors
-    RunoffError = 0.0;
-    GwaterError = 0.0;
-    FlowError   = 0.0;
-    QualError   = 0.0;
+    sp->RunoffError = 0.0;
+    sp->GwaterError = 0.0;
+    sp->FlowError   = 0.0;
+    sp->QualError   = 0.0;
 
     // --- initialize runoff totals
     RunoffTotals.rainfall    = 0.0;
@@ -175,7 +175,7 @@ int massbal_open(SWMM_Project *sp)
 	{
             if ( Node[j].type != STORAGE &&
                 Node[j].initDepth <= Node[j].crownElev - Node[j].invertElev )  //(5.1.007)
-                FlowTotals.initStorage += Node[j].initDepth * MinSurfArea;
+                FlowTotals.initStorage += Node[j].initDepth * sp->MinSurfArea;
 	}
     }
 
@@ -688,7 +688,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
         {
             if ( Node[j].type != STORAGE &&
                  Node[j].newDepth <= Node[j].crownElev - Node[j].invertElev )  //(5.1.007)
-                totalStorage +=	Node[j].newDepth * MinSurfArea;
+                totalStorage +=	Node[j].newDepth * sp->MinSurfArea;
 	}
     }
 
@@ -779,7 +779,7 @@ double massbal_getRunoffError(SWMM_Project *sp)
     {
         RunoffTotals.pctError = 100.0 * (totalInflow / totalOutflow - 1.0);
     }
-    RunoffError = RunoffTotals.pctError;
+    sp->RunoffError = RunoffTotals.pctError;
     return RunoffTotals.pctError;
 }
 
@@ -887,7 +887,7 @@ double massbal_getGwaterError(SWMM_Project *sp)
     {
         GwaterTotals.pctError = 100.0 * (totalInflow / totalOutflow - 1.0);
     }
-    GwaterError = GwaterTotals.pctError;
+    sp->GwaterError = GwaterTotals.pctError;
     return GwaterTotals.pctError;
 }
 
@@ -937,7 +937,7 @@ double massbal_getFlowError(SWMM_Project *sp)
     {
         FlowTotals.pctError = 100.0 * (totalInflow / totalOutflow - 1.0);
     }
-    FlowError = FlowTotals.pctError;
+    sp->FlowError = FlowTotals.pctError;
     return FlowTotals.pctError;
 }
 
@@ -1027,7 +1027,7 @@ double massbal_getQualError(SWMM_Project *sp)
             QualTotals[p].finalStorage *= cf; 
         }
     }
-    QualError = maxQualError;
+    sp->QualError = maxQualError;
     return maxQualError;
 }
 //=============================================================================
