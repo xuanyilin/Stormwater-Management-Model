@@ -368,7 +368,7 @@ void  output_checkFileSize(SWMM_Project *sp)
          sp->RptFlags.nodes != NONE ||
          sp->RptFlags.links != NONE )
     {
-        if ( (double)OutputStartPos + (double)BytesPerPeriod * TotalDuration
+        if ( (double)OutputStartPos + (double)BytesPerPeriod * sp->TotalDuration
              / 1000.0 / (double)sp->ReportStep >= (double)MAXFILESIZE )
         {
             report_writeErrorMsg(sp, ERR_FILE_SIZE, "");
@@ -514,7 +514,7 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     }
 
     // --- find where current reporting time lies between latest runoff times
-    f = (reportTime - OldRunoffTime) / (NewRunoffTime - OldRunoffTime);
+    f = (reportTime - sp->OldRunoffTime) / (sp->NewRunoffTime - sp->OldRunoffTime);
 
     // --- write subcatchment results to file
     for ( j=0; j<sp->Nobjects[SUBCATCH]; j++)
@@ -571,8 +571,8 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
     int j;
 
     // --- find where current reporting time lies between latest routing times
-    double f = (reportTime - OldRoutingTime) /
-               (NewRoutingTime - OldRoutingTime);
+    double f = (reportTime - sp->OldRoutingTime) /
+               (sp->NewRoutingTime - sp->OldRoutingTime);
 
     // --- write node results to file
     for (j=0; j<sp->Nobjects[NODE]; j++)
@@ -616,7 +616,7 @@ void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
     double z;
 
     // --- find where current reporting time lies between latest routing times
-    f = (reportTime - OldRoutingTime) / (NewRoutingTime - OldRoutingTime);
+    f = (reportTime - sp->OldRoutingTime) / (sp->NewRoutingTime - sp->OldRoutingTime);
 
     // --- write link results to file
     for (j=0; j<sp->Nobjects[LINK]; j++)

@@ -178,7 +178,7 @@ void    writeGroundwater(SWMM_Project *sp)
 {
     int i, j;
     int count = 0;
-    double totalSeconds = NewRunoffTime / 1000.;
+    double totalSeconds = sp->NewRunoffTime / 1000.;
     double x[9];
 
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
@@ -800,9 +800,9 @@ void writeFlowClass(SWMM_Project *sp)
                 LinkStats[j].timeInFlowClass[i] /= sp->StepCount);
         }
         fprintf(sp->Frpt.file, "  %4.2f", LinkStats[j].timeNormalFlow /
-                                      (NewRoutingTime/1000.0));
+                                      (sp->NewRoutingTime/1000.0));
         fprintf(sp->Frpt.file, "  %4.2f", LinkStats[j].timeInletControl /
-                                      (NewRoutingTime/1000.0)); 
+                                      (sp->NewRoutingTime/1000.0)); 
     }
     WRITE("");
 }
@@ -881,7 +881,7 @@ void writePumpFlows(SWMM_Project *sp)
         if ( Link[j].type != PUMP ) continue;
         k = Link[j].subIndex;
         fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
-        totalSeconds = NewRoutingTime / 1000.0;
+        totalSeconds = sp->NewRoutingTime / 1000.0;
         pctUtilized = PumpStats[k].utilized / totalSeconds * 100.0;
         avgFlow = PumpStats[k].avgFlow;
         if ( PumpStats[k].totalPeriods > 0 )

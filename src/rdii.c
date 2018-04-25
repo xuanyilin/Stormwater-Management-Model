@@ -751,7 +751,7 @@ void createRdiiFile(SWMM_Project *sp)
         initUnitHydData(sp);
 
         // --- convert total simulation duration from millisec to sec
-        duration = TotalDuration / 1000.0;
+        duration = sp->TotalDuration / 1000.0;
 
         // --- examine rainfall record over each RdiiStep time step
         elapsedTime = 0.0;

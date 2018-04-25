@@ -305,7 +305,7 @@ int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
     // --- save date and time to shared variables
     CurrentDate = floor(currentTime);
     CurrentTime = currentTime - floor(currentTime);
-    ElapsedTime = elapsedTime;
+    sp->ElapsedTime = elapsedTime;
 
     // --- evaluate each rule
     if ( RuleCount == 0 ) return 0;
@@ -1001,7 +1001,7 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
     switch ( v.attribute )
     {
       case r_TIME:
-        return ElapsedTime;
+        return sp->ElapsedTime;
         
       case r_DATE:
         return CurrentDate;

@@ -128,18 +128,18 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
                 project_readOption(sp, "START_DATE", theDate);
                 project_readOption(sp, "START_TIME", theTime);
                 sp->StartDateTime = sp->StartDate + sp->StartTime;
-                TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
+                sp->TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
-                TotalDuration *= 1000.0;
+                sp->TotalDuration *= 1000.0;
                 break;
             //sp->EndDateTime (globals.h)
             case SM_ENDDATE:
                 project_readOption(sp, "END_DATE", theDate);
                 project_readOption(sp, "END_TIME", theTime);
                 sp->EndDateTime = sp->EndDate + sp->EndTime;
-                TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
+                sp->TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
                 // --- convert total duration to milliseconds
-                TotalDuration *= 1000.0;
+                sp->TotalDuration *= 1000.0;
                 break;
             //sp->ReportStart (globals.h)
             case SM_REPORTDATE:
@@ -870,7 +870,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_Project *sp, char *dtimest
     if(swmm_IsStartedFlag() == FALSE) return(ERR_API_SIM_NRUNNING);
 
     // Fetch Current Time
-    currentTime = getDateTime(sp, NewRoutingTime);
+    currentTime = getDateTime(sp, sp->NewRoutingTime);
 
     // Convert To Char
     datetime_dateToStr(currentTime, theDate);
@@ -1516,7 +1516,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         // Add control action to RPT file if desired flagged
         if (sp->RptFlags.controls)
         {
-            currentTime = getDateTime(sp, NewRoutingTime);
+            currentTime = getDateTime(sp, sp->NewRoutingTime);
             report_writeControlAction(sp, currentTime, Link[index].ID,
                     targetSetting, _rule_);
         }

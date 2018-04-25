@@ -1047,7 +1047,7 @@ void report_writeSysStats(SWMM_Project *sp, TSysStats* sysStats)
     fprintf(sp->Frpt.file,
         "\n  Maximum Time Step           :  %7.2f sec",
         sysStats->maxTimeStep);
-    x = (1.0 - sysStats->avgTimeStep * 1000.0 / NewRoutingTime) * 100.0;       //(5.1.012)
+    x = (1.0 - sysStats->avgTimeStep * 1000.0 / sp->NewRoutingTime) * 100.0;       //(5.1.012)
     fprintf(sp->Frpt.file,
         "\n  Percent in Steady State     :  %7.2f", MIN(x, 100.0));
     fprintf(sp->Frpt.file,

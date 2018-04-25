@@ -171,10 +171,10 @@ void runoff_execute(SWMM_Project *sp)
     if ( sp->ErrorCode ) return;
 
     // --- find previous runoff time step in sec                               //(5.1.011)
-    oldRunoffStep = (NewRunoffTime - OldRunoffTime) / 1000.0;                  //(5.1.011)
+    oldRunoffStep = (sp->NewRunoffTime - sp->OldRunoffTime) / 1000.0;                  //(5.1.011)
 
     // --- convert elapsed runoff time in milliseconds to a calendar date
-    currentDate = getDateTime(sp, NewRunoffTime);
+    currentDate = getDateTime(sp, sp->NewRunoffTime);
 
     // --- update climatological conditions
     climate_setState(sp, currentDate);
@@ -182,9 +182,9 @@ void runoff_execute(SWMM_Project *sp)
     // --- if no subcatchments then simply update runoff elapsed time
     if ( sp->Nobjects[SUBCATCH] == 0 )
     {
-        OldRunoffTime = NewRunoffTime;
-        NewRunoffTime += (double)(1000 * sp->DryStep);
-        NewRunoffTime = MIN(NewRunoffTime, TotalDuration);                     //(5.1.008)
+        sp->OldRunoffTime = sp->NewRunoffTime;
+        sp->NewRunoffTime += (double)(1000 * sp->DryStep);
+        sp->NewRunoffTime = MIN(sp->NewRunoffTime, sp->TotalDuration);                     //(5.1.008)
         return;
     }
 
@@ -219,16 +219,16 @@ void runoff_execute(SWMM_Project *sp)
     }
 
     // --- update runoff time clock (in milliseconds)
-    OldRunoffTime = NewRunoffTime;
-    NewRunoffTime += (double)(1000 * runoffStep);
+    sp->OldRunoffTime = sp->NewRunoffTime;
+    sp->NewRunoffTime += (double)(1000 * runoffStep);
 
 ////  Following code segment added to release 5.1.008.  ////                   //(5.1.008)
 ////
     // --- adjust runoff step so that total duration not exceeded
-    if ( NewRunoffTime > TotalDuration )
+    if ( sp->NewRunoffTime > sp->TotalDuration )
     {
-        runoffStep = (TotalDuration - OldRunoffTime) / 1000.0;
-        NewRunoffTime = TotalDuration;
+        runoffStep = (sp->TotalDuration - sp->OldRunoffTime) / 1000.0;
+        sp->NewRunoffTime = sp->TotalDuration;
     }
 ////
 
@@ -477,9 +477,9 @@ void  runoff_readFromFile(SWMM_Project *sp)
     }
 
     // --- update runoff time clock
-    OldRunoffTime = NewRunoffTime;
-    NewRunoffTime = OldRunoffTime + (double)(tStep)*1000.0;
-    NewRunoffTime = MIN(NewRunoffTime, TotalDuration);                         //(5.1.008)
+    sp->OldRunoffTime = sp->NewRunoffTime;
+    sp->NewRunoffTime = sp->OldRunoffTime + (double)(tStep)*1000.0;
+    sp->NewRunoffTime = MIN(sp->NewRunoffTime, sp->TotalDuration);                         //(5.1.008)
     Nsteps++;
 }
 

@@ -714,13 +714,13 @@ double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup
     double rate = 0.0;
 
     // --- no buildup increment at start of simulation
-    if (NewRunoffTime == 0.0) return 0.0;
+    if (sp->NewRunoffTime == 0.0) return 0.0;
 
     // --- get buildup rate (mass/unit/day) over the interval
     if ( ts >= 0 )
     {        
         rate = sf * table_tseriesLookup(&Tseries[ts],
-               getDateTime(sp, NewRunoffTime), FALSE);
+               getDateTime(sp, sp->NewRunoffTime), FALSE);
     }
 
     // --- compute buildup at end of time interval

@@ -745,7 +745,7 @@ void getEvapRates(SWMM_Project *sp, double theta, double upperDepth)
     p = A.upperEvapPat;
     if ( p >= 0 )
     {
-        month = datetime_monthOfYear(getDateTime(sp, NewRunoffTime));
+        month = datetime_monthOfYear(getDateTime(sp, sp->NewRunoffTime));
         f = Pattern[p].factor[month-1];
     }
     upperFrac *= f;

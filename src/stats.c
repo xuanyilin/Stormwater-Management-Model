@@ -478,7 +478,7 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
 	if ( steadyState == FALSE )
 	{
         // --- skip initial time step for min. value)
-        if ( OldRoutingTime > 0 )
+        if ( sp->OldRoutingTime > 0 )
         {
             SysStats.minTimeStep = MIN(SysStats.minTimeStep, tStep);
         }

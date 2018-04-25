@@ -1314,14 +1314,14 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
       case TIDAL_OUTFALL:
         k = Outfall[i].tideCurve;
         table_getFirstEntry(&Curve[k], &x, &y);
-        currentDate = NewRoutingTime / MSECperDAY;
+        currentDate = sp->NewRoutingTime / MSECperDAY;
         x += ( currentDate - floor(currentDate) ) * 24.0;
         stage = table_lookup(&Curve[k], x) / UCF(sp, LENGTH);
         break;
 
       case TIMESERIES_OUTFALL:
         k = Outfall[i].stageSeries;
-        currentDate = sp->StartDateTime + NewRoutingTime / MSECperDAY;
+        currentDate = sp->StartDateTime + sp->NewRoutingTime / MSECperDAY;
         stage = table_tseriesLookup(&Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);
         break;

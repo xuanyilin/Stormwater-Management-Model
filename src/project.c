@@ -159,12 +159,12 @@ void project_readInput(SWMM_Project *sp)
 ////  Following code segment was modified for release 5.1.009.  ////           //(5.1.009)
 ////
         // --- compute total duration of simulation in seconds
-        TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
+        sp->TotalDuration = floor((sp->EndDateTime - sp->StartDateTime) * SECperDAY);
 
         // --- reporting step must be <= total duration
-        if ( (double)sp->ReportStep > TotalDuration )
+        if ( (double)sp->ReportStep > sp->TotalDuration )
         {
-            sp->ReportStep = (int)(TotalDuration);
+            sp->ReportStep = (int)(sp->TotalDuration);
         }
 
         // --- reporting step can't be < routing step
@@ -174,7 +174,7 @@ void project_readInput(SWMM_Project *sp)
         }
 
         // --- convert total duration to milliseconds
-        TotalDuration *= 1000.0;
+        sp->TotalDuration *= 1000.0;
     }
 ////
 }

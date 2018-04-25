@@ -156,16 +156,16 @@ double routing_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedSt
     // --- find largest step possible if between routing events
     if ( sp->NumEvents > 0 && BetweenEvents )                                      //(5.1.012)
     {
-        nextTime = MIN(NewRunoffTime, ReportTime);
-        date1 = getDateTime(sp, NewRoutingTime);
+        nextTime = MIN(sp->NewRunoffTime, sp->ReportTime);
+        date1 = getDateTime(sp, sp->NewRoutingTime);
         date2 = getDateTime(sp, nextTime);
         if ( date2 > date1 && date2 < Event[NextEvent].start )
         {
-            return (nextTime - NewRoutingTime) / 1000.0;
+            return (nextTime - sp->NewRoutingTime) / 1000.0;
         }
         else
         {
-            date1 = getDateTime(sp, NewRoutingTime + 1000.0 * fixedStep);
+            date1 = getDateTime(sp, sp->NewRoutingTime + 1000.0 * fixedStep);
             if ( date1 < Event[NextEvent].start ) return fixedStep;
         }
     }
@@ -203,7 +203,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     for (j=0; j<sp->Nobjects[LINK]; j++) link_setTargetSetting(j);
 
     // --- find new target settings due to control rules
-    currentDate = getDateTime(sp, NewRoutingTime);
+    currentDate = getDateTime(sp, sp->NewRoutingTime);
     controls_evaluate(sp, currentDate, currentDate - sp->StartDateTime,
                       routingStep/SECperDAY);
 
@@ -223,8 +223,8 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     }
 
     // --- update value of elapsed routing time (in milliseconds)
-    OldRoutingTime = NewRoutingTime;
-    NewRoutingTime = NewRoutingTime + 1000.0 * routingStep;
+    sp->OldRoutingTime = sp->NewRoutingTime;
+    sp->NewRoutingTime = sp->NewRoutingTime + 1000.0 * routingStep;
 
     // --- initialize mass balance totals for time step
     stepFlowError = massbal_getStepFlowError();
@@ -270,16 +270,16 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         // --- add lateral inflows and evap/seepage losses at nodes
         addExternalInflows(sp, currentDate);
         addDryWeatherInflows(sp, currentDate);
-        addWetWeatherInflows(sp, OldRoutingTime);
-        addGroundwaterInflows(sp, OldRoutingTime);
-        addLidDrainInflows(sp, OldRoutingTime);
+        addWetWeatherInflows(sp, sp->OldRoutingTime);
+        addGroundwaterInflows(sp, sp->OldRoutingTime);
+        addLidDrainInflows(sp, sp->OldRoutingTime);
         addRdiiInflows(sp, currentDate);
         addIfaceInflows(sp, currentDate);
 
         // --- check if can skip steady state periods based on flows
         if ( sp->SkipSteadyState )
         {
-            if ( OldRoutingTime == 0.0
+            if ( sp->OldRoutingTime == 0.0
             ||   actionCount > 0
             ||   fabs(stepFlowError) > sp->SysFlowTol
             ||   inflowHasChanged(sp) ) inSteadyState = FALSE;
@@ -324,7 +324,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- update summary statistics
     if ( sp->RptFlags.flowStats && sp->Nobjects[LINK] > 0 )
     {
-        stats_updateFlowStats(sp, routingStep, getDateTime(sp, NewRoutingTime),
+        stats_updateFlowStats(sp, routingStep, getDateTime(sp, sp->NewRoutingTime),
                               stepCount, inSteadyState);
     }
 }
@@ -484,7 +484,7 @@ void addWetWeatherInflows(SWMM_Project *sp, double routingTime)
 
     // --- find where current routing time lies between latest runoff times
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
-    f = (routingTime - OldRunoffTime) / (NewRunoffTime - OldRunoffTime);
+    f = (routingTime - sp->OldRunoffTime) / (sp->NewRunoffTime - sp->OldRunoffTime);
     if ( f < 0.0 ) f = 0.0;
     if ( f > 1.0 ) f = 1.0;
 
@@ -527,7 +527,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
 
     // --- find where current routing time lies between latest runoff times
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
-    f = (routingTime - OldRunoffTime) / (NewRunoffTime - OldRunoffTime);
+    f = (routingTime - sp->OldRunoffTime) / (sp->NewRunoffTime - sp->OldRunoffTime);
     if ( f < 0.0 ) f = 0.0;
     if ( f > 1.0 ) f = 1.0;
 
@@ -580,7 +580,7 @@ void addLidDrainInflows(SWMM_Project *sp, double routingTime)
 
     // for each subcatchment
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
-    f = (routingTime - OldRunoffTime) / (NewRunoffTime - OldRunoffTime);
+    f = (routingTime - sp->OldRunoffTime) / (sp->NewRunoffTime - sp->OldRunoffTime);
     if ( f < 0.0 ) f = 0.0;
     if ( f > 1.0 ) f = 1.0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)

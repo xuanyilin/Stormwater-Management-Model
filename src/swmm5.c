@@ -484,12 +484,12 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
 #endif
     {
         // --- initialize elapsed time in decimal days                         //(5.1.011)
-        ElapsedTime = 0.0;                                                     //(5.1.011)
+        sp->ElapsedTime = 0.0;                                                     //(5.1.011)
 
         // --- initialize runoff, routing & reporting time (in milliseconds)
-        NewRunoffTime = 0.0;
-        NewRoutingTime = 0.0;
-        ReportTime =   (double)(1000 * sp->ReportStep);
+        sp->NewRunoffTime = 0.0;
+        sp->NewRoutingTime = 0.0;
+        sp->ReportTime =   (double)(1000 * sp->ReportStep);
         sp->StepCount = 0;
         sp->NonConvergeCount = 0;
         IsStartedFlag = TRUE;
@@ -574,35 +574,35 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
 #endif
     {
         // --- if routing time has not exceeded total duration
-        if ( NewRoutingTime < TotalDuration )
+        if ( sp->NewRoutingTime < sp->TotalDuration )
         {
             // --- route flow & WQ through drainage system
             //     (runoff will be calculated as needed)
-            //     (NewRoutingTime is updated)
+            //     (sp->NewRoutingTime is updated)
             execRouting(sp);                                                     //(5.1.011)
         }
 
         // --- save results at next reporting time
-        if ( NewRoutingTime >= ReportTime )
+        if ( sp->NewRoutingTime >= sp->ReportTime )
         {
-            if ( SaveResultsFlag ) output_saveResults(sp, ReportTime);
-            ReportTime = ReportTime + (double)(1000 * sp->ReportStep);
+            if ( SaveResultsFlag ) output_saveResults(sp, sp->ReportTime);
+            sp->ReportTime = sp->ReportTime + (double)(1000 * sp->ReportStep);
         }
 
         // --- update elapsed time (days)
-        if ( NewRoutingTime < TotalDuration )
+        if ( sp->NewRoutingTime < sp->TotalDuration )
         {
-            ElapsedTime = NewRoutingTime / MSECperDAY;                         //(5.1.011)
+            sp->ElapsedTime = sp->NewRoutingTime / MSECperDAY;                         //(5.1.011)
         }
 
         // --- otherwise end the simulation
-        else ElapsedTime = 0.0;                                                //(5.1.011)
-        *elapsedTime = ElapsedTime;                                            //(5.1.011)
+        else sp->ElapsedTime = 0.0;                                                //(5.1.011)
+        *elapsedTime = sp->ElapsedTime;                                            //(5.1.011)
     }
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
-    __except(xfilter(sp, GetExceptionCode(), "swmm_step", ElapsedTime, sp->StepCount)) //(5.1.011)
+    __except(xfilter(sp, GetExceptionCode(), "swmm_step", sp->ElapsedTime, sp->StepCount)) //(5.1.011)
     {
         sp->ErrorCode = ERR_SYSTEM;
     }
@@ -636,39 +636,39 @@ void execRouting(SWMM_Project *sp)                                              
             sp->ErrorCode = ERR_TIMESTEP;
             return;
         }
-        nextRoutingTime = NewRoutingTime + 1000.0 * routingStep;
+        nextRoutingTime = sp->NewRoutingTime + 1000.0 * routingStep;
 
 ////  Following section added to release 5.1.008.  ////                        //(5.1.008)
 ////
         // --- adjust routing step so that total duration not exceeded
-        if ( nextRoutingTime > TotalDuration )
+        if ( nextRoutingTime > sp->TotalDuration )
         {
-            routingStep = (TotalDuration - NewRoutingTime) / 1000.0;
+            routingStep = (sp->TotalDuration - sp->NewRoutingTime) / 1000.0;
             routingStep = MAX(routingStep, 1./1000.0);
-            nextRoutingTime = TotalDuration;
+            nextRoutingTime = sp->TotalDuration;
         }
 ////
 
         // --- compute runoff until next routing time reached or exceeded
-        if ( DoRunoff ) while ( NewRunoffTime < nextRoutingTime )
+        if ( DoRunoff ) while ( sp->NewRunoffTime < nextRoutingTime )
         {
             runoff_execute(sp);
             if ( sp->ErrorCode ) return;
         }
 
         // --- if no runoff analysis, update climate state (for evaporation)
-        else climate_setState(sp, getDateTime(sp, NewRoutingTime));
+        else climate_setState(sp, getDateTime(sp, sp->NewRoutingTime));
   
         // --- route flows & pollutants through drainage system                //(5.1.008)
-        //     (while updating NewRoutingTime)                                 //(5.1.008)
+        //     (while updating sp->NewRoutingTime)                                 //(5.1.008)
         if ( DoRouting ) routing_execute(sp, sp->RouteModel, routingStep);
-        else NewRoutingTime = nextRoutingTime;
+        else sp->NewRoutingTime = nextRoutingTime;
     }
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- end of try loop; handle exception here
     __except(xfilter(sp, GetExceptionCode(), "execRouting",                        //(5.1.011)
-                     ElapsedTime, sp->StepCount))                                  //(5.1.011)
+                     sp->ElapsedTime, sp->StepCount))                                  //(5.1.011)
     {
         sp->ErrorCode = ERR_SYSTEM;
         return;

@@ -128,15 +128,15 @@ EXTERN SWMM_Project *_defaultProject;
 //                  ReportStartDate,          // Report start date
 //                  ReportStartTime,          // Report start time
 //                  ReportStart;              // Report start Date+Time
-
-EXTERN double
-                  ReportTime,               // Current reporting time (msec)
-                  OldRunoffTime,            // Previous runoff time (msec)
-                  NewRunoffTime,            // Current runoff time (msec)
-                  OldRoutingTime,           // Previous routing time (msec)
-                  NewRoutingTime,           // Current routing time (msec)
-                  TotalDuration,            // Simulation duration (msec)
-                  ElapsedTime;              // Current elapsed time (days)     //(5.1.011)
+//
+//EXTERN double
+//                  ReportTime,               // Current reporting time (msec)
+//                  OldRunoffTime,            // Previous runoff time (msec)
+//                  NewRunoffTime,            // Current runoff time (msec)
+//                  OldRoutingTime,           // Previous routing time (msec)
+//                  NewRoutingTime,           // Current routing time (msec)
+//                  TotalDuration,            // Simulation duration (msec)
+//                  ElapsedTime;              // Current elapsed time (days)     //(5.1.011)
 
 EXTERN TTemp      Temp;                     // Temperature data
 EXTERN TEvap      Evap;                     // Evaporation data

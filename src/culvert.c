@@ -398,7 +398,7 @@ void report_CulvertControl(SWMM_Project *sp, int j, double q0, double q, int con
     char     theDate[12];
     char     theTime[9];
 
-	DateTime aDate = getDateTime(sp, NewRoutingTime);
+	DateTime aDate = getDateTime(sp, sp->NewRoutingTime);
     datetime_dateToStr(aDate, theDate);
     datetime_timeToStr(aDate, theTime);
 
