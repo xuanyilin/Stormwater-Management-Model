@@ -432,7 +432,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         }
         break;
 
-      case s_EVENT: NumEvents++; break;                                        //(5.1.011)
+      case s_EVENT: sp->NumEvents++; break;                                        //(5.1.011)
     }
     return errcode;
 }

@@ -1140,7 +1140,7 @@ void lid_initState(SWMM_Project *sp)
     double     initVol;
     double     initDryTime = StartDryDays * SECperDAY;
 
-    //NextReportTime = (double) (ReportStep * 1000.0);                         //(5.1.008)
+    //NextReportTime = (double) (sp->ReportStep * 1000.0);                         //(5.1.008)
     HasWetLids = FALSE;                                                        //(5.1.010)
     for (j = 0; j < GroupCount; j++)
     {

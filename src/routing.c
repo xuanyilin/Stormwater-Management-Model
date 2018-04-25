@@ -76,7 +76,7 @@ static void removeStorageLosses(SWMM_Project *sp, double tStep);
 static void removeConduitLosses(SWMM_Project *sp);
 static void removeOutflows(SWMM_Project *sp, double tStep);                                      //(5.1.008)
 static int  inflowHasChanged(SWMM_Project *sp);
-static void sortEvents(void);                                                  //(5.1.011)
+static void sortEvents(SWMM_Project *sp);                                                  //(5.1.011)
 
 //=============================================================================
 
@@ -112,10 +112,10 @@ int routing_open(SWMM_Project *sp)
     if ( sp->Fhotstart1.mode == NO_FILE ) qualrout_init(sp);                         //(5.1.008)
 
     // --- initialize routing events                                           //(5.1.011)
-    if ( NumEvents > 0 ) sortEvents();                                         //(5.1.011)
+    if ( sp->NumEvents > 0 ) sortEvents(sp);                                         //(5.1.011)
     NextEvent = 0;                                                             //(5.1.011)
-    //InSteadyState = (NumEvents > 0);                                         //(5.1.012)
-    BetweenEvents = (NumEvents > 0);                                           //(5.1.012)
+    //InSteadyState = (sp->NumEvents > 0);                                         //(5.1.012)
+    BetweenEvents = (sp->NumEvents > 0);                                           //(5.1.012)
     return sp->ErrorCode;
 }
 
@@ -154,7 +154,7 @@ double routing_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedSt
     if ( sp->Nobjects[LINK] == 0 ) return fixedStep;
 
     // --- find largest step possible if between routing events
-    if ( NumEvents > 0 && BetweenEvents )                                      //(5.1.012)
+    if ( sp->NumEvents > 0 && BetweenEvents )                                      //(5.1.012)
     {
         nextTime = MIN(NewRunoffTime, ReportTime);
         date1 = getDateTime(NewRoutingTime);
@@ -245,7 +245,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     }
 
     // --- check if can skip non-event periods
-    if ( NumEvents > 0 )
+    if ( sp->NumEvents > 0 )
     {
         if ( currentDate > Event[NextEvent].end )
         {
@@ -833,7 +833,7 @@ void removeOutflows(SWMM_Project *sp, double tStep)
 
 ////  New function added for release 5.1.011.  ////                            //(5.1.011)
 
-void sortEvents()
+void sortEvents(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -844,9 +844,9 @@ void sortEvents()
     TEvent temp;
 
     // Apply simple exchange sort to event list
-    for (i = 0; i < NumEvents-1; i++)
+    for (i = 0; i < sp->NumEvents-1; i++)
     {
-        for (j = i+1; j < NumEvents; j++)
+        for (j = i+1; j < sp->NumEvents; j++)
         {
             if ( Event[i].start > Event[j].start )
             {
@@ -858,7 +858,7 @@ void sortEvents()
     }
 
     // Adjust for overlapping events
-    for (i = 0; i < NumEvents-1; i++)
+    for (i = 0; i < sp->NumEvents-1; i++)
     {
         if ( Event[i].end > Event[i+1].start ) Event[i].end = Event[i+1].start;
     }

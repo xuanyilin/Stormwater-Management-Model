@@ -182,7 +182,7 @@ void dynwave_validate(SWMM_Project *sp)
 	else MinSurfArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
     if ( HeadTol == 0.0 ) HeadTol = DEFAULT_HEADTOL;
     else HeadTol /= UCF(sp, LENGTH);
-	if ( MaxTrials == 0 ) MaxTrials = DEFAULT_MAXTRIALS;
+	if ( sp->MaxTrials == 0 ) sp->MaxTrials = DEFAULT_MAXTRIALS;
 }
 
 //=============================================================================
@@ -234,7 +234,7 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
     initRoutingStep(sp);
 
     // --- keep iterating until convergence 
-    while ( Steps < MaxTrials )
+    while ( Steps < sp->MaxTrials )
     {
         // --- execute a routing step & check for nodal convergence
         initNodeStates(sp);
@@ -374,7 +374,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     int i;
 
     // --- find new flow in each non-dummy conduit
-#pragma omp parallel num_threads(NumThreads)                                   //(5.1.008)
+#pragma omp parallel num_threads(sp->NumThreads)                                   //(5.1.008)
 {
     #pragma omp for                                                            //(5.1.008)
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
@@ -587,7 +587,7 @@ int findNodeDepths(SWMM_Project *sp, double dt)
     // --- compute new depth for all non-outfall nodes and determine if
     //     depth change from previous iteration is below tolerance
     converged = TRUE;
-#pragma omp parallel num_threads(NumThreads)                                   //(5.1.008)
+#pragma omp parallel num_threads(sp->NumThreads)                                   //(5.1.008)
 {
     #pragma omp for private(yOld)                                              //(5.1.008)
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )

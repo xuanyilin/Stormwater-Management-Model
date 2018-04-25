@@ -162,13 +162,13 @@ void project_readInput(SWMM_Project *sp)
         TotalDuration = floor((EndDateTime - StartDateTime) * SECperDAY);
 
         // --- reporting step must be <= total duration
-        if ( (double)ReportStep > TotalDuration )
+        if ( (double)sp->ReportStep > TotalDuration )
         {
-            ReportStep = (int)(TotalDuration);
+            sp->ReportStep = (int)(TotalDuration);
         }
 
         // --- reporting step can't be < routing step
-        if ( (double)ReportStep < RouteStep )
+        if ( (double)sp->ReportStep < RouteStep )
         {
             report_writeErrorMsg(sp, ERR_REPORT_STEP, "");
         }
@@ -236,15 +236,15 @@ void project_validate(SWMM_Project *sp)
     for ( i=0; i<sp->Nobjects[NODE]; i++) node_validate(sp, i);
 
     // --- adjust time steps if necessary
-    if ( DryStep < WetStep )
+    if ( sp->DryStep < sp->WetStep )
     {
         report_writeWarningMsg(sp, WARN06, "");
-        DryStep = WetStep;
+        sp->DryStep = sp->WetStep;
     }
-    if ( RouteStep > (double)WetStep )
+    if ( RouteStep > (double)sp->WetStep )
     {
         report_writeWarningMsg(sp, WARN07, "");
-        RouteStep = WetStep;
+        RouteStep = sp->WetStep;
     }
 
     // --- adjust individual reporting flags to match global reporting flag
@@ -260,10 +260,10 @@ void project_validate(SWMM_Project *sp)
 
 #pragma omp parallel                                                           //(5.1.008)
 {
-    if ( NumThreads == 0 ) NumThreads = omp_get_num_threads();                 //(5.1.008)
-    else NumThreads = MIN(NumThreads, omp_get_num_threads());                  //(5.1.008)
+    if ( sp->NumThreads == 0 ) sp->NumThreads = omp_get_num_threads();                 //(5.1.008)
+    else sp->NumThreads = MIN(sp->NumThreads, omp_get_num_threads());                  //(5.1.008)
 }
-    if ( sp->Nobjects[LINK] < 4 * NumThreads ) NumThreads = 1;                     //(5.1.008)
+    if ( sp->Nobjects[LINK] < 4 * sp->NumThreads ) sp->NumThreads = 1;                     //(5.1.008)
 
 }
 
@@ -515,8 +515,8 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
             return error_setInpError(ERR_DATETIME, s2);
         }
         m = datetime_dayOfYear(aDate);
-        if ( k == SWEEP_START ) SweepStart = m;
-        else SweepEnd = m;
+        if ( k == SWEEP_START ) sp->ReportStep = m;
+        else sp->SweepEnd = m;
         break;
 
       // --- number of antecedent dry days
@@ -543,9 +543,9 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
         if ( s <= 0 ) return error_setInpError(ERR_NUMBER, s2);
         switch ( k )
         {
-          case WET_STEP:     WetStep = s;     break;
-          case DRY_STEP:     DryStep = s;     break;
-          case REPORT_STEP:  ReportStep = s;  break;
+          case WET_STEP:     sp->WetStep = s;     break;
+          case DRY_STEP:     sp->DryStep = s;     break;
+          case REPORT_STEP:  sp->ReportStep = s;  break;
         }
         break;
 
@@ -650,7 +650,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case NUM_THREADS:
         m = atoi(s2);
         if ( m < 0 ) return error_setInpError(ERR_NUMBER, s2);
-        NumThreads = m;
+        sp->NumThreads = m;
         break;
  ////
 
@@ -683,7 +683,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case MAX_TRIALS:
         m = atoi(s2);
         if ( m < 0 ) return error_setInpError(ERR_NUMBER, s2);
-        MaxTrials = m;
+        sp->MaxTrials = m;
         break;
 
       // --- head convergence tolerance for dynamic wave routing
@@ -811,18 +811,18 @@ void setDefaults(SWMM_Project *sp)
    sp->IgnoreGwater    = FALSE;            // Analyze groundwater 
    sp->IgnoreRouting   = FALSE;            // Analyze flow routing
    sp->IgnoreQuality   = FALSE;            // Analyze water quality
-   WetStep         = 300;              // Runoff wet time step (secs)
-   DryStep         = 3600;             // Runoff dry time step (secs)
+   sp->WetStep         = 300;              // Runoff wet time step (secs)
+   sp->DryStep         = 3600;             // Runoff dry time step (secs)
    RouteStep       = 300.0;            // Routing time step (secs)
    MinRouteStep    = 0.5;              // Minimum variable time step (sec)     //(5.1.008)
-   ReportStep      = 900;              // Reporting time step (secs)
+   sp->ReportStep      = 900;              // Reporting time step (secs)
    StartDryDays    = 0.0;              // Antecedent dry days
-   MaxTrials       = 0;                // Force use of default max. trials 
+   sp->MaxTrials       = 0;                // Force use of default max. trials 
    HeadTol         = 0.0;              // Force use of default head tolerance
    SysFlowTol      = 0.05;             // System flow tolerance for steady state
    LatFlowTol      = 0.05;             // Lateral flow tolerance for steady state
-   NumThreads      = 0;                // Number of parallel threads to use
-   NumEvents       = 0;                // Number of detailed routing events    //(5.1.011)
+   sp->NumThreads      = 0;                // Number of parallel threads to use
+   sp->NumEvents       = 0;                // Number of detailed routing events    //(5.1.011)
 
    // Deprecated options
    sp->SlopeWeighting  = TRUE;             // Use slope weighting
@@ -836,8 +836,8 @@ void setDefaults(SWMM_Project *sp)
    EndTime         = 0.0;
    ReportStartDate = NO_DATE;
    ReportStartTime = NO_DATE;
-   SweepStart      = 1;
-   SweepEnd        = 365;
+   sp->ReportStep      = 1;
+   sp->SweepEnd        = 365;
 
    // Reporting options
    sp->RptFlags.input         = FALSE;
@@ -985,9 +985,9 @@ void createObjects(SWMM_Project *sp)
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
     // --- create array of detailed routing event periods
-    Event = (TEvent *) calloc(NumEvents+1, sizeof(TEvent));
-    Event[NumEvents].start = BIG;
-    Event[NumEvents].end = BIG + 1.0;
+    Event = (TEvent *) calloc(sp->NumEvents+1, sizeof(TEvent));
+    Event[sp->NumEvents].start = BIG;
+    Event[sp->NumEvents].end = BIG + 1.0;
 ////
 
     // --- create LID objects

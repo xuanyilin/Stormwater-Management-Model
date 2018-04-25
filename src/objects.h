@@ -1146,15 +1146,15 @@ struct SWMM_Project {
                  IgnoreRouting,            // Ignore flow routing
                  IgnoreQuality,            // Ignore water quality
                  ErrorCode,                // Error code number
-                 Warnings;                 // Number of warning messages      //(5.1.011)
-//                      WetStep,                  // Runoff wet time step (sec)
-//                      DryStep,                  // Runoff dry time step (sec)
-//                      ReportStep,               // Reporting time step (sec)
-//                      SweepStart,               // Day of year when sweeping starts
-//                      SweepEnd,                 // Day of year when sweeping ends
-//                      MaxTrials,                // Max. trials for DW routing
-//                      NumThreads,               // Number of parallel threads used //(5.1.008)
-//                      NumEvents;                // Number of detailed events       //(5.1.011)
+                 Warnings,                 // Number of warning messages      //(5.1.011)
+                 WetStep,                  // Runoff wet time step (sec)
+                 DryStep,                  // Runoff dry time step (sec)
+                 ReportStep,               // Reporting time step (sec)
+                 SweepStart,               // Day of year when sweeping starts
+                 SweepEnd,                 // Day of year when sweeping ends
+                 MaxTrials,                // Max. trials for DW routing
+                 NumThreads,               // Number of parallel threads used //(5.1.008)
+                 NumEvents;                // Number of detailed events       //(5.1.011)
 //                    //InSteadyState;            // System flows remain constant    //(5.1.012)
 //
 //    EXTERN double

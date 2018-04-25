@@ -335,15 +335,15 @@ int output_open(SWMM_Project *sp)
     //     (if reporting start date > simulation start date then
     //      make saved starting report date one reporting period
     //      prior to the date of the first reported result)
-    z = (double)ReportStep/86400.0;
+    z = (double)sp->ReportStep/86400.0;
     if ( StartDateTime + z > ReportStart ) z = StartDateTime;
     else
     {
         z = floor((ReportStart - StartDateTime)/z) - 1.0;
-        z = StartDateTime + z*(double)ReportStep/86400.0;
+        z = StartDateTime + z*(double)sp->ReportStep/86400.0;
     }
     fwrite(&z, sizeof(REAL8), 1, sp->Fout.file);
-    k = ReportStep;
+    k = sp->ReportStep;
     if ( fwrite(&k, sizeof(INT4), 1, sp->Fout.file) < 1)
     {
         report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
@@ -369,7 +369,7 @@ void  output_checkFileSize(SWMM_Project *sp)
          sp->RptFlags.links != NONE )
     {
         if ( (double)OutputStartPos + (double)BytesPerPeriod * TotalDuration
-             / 1000.0 / (double)ReportStep >= (double)MAXFILESIZE )
+             / 1000.0 / (double)sp->ReportStep >= (double)MAXFILESIZE )
         {
             report_writeErrorMsg(sp, ERR_FILE_SIZE, "");
         }

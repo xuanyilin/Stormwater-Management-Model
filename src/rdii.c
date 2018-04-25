@@ -118,7 +118,7 @@ static void   validateRdii(SWMM_Project *sp);
 
 static void   openRdiiProcessor(SWMM_Project *sp);
 static int    allocRdiiMemory(SWMM_Project *sp);
-static int    getRainInterval(int i);
+static int    getRainInterval(SWMM_Project *sp, int i);
 static int    getMaxPeriods(int i, int k);
 static void   initGageData(SWMM_Project *sp);
 static void   initUnitHydData(SWMM_Project *sp);
@@ -723,7 +723,7 @@ void createRdiiFile(SWMM_Project *sp)
     DateTime currentDate;              // current calendar date/time
 
     // --- set RDII reporting time step to Runoff wet step
-    RdiiStep = WetStep;
+    RdiiStep = sp->WetStep;
 
     // --- count nodes with RDII data
     NumRdiiNodes = getNumRdiiNodes(sp);
@@ -931,7 +931,7 @@ int  allocRdiiMemory(SWMM_Project *sp)
     // --- allocate memory for past rainfall data for each UH in each group
     for (i=0; i<sp->Nobjects[UNITHYD]; i++)
     {
-        UHGroup[i].rainInterval = getRainInterval(i);
+        UHGroup[i].rainInterval = getRainInterval(sp, i);
         for (k=0; k<3; k++)
         {
             UHGroup[i].uh[k].pastRain = NULL;
@@ -960,7 +960,7 @@ int  allocRdiiMemory(SWMM_Project *sp)
 
 //=============================================================================
 
-int  getRainInterval(int i)
+int  getRainInterval(SWMM_Project *sp, int i)
 //
 //  Input:   i = UH group index
 //  Output:  returns a time interval (sec)
@@ -972,7 +972,7 @@ int  getRainInterval(int i)
     int k, m;
 
     // --- begin with UH group time step equal to wet runoff step
-    ri = WetStep;
+    ri = sp->WetStep;
 
     // --- examine each UH in the group
     for (m=0; m<12; m++)

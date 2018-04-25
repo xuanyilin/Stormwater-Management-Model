@@ -228,10 +228,10 @@ void  gage_validate(SWMM_Project *sp, int j)
         {
             report_writeWarningMsg(sp, WARN09, Gage[j].ID);
         }
-        if ( Gage[j].rainInterval < WetStep )
+        if ( Gage[j].rainInterval < sp->WetStep )
         {
             report_writeWarningMsg(sp, WARN01, Gage[j].ID);
-            WetStep = Gage[j].rainInterval;
+            sp->WetStep = Gage[j].rainInterval;
         }
 
         // --- see if gage uses same time series as another gage

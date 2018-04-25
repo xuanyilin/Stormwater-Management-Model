@@ -183,7 +183,7 @@ void runoff_execute(SWMM_Project *sp)
     if ( sp->Nobjects[SUBCATCH] == 0 )
     {
         OldRunoffTime = NewRunoffTime;
-        NewRunoffTime += (double)(1000 * DryStep);
+        NewRunoffTime += (double)(1000 * sp->DryStep);
         NewRunoffTime = MIN(NewRunoffTime, TotalDuration);                     //(5.1.008)
         return;
     }
@@ -207,7 +207,7 @@ void runoff_execute(SWMM_Project *sp)
 
     // --- see if street sweeping can occur on current date
     day = datetime_dayOfYear(currentDate);
-    if ( day >= SweepStart && day <= SweepEnd ) canSweep = TRUE;
+    if ( day >= sp->ReportStep && day <= sp->SweepEnd ) canSweep = TRUE;
     else canSweep = FALSE;
 
     // --- get runoff time step (in seconds)
@@ -301,7 +301,7 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
 {
     int  j;
     long timeStep;
-    long maxStep = DryStep;
+    long maxStep = sp->DryStep;
 
     // --- find shortest time until next evaporation or rainfall value
     //     (this represents the maximum possible time step)
@@ -318,10 +318,10 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
     // --- determine whether wet or dry time step applies
     if ( IsRaining || HasSnow || HasRunoff || HasWetLids )
     {
-        timeStep = WetStep;
+        timeStep = sp->WetStep;
     }
 ////
-    else timeStep = DryStep;
+    else timeStep = sp->DryStep;
 
     // --- limit time step if necessary
     if ( timeStep > maxStep ) timeStep = maxStep;

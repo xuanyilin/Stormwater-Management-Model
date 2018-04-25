@@ -489,7 +489,7 @@ int DLLEXPORT swmm_start_project(SWMM_Project *sp, int saveResults)
         // --- initialize runoff, routing & reporting time (in milliseconds)
         NewRunoffTime = 0.0;
         NewRoutingTime = 0.0;
-        ReportTime =   (double)(1000 * ReportStep);
+        ReportTime =   (double)(1000 * sp->ReportStep);
         sp->StepCount = 0;
         sp->NonConvergeCount = 0;
         IsStartedFlag = TRUE;
@@ -586,7 +586,7 @@ int DLLEXPORT swmm_step_project(SWMM_Project *sp, double* elapsedTime)          
         if ( NewRoutingTime >= ReportTime )
         {
             if ( SaveResultsFlag ) output_saveResults(sp, ReportTime);
-            ReportTime = ReportTime + (double)(1000 * ReportStep);
+            ReportTime = ReportTime + (double)(1000 * sp->ReportStep);
         }
 
         // --- update elapsed time (days)
@@ -629,7 +629,7 @@ void execRouting(SWMM_Project *sp)                                              
     {
         // --- determine when next routing time occurs
         sp->StepCount++;
-        if ( !DoRouting ) routingStep = MIN(WetStep, ReportStep);
+        if ( !DoRouting ) routingStep = MIN(sp->WetStep, sp->ReportStep);
         else routingStep = routing_getRoutingStep(sp, sp->RouteModel, RouteStep);
         if ( routingStep <= 0.0 )
         {

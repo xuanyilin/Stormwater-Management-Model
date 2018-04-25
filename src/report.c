@@ -328,13 +328,13 @@ void report_writeOptions(SWMM_Project *sp)
     datetime_timeToStr(EndTime, str);
     fprintf(sp->Frpt.file, " %s", str);
     fprintf(sp->Frpt.file, "\n  Antecedent Dry Days ...... %.1f", StartDryDays);
-    datetime_timeToStr(datetime_encodeTime(0, 0, ReportStep), str);
+    datetime_timeToStr(datetime_encodeTime(0, 0, sp->ReportStep), str);
     fprintf(sp->Frpt.file, "\n  Report Time Step ......... %s", str);
     if ( sp->Nobjects[SUBCATCH] > 0 )
     {
-        datetime_timeToStr(datetime_encodeTime(0, 0, WetStep), str);
+        datetime_timeToStr(datetime_encodeTime(0, 0, sp->WetStep), str);
         fprintf(sp->Frpt.file, "\n  Wet Time Step ............ %s", str);
-        datetime_timeToStr(datetime_encodeTime(0, 0, DryStep), str);
+        datetime_timeToStr(datetime_encodeTime(0, 0, sp->DryStep), str);
         fprintf(sp->Frpt.file, "\n  Dry Time Step ............ %s", str);
     }
     if ( sp->Nobjects[LINK] > 0 )
@@ -345,8 +345,8 @@ void report_writeOptions(SWMM_Project *sp)
 		fprintf(sp->Frpt.file, "\n  Variable Time Step ....... ");
 		if ( CourantFactor > 0.0 ) fprintf(sp->Frpt.file, "YES");
 		else                       fprintf(sp->Frpt.file, "NO");
-		fprintf(sp->Frpt.file, "\n  Maximum Trials ........... %d", MaxTrials);
-        fprintf(sp->Frpt.file, "\n  Number of Threads ........ %d", NumThreads);   //(5.1.008)
+		fprintf(sp->Frpt.file, "\n  Maximum Trials ........... %d", sp->MaxTrials);
+        fprintf(sp->Frpt.file, "\n  Number of Threads ........ %d", sp->NumThreads);   //(5.1.008)
 		fprintf(sp->Frpt.file, "\n  Head Tolerance ........... %.6f ",
             HeadTol*UCF(sp, LENGTH));                                              //(5.1.008)
 		if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file, "ft");

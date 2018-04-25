@@ -68,7 +68,7 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TRptFlags
 //                  RptFlags;                 // Reporting options
 
-EXTERN int
+//EXTERN int
 //                  Nobjects[MAX_OBJ_TYPES],  // Number of each object type
 //                  Nnodes[MAX_NODE_TYPES],   // Number of each node sub-type
 //                  Nlinks[MAX_LINK_TYPES],   // Number of each link sub-type
@@ -92,15 +92,15 @@ EXTERN int
 //                  IgnoreQuality,            // Ignore water quality
 //                  ErrorCode,                // Error code number
 //                  Warnings,                 // Number of warning messages      //(5.1.011)
-                  WetStep,                  // Runoff wet time step (sec)
-                  DryStep,                  // Runoff dry time step (sec)
-                  ReportStep,               // Reporting time step (sec)
-                  SweepStart,               // Day of year when sweeping starts
-                  SweepEnd,                 // Day of year when sweeping ends
-                  MaxTrials,                // Max. trials for DW routing
-                  NumThreads,               // Number of parallel threads used //(5.1.008)
-                  NumEvents;                // Number of detailed events       //(5.1.011)
-                //InSteadyState;            // System flows remain constant    //(5.1.012)
+//                  WetStep,                  // Runoff wet time step (sec)
+//                  DryStep,                  // Runoff dry time step (sec)
+//                  ReportStep,               // Reporting time step (sec)
+//                  SweepStart,               // Day of year when sweeping starts
+//                  SweepEnd,                 // Day of year when sweeping ends
+//                  MaxTrials,                // Max. trials for DW routing
+//                  NumThreads,               // Number of parallel threads used //(5.1.008)
+//                  NumEvents;                // Number of detailed events       //(5.1.011)
+//                //InSteadyState;            // System flows remain constant    //(5.1.012)
 
 EXTERN double
                   RouteStep,                // Routing time step (sec)
