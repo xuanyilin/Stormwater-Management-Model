@@ -463,7 +463,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return climate_readParams(sp, Tok, Ntokens);
 
       case s_EVAP:
-        return climate_readEvapParams(Tok, Ntokens);
+        return climate_readEvapParams(sp, Tok, Ntokens);
 
       case s_ADJUST:                                                           //(5.1.007)
         return climate_readAdjustments(Tok, Ntokens);                          //(5.1.007)

@@ -1194,7 +1194,7 @@ struct SWMM_Project {
                  ElapsedTime;              // Current elapsed time (days)     //(5.1.011)
 
    TTemp         Temp;                     // Temperature data
-//    EXTERN TEvap      Evap;                     // Evaporation data
+   TEvap         Evap;                     // Evaporation data
 //    EXTERN TWind      Wind;                     // Wind speed data
 //    EXTERN TSnow      Snow;                     // Snow melt data
 //    EXTERN TAdjust    Adjust;                   // Climate adjustments             //(5.1.007)

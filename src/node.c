@@ -935,7 +935,7 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
     {
         // --- get node's evap. rate (ft/s) &  exfiltration object
         k = Node[j].subIndex;
-        evapRate = Evap.rate * Storage[k].fEvap;
+        evapRate = sp->Evap.rate * Storage[k].fEvap;
         exfil = Storage[k].exfil;
 
         // --- if either of these apply
@@ -951,7 +951,7 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
             // --- find exfiltration rate (cfs) through bottom and side banks
             if ( exfil != NULL )
             {
-                exfilRate = exfil_getLoss(exfil, tStep, depth, area);
+                exfilRate = exfil_getLoss(sp, exfil, tStep, depth, area);
             }
 
             // --- total loss over time step cannot exceed stored volume

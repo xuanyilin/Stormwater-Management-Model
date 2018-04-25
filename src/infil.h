@@ -99,13 +99,13 @@ int     infil_readParams(SWMM_Project *sp, int model, char* tok[], int ntoks);
 void    infil_initState(int area, int model);
 void    infil_getState(int j, int m, double x[]);
 void    infil_setState(int j, int m, double x[]);
-double  infil_getInfil(int area, int model, double tstep, double rainfall,
-        double runon, double depth);
+double  infil_getInfil(SWMM_Project *sp, int area, int model, double tstep,
+        double rainfall, double runon, double depth);
 
 int     grnampt_setParams(SWMM_Project *sp, TGrnAmpt *infil, double p[]);
 void    grnampt_initState(TGrnAmpt *infil);
-double  grnampt_getInfil(TGrnAmpt *infil, double tstep, double irate,
-        double depth, int modelType);                                          //(5.1.010)
+double  grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
+        double irate, double depth, int modelType);                            //(5.1.010)
 
 
 #endif //INFIL_H

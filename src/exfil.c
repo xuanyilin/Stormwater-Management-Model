@@ -143,7 +143,8 @@ void  exfil_initState(SWMM_Project *sp, int k)
 
 //=============================================================================
 
-double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
+double exfil_getLoss(SWMM_Project *sp, TExfil* exfil, double tStep, double depth,
+        double area)
 //
 //  Input:   exfil = ptr. to a storage exfiltration object
 //           tStep = time step (sec)
@@ -161,7 +162,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
     {
         exfilRate = exfil->btmExfil->Ks * Adjust.hydconFactor;                 //(5.1.008)
     }
-    else exfilRate = grnampt_getInfil(exfil->btmExfil, tStep, 0.0, depth,
+    else exfilRate = grnampt_getInfil(sp, exfil->btmExfil, tStep, 0.0, depth,
                                       MOD_GREEN_AMPT);                         //(5.1.010)
     exfilRate *= exfil->btmArea;
 
@@ -193,7 +194,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
                 else depth = (depth - exfil->bankMinDepth) / 2.0;
 
                 // --- use Green-Ampt function for bank infiltration
-                exfilRate += area * grnampt_getInfil(exfil->bankExfil,
+                exfilRate += area * grnampt_getInfil(sp, exfil->bankExfil,
                                     tStep, 0.0, depth, MOD_GREEN_AMPT);        //(5.1.010)
             }
         }

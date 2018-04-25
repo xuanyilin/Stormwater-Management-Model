@@ -31,7 +31,8 @@ typedef struct
 //-----------------------------------------------------------------------------
 int    exfil_readStorageParams(SWMM_Project *sp, int k, char* tok[], int ntoks, int n);
 void   exfil_initState(SWMM_Project *sp, int k);
-double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area);
+double exfil_getLoss(SWMM_Project *sp, TExfil* exfil, double tStep, double depth,
+        double area);
 
 
 #endif //EXFIL_H

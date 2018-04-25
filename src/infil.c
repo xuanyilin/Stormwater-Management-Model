@@ -68,26 +68,26 @@ static int    horton_setParams(SWMM_Project *sp, THorton *infil, double p[]);
 static void   horton_initState(THorton *infil);
 static void   horton_getState(THorton *infil, double x[]);
 static void   horton_setState(THorton *infil, double x[]);
-static double horton_getInfil(THorton *infil, double tstep, double irate,
-              double depth);
-static double modHorton_getInfil(THorton *infil, double tstep, double irate,
-              double depth);
+static double horton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
+        double irate, double depth);
+static double modHorton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
+        double irate, double depth);
 
 ////  Revised set of functions for Green-Ampt infiltration  ////               //(5.1.007)
 static void   grnampt_getState(TGrnAmpt *infil, double x[]);
 static void   grnampt_setState(TGrnAmpt *infil, double x[]);
-static double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep,
-              double irate, double depth, int modelType);                      //(5.1.010)
-static double grnampt_getSatInfil(TGrnAmpt *infil, double tstep,
-              double irate, double depth);
+static double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil,
+        double tstep, double irate, double depth, int modelType);                      //(5.1.010)
+static double grnampt_getSatInfil(SWMM_Project *sp, TGrnAmpt *infil,
+        double tstep, double irate, double depth);
 static double grnampt_getF2(double f1, double c1, double ks, double ts);
 
 static int    curvenum_setParams(TCurveNum *infil, double p[]);
 static void   curvenum_initState(TCurveNum *infil);
 static void   curvenum_getState(TCurveNum *infil, double x[]);
 static void   curvenum_setState(TCurveNum *infil, double x[]);
-static double curvenum_getInfil(TCurveNum *infil, double tstep, double irate,
-              double depth);
+static double curvenum_getInfil(SWMM_Project *sp, TCurveNum *infil, double tstep,
+        double irate, double depth);
 
 //=============================================================================
 
@@ -261,8 +261,8 @@ void infil_setState(int j, int m, double x[])
 
 //=============================================================================
 
-double infil_getInfil(int j, int m, double tstep, double rainfall,
-                      double runon, double depth)
+double infil_getInfil(SWMM_Project *sp, int j, int m, double tstep,
+        double rainfall, double runon, double depth)
 //
 //  Input:   j = subcatchment index
 //           m = infiltration method code
@@ -277,19 +277,19 @@ double infil_getInfil(int j, int m, double tstep, double rainfall,
     switch (m)
     {
       case HORTON:
-          return horton_getInfil(&HortInfil[j], tstep, rainfall+runon, depth);
+          return horton_getInfil(sp, &HortInfil[j], tstep, rainfall+runon, depth);
 
       case MOD_HORTON:
-          return modHorton_getInfil(&HortInfil[j], tstep, rainfall+runon,
+          return modHorton_getInfil(sp, &HortInfil[j], tstep, rainfall+runon,
                                     depth);
 
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-        return grnampt_getInfil(&GAInfil[j], tstep, rainfall+runon, depth, m); //(5.1.010)
+        return grnampt_getInfil(sp, &GAInfil[j], tstep, rainfall+runon, depth, m); //(5.1.010)
 
       case CURVE_NUMBER:
         depth += runon / tstep;
-        return curvenum_getInfil(&CNInfil[j], tstep, rainfall, depth);
+        return curvenum_getInfil(sp, &CNInfil[j], tstep, rainfall, depth);
 
       default:
         return 0.0;
@@ -357,7 +357,8 @@ void horton_setState(THorton *infil, double x[])
 
 //=============================================================================
 
-double horton_getInfil(THorton *infil, double tstep, double irate, double depth)
+double horton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
+        double irate, double depth)
 //
 //  Input:   infil = ptr. to Horton infiltration object
 //           tstep =  runoff time step (sec),
@@ -379,7 +380,7 @@ double horton_getInfil(THorton *infil, double tstep, double irate, double depth)
     double tp   = infil->tp;
     double df   = f0 - fmin;                                                   //(5.1.008)
     double kd   = infil->decay;
-    double kr   = infil->regen * Evap.recoveryFactor;
+    double kr   = infil->regen * sp->Evap.recoveryFactor;
 
     // --- special cases of no infil. or constant infil
     if ( df < 0.0 || kd < 0.0 || kr < 0.0 ) return 0.0;
@@ -469,8 +470,8 @@ double horton_getInfil(THorton *infil, double tstep, double irate, double depth)
 
 //=============================================================================
 
-double modHorton_getInfil(THorton *infil, double tstep, double irate,
-                          double depth)
+double modHorton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
+        double irate, double depth)
 //
 //  Input:   infil = ptr. to Horton infiltration object
 //           tstep =  runoff time step (sec),
@@ -488,7 +489,7 @@ double modHorton_getInfil(THorton *infil, double tstep, double irate,
     double fmin = infil->fmin * Adjust.hydconFactor;                           //(5.1.008)
     double df = f0 - fmin;                                                     //(5.1.008)
     double kd = infil->decay;
-    double kr = infil->regen * Evap.recoveryFactor;
+    double kr = infil->regen * sp->Evap.recoveryFactor;
 
     // --- special cases of no or constant infiltration
     if ( df < 0.0 || kd < 0.0 || kr < 0.0 ) return 0.0;
@@ -592,8 +593,8 @@ void grnampt_setState(TGrnAmpt *infil, double x[])
 
 ////  This function was re-written for release 5.1.007  ////                   //(5.1.007)
 
-double grnampt_getInfil(TGrnAmpt *infil, double tstep, double irate,
-    double depth, int modelType)                                               //(5.1.010)
+double grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
+        double irate, double depth, int modelType)                             //(5.1.010)
 //
 //  Input:   infil = ptr. to Green-Ampt infiltration object
 //           tstep =  time step (sec),
@@ -614,16 +615,16 @@ double grnampt_getInfil(TGrnAmpt *infil, double tstep, double irate,
     infil->T -= tstep;
 
     // --- use different procedures depending on upper soil zone saturation
-    if ( infil->Sat ) return grnampt_getSatInfil(infil, tstep, irate, depth);
-    else return grnampt_getUnsatInfil(infil, tstep, irate, depth, modelType);
+    if ( infil->Sat ) return grnampt_getSatInfil(sp, infil, tstep, irate, depth);
+    else return grnampt_getUnsatInfil(sp, infil, tstep, irate, depth, modelType);
 }
 
 //=============================================================================
 
 ////  New function added to release 5.1.007  ////                              //(5.1.007)
 
-double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep, double irate,
-    double depth, int modelType)
+double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
+        double irate, double depth, int modelType)
 //
 //  Input:   infil = ptr. to Green-Ampt infiltration object
 //           tstep =  runoff time step (sec),
@@ -649,7 +650,7 @@ double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep, double irate,
     if ( ia == 0.0 )
     {
         if ( infil->Fu <= 0.0 ) return 0.0;
-        kr = lu / 90000.0 * Evap.recoveryFactor;                               //(5.1.011)
+        kr = lu / 90000.0 * sp->Evap.recoveryFactor;                               //(5.1.011)
         dF = kr * Fumax * tstep;
         infil->F -= dF;
         infil->Fu -= dF;
@@ -686,7 +687,7 @@ double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep, double irate,
     }
 
     // --- rainfall exceeds Ksat; renew time to drain upper zone
-    infil->T = 5400.0 / lu / Evap.recoveryFactor;                              //(5.1.011)
+    infil->T = 5400.0 / lu / sp->Evap.recoveryFactor;                              //(5.1.011)
 
     // --- find volume needed to saturate surface layer
     Fs = ks * (infil->S + depth) * infil->IMD / (ia - ks);                     //(5.1.008)
@@ -695,7 +696,7 @@ double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep, double irate,
     if ( infil->F > Fs )
     {
         infil->Sat = TRUE;
-        return grnampt_getSatInfil(infil, tstep, irate, depth);
+        return grnampt_getSatInfil(sp, infil, tstep, irate, depth);
     }
 
     // --- surface layer remains unsaturated
@@ -731,8 +732,8 @@ double grnampt_getUnsatInfil(TGrnAmpt *infil, double tstep, double irate,
 
 ////  New function added to release 5.1.007  ////                              //(5.1.007)
 
-double grnampt_getSatInfil(TGrnAmpt *infil, double tstep, double irate,
-    double depth)
+double grnampt_getSatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
+        double irate, double depth)
 //
 //  Input:   infil = ptr. to Green-Ampt infiltration object
 //           tstep =  runoff time step (sec),
@@ -754,7 +755,7 @@ double grnampt_getSatInfil(TGrnAmpt *infil, double tstep, double irate,
     if ( ia < ZERO ) return 0.0;
 
     // --- re-set new event recovery time
-    infil->T = 5400.0 / lu / Evap.recoveryFactor;                              //(5.1.011)
+    infil->T = 5400.0 / lu / sp->Evap.recoveryFactor;                              //(5.1.011)
 
     // --- solve G-A equation for new cumulative infiltration volume (F2)
     c1 = (infil->S + depth) * infil->IMD;
@@ -895,8 +896,8 @@ void curvenum_setState(TCurveNum *infil, double x[])
 
 //=============================================================================
 
-double curvenum_getInfil(TCurveNum *infil, double tstep, double irate,
-    double depth)
+double curvenum_getInfil(SWMM_Project *sp, TCurveNum *infil, double tstep,
+        double irate, double depth)
 //
 //  Input:   infil = ptr. to Curve Number infiltration object
 //           tstep = runoff time step (sec),
@@ -971,7 +972,7 @@ double curvenum_getInfil(TCurveNum *infil, double tstep, double irate,
     // --- otherwise regenerate infil. capacity
     else
     {
-        infil->S += infil->regen * infil->Smax * tstep * Evap.recoveryFactor;
+        infil->S += infil->regen * infil->Smax * tstep * sp->Evap.recoveryFactor;
         if ( infil->S > infil->Smax ) infil->S = infil->Smax;
     }
     infil->f = f1;

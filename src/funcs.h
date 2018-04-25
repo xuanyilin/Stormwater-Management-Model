@@ -134,7 +134,7 @@ void    statsrpt_writeReport(SWMM_Project *sp);
 //   Temperature/Evaporation Methods
 //-----------------------------------------------------------------------------
 int      climate_readParams(SWMM_Project *sp, char* tok[], int ntoks);
-int      climate_readEvapParams(char* tok[], int ntoks);
+int      climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks);
 int      climate_readAdjustments(char* tok[], int ntoks);                      //(5.1.007)
 void     climate_validate(SWMM_Project *sp);
 void     climate_openFile(SWMM_Project *sp);

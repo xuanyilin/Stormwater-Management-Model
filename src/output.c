@@ -545,7 +545,7 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     else f = sp->Temp.ta;
     SysResults[SYS_TEMPERATURE] = (REAL4)f;
     
-    f = Evap.rate * UCF(sp, EVAPRATE);                                             //(5.1.010)
+    f = sp->Evap.rate * UCF(sp, EVAPRATE);                                             //(5.1.010)
     SysResults[SYS_PET] = (REAL4)f;                                            //(5.1.010)
 
     if ( totalArea > 0.0 )                                                     //(5.1.008)

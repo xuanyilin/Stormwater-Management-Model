@@ -264,7 +264,7 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-int climate_readEvapParams(char* tok[], int ntoks)
+int climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -294,7 +294,7 @@ int climate_readEvapParams(char* tok[], int ntoks)
         if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
         i = project_findObject(TIMEPATTERN, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-        Evap.recoveryPattern = i;
+        sp->Evap.recoveryPattern = i;
         return 0;
     }
 
@@ -302,14 +302,14 @@ int climate_readEvapParams(char* tok[], int ntoks)
     if ( k == DRYONLY )
     {
         if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-        if      ( strcomp(tok[1], w_NO ) )  Evap.dryOnly = FALSE;
-        else if ( strcomp(tok[1], w_YES ) ) Evap.dryOnly = TRUE;
+        if      ( strcomp(tok[1], w_NO ) )  sp->Evap.dryOnly = FALSE;
+        else if ( strcomp(tok[1], w_YES ) ) sp->Evap.dryOnly = TRUE;
         else return error_setInpError(ERR_KEYWORD, tok[1]);
         return 0;
     }
 
     // --- process data depending on its form
-    Evap.type = k;
+    sp->Evap.type = k;
     if ( k != TEMPERATURE_EVAP && ntoks < 2 )
         return error_setInpError(ERR_ITEMS, "");
     switch ( k )
@@ -318,14 +318,14 @@ int climate_readEvapParams(char* tok[], int ntoks)
         // --- for constant evap., fill monthly avg. values with same number
         if ( !getDouble(tok[1], &x) )
             return error_setInpError(ERR_NUMBER, tok[1]);
-        for (i=0; i<12; i++) Evap.monthlyEvap[i] = x;
+        for (i=0; i<12; i++) sp->Evap.monthlyEvap[i] = x;
         break;
 
       case MONTHLY_EVAP:
         // --- for monthly evap., read a value for each month of year
         if ( ntoks < 13 ) return error_setInpError(ERR_ITEMS, "");
         for ( i=0; i<12; i++)
-            if ( !getDouble(tok[i+1], &Evap.monthlyEvap[i]) )
+            if ( !getDouble(tok[i+1], &sp->Evap.monthlyEvap[i]) )
                 return error_setInpError(ERR_NUMBER, tok[i+1]);
         break;
 
@@ -333,7 +333,7 @@ int climate_readEvapParams(char* tok[], int ntoks)
         // --- for time series evap., read name of time series
         i = project_findObject(TSERIES, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-        Evap.tSeries = i;
+        sp->Evap.tSeries = i;
         Tseries[i].refersTo = TIMESERIES_EVAP;
         break;
 
@@ -345,7 +345,7 @@ int climate_readEvapParams(char* tok[], int ntoks)
             if ( ntoks < 13 ) return error_setInpError(ERR_ITEMS, "");
             for (i=0; i<12; i++)
             {
-                if ( !getDouble(tok[i+1], &Evap.panCoeff[i]) )
+                if ( !getDouble(tok[i+1], &sp->Evap.panCoeff[i]) )
                     return error_setInpError(ERR_NUMBER, tok[i+1]);
             }
         }
@@ -438,8 +438,8 @@ void climate_validate(SWMM_Project *sp)
     double    a, z, pa;
 
     // --- check if climate data comes from external data file                 //(5.1.007)
-    if ( Wind.type == FILE_WIND || Evap.type == FILE_EVAP ||
-         Evap.type == TEMPERATURE_EVAP )
+    if ( Wind.type == FILE_WIND || sp->Evap.type == FILE_EVAP ||
+         sp->Evap.type == TEMPERATURE_EVAP )
     {
         if ( sp->Fclimate.mode == NO_FILE )
         {
@@ -561,17 +561,17 @@ void climate_initState(SWMM_Project *sp)
     NextEvapRate = 0.0;
 
     // --- initialize variables for time series evaporation
-    if ( Evap.type == TIMESERIES_EVAP && Evap.tSeries >= 0  )
+    if ( sp->Evap.type == TIMESERIES_EVAP && sp->Evap.tSeries >= 0  )
     {
         // --- initialize NextEvapDate & NextEvapRate to first entry of
         //     time series whose date <= the simulation start date
-        table_getFirstEntry(&Tseries[Evap.tSeries],
+        table_getFirstEntry(&Tseries[sp->Evap.tSeries],
                             &NextEvapDate, &NextEvapRate);
         if ( NextEvapDate < sp->StartDate )
         {  
             setNextEvapDate(sp, sp->StartDate);
         }
-        Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
+        sp->Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
 
         // --- find the next time evaporation rates change after this
         setNextEvapDate(sp, NextEvapDate);
@@ -579,7 +579,7 @@ void climate_initState(SWMM_Project *sp)
 
 ////  Following section added to release 5.1.010.  ////                        //(5.1.010)
     // --- initialize variables for temperature evaporation
-    if ( Evap.type == TEMPERATURE_EVAP )
+    if ( sp->Evap.type == TEMPERATURE_EVAP )
     {
         Tma.maxCount = sizeof(Tma.ta) / sizeof(double);
         Tma.count = 0;
@@ -639,7 +639,7 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
     // --- do nothing if current date hasn't reached the current next date
     if ( NextEvapDate > theDate ) return;
 
-    switch ( Evap.type )
+    switch ( sp->Evap.type )
     {
       // --- for constant evaporation, use a next date far in the future
       case CONSTANT_EVAP:
@@ -661,7 +661,7 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
       // --- for time series evaporation, find the next entry in the
       //     series on or after the current date
       case TIMESERIES_EVAP:
-        k = Evap.tSeries;
+        k = sp->Evap.tSeries;
         if ( k >= 0 )
         {
             NextEvapDate = theDate + 365.;
@@ -770,7 +770,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
                 Tmax = tmp;
             }
             updateTempTimes(sp, day);
-            if ( Evap.type == TEMPERATURE_EVAP )
+            if ( sp->Evap.type == TEMPERATURE_EVAP )
             {
                 updateTempMoveAve(Tmin, Tmax);                                 //(5.1.010)
                 FileValue[EVAP] = getTempEvap(sp, day, Tma.tAve, Tma.tRng);        //(5.1.010)
@@ -837,42 +837,42 @@ void setEvap(SWMM_Project *sp, DateTime theDate)
     int k;
     int mon = datetime_monthOfYear(theDate);                                   //(5.1.007)
 
-    switch ( Evap.type )
+    switch ( sp->Evap.type )
     {
       case CONSTANT_EVAP:
-        Evap.rate = Evap.monthlyEvap[0] / UCF(sp, EVAPRATE);
+        sp->Evap.rate = sp->Evap.monthlyEvap[0] / UCF(sp, EVAPRATE);
         break;
 
       case MONTHLY_EVAP:
-        Evap.rate = Evap.monthlyEvap[mon-1] / UCF(sp, EVAPRATE);
+        sp->Evap.rate = sp->Evap.monthlyEvap[mon-1] / UCF(sp, EVAPRATE);
         break;
 
       case TIMESERIES_EVAP:
         if ( theDate >= NextEvapDate )
-            Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
+            sp->Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
         break;
 
       case FILE_EVAP:
-        Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
-        Evap.rate *= Evap.panCoeff[mon-1];
+        sp->Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
+        sp->Evap.rate *= sp->Evap.panCoeff[mon-1];
         break;
 
       case TEMPERATURE_EVAP:
-        Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
+        sp->Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
         break;
 
-      default: Evap.rate = 0.0;
+      default: sp->Evap.rate = 0.0;
     }
 
     // --- apply climate change adjustment                                     //(5.1.007)
-    Evap.rate += Adjust.evap[mon-1];                                           //(5.1.007)
+    sp->Evap.rate += Adjust.evap[mon-1];                                           //(5.1.007)
 
     // --- set soil recovery factor
-    Evap.recoveryFactor = 1.0;
-    k = Evap.recoveryPattern;
+    sp->Evap.recoveryFactor = 1.0;
+    k = sp->Evap.recoveryPattern;
     if ( k >= 0 && Pattern[k].type == MONTHLY_PATTERN )
     {
-        Evap.recoveryFactor = Pattern[k].factor[mon-1];                        //(5.1.007)
+        sp->Evap.recoveryFactor = Pattern[k].factor[mon-1];                        //(5.1.007)
     }
 }
 

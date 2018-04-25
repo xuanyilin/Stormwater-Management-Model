@@ -684,8 +684,8 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     getNetPrecip(sp, j, netPrecip, tStep);
 
     // --- find potential evaporation rate
-    if ( Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) evapRate = 0.0;
-    else evapRate = Evap.rate;
+    if ( sp->Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) evapRate = 0.0;
+    else evapRate = sp->Evap.rate;
 
     // --- examine each type of sub-area (impervious w/o depression storage,
     //     impervious w/ depression storage, and pervious)
@@ -1014,7 +1014,7 @@ double getSubareaInfil(SWMM_Project *sp, int j, TSubarea* subarea, double precip
     double infil = 0.0;                     // actual infiltration rate (ft/sec)
 
     // --- compute infiltration rate 
-    infil = infil_getInfil(j, sp->InfilModel, tStep, precip,
+    infil = infil_getInfil(sp, j, sp->InfilModel, tStep, precip,
                            subarea->inflow, subarea->depth);
 
     // --- limit infiltration rate by available void space in unsaturated

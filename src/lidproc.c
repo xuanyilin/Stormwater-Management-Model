@@ -271,7 +271,7 @@ double lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidProc
     else if ( theLidUnit->soilInfil.Ks > 0.0 )
     {
         SurfaceInfil =
-            grnampt_getInfil(&theLidUnit->soilInfil, Tstep,
+            grnampt_getInfil(sp, &theLidUnit->soilInfil, Tstep,
                              SurfaceInflow, theLidUnit->surfaceDepth,
                              MOD_GREEN_AMPT);                                  //(5.1.010)
     }

@@ -874,16 +874,16 @@ void setDefaults(SWMM_Project *sp)
    }
 
    // Evaporation rates
-   Evap.type = CONSTANT_EVAP;
+   sp->Evap.type = CONSTANT_EVAP;
    for (i=0; i<12; i++)
    {
-       Evap.monthlyEvap[i] = 0.0;
-       Evap.panCoeff[i]    = 1.0;
+       sp->Evap.monthlyEvap[i] = 0.0;
+       sp->Evap.panCoeff[i]    = 1.0;
    }
-   Evap.recoveryPattern = -1;
-   Evap.recoveryFactor  = 1.0; 
-   Evap.tSeries = -1;
-   Evap.dryOnly = FALSE;
+   sp->Evap.recoveryPattern = -1;
+   sp->Evap.recoveryFactor  = 1.0;
+   sp->Evap.tSeries = -1;
+   sp->Evap.dryOnly = FALSE;
 
 ////  Following code segment added to release 5.1.007.  ////                   //(5.1.007)
 ////

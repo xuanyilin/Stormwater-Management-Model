@@ -1551,8 +1551,8 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
     if ( !lidList ) return;
 
     //... determine if evaporation can occur
-    EvapRate = Evap.rate;
-    if ( Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
+    EvapRate = sp->Evap.rate;
+    if ( sp->Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
 
     //... find subcatchment's infiltration rate into native soil
     findNativeInfil(sp, j, tStep);
@@ -1630,7 +1630,7 @@ void findNativeInfil(SWMM_Project *sp, int j, double tStep)
     //... otherwise find infil. rate for the subcatchment's rainfall + runon
     else
     {
-        NativeInfil = infil_getInfil(j, sp->InfilModel, tStep,
+        NativeInfil = infil_getInfil(sp, j, sp->InfilModel, tStep,
                                      Subcatch[j].rainfall,
                                      Subcatch[j].runon,
                                      getSurfaceDepth(j));                      //(5.1.008)

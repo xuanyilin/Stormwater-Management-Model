@@ -139,7 +139,7 @@ EXTERN SWMM_Project *_defaultProject;
 //                  ElapsedTime;              // Current elapsed time (days)     //(5.1.011)
 //
 //EXTERN TTemp      Temp;                     // Temperature data
-EXTERN TEvap      Evap;                     // Evaporation data
+//EXTERN TEvap      Evap;                     // Evaporation data
 EXTERN TWind      Wind;                     // Wind speed data
 EXTERN TSnow      Snow;                     // Snow melt data
 EXTERN TAdjust    Adjust;                   // Climate adjustments             //(5.1.007)

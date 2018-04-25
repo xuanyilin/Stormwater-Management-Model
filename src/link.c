@@ -1320,10 +1320,10 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
         length = conduit_getLength(sp, j);
 
         // --- find evaporation rate for open conduits
-        if ( xsect_isOpen(xsect->type) && Evap.rate > 0.0 )
+        if ( xsect_isOpen(xsect->type) && sp->Evap.rate > 0.0 )
         {
             topWidth = xsect_getWofY(xsect, depth);
-            evapLossRate = topWidth * length * Evap.rate;
+            evapLossRate = topWidth * length * sp->Evap.rate;
         }
 
         // --- compute seepage loss rate

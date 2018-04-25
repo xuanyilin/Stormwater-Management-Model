@@ -525,7 +525,7 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     // --- convert max. surface evap rate (ft/sec) to a rate
     //     that applies to GW evap (GW evap can only occur
     //     through the pervious land surface area)
-    MaxEvap = Evap.rate * FracPerv;
+    MaxEvap = sp->Evap.rate * FracPerv;
 
     // --- available subsurface evaporation is difference between max.
     //     rate and pervious surface evap already exerted
