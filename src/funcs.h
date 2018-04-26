@@ -155,13 +155,13 @@ int     snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     snow_createSnowpack(int subcacth, int snowIndex);
 
 void    snow_validateSnowmelt(SWMM_Project *sp, int snowIndex);
-void    snow_initSnowpack(int subcatch);
-void    snow_initSnowmelt(int snowIndex);
+void    snow_initSnowpack(SWMM_Project *sp, int subcatch);
+void    snow_initSnowmelt(SWMM_Project *sp, int snowIndex);
 
 void    snow_getState(int subcatch, int subArea, double x[]);
 void    snow_setState(int subcatch, int subArea, double x[]);
 
-void    snow_setMeltCoeffs(int snowIndex, double season);
+void    snow_setMeltCoeffs(SWMM_Project *sp, int snowIndex, double season);
 void    snow_plowSnow(SWMM_Project *sp, int subcatch, double tStep);
 double  snow_getSnowMelt(SWMM_Project *sp, int subcatch, double rainfall,
         double snowfall, double tStep, double netPrecip[]);
@@ -326,14 +326,14 @@ void    stats_updateMaxNodeDepth(int node, double depth);                      /
 //-----------------------------------------------------------------------------
 //   Raingage Methods
 //-----------------------------------------------------------------------------
-int      gage_readParams(int gage, char* tok[], int ntoks);
+int      gage_readParams(SWMM_Project *sp, int gage, char* tok[], int ntoks);
 void     gage_validate(SWMM_Project *sp, int gage);
 void     gage_initState(SWMM_Project *sp, int gage);
 void     gage_setState(SWMM_Project *sp, int gage, DateTime aDate);
 double   gage_getPrecip(SWMM_Project *sp, int gage, double *rainfall,
         double *snowfall);
-void     gage_setReportRainfall(int gage, DateTime aDate);
-DateTime gage_getNextRainDate(int gage, DateTime aDate);
+void     gage_setReportRainfall(SWMM_Project *sp, int gage, DateTime aDate);
+DateTime gage_getNextRainDate(SWMM_Project *sp, int gage, DateTime aDate);
 
 //-----------------------------------------------------------------------------
 //   Subcatchment Methods

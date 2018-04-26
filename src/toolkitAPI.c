@@ -344,7 +344,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
         switch (type)
         {
             case SM_GAGE:
-                strcpy(id,Gage[index].ID); break;
+                strcpy(id,sp->Gage[index].ID); break;
             case SM_SUBCATCH:
                 strcpy(id,Subcatch[index].ID); break;
             case SM_NODE:
@@ -370,7 +370,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_UNITHYD:
                 strcpy(id,UnitHyd[index].ID); break;
             case SM_SNOWMELT:
-                strcpy(id,Snowmelt[index].ID); break;
+                strcpy(id,sp->Snowmelt[index].ID); break;
             //case SM_SHAPE:
                 //strcpy(id,Shape[index].ID); break;
             //case SM_LID:
@@ -1463,11 +1463,11 @@ int DLLEXPORT swmm_setGagePrecip_project(SWMM_Project *sp, int index, double val
     // Read the rainfall value
     else
     {
-        if (Gage[index].dataSource != RAIN_API)
+        if (sp->Gage[index].dataSource != RAIN_API)
         {
-            Gage[index].dataSource = RAIN_API;
+            sp->Gage[index].dataSource = RAIN_API;
         }
-	    Gage[index].externalRain = value * UCF(sp, RAINFALL);
+	    sp->Gage[index].externalRain = value * UCF(sp, RAINFALL);
     }
     return(errcode);
 }

@@ -1037,9 +1037,9 @@ void initGageData(SWMM_Project *sp)
     // --- first initialize the state of each rain gage
     for (g=0; g<sp->Nobjects[GAGE]; g++)
     {
-        if ( Gage[g].tSeries >= 0 )
+        if ( sp->Gage[g].tSeries >= 0 )
         {
-            table_tseriesInit(&Tseries[Gage[g].tSeries]);
+            table_tseriesInit(&Tseries[sp->Gage[g].tSeries]);
         }
         gage_initState(sp, g);
     }
@@ -1050,14 +1050,14 @@ void initGageData(SWMM_Project *sp)
         g = UnitHyd[i].rainGage;
         if ( g >= 0 )
         {
-            Gage[g].isUsed = TRUE;
+            sp->Gage[g].isUsed = TRUE;
 
             // --- if UH's gage uses same time series as a previous gage,
             //     then assign the latter gage to the UH
-            if ( Gage[g].coGage >= 0 )
+            if ( sp->Gage[g].coGage >= 0 )
             {
-                UnitHyd[i].rainGage = Gage[g].coGage;
-                Gage[Gage[g].coGage].isUsed = TRUE;
+                UnitHyd[i].rainGage = sp->Gage[g].coGage;
+                sp->Gage[sp->Gage[g].coGage].isUsed = TRUE;
             }
         }
     }
@@ -1176,7 +1176,7 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
 
     // --- examine each UH group
     month = datetime_monthOfYear(currentDate) - 1;
-    for (g = 0; g < sp->Nobjects[GAGE]; g++) Gage[g].isCurrent = FALSE;
+    for (g = 0; g < sp->Nobjects[GAGE]; g++) sp->Gage[g].isCurrent = FALSE;
     for (j = 0; j < sp->Nobjects[UNITHYD]; j++)
     {
         // --- repeat until gage's date reaches or exceeds current date
@@ -1188,12 +1188,12 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
             //     at gage'a current date (in original depth units)
             gageDate = UHGroup[j].gageDate;
             sp->Adjust.rainFactor = sp->Adjust.rain[datetime_monthOfYear(gageDate)-1]; //(5.1.007)
-            if (!Gage[g].isCurrent)
+            if (!sp->Gage[g].isCurrent)
             {
                 gage_setState(sp, g, gageDate);
-                Gage[g].isCurrent = TRUE;
+                sp->Gage[g].isCurrent = TRUE;
             }
-            rainDepth = Gage[g].rainfall * (double)rainInterval / 3600.0;
+            rainDepth = sp->Gage[g].rainfall * (double)rainInterval / 3600.0;
 
             // --- update amount of total rainfall volume (ft3)
             TotalRainVol += rainDepth / UCF(sp, RAINDEPTH) * UHGroup[j].area;

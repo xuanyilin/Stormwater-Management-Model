@@ -104,16 +104,16 @@ void inputrpt_writeInput(SWMM_Project *sp)
 "\n  ------------------------------------------------------------------------");
         for (i = 0; i < sp->Nobjects[GAGE]; i++)
         {
-            if ( Gage[i].tSeries >= 0 )
+            if ( sp->Gage[i].tSeries >= 0 )
             {
                 fprintf(sp->Frpt.file, "\n  %-20s %-30s ",
-                    Gage[i].ID, Tseries[Gage[i].tSeries].ID);
+                    sp->Gage[i].ID, Tseries[sp->Gage[i].tSeries].ID);
                 fprintf(sp->Frpt.file, "%-10s %3d min.",
-                    RainTypeWords[Gage[i].rainType],
-                    (Gage[i].rainInterval)/60);
+                    RainTypeWords[sp->Gage[i].rainType],
+                    (sp->Gage[i].rainInterval)/60);
             }
             else fprintf(sp->Frpt.file, "\n  %-20s %-30s",
-                Gage[i].ID, Gage[i].fname);
+                sp->Gage[i].ID, sp->Gage[i].fname);
         }
     }
 
@@ -133,7 +133,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
             fprintf(sp->Frpt.file,"\n  %-20s %10.2f%10.2f%10.2f%10.4f %-20s ",
                 Subcatch[i].ID, Subcatch[i].area*UCF(sp, LANDAREA),
                 Subcatch[i].width*UCF(sp, LENGTH),  Subcatch[i].fracImperv*100.0,
-                Subcatch[i].slope*100.0, Gage[Subcatch[i].gage].ID);
+                Subcatch[i].slope*100.0, sp->Gage[Subcatch[i].gage].ID);
             if ( Subcatch[i].outNode >= 0 )
             {
                 fprintf(sp->Frpt.file, "%-20s", Node[Subcatch[i].outNode].ID);

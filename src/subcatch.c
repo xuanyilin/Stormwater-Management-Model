@@ -428,14 +428,14 @@ void  subcatch_initState(SWMM_Project *sp, int j)
     i = Subcatch[j].gage;
     if ( i >= 0 )
     {
-        Gage[i].isUsed = TRUE;
-        if ( Gage[i].coGage >= 0 ) Gage[Gage[i].coGage].isUsed = TRUE;
+        sp->Gage[i].isUsed = TRUE;
+        if ( sp->Gage[i].coGage >= 0 ) sp->Gage[sp->Gage[i].coGage].isUsed = TRUE;
     }
 
     // --- initialize state of infiltration, groundwater, & snow pack objects
     if ( Subcatch[j].infil == j )  infil_initState(j, sp->InfilModel);
     if ( Subcatch[j].groundwater ) gwater_initState(j);
-    if ( Subcatch[j].snowpack )    snow_initSnowpack(j);
+    if ( Subcatch[j].snowpack )    snow_initSnowpack(sp, j);
 
     // --- initialize state of sub-areas
     for (i = IMPERV0; i <= PERV; i++)
@@ -867,7 +867,7 @@ void  subcatch_getResults(SWMM_Project *sp, int j, double f, float x[])
 
     // --- retrieve rainfall for current report period
     k = Subcatch[j].gage;
-    if ( k >= 0 ) x[SUBCATCH_RAINFALL] = (float)Gage[k].reportRainfall;
+    if ( k >= 0 ) x[SUBCATCH_RAINFALL] = (float)sp->Gage[k].reportRainfall;
     else          x[SUBCATCH_RAINFALL] = 0.0f;
 
     // --- retrieve snow depth

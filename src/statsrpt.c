@@ -783,7 +783,7 @@ void writeFlowClass(SWMM_Project *sp)
     WRITE("");
     fprintf(sp->Frpt.file,
 "\n  -------------------------------------------------------------------------------------"
-"\n                      sp->Adjusted    ---------- Fraction of Time in Flow Class ---------- "
+"\n                      Adjusted    ---------- Fraction of Time in Flow Class ---------- "
 "\n                       /Actual         Up    Down  Sub   Sup   Up    Down  Norm  Inlet "
 "\n  Conduit               Length    Dry  Dry   Dry   Crit  Crit  Crit  Crit  Ltd   Ctrl  "
 "\n  -------------------------------------------------------------------------------------");

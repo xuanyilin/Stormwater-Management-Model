@@ -510,7 +510,7 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     // --- update reported rainfall at each rain gage
     for ( j=0; j<sp->Nobjects[GAGE]; j++ )
     {
-        gage_setReportRainfall(j, reportDate);
+        gage_setReportRainfall(sp, j, reportDate);
     }
 
     // --- find where current reporting time lies between latest runoff times

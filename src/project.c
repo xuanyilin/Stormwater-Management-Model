@@ -94,7 +94,7 @@ static char     MemPoolAllocated;      // TRUE if memory pool allocated
 //-----------------------------------------------------------------------------
 //  Function declarations
 //-----------------------------------------------------------------------------
-static void initPointers(void);
+static void initPointers(SWMM_Project *sp);
 static void setDefaults(SWMM_Project *sp);
 static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
 static void createObjects(SWMM_Project *sp);
@@ -114,7 +114,7 @@ void project_open(SWMM_Project *sp, char *f1, char *f2, char *f3)
 //  Purpose: opens a new SWMM project.
 //
 {
-    initPointers();
+    initPointers(sp);
     setDefaults(sp);
     openFiles(sp, f1, f2, f3);
 }
@@ -722,14 +722,14 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
 //=============================================================================
 
-void initPointers()
+void initPointers(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: assigns NULL to all dynamic arrays for a new project.
 //
 {
-    Gage     = NULL;
+    sp->Gage     = NULL;
     Subcatch = NULL;
     Node     = NULL;
     Outfall  = NULL;
@@ -750,7 +750,7 @@ void initPointers()
     Shape    = NULL;
     Aquifer    = NULL;
     UnitHyd    = NULL;
-    Snowmelt   = NULL;
+    sp->Snowmelt   = NULL;
     Event      = NULL;                                                         //(5.1.011)
     MemPoolAllocated = FALSE;
 }
@@ -961,7 +961,7 @@ void createObjects(SWMM_Project *sp)
 
     // --- allocate memory for each category of object
     if ( sp->ErrorCode ) return;
-    Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
+    sp->Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
     Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
     Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
@@ -980,7 +980,7 @@ void createObjects(SWMM_Project *sp)
     Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
     Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
     UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
-    Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
+    sp->Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
     Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
@@ -1065,8 +1065,8 @@ void createObjects(SWMM_Project *sp)
     // --- initialize rain gage properties
     for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
-        Gage[j].tSeries = -1;
-        strcpy(Gage[j].fname, "");
+        sp->Gage[j].tSeries = -1;
+        strcpy(sp->Gage[j].fname, "");
     }
 
     // --- initialize subcatchment properties
@@ -1090,7 +1090,7 @@ void createObjects(SWMM_Project *sp)
     for ( j = 0; j < sp->Nobjects[UNITHYD]; j++ ) rdii_initUnitHyd(j);
 
     // --- initialize snowmelt properties
-    for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(j);
+    for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(sp, j);
 
     // --- initialize storage node exfiltration                                //(5.1.007)
     for (j = 0; j < sp->Nnodes[STORAGE]; j++) Storage[j].exfil = NULL;             //(5.1.007)
@@ -1219,7 +1219,7 @@ void deleteObjects(SWMM_Project *sp)
     lid_delete();
 
     // --- now free each major category of object
-    FREE(Gage);
+    FREE(sp->Gage);
     FREE(Subcatch);
     FREE(Node);
     FREE(Outfall);
@@ -1238,7 +1238,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(Tseries);
     FREE(Aquifer);
     FREE(UnitHyd);
-    FREE(Snowmelt);
+    FREE(sp->Snowmelt);
     FREE(Shape);
     FREE(Event);                                                               //(5.1.011)
 }

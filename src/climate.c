@@ -781,7 +781,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         sp->Snow.season = sin(0.0172615*(day-81.0));
         for (j=0; j<sp->Nobjects[SNOWMELT]; j++)
         {
-            snow_setMeltCoeffs(j, sp->Snow.season);
+            snow_setMeltCoeffs(sp, j, sp->Snow.season);
         }
 
         // --- update date of last day analyzed

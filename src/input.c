@@ -455,7 +455,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
 
       case s_RAINGAGE:
         j = Mobjects[GAGE];
-        err = gage_readParams(j, Tok, Ntokens);
+        err = gage_readParams(sp, j, Tok, Ntokens);
         Mobjects[GAGE]++;
         return err;
 

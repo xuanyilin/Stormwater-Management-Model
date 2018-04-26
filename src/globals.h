@@ -144,8 +144,8 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TSnow      Snow;                     // Snow melt data
 //EXTERN TAdjust    Adjust;                   // Climate adjustments             //(5.1.007)
 
-EXTERN TSnowmelt* Snowmelt;                 // Array of snow melt objects
-EXTERN TGage*     Gage;                     // Array of rain gages
+//EXTERN TSnowmelt* Snowmelt;                 // Array of snow melt objects
+//EXTERN TGage*     Gage;                     // Array of rain gages
 EXTERN TSubcatch* Subcatch;                 // Array of subcatchments
 EXTERN TAquifer*  Aquifer;                  // Array of groundwater aquifers
 EXTERN TUnitHyd*  UnitHyd;                  // Array of unit hydrographs

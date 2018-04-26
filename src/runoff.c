@@ -195,7 +195,7 @@ void runoff_execute(SWMM_Project *sp)
     for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
         gage_setState(sp, j, currentDate);
-        if ( Gage[j].rainfall > 0.0 ) IsRaining = TRUE;
+        if ( sp->Gage[j].rainfall > 0.0 ) IsRaining = TRUE;
     }
 
     // --- read runoff results from interface file if applicable
@@ -309,7 +309,7 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
     if ( timeStep > 0.0 && timeStep < maxStep ) maxStep = timeStep;            //(5.1.008)
     for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
-        timeStep = datetime_timeDiff(gage_getNextRainDate(j, currentDate),
+        timeStep = datetime_timeDiff(gage_getNextRainDate(sp, j, currentDate),
                    currentDate);
         if ( timeStep > 0 && timeStep < maxStep ) maxStep = timeStep;
     }

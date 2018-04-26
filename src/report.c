@@ -390,7 +390,7 @@ void report_writeRainStats(SWMM_Project *sp, int i, TRainStats* r)
         if ( r->startDate != NO_DATE ) datetime_dateToStr(r->startDate, date1);
         if ( r->endDate   != NO_DATE ) datetime_dateToStr(r->endDate, date2);
         fprintf(sp->Frpt.file, "  %-10s %-11s  %-11s  %5d min    %6ld     %6ld     %6ld\n",
-            Gage[i].staID, date1, date2, Gage[i].rainInterval/60,
+            sp->Gage[i].staID, date1, date2, sp->Gage[i].rainInterval/60,
             r->periodsRain, r->periodsMissing, r->periodsMalfunc);
     }
 }

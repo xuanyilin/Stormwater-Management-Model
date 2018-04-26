@@ -92,7 +92,7 @@ static int  rainFileConflict(SWMM_Project *sp, int i);
 static void initRainFile(SWMM_Project *sp);
 static int  findGageInFile(SWMM_Project *sp, int i, int kount);
 static int  addGageToRainFile(SWMM_Project *sp, int i);
-static int  findFileFormat(FILE *f, int i, int *hdrLines);
+static int  findFileFormat(SWMM_Project *sp, FILE *f, int i, int *hdrLines);
 static int  findNWSOnlineFormat(FILE *f, char *line);
 static void readFile(SWMM_Project *sp, FILE *f, int fileFormat, int hdrLines,
         DateTime day1, DateTime day2);
@@ -129,7 +129,7 @@ void  rain_open(SWMM_Project *sp)
     count = 0;
     for (i = 0; i < sp->Nobjects[GAGE]; i++)
     {
-        if ( Gage[i].dataSource == RAIN_FILE ) count++;
+        if ( sp->Gage[i].dataSource == RAIN_FILE ) count++;
     }
     sp->Frain.file = NULL;
     if ( count == 0 )
@@ -239,7 +239,7 @@ void createRainFile(SWMM_Project *sp, int count)
     //     looking for ones using rain files
     for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
-        if ( sp->ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
+        if ( sp->ErrorCode || sp->Gage[i].dataSource != RAIN_FILE ) continue;
         if ( rainFileConflict(sp, i) ) break;
 
         // --- position rain file to where data for gage will begin
@@ -251,7 +251,7 @@ void createRainFile(SWMM_Project *sp, int count)
             // --- write header records for gage to beginning of rain file
             filePos3 = ftell(sp->Frain.file);
             fseek(sp->Frain.file, filePos1, SEEK_SET);
-            sstrncpy(staID, Gage[i].staID, MAXMSG);
+            sstrncpy(staID, sp->Gage[i].staID, MAXMSG);
             interval = Interval;
             fwrite(staID,      sizeof(char), MAXMSG+1, sp->Frain.file);
             fwrite(&interval,  sizeof(int), 1, sp->Frain.file);
@@ -283,13 +283,13 @@ int rainFileConflict(SWMM_Project *sp, int i)
 //
 {
     int j;
-    char* staID = Gage[i].staID;
-    char* fname = Gage[i].fname;
+    char* staID = sp->Gage[i].staID;
+    char* fname = sp->Gage[i].fname;
     for (j = 1; j < i; j++)
     {
-        if ( strcomp(Gage[j].staID, staID) && !strcomp(Gage[j].fname, fname) )
+        if ( strcomp(sp->Gage[j].staID, staID) && !strcomp(sp->Gage[j].fname, fname) )
         {
-            report_writeErrorMsg(sp, ERR_RAIN_FILE_CONFLICT, Gage[i].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_CONFLICT, sp->Gage[i].ID);
             return 1;
         }
     }
@@ -313,20 +313,20 @@ int addGageToRainFile(SWMM_Project *sp, int i)
     StationID = NULL;
 
     // --- check that rain file exists
-    if ( (f = fopen(Gage[i].fname, "rt")) == NULL )
-        report_writeErrorMsg(sp, ERR_RAIN_FILE_DATA, Gage[i].fname);
+    if ( (f = fopen(sp->Gage[i].fname, "rt")) == NULL )
+        report_writeErrorMsg(sp, ERR_RAIN_FILE_DATA, sp->Gage[i].fname);
     else
     {
-        fileFormat = findFileFormat(f, i, &hdrLines);
+        fileFormat = findFileFormat(sp, f, i, &hdrLines);
         if ( fileFormat == UNKNOWN_FORMAT )
         {
-            report_writeErrorMsg(sp, ERR_RAIN_FILE_FORMAT, Gage[i].fname);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_FORMAT, sp->Gage[i].fname);
         }
         else
         {
             GageIndex = i;
-            readFile(sp, f, fileFormat, hdrLines, Gage[i].startFileDate,
-                     Gage[i].endFileDate);
+            readFile(sp, f, fileFormat, hdrLines, sp->Gage[i].startFileDate,
+                     sp->Gage[i].endFileDate);
         }
         fclose(f);
     }
@@ -367,14 +367,14 @@ void initRainFile(SWMM_Project *sp)
     // --- locate information for each raingage in interface file
     for ( i = 0; i < sp->Nobjects[GAGE]; i++ )
     {
-        if ( sp->ErrorCode || Gage[i].dataSource != RAIN_FILE ) continue;
+        if ( sp->ErrorCode || sp->Gage[i].dataSource != RAIN_FILE ) continue;
 
         // --- match station ID for gage with one in file
         fseek(sp->Frain.file, filePos, SEEK_SET);
         if ( !findGageInFile(sp, i, (int)kount) ||
-             Gage[i].startFilePos == Gage[i].endFilePos )
+             sp->Gage[i].startFilePos == sp->Gage[i].endFilePos )
         {
-            report_writeErrorMsg(sp, ERR_RAIN_FILE_GAGE, Gage[i].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_FILE_GAGE, sp->Gage[i].ID);
         }
     }
 }
@@ -400,14 +400,14 @@ int findGageInFile(SWMM_Project *sp, int i, int kount)
         fread(&interval,  sizeof(int), 1, sp->Frain.file);
         fread(&filePos1,  sizeof(int), 1, sp->Frain.file);
         fread(&filePos2,  sizeof(int), 1, sp->Frain.file);
-        if ( strcmp(staID, Gage[i].staID) == 0 )
+        if ( strcmp(staID, sp->Gage[i].staID) == 0 )
         {
             // --- match found; save file parameters
-            Gage[i].rainType     = RAINFALL_VOLUME;
-            Gage[i].rainInterval = interval;
-            Gage[i].startFilePos = (long)filePos1;
-            Gage[i].endFilePos   = (long)filePos2;
-            Gage[i].currentFilePos = Gage[i].startFilePos;
+            sp->Gage[i].rainType     = RAINFALL_VOLUME;
+            sp->Gage[i].rainInterval = interval;
+            sp->Gage[i].startFilePos = (long)filePos1;
+            sp->Gage[i].endFilePos   = (long)filePos2;
+            sp->Gage[i].currentFilePos = sp->Gage[i].startFilePos;
             return TRUE;
         }
     }
@@ -416,7 +416,7 @@ int findGageInFile(SWMM_Project *sp, int i, int kount)
 
 //=============================================================================
 
-int findFileFormat(FILE *f, int i, int *hdrLines)
+int findFileFormat(SWMM_Project *sp, FILE *f, int i, int *hdrLines)
 //
 //  Input:   f = ptr. to rain gage's rainfall data file
 //           i = rain gage index
@@ -564,17 +564,17 @@ int findFileFormat(FILE *f, int i, int *hdrLines)
         if ( parseStdLine(line, &year, &month, &day, &hour, &minute, &x) )
         {
             fileFormat = STD_SPACE_DELIMITED;
-            RainType = Gage[i].rainType;
-            Interval = Gage[i].rainInterval;
-            if ( Gage[i].rainUnits == SI ) UnitsFactor = 1.0/MMperINCH;
+            RainType = sp->Gage[i].rainType;
+            Interval = sp->Gage[i].rainInterval;
+            if ( sp->Gage[i].rainUnits == SI ) UnitsFactor = 1.0/MMperINCH;
             TimeOffset = 0;
-            StationID = Gage[i].staID;
+            StationID = sp->Gage[i].staID;
             break;
         }
         (*hdrLines)++;
 
     }
-    if ( fileFormat != UNKNOWN_FORMAT ) Gage[i].rainInterval = Interval;
+    if ( fileFormat != UNKNOWN_FORMAT ) sp->Gage[i].rainInterval = Interval;
     return fileFormat;
 }
 
@@ -1022,7 +1022,7 @@ int readStdLine(SWMM_Project *sp, char *line, DateTime day1, DateTime day2)
     date2 = date1 + datetime_encodeTime(hour, minute, 0);
     if ( date2 <= PreviousDate )
     {
-        report_writeErrorMsg(sp, ERR_RAIN_FILE_SEQUENCE, Gage[GageIndex].fname);   //(5.1.010)
+        report_writeErrorMsg(sp, ERR_RAIN_FILE_SEQUENCE, sp->Gage[GageIndex].fname);   //(5.1.010)
         report_writeLine(sp, line);
         return -1;
     }
