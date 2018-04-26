@@ -346,7 +346,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_GAGE:
                 strcpy(id,sp->Gage[index].ID); break;
             case SM_SUBCATCH:
-                strcpy(id,Subcatch[index].ID); break;
+                strcpy(id,sp->Subcatch[index].ID); break;
             case SM_NODE:
                 strcpy(id,Node[index].ID); break;
             case SM_LINK:
@@ -732,15 +732,15 @@ int DLLEXPORT swmm_getSubcatchParam_project(SWMM_Project *sp, int index, int Par
         switch(Param)
         {
             case SM_WIDTH:
-                *value = Subcatch[index].width * UCF(sp, LENGTH); break;
+                *value = sp->Subcatch[index].width * UCF(sp, LENGTH); break;
             case SM_AREA:
-                *value = Subcatch[index].area * UCF(sp, LANDAREA); break;
+                *value = sp->Subcatch[index].area * UCF(sp, LANDAREA); break;
             case SM_FRACIMPERV:
-                *value = Subcatch[index].fracImperv; break;
+                *value = sp->Subcatch[index].fracImperv; break;
             case SM_SLOPE:
-                *value = Subcatch[index].slope; break;
+                *value = sp->Subcatch[index].slope; break;
             case SM_CURBLEN:
-                *value = Subcatch[index].curbLength * UCF(sp, LENGTH); break;
+                *value = sp->Subcatch[index].curbLength * UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -781,15 +781,15 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
         switch(Param)
         {
             case SM_WIDTH:
-                Subcatch[index].width = value / UCF(sp, LENGTH); break;
+                sp->Subcatch[index].width = value / UCF(sp, LENGTH); break;
             case SM_AREA:
-                Subcatch[index].area = value / UCF(sp, LANDAREA); break;
+                sp->Subcatch[index].area = value / UCF(sp, LANDAREA); break;
             case SM_FRACIMPERV:
-                Subcatch[index].fracImperv; break;
+                sp->Subcatch[index].fracImperv; break;
             case SM_SLOPE:
-                Subcatch[index].slope; break;
+                sp->Subcatch[index].slope; break;
             case SM_CURBLEN:
-                Subcatch[index].curbLength = value / UCF(sp, LENGTH); break;
+                sp->Subcatch[index].curbLength = value / UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -826,19 +826,19 @@ int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_Project *sp, int index,
     }
     else
     {
-        if (Subcatch[index].outNode == -1 && Subcatch[index].outSubcatch == -1)
+        if (sp->Subcatch[index].outNode == -1 && sp->Subcatch[index].outSubcatch == -1)
         {
             *ObjIndex = index; // Case of self Loading subcatchment
             *type = SUBCATCH;
         }
-        if (Subcatch[index].outNode >= 0)
+        if (sp->Subcatch[index].outNode >= 0)
         {
-            *ObjIndex = Subcatch[index].outNode;
+            *ObjIndex = sp->Subcatch[index].outNode;
             *type = NODE;
         }
-        if (Subcatch[index].outSubcatch >= 0)
+        if (sp->Subcatch[index].outSubcatch >= 0)
         {
-            *ObjIndex = Subcatch[index].outSubcatch;
+            *ObjIndex = sp->Subcatch[index].outSubcatch;
             *type = SUBCATCH;
         }
     }
@@ -1014,17 +1014,17 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int ty
         switch (type)
         {
             case SM_SUBCRAIN:
-                *result = Subcatch[index].rainfall * UCF(sp, RAINFALL); break;
+                *result = sp->Subcatch[index].rainfall * UCF(sp, RAINFALL); break;
             case SM_SUBCEVAP:
-                *result = Subcatch[index].evapLoss * UCF(sp, EVAPRATE); break;
+                *result = sp->Subcatch[index].evapLoss * UCF(sp, EVAPRATE); break;
             case SM_SUBCINFIL:
-                *result = Subcatch[index].infilLoss * UCF(sp, RAINFALL); break;
+                *result = sp->Subcatch[index].infilLoss * UCF(sp, RAINFALL); break;
             case SM_SUBCRUNON:
-                *result = Subcatch[index].runon * UCF(sp, FLOW); break;
+                *result = sp->Subcatch[index].runon * UCF(sp, FLOW); break;
             case SM_SUBCRUNOFF:
-                *result = Subcatch[index].newRunoff * UCF(sp, FLOW); break;
+                *result = sp->Subcatch[index].newRunoff * UCF(sp, FLOW); break;
             case SM_SUBCSNOW:
-                *result = Subcatch[index].newSnowDepth * UCF(sp, RAINDEPTH); break;
+                *result = sp->Subcatch[index].newSnowDepth * UCF(sp, RAINDEPTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -1280,7 +1280,7 @@ int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
 
     if (errorcode == 0)
     {
-        double a = Subcatch[index].area;
+        double a = sp->Subcatch[index].area;
 
         // Cumulative Runon Volume
         subcatchStats->runon *= (UCF(sp, RAINDEPTH) / a);

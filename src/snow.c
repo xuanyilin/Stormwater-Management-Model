@@ -121,7 +121,7 @@ int snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-int snow_createSnowpack(int j, int k)
+int snow_createSnowpack(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = subcatchment index
 //           k = snow melt parameter set index
@@ -132,7 +132,7 @@ int snow_createSnowpack(int j, int k)
     TSnowpack* snowpack;
     snowpack = (TSnowpack *) malloc(sizeof(TSnowpack));
     if ( !snowpack ) return FALSE;
-    Subcatch[j].snowpack = snowpack;
+    sp->Subcatch[j].snowpack = snowpack;
     snowpack->snowmeltIndex = k;
     return TRUE;
 }
@@ -153,17 +153,17 @@ void snow_initSnowpack(SWMM_Project *sp, int j)
     TSnowpack* snowpack;               // ptr. to snow pack object
 
     // --- get ptr. to subcatchment's snow pack object
-    snowpack = Subcatch[j].snowpack;
+    snowpack = sp->Subcatch[j].snowpack;
     if ( snowpack == NULL ) return;
 
     // --- identify index of snow melt data set used by snow pack
-    k = Subcatch[j].snowpack->snowmeltIndex;
+    k = sp->Subcatch[j].snowpack->snowmeltIndex;
 
     // --- find fractional area of each snow surface
     f = sp->Snowmelt[k].snn;
-    snowpack->fArea[SNOW_PLOWABLE] = f * Subcatch[j].fracImperv;
-    snowpack->fArea[SNOW_IMPERV]   = (1.0 - f) * Subcatch[j].fracImperv;
-    snowpack->fArea[SNOW_PERV]     = 1.0 - Subcatch[j].fracImperv;
+    snowpack->fArea[SNOW_PLOWABLE] = f * sp->Subcatch[j].fracImperv;
+    snowpack->fArea[SNOW_IMPERV]   = (1.0 - f) * sp->Subcatch[j].fracImperv;
+    snowpack->fArea[SNOW_PERV]     = 1.0 - sp->Subcatch[j].fracImperv;
 
     // --- initialize state of snow pack on each snow surface
     for (i=SNOW_PLOWABLE; i<=SNOW_PERV; i++)
@@ -183,7 +183,7 @@ void snow_initSnowpack(SWMM_Project *sp, int j)
         snowpack->awe[i]   = 1.0;
         snowDepth += snowpack->wsnow[i] * snowpack->fArea[i];
     }
-    Subcatch[j].newSnowDepth = snowDepth;
+    sp->Subcatch[j].newSnowDepth = snowDepth;
 }
 
 //=============================================================================
@@ -246,7 +246,7 @@ void snow_validateSnowmelt(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void snow_getState(int i, int j, double x[])
+void snow_getState(SWMM_Project *sp, int i, int j, double x[])
 //
 //  Input:   i = subcatchment index
 //           j = snow pack sub-area index
@@ -254,7 +254,7 @@ void snow_getState(int i, int j, double x[])
 //  Purpose: retrieves the current state of a snow pack object.
 //
 {
-    TSnowpack* snowpack = Subcatch[i].snowpack;
+    TSnowpack* snowpack = sp->Subcatch[i].snowpack;
     if ( snowpack == NULL ) return;
     x[0] = snowpack->wsnow[j];
     x[1] = snowpack->fw[j];
@@ -265,7 +265,7 @@ void snow_getState(int i, int j, double x[])
 
 //=============================================================================
 
-void snow_setState(int i, int j, double x[])
+void snow_setState(SWMM_Project *sp, int i, int j, double x[])
 //
 //  Input:   i = subcatchment index
 //           j = snow pack sub-area index
@@ -274,7 +274,7 @@ void snow_setState(int i, int j, double x[])
 //  Purpose: sets the current state of a snow pack object.
 //
 {
-    TSnowpack* snowpack = Subcatch[i].snowpack;
+    TSnowpack* snowpack = sp->Subcatch[i].snowpack;
     if ( snowpack == NULL ) return;
     snowpack->wsnow[j] = x[0];
     snowpack->fw[j]    = x[1];
@@ -373,11 +373,11 @@ void snow_plowSnow(SWMM_Project *sp, int j, double tStep)
     double sfracTotal;                 // total fraction of snow moved
     TSnowpack* snowpack;               // ptr. to snow pack object
 
-    snowpack = Subcatch[j].snowpack;
+    snowpack = sp->Subcatch[j].snowpack;
     if ( !snowpack ) return;
 
     // --- see if there's any snowfall
-    gage_getPrecip(sp, Subcatch[j].gage, &rainfall, &snowfall);
+    gage_getPrecip(sp, sp->Subcatch[j].gage, &rainfall, &snowfall);
 
     // --- add snowfall to snow pack
     for (i=SNOW_PLOWABLE; i<=SNOW_PERV; i++)
@@ -399,7 +399,7 @@ void snow_plowSnow(SWMM_Project *sp, int j, double tStep)
             exc = snowpack->wsnow[SNOW_PLOWABLE];
 
             // --- plow out of system
-            f = snowpack->fArea[SNOW_PLOWABLE] * Subcatch[j].area;
+            f = snowpack->fArea[SNOW_PLOWABLE] * sp->Subcatch[j].area;
             sp->Snow.removed += sp->Snowmelt[k].sfrac[0] * exc * f;
             sfracTotal = sp->Snowmelt[k].sfrac[0];
 
@@ -429,15 +429,15 @@ void snow_plowSnow(SWMM_Project *sp, int j, double tStep)
             if ( sp->Snowmelt[k].sfrac[4] > 0.0 )
             {
                 m = sp->Snowmelt[k].toSubcatch;
-                if ( Subcatch[m].snowpack )
+                if ( sp->Subcatch[m].snowpack )
                 {
-                    f = Subcatch[m].snowpack->fArea[SNOW_PERV];
+                    f = sp->Subcatch[m].snowpack->fArea[SNOW_PERV];
                 } 
                 else f = 0.0; 
                 if ( f > 0.0 )
                 {
                     f = snowpack->fArea[SNOW_PLOWABLE] / f;
-                    Subcatch[m].snowpack->wsnow[SNOW_PERV] +=
+                    sp->Subcatch[m].snowpack->wsnow[SNOW_PERV] +=
                         sp->Snowmelt[k].sfrac[4] * exc * f;
                     sfracTotal += sp->Snowmelt[k].sfrac[4];
                 }
@@ -474,7 +474,7 @@ double snow_getSnowMelt(SWMM_Project *sp, int j, double rainfall,
     TSnowpack* snowpack;               // ptr. to snow pack object
 
     // --- get ptr. to subcatchment's snowpack
-    snowpack = Subcatch[j].snowpack;
+    snowpack = sp->Subcatch[j].snowpack;
 
     // --- compute snowmelt over entire subcatchment when rain falling
     rmelt = getRainmelt(sp, rainfall);
@@ -515,12 +515,12 @@ double snow_getSnowMelt(SWMM_Project *sp, int j, double rainfall,
     }
 
     // --- combine netPrecip on plowable & non-plowable imperv. areas
-    if ( Subcatch[j].fracImperv > 0.0 )
+    if ( sp->Subcatch[j].fracImperv > 0.0 )
     {
         impervPrecip =
             (netPrecip[SNOW_PLOWABLE] * snowpack->fArea[SNOW_PLOWABLE] +
              netPrecip[SNOW_IMPERV] * snowpack->fArea[SNOW_IMPERV]) /
-             Subcatch[j].fracImperv;
+             sp->Subcatch[j].fracImperv;
         netPrecip[IMPERV0] = impervPrecip;
         netPrecip[IMPERV1] = impervPrecip;
     }
@@ -529,7 +529,7 @@ double snow_getSnowMelt(SWMM_Project *sp, int j, double rainfall,
 
 //=============================================================================
 
-double snow_getSnowCover(int j)
+double snow_getSnowCover(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  returns volume of snow cover (ft3)
@@ -540,14 +540,14 @@ double snow_getSnowCover(int j)
     double  snowCover = 0.0;           // snow cover volume (ft3)
     TSnowpack* snowpack;               // ptr. to snowpack object
 
-    snowpack = Subcatch[j].snowpack;
+    snowpack = sp->Subcatch[j].snowpack;
     if ( !snowpack ) return 0.0;
     for (i=SNOW_PLOWABLE; i<=SNOW_PERV; i++)
     {
         snowCover += (snowpack->wsnow[i] + snowpack->fw[i]) * 
                       snowpack->fArea[i];
     }
-    return snowCover * Subcatch[j].area;
+    return snowCover * sp->Subcatch[j].area;
 }
 
 //=============================================================================

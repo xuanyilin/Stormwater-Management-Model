@@ -550,7 +550,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return landuse_readWashoffParams(sp, Tok, Ntokens);
 
       case s_COVERAGE:
-        return subcatch_readLanduseParams(Tok, Ntokens);
+        return subcatch_readLanduseParams(sp, Tok, Ntokens);
 
       case s_INFLOW:
         return inflow_readExtInflow(sp, Tok, Ntokens);
@@ -568,7 +568,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return rdii_readUnitHydParams(Tok, Ntokens);
 
       case s_LOADING:
-        return subcatch_readInitBuildup(Tok, Ntokens);
+        return subcatch_readInitBuildup(sp, Tok, Ntokens);
 
       case s_TREATMENT:
         return treatmnt_readExpression(sp, Tok, Ntokens);

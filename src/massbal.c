@@ -131,9 +131,9 @@ int massbal_open(SWMM_Project *sp)
     TotalArea = 0.0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        RunoffTotals.initStorage += subcatch_getStorage(j);
-        RunoffTotals.initSnowCover += snow_getSnowCover(j);
-        TotalArea += Subcatch[j].area;
+        RunoffTotals.initStorage += subcatch_getStorage(sp, j);
+        RunoffTotals.initSnowCover += snow_getSnowCover(sp, j);
+        TotalArea += sp->Subcatch[j].area;
     }
 
     // --- initialize groundwater totals
@@ -146,7 +146,7 @@ int massbal_open(SWMM_Project *sp)
     GwaterTotals.finalStorage = 0.0;
     for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
-        GwaterTotals.initStorage += gwater_getVolume(j) * Subcatch[j].area;
+        GwaterTotals.initStorage += gwater_getVolume(sp, j) * sp->Subcatch[j].area;
     }
 
     // --- initialize node flow & storage totals
@@ -308,7 +308,7 @@ void massbal_report(SWMM_Project *sp)
         {
             for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
             {
-                if ( Subcatch[j].groundwater ) gwArea += Subcatch[j].area;
+                if ( sp->Subcatch[j].groundwater ) gwArea += sp->Subcatch[j].area;
             }
             if ( gwArea > 0.0 ) report_writeGwaterError(sp, &GwaterTotals, gwArea);
        }
@@ -345,9 +345,9 @@ double massbal_getBuildup(SWMM_Project *sp, int p)
     {
         for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
         {
-            load += Subcatch[j].landFactor[i].buildup[p];
+            load += sp->Subcatch[j].landFactor[i].buildup[p];
         }
-        load += Subcatch[j].pondedQual[p] * Pollut[p].mcf;
+        load += sp->Subcatch[j].pondedQual[p] * Pollut[p].mcf;
     }
     return load;
 }
@@ -747,8 +747,8 @@ double massbal_getRunoffError(SWMM_Project *sp)
     RunoffTotals.finalSnowCover = 0.0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        RunoffTotals.finalStorage += subcatch_getStorage(j);
-        RunoffTotals.finalSnowCover += snow_getSnowCover(j);
+        RunoffTotals.finalStorage += subcatch_getStorage(sp, j);
+        RunoffTotals.finalSnowCover += snow_getSnowCover(sp, j);
     }
 
     // --- get snow removed from system
@@ -863,7 +863,7 @@ double massbal_getGwaterError(SWMM_Project *sp)
     GwaterTotals.finalStorage = 0.0;
     for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
-        GwaterTotals.finalStorage += gwater_getVolume(j) * Subcatch[j].area;
+        GwaterTotals.finalStorage += gwater_getVolume(sp, j) * sp->Subcatch[j].area;
     }
 
     // --- compute % difference between total inflow and outflow

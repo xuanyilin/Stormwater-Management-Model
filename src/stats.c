@@ -149,14 +149,14 @@ int  stats_open(SWMM_Project *sp)
 ////
         for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
         {
-            if ( Subcatch[j].groundwater == NULL ) continue;
-            Subcatch[j].groundwater->stats.avgUpperMoist = 0.0;
-            Subcatch[j].groundwater->stats.avgWaterTable = 0.0;
-            Subcatch[j].groundwater->stats.infil = 0.0;
-            Subcatch[j].groundwater->stats.latFlow = 0.0;
-            Subcatch[j].groundwater->stats.deepFlow = 0.0;
-            Subcatch[j].groundwater->stats.evap = 0.0;
-            Subcatch[j].groundwater->stats.maxFlow = 0.0;
+            if ( sp->Subcatch[j].groundwater == NULL ) continue;
+            sp->Subcatch[j].groundwater->stats.avgUpperMoist = 0.0;
+            sp->Subcatch[j].groundwater->stats.avgWaterTable = 0.0;
+            sp->Subcatch[j].groundwater->stats.infil = 0.0;
+            sp->Subcatch[j].groundwater->stats.latFlow = 0.0;
+            sp->Subcatch[j].groundwater->stats.deepFlow = 0.0;
+            sp->Subcatch[j].groundwater->stats.evap = 0.0;
+            sp->Subcatch[j].groundwater->stats.maxFlow = 0.0;
         }
 ////
     }
@@ -389,21 +389,21 @@ void   stats_updateSubcatchStats(SWMM_Project *sp, int j, double rainVol,
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void  stats_updateGwaterStats(int j, double infil, double evap, double latFlow,
-                              double deepFlow, double theta, double waterTable,
-                              double tStep)
+void  stats_updateGwaterStats(SWMM_Project *sp, int j, double infil, double evap,
+        double latFlow, double deepFlow, double theta, double waterTable,
+        double tStep)
 {
-    Subcatch[j].groundwater->stats.infil += infil * tStep;
-    Subcatch[j].groundwater->stats.evap += evap * tStep;
-    Subcatch[j].groundwater->stats.latFlow += latFlow * tStep;
-    Subcatch[j].groundwater->stats.deepFlow += deepFlow * tStep;
-    Subcatch[j].groundwater->stats.avgUpperMoist += theta * tStep;
-    Subcatch[j].groundwater->stats.avgWaterTable += waterTable * tStep;
-    Subcatch[j].groundwater->stats.finalUpperMoist = theta;
-    Subcatch[j].groundwater->stats.finalWaterTable = waterTable;
-    if ( fabs(latFlow) > fabs(Subcatch[j].groundwater->stats.maxFlow) )
+    sp->Subcatch[j].groundwater->stats.infil += infil * tStep;
+    sp->Subcatch[j].groundwater->stats.evap += evap * tStep;
+    sp->Subcatch[j].groundwater->stats.latFlow += latFlow * tStep;
+    sp->Subcatch[j].groundwater->stats.deepFlow += deepFlow * tStep;
+    sp->Subcatch[j].groundwater->stats.avgUpperMoist += theta * tStep;
+    sp->Subcatch[j].groundwater->stats.avgWaterTable += waterTable * tStep;
+    sp->Subcatch[j].groundwater->stats.finalUpperMoist = theta;
+    sp->Subcatch[j].groundwater->stats.finalWaterTable = waterTable;
+    if ( fabs(latFlow) > fabs(sp->Subcatch[j].groundwater->stats.maxFlow) )
     {
-        Subcatch[j].groundwater->stats.maxFlow = latFlow;
+        sp->Subcatch[j].groundwater->stats.maxFlow = latFlow;
     }
 }
 
@@ -419,7 +419,7 @@ void  stats_updateMaxRunoff(SWMM_Project *sp)
     int j;
     double sysRunoff = 0.0;
     
-    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) sysRunoff += Subcatch[j].newRunoff;
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) sysRunoff += sp->Subcatch[j].newRunoff;
     MaxRunoffFlow = MAX(MaxRunoffFlow, sysRunoff);
 }    
 

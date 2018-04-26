@@ -544,7 +544,7 @@ double landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p)
     double r = 0.0;
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
-        r += Subcatch[j].landFactor[i].fraction *
+        r += sp->Subcatch[j].landFactor[i].fraction *
              Landuse[i].washoffFunc[p].bmpEffic;
     }
     return r;

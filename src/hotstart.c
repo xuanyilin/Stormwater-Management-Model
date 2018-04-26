@@ -305,7 +305,7 @@ void readRouting(SWMM_Project *sp)
             xgw[1] = x;
 
             // --- set GW state
-            if ( Subcatch[i].groundwater != NULL ) gwater_setState(i, xgw);
+            if ( sp->Subcatch[i].groundwater != NULL ) gwater_setState(sp, i, xgw);
         }
     }
 
@@ -386,8 +386,8 @@ void  saveRunoff(SWMM_Project *sp)
     for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
     {
         // Ponded depths for each sub-area & total runoff (4 elements)
-        for (j = 0; j < 3; j++) x[j] = Subcatch[i].subArea[j].depth;
-        x[3] = Subcatch[i].newRunoff;
+        for (j = 0; j < 3; j++) x[j] = sp->Subcatch[i].subArea[j].depth;
+        x[3] = sp->Subcatch[i].newRunoff;
         fwrite(x, sizeof(double), 4, f);
 
         // Infiltration state (max. of 6 elements)
@@ -396,18 +396,18 @@ void  saveRunoff(SWMM_Project *sp)
         fwrite(x, sizeof(double), 6, f);
 
         // Groundwater state (4 elements)
-        if ( Subcatch[i].groundwater != NULL )
+        if ( sp->Subcatch[i].groundwater != NULL )
         {
-            gwater_getState(i, x);
+            gwater_getState(sp, i, x);
             fwrite(x, sizeof(double), 4, f);
         }
 
         // Snowpack state (5 elements for each of 3 snow surfaces)
-        if ( Subcatch[i].snowpack != NULL )
+        if ( sp->Subcatch[i].snowpack != NULL )
         {
             for (j=0; j<3; j++)
             {
-                snow_getState(i, j, x);
+                snow_getState(sp, i, j, x);
                 fwrite(x, sizeof(double), 5, f);
             }
         }
@@ -416,20 +416,20 @@ void  saveRunoff(SWMM_Project *sp)
         if ( sp->Nobjects[POLLUT] > 0 )                                            //(5.1.008)
         {
             // Runoff quality
-            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = Subcatch[i].newQual[j];
+            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = sp->Subcatch[i].newQual[j];
             fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
 
             // Ponded quality
-            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = Subcatch[i].pondedQual[j];
+            for (j=0; j<sp->Nobjects[POLLUT]; j++) x[j] = sp->Subcatch[i].pondedQual[j];
             fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
             
             // Buildup and when streets were last swept
             for (k=0; k<sp->Nobjects[LANDUSE]; k++)
             {
                 for (j=0; j<sp->Nobjects[POLLUT]; j++)
-                    x[j] = Subcatch[i].landFactor[k].buildup[j];
+                    x[j] = sp->Subcatch[i].landFactor[k].buildup[j];
                 fwrite(x, sizeof(double), sp->Nobjects[POLLUT], f);
-                x[0] = Subcatch[i].landFactor[k].lastSwept;
+                x[0] = sp->Subcatch[i].landFactor[k].lastSwept;
                 fwrite(x, sizeof(double), 1, f);
             }
         }
@@ -455,28 +455,28 @@ void  readRunoff(SWMM_Project *sp)
         // Ponded depths & runoff (4 elements)
         for (j = 0; j < 3; j++)
         {
-            if ( !readDouble(sp, &Subcatch[i].subArea[j].depth, f) ) return;
+            if ( !readDouble(sp, &sp->Subcatch[i].subArea[j].depth, f) ) return;
         }
-        if ( !readDouble(sp, &Subcatch[i].newRunoff, f) ) return;                  //(5.1.008)
+        if ( !readDouble(sp, &sp->Subcatch[i].newRunoff, f) ) return;                  //(5.1.008)
 
         // Infiltration state (max. of 6 elements)
         for (j=0; j<6; j++) if ( !readDouble(sp, &x[j], f) ) return;
         infil_setState(i, sp->InfilModel, x);
 
         // Groundwater state (4 elements)
-        if ( Subcatch[i].groundwater != NULL )
+        if ( sp->Subcatch[i].groundwater != NULL )
         {
             for (j=0; j<4; j++) if ( !readDouble(sp, &x[j], f) ) return;
-            gwater_setState(i, x);
+            gwater_setState(sp, i, x);
         }
 
         // Snowpack state (5 elements for each of 3 snow surfaces)
-        if ( Subcatch[i].snowpack != NULL )
+        if ( sp->Subcatch[i].snowpack != NULL )
         {
             for (j=0; j<3; j++) 
             {
                 for (k=0; k<5; k++) if ( !readDouble(sp, &x[k], f) ) return;       //(5.1.008)
-                snow_setState(i, j, x);
+                snow_setState(sp, i, j, x);
             }
         }
 
@@ -485,11 +485,11 @@ void  readRunoff(SWMM_Project *sp)
         {
             // Runoff quality
             for (j=0; j<sp->Nobjects[POLLUT]; j++)
-                if ( ! readDouble(sp, &Subcatch[i].newQual[j], f) ) return;        //(5.1.008)
+                if ( ! readDouble(sp, &sp->Subcatch[i].newQual[j], f) ) return;        //(5.1.008)
 
             // Ponded quality
             for (j=0; j<sp->Nobjects[POLLUT]; j++)
-                if ( !readDouble(sp, &Subcatch[i].pondedQual[j], f) ) return;
+                if ( !readDouble(sp, &sp->Subcatch[i].pondedQual[j], f) ) return;
             
             // Buildup and when streets were last swept
             for (k=0; k<sp->Nobjects[LANDUSE]; k++)
@@ -497,9 +497,9 @@ void  readRunoff(SWMM_Project *sp)
                 for (j=0; j<sp->Nobjects[POLLUT]; j++)
                 {
                     if ( !readDouble(sp,
-                        &Subcatch[i].landFactor[k].buildup[j], f) ) return;
+                        &sp->Subcatch[i].landFactor[k].buildup[j], f) ) return;
                 }
-                if ( !readDouble(sp, &Subcatch[i].landFactor[k].lastSwept, f) )
+                if ( !readDouble(sp, &sp->Subcatch[i].landFactor[k].lastSwept, f) )
                     return;
             }
         }

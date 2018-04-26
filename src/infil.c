@@ -178,7 +178,7 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
     }
 
     // --- assign parameter values to infil. object
-    Subcatch[j].infil = j;
+    sp->Subcatch[j].infil = j;
     switch (m)
     {
       case HORTON:

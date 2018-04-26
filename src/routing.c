@@ -492,18 +492,18 @@ void addWetWeatherInflows(SWMM_Project *sp, double routingTime)
     // add interpolated runoff flow & pollutant load to node's inflow
     for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
     {
-        j = Subcatch[i].outNode;
+        j = sp->Subcatch[i].outNode;
         if ( j >= 0)
         {
             // add runoff flow to lateral inflow
-            q = subcatch_getWtdOutflow(i, f);     // current runoff flow
+            q = subcatch_getWtdOutflow(sp, i, f);     // current runoff flow
             Node[j].newLatFlow += q;
             massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
 
             // add pollutant load
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
-                w = surfqual_getWtdWashoff(i, p, f);                           //(5.1.008)
+                w = surfqual_getWtdWashoff(sp, i, p, f);                           //(5.1.008)
                 Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, WET_WEATHER_INFLOW, p, w);
             }
@@ -535,7 +535,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
     for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
     {
         // --- see if subcatch contains groundwater
-        gw = Subcatch[i].groundwater;
+        gw = sp->Subcatch[i].groundwater;
         if ( gw )
         {
             // --- identify node receiving groundwater flow
@@ -544,7 +544,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
             {
                 // add groundwater flow to lateral inflow
                 q = ( (1.0 - f)*(gw->oldFlow) + f*(gw->newFlow) )
-                    * Subcatch[i].area;
+                    * sp->Subcatch[i].area;
                 if ( fabs(q) < FLOW_TOL ) continue;
                 Node[j].newLatFlow += q;
                 massbal_addInflowFlow(GROUNDWATER_INFLOW, q);
@@ -585,7 +585,7 @@ void addLidDrainInflows(SWMM_Project *sp, double routingTime)
     if ( f > 1.0 ) f = 1.0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        if ( Subcatch[j].area > 0.0 && Subcatch[j].lidArea > 0.0 )
+        if ( sp->Subcatch[j].area > 0.0 && sp->Subcatch[j].lidArea > 0.0 )
             lid_addDrainInflow(sp, j, f);
     }
 }

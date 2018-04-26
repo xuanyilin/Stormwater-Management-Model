@@ -131,18 +131,18 @@ void inputrpt_writeInput(SWMM_Project *sp)
         for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
         {
             fprintf(sp->Frpt.file,"\n  %-20s %10.2f%10.2f%10.2f%10.4f %-20s ",
-                Subcatch[i].ID, Subcatch[i].area*UCF(sp, LANDAREA),
-                Subcatch[i].width*UCF(sp, LENGTH),  Subcatch[i].fracImperv*100.0,
-                Subcatch[i].slope*100.0, sp->Gage[Subcatch[i].gage].ID);
-            if ( Subcatch[i].outNode >= 0 )
+                sp->Subcatch[i].ID, sp->Subcatch[i].area*UCF(sp, LANDAREA),
+                sp->Subcatch[i].width*UCF(sp, LENGTH),  sp->Subcatch[i].fracImperv*100.0,
+                sp->Subcatch[i].slope*100.0, sp->Gage[sp->Subcatch[i].gage].ID);
+            if ( sp->Subcatch[i].outNode >= 0 )
             {
-                fprintf(sp->Frpt.file, "%-20s", Node[Subcatch[i].outNode].ID);
+                fprintf(sp->Frpt.file, "%-20s", Node[sp->Subcatch[i].outNode].ID);
             }
-            else if ( Subcatch[i].outSubcatch >= 0 )
+            else if ( sp->Subcatch[i].outSubcatch >= 0 )
             {
-                fprintf(sp->Frpt.file, "%-20s", Subcatch[Subcatch[i].outSubcatch].ID);
+                fprintf(sp->Frpt.file, "%-20s", sp->Subcatch[sp->Subcatch[i].outSubcatch].ID);
             }
-            if ( Subcatch[i].lidArea ) lidCount++;
+            if ( sp->Subcatch[i].lidArea ) lidCount++;
         }
     }
     if ( lidCount > 0 ) lid_writeSummary(sp);

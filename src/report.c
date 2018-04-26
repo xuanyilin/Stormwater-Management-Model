@@ -149,7 +149,7 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
             if ( j < 0 ) return error_setInpError(ERR_NAME, tok[t]);
             switch ( m )
             {
-              case SUBCATCH:  Subcatch[j].rptFlag = TRUE;  break;
+              case SUBCATCH:  sp->Subcatch[j].rptFlag = TRUE;  break;
               case NODE:      Node[j].rptFlag = TRUE;  break;
               case LINK:      Link[j].rptFlag = TRUE;  break;
             }
@@ -1110,9 +1110,9 @@ void report_Subcatchments(SWMM_Project *sp)
     k = 0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        if ( Subcatch[j].rptFlag == TRUE )
+        if ( sp->Subcatch[j].rptFlag == TRUE )
         {
-            report_SubcatchHeader(sp, Subcatch[j].ID);
+            report_SubcatchHeader(sp, sp->Subcatch[j].ID);
             for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);

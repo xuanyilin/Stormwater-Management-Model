@@ -249,7 +249,7 @@ void project_validate(SWMM_Project *sp)
 
     // --- adjust individual reporting flags to match global reporting flag
     if ( sp->RptFlags.subcatchments == ALL )
-        for (i=0; i<sp->Nobjects[SUBCATCH]; i++) Subcatch[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[SUBCATCH]; i++) sp->Subcatch[i].rptFlag = TRUE;
     if ( sp->RptFlags.nodes == ALL )
         for (i=0; i<sp->Nobjects[NODE]; i++) Node[i].rptFlag = TRUE;
     if ( sp->RptFlags.links == ALL )
@@ -730,7 +730,7 @@ void initPointers(SWMM_Project *sp)
 //
 {
     sp->Gage     = NULL;
-    Subcatch = NULL;
+    sp->Subcatch = NULL;
     Node     = NULL;
     Outfall  = NULL;
     Divider  = NULL;
@@ -962,7 +962,7 @@ void createObjects(SWMM_Project *sp)
     // --- allocate memory for each category of object
     if ( sp->ErrorCode ) return;
     sp->Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
-    Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
+    sp->Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
     Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
     Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
@@ -1007,12 +1007,12 @@ void createObjects(SWMM_Project *sp)
     // --- allocate memory for water quality state variables
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        Subcatch[j].initBuildup =
+        sp->Subcatch[j].initBuildup =
                               (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].pondedQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Subcatch[j].totalLoad  = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Subcatch[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Subcatch[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Subcatch[j].pondedQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Subcatch[j].totalLoad  = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
     }
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
@@ -1042,11 +1042,11 @@ void createObjects(SWMM_Project *sp)
     // --- allocate memory for subcatchment landuse factors
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        Subcatch[j].landFactor =
+        sp->Subcatch[j].landFactor =
             (TLandFactor *) calloc(sp->Nobjects[LANDUSE], sizeof(TLandFactor));
         for (k = 0; k < sp->Nobjects[LANDUSE]; k++)
         {
-            Subcatch[j].landFactor[k].buildup =
+            sp->Subcatch[j].landFactor[k].buildup =
                 (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
         }
     }
@@ -1072,17 +1072,17 @@ void createObjects(SWMM_Project *sp)
     // --- initialize subcatchment properties
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        Subcatch[j].outSubcatch = -1;
-        Subcatch[j].outNode     = -1;
-        Subcatch[j].infil       = -1;
-        Subcatch[j].groundwater = NULL;
-        Subcatch[j].gwLatFlowExpr = NULL;                                      //(5.1.007)
-        Subcatch[j].gwDeepFlowExpr = NULL;                                     //(5.1.007)
-        Subcatch[j].snowpack    = NULL;
-        Subcatch[j].lidArea     = 0.0;
+        sp->Subcatch[j].outSubcatch = -1;
+        sp->Subcatch[j].outNode     = -1;
+        sp->Subcatch[j].infil       = -1;
+        sp->Subcatch[j].groundwater = NULL;
+        sp->Subcatch[j].gwLatFlowExpr = NULL;                                      //(5.1.007)
+        sp->Subcatch[j].gwDeepFlowExpr = NULL;                                     //(5.1.007)
+        sp->Subcatch[j].snowpack    = NULL;
+        sp->Subcatch[j].lidArea     = 0.0;
         for (k = 0; k < sp->Nobjects[POLLUT]; k++)
         {
-            Subcatch[j].initBuildup[k] = 0.0;
+            sp->Subcatch[j].initBuildup[k] = 0.0;
         }
     }
 
@@ -1107,7 +1107,7 @@ void createObjects(SWMM_Project *sp)
     for (j = 0; j < sp->Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
 
     // --- initialize reporting flags
-    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) Subcatch[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) sp->Subcatch[j].rptFlag = FALSE;
     for (j = 0; j < sp->Nobjects[NODE]; j++) Node[j].rptFlag = FALSE;
     for (j = 0; j < sp->Nobjects[LINK]; j++) Link[j].rptFlag = FALSE;
 
@@ -1133,16 +1133,16 @@ void deleteObjects(SWMM_Project *sp)
     int j, k;
 
     // --- free memory for landuse factors & groundwater
-    if ( Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
+    if ( sp->Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         for (k = 0; k < sp->Nobjects[LANDUSE]; k++)
         {
-            FREE(Subcatch[j].landFactor[k].buildup);
+            FREE(sp->Subcatch[j].landFactor[k].buildup);
         }
-        FREE(Subcatch[j].landFactor);
-        FREE(Subcatch[j].groundwater);
-        gwater_deleteFlowExpression(j);
-        FREE(Subcatch[j].snowpack);
+        FREE(sp->Subcatch[j].landFactor);
+        FREE(sp->Subcatch[j].groundwater);
+        gwater_deleteFlowExpression(sp, j);
+        FREE(sp->Subcatch[j].snowpack);
     }
 
     // --- free memory for buildup/washoff functions
@@ -1153,13 +1153,13 @@ void deleteObjects(SWMM_Project *sp)
     }
 
     // --- free memory for water quality state variables
-    if ( Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
+    if ( sp->Subcatch ) for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        FREE(Subcatch[j].initBuildup);
-        FREE(Subcatch[j].oldQual);
-        FREE(Subcatch[j].newQual);
-        FREE(Subcatch[j].pondedQual);
-        FREE(Subcatch[j].totalLoad);
+        FREE(sp->Subcatch[j].initBuildup);
+        FREE(sp->Subcatch[j].oldQual);
+        FREE(sp->Subcatch[j].newQual);
+        FREE(sp->Subcatch[j].pondedQual);
+        FREE(sp->Subcatch[j].totalLoad);
     }
     if ( Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
@@ -1220,7 +1220,7 @@ void deleteObjects(SWMM_Project *sp)
 
     // --- now free each major category of object
     FREE(sp->Gage);
-    FREE(Subcatch);
+    FREE(sp->Subcatch);
     FREE(Node);
     FREE(Outfall);
     FREE(Divider);

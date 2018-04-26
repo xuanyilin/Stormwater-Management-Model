@@ -217,8 +217,8 @@ static void   validateLidProc(SWMM_Project *sp, int j);
 static void   validateLidGroup(SWMM_Project *sp, int j);
 
 static int    isLidPervious(int k);
-static double getImpervAreaRunoff(int j);                                      //(5.1.008)
-static double getSurfaceDepth(int subcatch);                                   //(5.1.008)
+static double getImpervAreaRunoff(SWMM_Project *sp, int j);                                      //(5.1.008)
+static double getSurfaceDepth(SWMM_Project *sp, int subcatch);                                   //(5.1.008)
 static void   findNativeInfil(SWMM_Project *sp, int j, double tStep);                            //(5.1.008)
 
 ////  Re-definition of evalLidUnit.  ////                                      //(5.1.008)
@@ -795,8 +795,8 @@ void lid_writeSummary(SWMM_Project *sp)
         {
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            pctArea = lidUnit->area * lidUnit->number / Subcatch[j].area * 100.0;
-            fprintf(sp->Frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
+            pctArea = lidUnit->area * lidUnit->number / sp->Subcatch[j].area * 100.0;
+            fprintf(sp->Frpt.file, "\n  %-16s %-16s", sp->Subcatch[j].ID, LidProcs[k].ID);
             fprintf(sp->Frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
                 lidUnit->number, lidUnit->area * SQR(UCF(sp, LENGTH)),
                 lidUnit->fullWidth * UCF(sp, LENGTH), pctArea,
@@ -1029,7 +1029,7 @@ void validateLidGroup(SWMM_Project *sp, int j)
 {
     int        k;
     double     p[3];
-    double     totalArea = Subcatch[j].area;
+    double     totalArea = sp->Subcatch[j].area;
     double     totalLidArea = 0.0;
     double     fromImperv = 0.0;
     TLidUnit*  lidUnit;
@@ -1097,13 +1097,13 @@ void validateLidGroup(SWMM_Project *sp, int j)
 ////
         //... LID unit cannot send outflow back to subcatchment's
         //    pervious area if none exists
-        if ( Subcatch[j].fracImperv >= 0.999 ) lidUnit->toPerv = 0;
+        if ( sp->Subcatch[j].fracImperv >= 0.999 ) lidUnit->toPerv = 0;
 
         //... assign drain outlet if not set by user
         if ( lidUnit->drainNode == -1 && lidUnit->drainSubcatch == -1 )
         {
-            lidUnit->drainNode = Subcatch[j].outNode;
-            lidUnit->drainSubcatch = Subcatch[j].outSubcatch;
+            lidUnit->drainNode = sp->Subcatch[j].outNode;
+            lidUnit->drainSubcatch = sp->Subcatch[j].outSubcatch;
         }
 ////
         lidList = lidList->nextLidUnit;
@@ -1112,16 +1112,16 @@ void validateLidGroup(SWMM_Project *sp, int j)
     //... check contributing area fractions
     if ( totalLidArea > 1.001 * totalArea )
     {
-        report_writeErrorMsg(sp, ERR_LID_AREAS, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_AREAS, sp->Subcatch[j].ID);
     }
     if ( fromImperv > 1.001 )
     {
-        report_writeErrorMsg(sp, ERR_LID_CAPTURE_AREA, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_CAPTURE_AREA, sp->Subcatch[j].ID);
     }
 
     //... Make subcatchment LID area equal total area if the two are close
     if ( totalLidArea > 0.999 * totalArea ) totalLidArea = totalArea;
-    Subcatch[j].lidArea = totalLidArea;
+    sp->Subcatch[j].lidArea = totalLidArea;
 }
 
 //=============================================================================
@@ -1194,7 +1194,7 @@ void lid_initState(SWMM_Project *sp)
             //... initialize report file for the LID
             if ( lidUnit->rptFile )
             {
-                initLidRptFile(sp, sp->Title[0], LidProcs[k].ID, Subcatch[j].ID, lidUnit);
+                initLidRptFile(sp, sp->Title[0], LidProcs[k].ID, sp->Subcatch[j].ID, lidUnit);
             }
 
             //... initialize drain flows                                       //(5.1.008)
@@ -1260,7 +1260,7 @@ int isLidPervious(int k)
 
 //=============================================================================
 
-double getSurfaceDepth(int j)                                                  //(5.1.008)
+double getSurfaceDepth(SWMM_Project *sp, int j)                                                  //(5.1.008)
 //
 //  Purpose: computes the depth (volume per unit area) of ponded water on the
 //           surface of all LIDs within a subcatchment.
@@ -1276,7 +1276,7 @@ double getSurfaceDepth(int j)                                                  /
 
     lidGroup = LidGroups[j];
     if ( lidGroup == NULL ) return 0.0;
-    if ( Subcatch[j].lidArea == 0.0 ) return 0.0;
+    if ( sp->Subcatch[j].lidArea == 0.0 ) return 0.0;
     lidList = lidGroup->lidList;
     while ( lidList )
     {
@@ -1286,7 +1286,7 @@ double getSurfaceDepth(int j)                                                  /
                  lidUnit->area * lidUnit->number;
         lidList = lidList->nextLidUnit;
     }
-    return depth / Subcatch[j].lidArea;
+    return depth / sp->Subcatch[j].lidArea;
 }
 
 //=============================================================================
@@ -1318,7 +1318,7 @@ double   lid_getFlowToPerv(int j)
 
 //=============================================================================
 
-double lid_getStoredVolume(int j)
+double lid_getStoredVolume(SWMM_Project *sp, int j)
 //
 //  Purpose: computes stored volume of water for all LIDs 
 //           grouped within a subcatchment.
@@ -1332,7 +1332,7 @@ double lid_getStoredVolume(int j)
     TLidGroup  lidGroup;
 
     lidGroup = LidGroups[j];
-    if ( lidGroup == NULL || Subcatch[j].lidArea == 0.0 ) return 0.0;
+    if ( lidGroup == NULL || sp->Subcatch[j].lidArea == 0.0 ) return 0.0;
     lidList = lidGroup->lidList;
     while ( lidList )
     {
@@ -1446,15 +1446,15 @@ void lid_addDrainRunon(SWMM_Project *sp, int j)
             {
                 //... distribute drain flow across subcatchment's areas
                 q = lidUnit->oldDrainFlow;
-                subcatch_addRunonFlow(k, q);
+                subcatch_addRunonFlow(sp, k, q);
 
                 //... add pollutant loads from drain to subcatchment
                 //    (newQual[] contains loading rate (mass/sec) at this
                 //    point which is converted later on to a concentration)
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
-                    Subcatch[k].newQual[p] +=
-                        q * Subcatch[j].oldQual[p] * LperFT3;
+                    sp->Subcatch[k].newQual[p] +=
+                        q * sp->Subcatch[j].oldQual[p] * LperFT3;
                 }
             }
             lidList = lidList->nextLidUnit;
@@ -1507,8 +1507,8 @@ void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     //... get previous & current drain loads
-                    w1 = lidUnit->oldDrainFlow * Subcatch[j].oldQual[p];
-                    w2 = lidUnit->newDrainFlow * Subcatch[j].newQual[p]; 
+                    w1 = lidUnit->oldDrainFlow * sp->Subcatch[j].oldQual[p];
+                    w2 = lidUnit->newDrainFlow * sp->Subcatch[j].newQual[p]; 
 
                     //... add interpolated load to node's wet weather loading
                     w = (1.0 - f) * w1 + f * w2;
@@ -1552,15 +1552,15 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
 
     //... determine if evaporation can occur
     EvapRate = sp->Evap.rate;
-    if ( sp->Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
+    if ( sp->Evap.dryOnly && sp->Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
 
     //... find subcatchment's infiltration rate into native soil
     findNativeInfil(sp, j, tStep);
 
     //... get runoff from impervious, non-LID subarea of subcatchment (cfs)
-    if ( Subcatch[j].area > Subcatch[j].lidArea )
+    if ( sp->Subcatch[j].area > sp->Subcatch[j].lidArea )
     {    
-        qImperv = getImpervAreaRunoff(j);
+        qImperv = getImpervAreaRunoff(sp, j);
     }
 
     //... evaluate performance of each LID unit placed in the subcatchment
@@ -1580,12 +1580,12 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
             VlidIn += lidInflow * lidArea * tStep;
 
             //... add rainfall onto LID inflow (ft/s)
-            lidInflow = lidInflow + Subcatch[j].rainfall;
+            lidInflow = lidInflow + sp->Subcatch[j].rainfall;
 
             // ... add upstream runon only if LID occupies full subcatchment
-            if ( Subcatch[j].area == Subcatch[j].lidArea )
+            if ( sp->Subcatch[j].area == sp->Subcatch[j].lidArea )
             {
-                lidInflow += Subcatch[j].runon;
+                lidInflow += sp->Subcatch[j].runon;
             }
 
             //... evaluate the LID unit's performance, updating the LID group's
@@ -1621,8 +1621,8 @@ void findNativeInfil(SWMM_Project *sp, int j, double tStep)
     double nonLidArea;
 
     //... subcatchment has non-LID pervious area
-    nonLidArea = Subcatch[j].area - Subcatch[j].lidArea;
-    if ( nonLidArea > 0.0 && Subcatch[j].fracImperv < 1.0 )
+    nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
+    if ( nonLidArea > 0.0 && sp->Subcatch[j].fracImperv < 1.0 )
     {
         NativeInfil = Vinfil / nonLidArea / tStep;
     }
@@ -1631,15 +1631,15 @@ void findNativeInfil(SWMM_Project *sp, int j, double tStep)
     else
     {
         NativeInfil = infil_getInfil(sp, j, sp->InfilModel, tStep,
-                                     Subcatch[j].rainfall,
-                                     Subcatch[j].runon,
-                                     getSurfaceDepth(j));                      //(5.1.008)
+                                     sp->Subcatch[j].rainfall,
+                                     sp->Subcatch[j].runon,
+                                     getSurfaceDepth(sp, j));                  //(5.1.008)
     }
 
     //... see if there is any groundwater-imposed limit on infil.
-    if ( !sp->IgnoreGwater && Subcatch[j].groundwater )
+    if ( !sp->IgnoreGwater && sp->Subcatch[j].groundwater )
     {
-        MaxNativeInfil = Subcatch[j].groundwater->maxInfilVol / tStep;
+        MaxNativeInfil = sp->Subcatch[j].groundwater->maxInfilVol / tStep;
     }
     else MaxNativeInfil = BIG;
 }
@@ -1648,7 +1648,7 @@ void findNativeInfil(SWMM_Project *sp, int j, double tStep)
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double getImpervAreaRunoff(int j)
+double getImpervAreaRunoff(SWMM_Project *sp, int j)
 //
 //  Purpose: computes runoff from impervious area of a subcatchment that
 //           is available for LID treatment.
@@ -1663,16 +1663,16 @@ double getImpervAreaRunoff(int j)
     // --- runoff from impervious area w/ & w/o depression storage
     for (i = IMPERV0; i <= IMPERV1; i++)
     {
-        q += Subcatch[j].subArea[i].runoff * Subcatch[j].subArea[i].fArea;
+        q += sp->Subcatch[j].subArea[i].runoff * sp->Subcatch[j].subArea[i].fArea;
     }
 
     // --- adjust for any fraction of runoff sent to pervious area
-    if ( Subcatch[j].subArea[IMPERV0].routeTo == TO_PERV &&
-         Subcatch[j].fracImperv < 1.0 )
+    if ( sp->Subcatch[j].subArea[IMPERV0].routeTo == TO_PERV &&
+         sp->Subcatch[j].fracImperv < 1.0 )
     {
-        q *= Subcatch[j].subArea[IMPERV0].fOutlet;
+        q *= sp->Subcatch[j].subArea[IMPERV0].fOutlet;
     }
-    nonLidArea = Subcatch[j].area - Subcatch[j].lidArea;
+    nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
     return q * nonLidArea;
 }
 
@@ -1717,15 +1717,15 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
     lidDrain *= lidArea;
 
     //... revise flows if LID outflow returned to pervious area
-    if ( lidUnit->toPerv && Subcatch[j].area > Subcatch[j].lidArea )           //(5.1.009)
+    if ( lidUnit->toPerv && sp->Subcatch[j].area > sp->Subcatch[j].lidArea )           //(5.1.009)
     {
         //... surface runoff is always returned
         *qReturn += lidRunoff;
         lidRunoff = 0.0;
 
         //... drain flow returned if it has same outlet as subcatchment
-        if ( lidUnit->drainNode == Subcatch[j].outNode &&
-            lidUnit->drainSubcatch == Subcatch[j].outSubcatch )
+        if ( lidUnit->drainNode == sp->Subcatch[j].outNode &&
+            lidUnit->drainSubcatch == sp->Subcatch[j].outSubcatch )
         {
             *qReturn += lidDrain;
             lidDrain = 0.0;
@@ -1751,7 +1751,7 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
     }
 
     //... update time since last rainfall (for Rain Barrel emptying)
-    if ( Subcatch[j].rainfall > MIN_RUNOFF ) lidUnit->dryTime = 0.0;
+    if ( sp->Subcatch[j].rainfall > MIN_RUNOFF ) lidUnit->dryTime = 0.0;
     else lidUnit->dryTime += tStep;
 
     //... update LID water balance and save results
@@ -1811,14 +1811,14 @@ void lid_writeWaterBalance(SWMM_Project *sp)
     for ( j = 0; j < GroupCount; j++ )
     {
         lidGroup = LidGroups[j];
-        if ( !lidGroup || Subcatch[j].lidArea == 0.0 ) continue;
+        if ( !lidGroup || sp->Subcatch[j].lidArea == 0.0 ) continue;
         lidList = lidGroup->lidList;
         while ( lidList )
         {
             //... write water balance components to report file
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            fprintf(sp->Frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
+            fprintf(sp->Frpt.file, "\n  %-16s  %-16s", sp->Subcatch[j].ID,
                                                    LidProcs[k].ID);
             fprintf(sp->Frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
                     lidUnit->waterBalance.inflow*ucf,

@@ -120,7 +120,7 @@ int output_open(SWMM_Project *sp)
     NumSubcatch = 0;
     NumNodes = 0;
     NumLinks = 0;
-    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (Subcatch[j].rptFlag) NumSubcatch++;
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (sp->Subcatch[j].rptFlag) NumSubcatch++;
     for (j=0; j<sp->Nobjects[NODE]; j++) if (Node[j].rptFlag) NumNodes++;
     for (j=0; j<sp->Nobjects[LINK]; j++) if (Link[j].rptFlag) NumLinks++;
 
@@ -163,7 +163,7 @@ int output_open(SWMM_Project *sp)
     IDStartPos = ftell(sp->Fout.file);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
-        if ( Subcatch[j].rptFlag ) output_saveID(Subcatch[j].ID, sp->Fout.file);
+        if ( sp->Subcatch[j].rptFlag ) output_saveID(sp->Subcatch[j].ID, sp->Fout.file);
     }
     for (j=0; j<sp->Nobjects[NODE];     j++)
     {
@@ -191,8 +191,8 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
-         if ( !Subcatch[j].rptFlag ) continue;
-         SubcatchResults[0] = (REAL4)(Subcatch[j].area * UCF(sp, LANDAREA));
+         if ( !sp->Subcatch[j].rptFlag ) continue;
+         SubcatchResults[0] = (REAL4)(sp->Subcatch[j].area * UCF(sp, LANDAREA));
          fwrite(&SubcatchResults[0], sizeof(REAL4), 1, sp->Fout.file);
     }
 
@@ -521,11 +521,11 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     {
         // --- retrieve interpolated results for reporting time & write to file
         subcatch_getResults(sp, j, f, SubcatchResults);
-        if ( Subcatch[j].rptFlag )
+        if ( sp->Subcatch[j].rptFlag )
             fwrite(SubcatchResults, sizeof(REAL4), NsubcatchResults, file);
 
         // --- update system-wide results
-        area = Subcatch[j].area * UCF(sp, LANDAREA);
+        area = sp->Subcatch[j].area * UCF(sp, LANDAREA);
         totalArea += (REAL4)area;
         SysResults[SYS_RAINFALL] +=
             (REAL4)(SubcatchResults[SUBCATCH_RAINFALL] * area);
@@ -533,8 +533,8 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
             (REAL4)(SubcatchResults[SUBCATCH_SNOWDEPTH] * area);
         SysResults[SYS_EVAP] +=
             (REAL4)(SubcatchResults[SUBCATCH_EVAP] * area);
-        if ( Subcatch[j].groundwater ) SysResults[SYS_EVAP] += 
-            (REAL4)(Subcatch[j].groundwater->evapLoss * UCF(sp, EVAPRATE) * area);
+        if ( sp->Subcatch[j].groundwater ) SysResults[SYS_EVAP] += 
+            (REAL4)(sp->Subcatch[j].groundwater->evapLoss * UCF(sp, EVAPRATE) * area);
         SysResults[SYS_INFIL] +=
             (REAL4)(SubcatchResults[SUBCATCH_INFIL] * area);
         SysResults[SYS_RUNOFF] += (REAL4)SubcatchResults[SUBCATCH_RUNOFF];

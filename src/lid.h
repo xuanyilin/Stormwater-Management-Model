@@ -197,7 +197,7 @@ void     lid_setOldGroupState(int subcatch);                                   /
 double   lid_getPervArea(int subcatch);
 double   lid_getFlowToPerv(int subcatch);
 double   lid_getDrainFlow(int subcatch, int timePeriod);                       //(5.1.008)
-double   lid_getStoredVolume(int subcatch);
+double   lid_getStoredVolume(SWMM_Project *sp, int subcatch);
 
 //double   lid_getSurfaceDepth(int subcatch);                                  //(5.1.008)
 //double   lid_getDepthOnPavement(int subcatch, double impervDepth);           //(5.1.008)

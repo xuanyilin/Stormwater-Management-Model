@@ -241,7 +241,7 @@ void runoff_execute(SWMM_Project *sp)
     // --- determine runon from upstream subcatchments, and implement snow removal
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
-        if ( Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
+        if ( sp->Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
         subcatch_getRunon(sp, j);
         if ( !sp->IgnoreSnowmelt ) snow_plowSnow(sp, j, runoffStep);
     }
@@ -254,13 +254,13 @@ void runoff_execute(SWMM_Project *sp)
     {
         // --- find total runoff rate (in ft/sec) over the subcatchment
         //     (the amount that actually leaves the subcatchment (in cfs)
-        //     is also computed and is stored in Subcatch[j].newRunoff)
-        if ( Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
+        //     is also computed and is stored in sp->Subcatch[j].newRunoff)
+        if ( sp->Subcatch[j].area == 0.0 ) continue;                               //(5.1.008)
         runoff = subcatch_getRunoff(sp, j, runoffStep);
 
         // --- update state of study area surfaces
         if ( runoff > 0.0 ) HasRunoff = TRUE;
-        if ( Subcatch[j].newSnowDepth > 0.0 ) HasSnow = TRUE;
+        if ( sp->Subcatch[j].newSnowDepth > 0.0 ) HasSnow = TRUE;
 
         // --- skip pollutant buildup/washoff if quality ignored
         if ( sp->IgnoreQuality ) continue;
@@ -269,7 +269,7 @@ void runoff_execute(SWMM_Project *sp)
         if ( runoff < MIN_RUNOFF ) surfqual_getBuildup(sp, j, runoffStep);
 
         // --- reduce buildup by street sweeping
-        if ( canSweep && Subcatch[j].rainfall <= MIN_RUNOFF)
+        if ( canSweep && sp->Subcatch[j].rainfall <= MIN_RUNOFF)
             surfqual_sweepBuildup(sp, j, currentDate);
 
         // --- compute pollutant washoff 
@@ -287,7 +287,7 @@ void runoff_execute(SWMM_Project *sp)
     }
 
     // --- reset subcatchment runon to 0
-    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) Subcatch[j].runon = 0.0;
+    for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) sp->Subcatch[j].runon = 0.0;
 }
 
 //=============================================================================
@@ -445,15 +445,15 @@ void  runoff_readFromFile(SWMM_Project *sp)
 
         // --- extract hydrologic results, converting units where necessary
         //     (results were saved to file in user's units)
-        Subcatch[j].newSnowDepth = SubcatchResults[SUBCATCH_SNOWDEPTH] /
+        sp->Subcatch[j].newSnowDepth = SubcatchResults[SUBCATCH_SNOWDEPTH] /
                                    UCF(sp, RAINDEPTH);
-        Subcatch[j].evapLoss     = SubcatchResults[SUBCATCH_EVAP] /
+        sp->Subcatch[j].evapLoss     = SubcatchResults[SUBCATCH_EVAP] /
                                    UCF(sp, RAINFALL);
-        Subcatch[j].infilLoss    = SubcatchResults[SUBCATCH_INFIL] /
+        sp->Subcatch[j].infilLoss    = SubcatchResults[SUBCATCH_INFIL] /
                                    UCF(sp, RAINFALL);
-        Subcatch[j].newRunoff    = SubcatchResults[SUBCATCH_RUNOFF] /
+        sp->Subcatch[j].newRunoff    = SubcatchResults[SUBCATCH_RUNOFF] /
                                    UCF(sp, FLOW);
-        gw = Subcatch[j].groundwater;
+        gw = sp->Subcatch[j].groundwater;
         if ( gw )
         {
             gw->newFlow    = SubcatchResults[SUBCATCH_GW_FLOW] / UCF(sp, FLOW);
@@ -465,7 +465,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
         // --- extract water quality results
         for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         {
-            Subcatch[j].newQual[i] = SubcatchResults[SUBCATCH_WASHOFF + i];
+            sp->Subcatch[j].newQual[i] = SubcatchResults[SUBCATCH_WASHOFF + i];
         }
     }
 
@@ -504,11 +504,11 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
         // --- ignore node if outflow not re-routed onto a subcatchment
         k = Outfall[i].routeTo;
         if ( k < 0 ) continue;
-        if ( Subcatch[k].area == 0.0 ) continue;
+        if ( sp->Subcatch[k].area == 0.0 ) continue;
 
         // --- add outfall's flow to subcatchment as runon and re-set routed
         //     flow volume to 0
-        subcatch_addRunonFlow(k, Outfall[i].vRouted/tStep);
+        subcatch_addRunonFlow(sp, k, Outfall[i].vRouted/tStep);
         massbal_updateRunoffTotals(RUNOFF_RUNON, Outfall[i].vRouted);
         Outfall[i].vRouted = 0.0;
 
@@ -519,7 +519,7 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
         {
             w = Outfall[i].wRouted[p] * LperFT3;
             massbal_updateLoadingTotals(DEPOSITION_LOAD, p, w * Pollut[p].mcf);
-            Subcatch[k].newQual[p] += w / tStep;
+            sp->Subcatch[k].newQual[p] += w / tStep;
             Outfall[i].wRouted[p] = 0.0;
         }
     }

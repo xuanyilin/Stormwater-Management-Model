@@ -152,20 +152,20 @@ void    rain_close(SWMM_Project *sp);
 //   Snowmelt Processing Methods
 //-----------------------------------------------------------------------------
 int     snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks);
-int     snow_createSnowpack(int subcacth, int snowIndex);
+int     snow_createSnowpack(SWMM_Project *sp, int subcacth, int snowIndex);
 
 void    snow_validateSnowmelt(SWMM_Project *sp, int snowIndex);
 void    snow_initSnowpack(SWMM_Project *sp, int subcatch);
 void    snow_initSnowmelt(SWMM_Project *sp, int snowIndex);
 
-void    snow_getState(int subcatch, int subArea, double x[]);
-void    snow_setState(int subcatch, int subArea, double x[]);
+void    snow_getState(SWMM_Project *sp, int subcatch, int subArea, double x[]);
+void    snow_setState(SWMM_Project *sp, int subcatch, int subArea, double x[]);
 
 void    snow_setMeltCoeffs(SWMM_Project *sp, int snowIndex, double season);
 void    snow_plowSnow(SWMM_Project *sp, int subcatch, double tStep);
 double  snow_getSnowMelt(SWMM_Project *sp, int subcatch, double rainfall,
         double snowfall, double tStep, double netPrecip[]);
-double  snow_getSnowCover(int subcatch);
+double  snow_getSnowCover(SWMM_Project *sp, int subcatch);
 
 //-----------------------------------------------------------------------------
 //   Runoff Analyzer Methods
@@ -201,18 +201,18 @@ void    output_readLinkResults(SWMM_Project *sp, int period, int link);
 int     gwater_readAquiferParams(SWMM_Project *sp, int aquifer, char* tok[], int ntoks);
 int     gwater_readGroundwaterParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks);
-void    gwater_deleteFlowExpression(int subcatch);
+void    gwater_deleteFlowExpression(SWMM_Project *sp, int subcatch);
 
 void    gwater_validateAquifer(SWMM_Project *sp, int aquifer);
 void    gwater_validate(SWMM_Project *sp, int subcatch);
 
-void    gwater_initState(int subcatch);
-void    gwater_getState(int subcatch, double x[]);
-void    gwater_setState(int subcatch, double x[]);
+void    gwater_initState(SWMM_Project *sp, int subcatch);
+void    gwater_getState(SWMM_Project *sp, int subcatch, double x[]);
+void    gwater_setState(SWMM_Project *sp, int subcatch, double x[]);
 
 void    gwater_getGroundwater(SWMM_Project *sp, int subcatch, double evap,
         double infil, double tStep);
-double  gwater_getVolume(int subcatch);
+double  gwater_getVolume(SWMM_Project *sp, int subcatch);
 
 //-----------------------------------------------------------------------------
 //   RDII Methods
@@ -317,7 +317,7 @@ void    stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
         int stepCount, int steadyState);
 void    stats_updateSubcatchStats(SWMM_Project *sp, int subcatch, double rainVol, double runonVol,
         double evapVol, double infilVol, double runoffVol, double runoff);
-void    stats_updateGwaterStats(int j, double infil, double evap,              //(5.1.008)
+void    stats_updateGwaterStats(SWMM_Project *sp, int j, double infil, double evap,              //(5.1.008)
         double latFlow, double deepFlow, double theta, double waterTable,      //(5.1.008)
         double tStep);                                                         //(5.1.008)
 void    stats_updateMaxRunoff(SWMM_Project *sp);
@@ -340,23 +340,23 @@ DateTime gage_getNextRainDate(SWMM_Project *sp, int gage, DateTime aDate);
 //-----------------------------------------------------------------------------
 int     subcatch_readParams(SWMM_Project *sp, int subcatch, char* tok[], int ntoks);
 int     subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks);
-int     subcatch_readLanduseParams(char* tok[], int ntoks);
-int     subcatch_readInitBuildup(char* tok[], int ntoks);
+int     subcatch_readLanduseParams(SWMM_Project *sp, char* tok[], int ntoks);
+int     subcatch_readInitBuildup(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    subcatch_validate(SWMM_Project *sp, int subcatch);
 void    subcatch_initState(SWMM_Project *sp, int subcatch);
 void    subcatch_setOldState(SWMM_Project *sp, int subcatch);
 
-double  subcatch_getFracPerv(int subcatch);
-double  subcatch_getStorage(int subcatch);
-double  subcatch_getDepth(int subcatch);
+double  subcatch_getFracPerv(SWMM_Project *sp, int subcatch);
+double  subcatch_getStorage(SWMM_Project *sp, int subcatch);
+double  subcatch_getDepth(SWMM_Project *sp, int subcatch);
 double  subcatch_getBuildup(SWMM_Project *sp, int subcatch, int pollut);
 
 void    subcatch_getRunon(SWMM_Project *sp, int subcatch);
-void    subcatch_addRunonFlow(int subcatch, double flow);                      //(5.1.008)
+void    subcatch_addRunonFlow(SWMM_Project *sp, int subcatch, double flow);                      //(5.1.008)
 double  subcatch_getRunoff(SWMM_Project *sp, int subcatch, double tStep);
 
-double  subcatch_getWtdOutflow(int subcatch, double wt);
+double  subcatch_getWtdOutflow(SWMM_Project *sp, int subcatch, double wt);
 void    subcatch_getResults(SWMM_Project *sp, int subcatch, double wt, float x[]);
 
 ////  New functions added to release 5.1.008.  ////                            //(5.1.008)
@@ -367,7 +367,7 @@ void    surfqual_initState(SWMM_Project *sp, int subcatch);
 void    surfqual_getWashoff(SWMM_Project *sp, int subcatch, double runoff, double tStep);
 void    surfqual_getBuildup(SWMM_Project *sp, int subcatch, double tStep);
 void    surfqual_sweepBuildup(SWMM_Project *sp, int subcatch, DateTime aDate);
-double  surfqual_getWtdWashoff(int subcatch, int pollut, double wt);
+double  surfqual_getWtdWashoff(SWMM_Project *sp, int subcatch, int pollut, double wt);
 
 //-----------------------------------------------------------------------------
 //   Conveyance System Node Methods

@@ -232,13 +232,13 @@ int gwater_readGroundwaterParams(SWMM_Project *sp, char* tok[], int ntoks)
     }
 
     // --- create a groundwater flow object
-    if ( !Subcatch[j].groundwater )
+    if ( !sp->Subcatch[j].groundwater )
     {
         gw = (TGroundwater *) malloc(sizeof(TGroundwater));
         if ( !gw ) return error_setInpError(ERR_MEMORY, "");
-        Subcatch[j].groundwater = gw;
+        sp->Subcatch[j].groundwater = gw;
     }
-    else gw = Subcatch[j].groundwater;
+    else gw = sp->Subcatch[j].groundwater;
 
     // --- populate the groundwater flow object with its parameters
     gw->aquifer    = k;
@@ -301,8 +301,8 @@ int gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks)
     }
 
     // --- delete any previous flow eqn.
-    if ( k == 1 ) mathexpr_delete(Subcatch[j].gwLatFlowExpr);
-    else          mathexpr_delete(Subcatch[j].gwDeepFlowExpr);
+    if ( k == 1 ) mathexpr_delete(sp->Subcatch[j].gwLatFlowExpr);
+    else          mathexpr_delete(sp->Subcatch[j].gwDeepFlowExpr);
 
     // --- create a parsed expression tree from the string expr
     //     (getVariableIndex is the function that converts a GW
@@ -311,22 +311,22 @@ int gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks)
     if ( expr == NULL ) return error_setInpError(ERR_TREATMENT_EXPR, "");
 
     // --- save expression tree with the subcatchment
-    if ( k == 1 ) Subcatch[j].gwLatFlowExpr = expr;
-    else          Subcatch[j].gwDeepFlowExpr = expr;
+    if ( k == 1 ) sp->Subcatch[j].gwLatFlowExpr = expr;
+    else          sp->Subcatch[j].gwDeepFlowExpr = expr;
     return 0;
 }
 
 //=============================================================================
 
-void gwater_deleteFlowExpression(int j)
+void gwater_deleteFlowExpression(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  none
 //  Purpose: deletes a subcatchment's custom groundwater flow expressions.     //(5.1.007)
 //
 {
-    mathexpr_delete(Subcatch[j].gwLatFlowExpr);
-    mathexpr_delete(Subcatch[j].gwDeepFlowExpr);
+    mathexpr_delete(sp->Subcatch[j].gwLatFlowExpr);
+    mathexpr_delete(sp->Subcatch[j].gwDeepFlowExpr);
 }
 
 //=============================================================================
@@ -367,7 +367,7 @@ void  gwater_validate(SWMM_Project *sp, int j)
     TAquifer a;         // Aquifer data structure
     TGroundwater* gw;   // Groundwater data structure
     
-    gw = Subcatch[j].groundwater;
+    gw = sp->Subcatch[j].groundwater;
     if ( gw )
     {
         a = Aquifer[gw->aquifer];
@@ -379,13 +379,13 @@ void  gwater_validate(SWMM_Project *sp, int j)
 
         // ... ground elevation can't be below water table elevation
         if ( gw->surfElev < gw->waterTableElev )
-            report_writeErrorMsg(sp, ERR_GROUND_ELEV, Subcatch[j].ID);
+            report_writeErrorMsg(sp, ERR_GROUND_ELEV, sp->Subcatch[j].ID);
     }
 }
 
 //=============================================================================
 
-void  gwater_initState(int j)
+void  gwater_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  none
@@ -395,7 +395,7 @@ void  gwater_initState(int j)
     TAquifer a;         // Aquifer data structure
     TGroundwater* gw;   // Groundwater data structure
     
-    gw = Subcatch[j].groundwater;
+    gw = sp->Subcatch[j].groundwater;
     if ( gw )
     {
         a = Aquifer[gw->aquifer];
@@ -422,20 +422,20 @@ void  gwater_initState(int j)
         // ... initial available infiltration volume into upper zone
         gw->maxInfilVol = (gw->surfElev - gw->waterTableElev) *
                           (a.porosity - gw->theta) /
-                          subcatch_getFracPerv(j);
+                          subcatch_getFracPerv(sp, j);
     }
 }
 
 //=============================================================================
 
-void gwater_getState(int j, double x[])
+void gwater_getState(SWMM_Project *sp, int j, double x[])
 //
 //  Input:   j = subcatchment index
 //  Output:  x[] = array of groundwater state variables
 //  Purpose: retrieves state of subcatchment's groundwater.
 //
 {
-    TGroundwater* gw = Subcatch[j].groundwater;
+    TGroundwater* gw = sp->Subcatch[j].groundwater;
     x[0] = gw->theta;
     x[1] = gw->bottomElev + gw->lowerDepth;
     x[2] = gw->newFlow;
@@ -444,14 +444,14 @@ void gwater_getState(int j, double x[])
 
 //=============================================================================
 
-void gwater_setState(int j, double x[])
+void gwater_setState(SWMM_Project *sp, int j, double x[])
 //
 //  Input:   j = subcatchment index
 //           x[] = array of groundwater state variables
 //  Purpose: assigns values to a subcatchment's groundwater state.
 //
 {
-    TGroundwater* gw = Subcatch[j].groundwater;
+    TGroundwater* gw = sp->Subcatch[j].groundwater;
     if ( gw == NULL ) return;
     gw->theta = x[0];
     gw->lowerDepth = x[1] - gw->bottomElev;
@@ -461,7 +461,7 @@ void gwater_setState(int j, double x[])
 
 //=============================================================================
 
-double gwater_getVolume(int j)
+double gwater_getVolume(SWMM_Project *sp, int j)
 //
 //  Input:   j = subcatchment index
 //  Output:  returns total volume of groundwater in ft/ft2
@@ -471,7 +471,7 @@ double gwater_getVolume(int j)
     TAquifer a;
     TGroundwater* gw;
     double upperDepth;
-    gw = Subcatch[j].groundwater;
+    gw = sp->Subcatch[j].groundwater;
     if ( gw == NULL ) return 0.0;
     a = Aquifer[gw->aquifer];
     upperDepth = gw->surfElev - gw->bottomElev - gw->lowerDepth;
@@ -501,16 +501,16 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
 
     // --- save subcatchment's groundwater and aquifer objects to 
     //     shared variables
-    GW = Subcatch[j].groundwater;
+    GW = sp->Subcatch[j].groundwater;
     if ( GW == NULL ) return;
-    LatFlowExpr = Subcatch[j].gwLatFlowExpr;                                   //(5.1.007)
-    DeepFlowExpr = Subcatch[j].gwDeepFlowExpr;                                 //(5.1.007)
+    LatFlowExpr = sp->Subcatch[j].gwLatFlowExpr;                                   //(5.1.007)
+    DeepFlowExpr = sp->Subcatch[j].gwDeepFlowExpr;                                 //(5.1.007)
     A = Aquifer[GW->aquifer];
 
     // --- get fraction of total area that is pervious
-    FracPerv = subcatch_getFracPerv(j);
+    FracPerv = subcatch_getFracPerv(sp, j);
     if ( FracPerv <= 0.0 ) return;
-    Area = Subcatch[j].area;
+    Area = sp->Subcatch[j].area;
 
     // --- convert infiltration volume (ft3) to equivalent rate
     //     over entire GW (subcatchment) area
@@ -606,7 +606,7 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     updateMassBal(Area, tStep);
 
     // --- update GW statistics                                                //(5.1.008)
-    stats_updateGwaterStats(j, infil, GW->evapLoss, GWFlow, LowerLoss,         //(5.1.008)
+    stats_updateGwaterStats(sp, j, infil, GW->evapLoss, GWFlow, LowerLoss,         //(5.1.008)
         GW->theta, GW->lowerDepth + GW->bottomElev, tStep);                    //(5.1.008)
 }
 

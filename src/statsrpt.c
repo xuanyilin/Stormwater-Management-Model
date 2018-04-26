@@ -146,9 +146,9 @@ void writeSubcatchRunoff(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
-        a = Subcatch[j].area;
+        a = sp->Subcatch[j].area;
         if ( a == 0.0 ) continue;
-        fprintf(sp->Frpt.file, "\n  %-20s", Subcatch[j].ID);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Subcatch[j].ID);
         x = SubcatchStats[j].precip * UCF(sp, RAINDEPTH);
         fprintf(sp->Frpt.file, " %10.2f", x/a);
         x = SubcatchStats[j].runon * UCF(sp, RAINDEPTH); 
@@ -184,7 +184,7 @@ void    writeGroundwater(SWMM_Project *sp)
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
     for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
-        if ( Subcatch[j].groundwater != NULL ) count++;
+        if ( sp->Subcatch[j].groundwater != NULL ) count++;
     }
     if ( count == 0 ) return;
 
@@ -210,18 +210,18 @@ void    writeGroundwater(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
     {
-        if ( Subcatch[j].area == 0.0 || Subcatch[j].groundwater == NULL ) continue;
-        fprintf(sp->Frpt.file, "\n  %-20s", Subcatch[j].ID);
-        x[0] = Subcatch[j].groundwater->stats.infil * UCF(sp, RAINDEPTH);
-        x[1] = Subcatch[j].groundwater->stats.evap * UCF(sp, RAINDEPTH);
-        x[2] = Subcatch[j].groundwater->stats.deepFlow * UCF(sp, RAINDEPTH);
-        x[3] = Subcatch[j].groundwater->stats.latFlow * UCF(sp, RAINDEPTH);
-        x[4] = Subcatch[j].groundwater->stats.maxFlow * UCF(sp, FLOW) * Subcatch[j].area;
-        x[5] = Subcatch[j].groundwater->stats.avgUpperMoist / totalSeconds;
-        x[6] = Subcatch[j].groundwater->stats.avgWaterTable * UCF(sp, LENGTH) /
+        if ( sp->Subcatch[j].area == 0.0 || sp->Subcatch[j].groundwater == NULL ) continue;
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Subcatch[j].ID);
+        x[0] = sp->Subcatch[j].groundwater->stats.infil * UCF(sp, RAINDEPTH);
+        x[1] = sp->Subcatch[j].groundwater->stats.evap * UCF(sp, RAINDEPTH);
+        x[2] = sp->Subcatch[j].groundwater->stats.deepFlow * UCF(sp, RAINDEPTH);
+        x[3] = sp->Subcatch[j].groundwater->stats.latFlow * UCF(sp, RAINDEPTH);
+        x[4] = sp->Subcatch[j].groundwater->stats.maxFlow * UCF(sp, FLOW) * sp->Subcatch[j].area;
+        x[5] = sp->Subcatch[j].groundwater->stats.avgUpperMoist / totalSeconds;
+        x[6] = sp->Subcatch[j].groundwater->stats.avgWaterTable * UCF(sp, LENGTH) /
                totalSeconds;
-        x[7] = Subcatch[j].groundwater->stats.finalUpperMoist;
-        x[8] = Subcatch[j].groundwater->stats.finalWaterTable * UCF(sp, LENGTH);
+        x[7] = sp->Subcatch[j].groundwater->stats.finalUpperMoist;
+        x[8] = sp->Subcatch[j].groundwater->stats.finalWaterTable * UCF(sp, LENGTH);
         for (i = 0; i < 9; i++) fprintf(sp->Frpt.file, " %8.2f", x[i]);
     }
     WRITE("");
@@ -267,10 +267,10 @@ void writeSubcatchLoads(SWMM_Project *sp)
         // --- print the pollutant loadings from each subcatchment
         for ( j = 0; j < sp->Nobjects[SUBCATCH]; j++ )
         {
-            fprintf(sp->Frpt.file, "\n  %-20s", Subcatch[j].ID);
+            fprintf(sp->Frpt.file, "\n  %-20s", sp->Subcatch[j].ID);
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
-                x = Subcatch[j].totalLoad[p];
+                x = sp->Subcatch[j].totalLoad[p];
                 totals[p] += x;
                 if ( Pollut[p].units == COUNT ) x = LOG10(x);
 				fprintf(sp->Frpt.file, "%14.3f", x);
