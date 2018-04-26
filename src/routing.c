@@ -857,7 +857,7 @@ void sortEvents(SWMM_Project *sp)
         }
     }
 
-    // Adjust for overlapping events
+    // sp->Adjust for overlapping events
     for (i = 0; i < sp->NumEvents-1; i++)
     {
         if ( Event[i].end > Event[i+1].start ) Event[i].end = Event[i+1].start;

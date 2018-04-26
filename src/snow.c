@@ -10,7 +10,7 @@
 //   Models snow melt processes.
 //
 //   Build 5.1.008:
-//   - Adjustment of snowmelt and subcatchment's net precipitation for area
+//   - sp->Adjustment of snowmelt and subcatchment's net precipitation for area
 //     covered by snow was corrected. 
 //   - Area covered by snow now included in calculation of rate that liquid
 //     water leaves a snowpack.
@@ -48,9 +48,9 @@ enum SnowKeywords {SNOW_PLOWABLE, SNOW_IMPERV, SNOW_PERV, SNOW_REMOVAL};
 //-----------------------------------------------------------------------------
 static void   setMeltParams(SWMM_Project *sp, int i, int k, double x[]);
 static double getRainmelt(SWMM_Project *sp, double rainfall);
-static double getArealDepletion(TSnowpack* snowpack, int i, double snowfall,
-              double tStep);
-static double getArealSnowCover(int i, double awesi);
+static double getArealDepletion(SWMM_Project *sp, TSnowpack* snowpack, int i,
+        double snowfall, double tStep);
+static double getArealSnowCover(SWMM_Project *sp, int i, double awesi);
 static double meltSnowpack(SWMM_Project *sp, TSnowpack* snowpack, int i,
         double rmelt, double asc, double snowfall, double tStep);
 static double reduceColdContent(TSnowpack* snowpack, int i, double smelt,
@@ -400,7 +400,7 @@ void snow_plowSnow(SWMM_Project *sp, int j, double tStep)
 
             // --- plow out of system
             f = snowpack->fArea[SNOW_PLOWABLE] * Subcatch[j].area;
-            Snow.removed += Snowmelt[k].sfrac[0] * exc * f;
+            sp->Snow.removed += Snowmelt[k].sfrac[0] * exc * f;
             sfracTotal = Snowmelt[k].sfrac[0];
 
             // --- plow onto non-plowable impervious area
@@ -498,7 +498,7 @@ double snow_getSnowMelt(SWMM_Project *sp, int j, double rainfall,
         //     and route it through pack
         else
         {
-            asc   = getArealDepletion(snowpack, i, snowfall, tStep);
+            asc   = getArealDepletion(sp, snowpack, i, snowfall, tStep);
             smelt = meltSnowpack(sp, snowpack, i, rmelt, asc, snowfall, tStep);
             smelt = routeSnowmelt(snowpack, i, smelt, asc, rainfall, tStep);
         }
@@ -552,7 +552,8 @@ double snow_getSnowCover(int j)
 
 //=============================================================================
 
-double getArealDepletion(TSnowpack* snowpack, int i, double snowfall, double tStep)
+double getArealDepletion(SWMM_Project *sp, TSnowpack* snowpack, int i,
+        double snowfall, double tStep)
 //
 //  Input:   snowpack = ptr. to snow pack object
 //           i = snow sub-area index
@@ -592,7 +593,7 @@ double getArealDepletion(TSnowpack* snowpack, int i, double snowfall, double tSt
     {
         awe = (snowpack->wsnow[i] - snowfall*tStep) / si;
         awe = MAX(awe, 0.0);
-        sba = getArealSnowCover(i, awe);
+        sba = getArealSnowCover(sp, i, awe);
         sbws = awe + (0.75*snowfall*tStep) / si;
         sbws = MIN(sbws, 1.0);
         snowpack->awe[i] = awe;
@@ -613,7 +614,7 @@ double getArealDepletion(TSnowpack* snowpack, int i, double snowfall, double tSt
         if ( awesi < snowpack->awe[i] )
         {
             snowpack->awe[i] = 1.0;
-            asc = getArealSnowCover(i, awesi);
+            asc = getArealSnowCover(sp, i, awesi);
         }
         
         // --- relative snow depth is above end of new snow ADC
@@ -633,7 +634,7 @@ double getArealDepletion(TSnowpack* snowpack, int i, double snowfall, double tSt
 
 //=============================================================================
 
-double getArealSnowCover(int i, double awesi)
+double getArealSnowCover(SWMM_Project *sp, int i, double awesi)
 //
 //  Input:   i = snow sub-area index
 //           awesi = snow depth relative to depth at 100% snow cover
@@ -661,9 +662,9 @@ double getArealSnowCover(int i, double awesi)
     m = (int)(awesi*10.0 + 0.00001);
 
     // --- get asc values for either end of interval
-    asc1 = Snow.adc[k][m];
+    asc1 = sp->Snow.adc[k][m];
     if ( m >= 9) asc2 = 1.0;
-    else asc2 = Snow.adc[k][m+1];
+    else asc2 = sp->Snow.adc[k][m+1];
 
     // --- return with interpolated asc value
     return asc1 + (asc2 - asc1) / 0.1 * (awesi - 0.1*(float)m);
@@ -709,7 +710,7 @@ double meltSnowpack(SWMM_Project *sp, TSnowpack* snowpack, int i, double rmelt,
     smelt *= asc;                                                              //(5.1.008)
 
     // --- reduce cold content of melting pack
-    ccFactor = tStep * Snow.rnm * asc;
+    ccFactor = tStep * sp->Snow.rnm * asc;
     smelt = reduceColdContent(snowpack, i, smelt, ccFactor);
     snowpack->ati[i] = Snowmelt[k].tbase[i];
     return smelt;
@@ -731,7 +732,7 @@ double getRainmelt(SWMM_Project *sp, double rainfall)
     rainfall = rainfall * 43200.0;     // convert rain to in/hr
     if ( rainfall > 0.02 )
     {
-        uadj = 0.006 * Wind.ws;
+        uadj = 0.006 * sp->Wind.ws;
         t1 = sp->Temp.ta - 32.0;
         t2 = 7.5 * sp->Temp.gamma * uadj;
         t3 = 8.5 * uadj * (sp->Temp.ea - 0.18);
@@ -770,7 +771,7 @@ void updateColdContent(SWMM_Project *sp, TSnowpack* snowpack, int i, double asc,
 	else
 	{
 	    // convert ATI weighting factor from 6-hr to tStep time basis
-	    tipm = 1.0 - pow(1.0 - Snow.tipm, tStep / (6.0*3600.0));
+	    tipm = 1.0 - pow(1.0 - sp->Snow.tipm, tStep / (6.0*3600.0));
 		
 		// update ATI
 		ati += tipm * (sp->Temp.ta - ati);
@@ -781,7 +782,7 @@ void updateColdContent(SWMM_Project *sp, TSnowpack* snowpack, int i, double asc,
     ati = MIN(ati, Snowmelt[k].tbase[i]);
 
     // --- update cold content
-    cc += Snow.rnm * Snowmelt[k].dhm[i] * (ati - sp->Temp.ta) * tStep * asc;
+    cc += sp->Snow.rnm * Snowmelt[k].dhm[i] * (ati - sp->Temp.ta) * tStep * asc;
     cc = MAX(cc, 0.0);
 
     // --- maximum cold content based on assumed specific heat of snow

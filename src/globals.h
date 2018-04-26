@@ -140,9 +140,9 @@ EXTERN SWMM_Project *_defaultProject;
 //
 //EXTERN TTemp      Temp;                     // Temperature data
 //EXTERN TEvap      Evap;                     // Evaporation data
-EXTERN TWind      Wind;                     // Wind speed data
-EXTERN TSnow      Snow;                     // Snow melt data
-EXTERN TAdjust    Adjust;                   // Climate adjustments             //(5.1.007)
+//EXTERN TWind      Wind;                     // Wind speed data
+//EXTERN TSnow      Snow;                     // Snow melt data
+//EXTERN TAdjust    Adjust;                   // Climate adjustments             //(5.1.007)
 
 EXTERN TSnowmelt* Snowmelt;                 // Array of snow melt objects
 EXTERN TGage*     Gage;                     // Array of rain gages

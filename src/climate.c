@@ -209,19 +209,19 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         // --- check if wind speeds will be supplied from climate file
         if ( strcomp(tok[1], w_FILE) )
         {
-            Wind.type = FILE_WIND;
+            sp->Wind.type = FILE_WIND;
         }
 
         // --- otherwise read 12 monthly avg. wind speed values
         else
         {
             if ( ntoks < 14 ) return error_setInpError(ERR_ITEMS, "");
-            Wind.type = MONTHLY_WIND;
+            sp->Wind.type = MONTHLY_WIND;
             for (i=0; i<12; i++)
             {
                 if ( !getDouble(tok[i+2], &y) )
                     return error_setInpError(ERR_NUMBER, tok[i+2]);
-                Wind.aws[i] = y;
+                sp->Wind.aws[i] = y;
             }
         }
         break;
@@ -235,9 +235,9 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         }
         // --- convert deg. C to deg. F for snowfall temperature
         if ( sp->UnitSystem == SI ) x[0] = 9./5.*x[0] + 32.0;
-        Snow.snotmp = x[0];
-        Snow.tipm   = x[1];
-        Snow.rnm    = x[2];
+        sp->Snow.snotmp = x[0];
+        sp->Snow.tipm   = x[1];
+        sp->Snow.rnm    = x[2];
         sp->Temp.elev   = x[3] / UCF(sp, LENGTH);
         sp->Temp.anglat = x[4];
         sp->Temp.dtlong = x[5] / 60.0;
@@ -255,7 +255,7 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         {
             if ( !getDouble(tok[j+2], &y) || y < 0.0 || y > 1.0 )
                 return error_setInpError(ERR_NUMBER, tok[j+2]);
-            Snow.adc[i][j] = y;
+            sp->Snow.adc[i][j] = y;
         }
         break;
     }
@@ -358,7 +358,7 @@ int climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks)
 
 ////  New function added to release 5.1.007.  ////                             //(5.1.007)
 
-int climate_readAdjustments(char* tok[], int ntoks)
+int climate_readAdjustments(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -380,7 +380,7 @@ int climate_readAdjustments(char* tok[], int ntoks)
         if ( ntoks < 13 )  return error_setInpError(ERR_ITEMS, "");
         for (i = 1; i < 13; i++)
         {
-            if ( !getDouble(tok[i], &Adjust.temp[i-1]) )
+            if ( !getDouble(tok[i], &sp->Adjust.temp[i-1]) )
                 return error_setInpError(ERR_NUMBER, tok[i]);
         }
         return 0;
@@ -391,7 +391,7 @@ int climate_readAdjustments(char* tok[], int ntoks)
         if ( ntoks < 13 )  return error_setInpError(ERR_ITEMS, "");
         for (i = 1; i < 13; i++)
         {
-            if ( !getDouble(tok[i], &Adjust.evap[i-1]) )
+            if ( !getDouble(tok[i], &sp->Adjust.evap[i-1]) )
                 return error_setInpError(ERR_NUMBER, tok[i]);
         }
         return 0;
@@ -402,7 +402,7 @@ int climate_readAdjustments(char* tok[], int ntoks)
         if ( ntoks < 13 )  return error_setInpError(ERR_ITEMS, "");
         for (i = 1; i < 13; i++)
         {
-            if ( !getDouble(tok[i], &Adjust.rain[i-1]) )
+            if ( !getDouble(tok[i], &sp->Adjust.rain[i-1]) )
                 return error_setInpError(ERR_NUMBER, tok[i]);
         }
         return 0;
@@ -415,9 +415,9 @@ int climate_readAdjustments(char* tok[], int ntoks)
         if ( ntoks < 13 )  return error_setInpError(ERR_ITEMS, "");
         for (i = 1; i < 13; i++)
         {
-            if ( !getDouble(tok[i], &Adjust.hydcon[i-1]) )
+            if ( !getDouble(tok[i], &sp->Adjust.hydcon[i-1]) )
                 return error_setInpError(ERR_NUMBER, tok[i]);
-            if ( Adjust.hydcon[i-1] <= 0.0 ) Adjust.hydcon[i-1] = 1.0;         //(5.1.011)
+            if ( sp->Adjust.hydcon[i-1] <= 0.0 ) sp->Adjust.hydcon[i-1] = 1.0;         //(5.1.011)
         }
         return 0;
     }
@@ -438,7 +438,7 @@ void climate_validate(SWMM_Project *sp)
     double    a, z, pa;
 
     // --- check if climate data comes from external data file                 //(5.1.007)
-    if ( Wind.type == FILE_WIND || sp->Evap.type == FILE_EVAP ||
+    if ( sp->Wind.type == FILE_WIND || sp->Evap.type == FILE_EVAP ||
          sp->Evap.type == TEMPERATURE_EVAP )
     {
         if ( sp->Fclimate.mode == NO_FILE )
@@ -451,10 +451,10 @@ void climate_validate(SWMM_Project *sp)
     if ( sp->Fclimate.mode == USE_FILE ) climate_openFile(sp);                       //(5.1.007)
 
     // --- snow melt parameters tipm & rnm must be fractions
-    if ( Snow.tipm < 0.0 ||
-         Snow.tipm > 1.0 ||
-         Snow.rnm  < 0.0 ||
-         Snow.rnm  > 1.0 ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
+    if ( sp->Snow.tipm < 0.0 ||
+         sp->Snow.tipm > 1.0 ||
+         sp->Snow.rnm  < 0.0 ||
+         sp->Snow.rnm  > 1.0 ) report_writeErrorMsg(sp, ERR_SNOWMELT_PARAMS, "");
 
     // --- latitude should be between -90 & 90 degrees
     a = sp->Temp.anglat;
@@ -471,8 +471,8 @@ void climate_validate(SWMM_Project *sp)
     // --- convert units of monthly temperature & evap adjustments             //(5.1.007)
     for (i = 0; i < 12; i++)
     {
-        if (sp->UnitSystem == SI) Adjust.temp[i] *= 9.0/5.0;
-        Adjust.evap[i] /= UCF(sp, EVAPRATE);
+        if (sp->UnitSystem == SI) sp->Adjust.temp[i] *= 9.0/5.0;
+        sp->Adjust.evap[i] /= UCF(sp, EVAPRATE);
     }
 }
 
@@ -556,7 +556,7 @@ void climate_initState(SWMM_Project *sp)
 {
     LastDay = NO_DATE;
     sp->Temp.tmax = MISSING;
-    Snow.removed = 0.0;
+    sp->Snow.removed = 0.0;
     NextEvapDate = sp->StartDate;
     NextEvapRate = 0.0;
 
@@ -603,8 +603,8 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
     if ( sp->Temp.dataSource != NO_TEMP ) setTemp(sp, theDate);
     setEvap(sp, theDate);
     setWind(sp, theDate);
-    Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
-    Adjust.hydconFactor = Adjust.hydcon[datetime_monthOfYear(theDate)-1];      //(5.1.008)
+    sp->Adjust.rainFactor = sp->Adjust.rain[datetime_monthOfYear(theDate)-1];          //(5.1.007)
+    sp->Adjust.hydconFactor = sp->Adjust.hydcon[datetime_monthOfYear(theDate)-1];      //(5.1.008)
     setNextEvapDate(sp, theDate);                                              //(5.1.008)
 }
 
@@ -761,8 +761,8 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         day = datetime_dayOfYear(theDate);
         if ( sp->Temp.dataSource == FILE_TEMP )
         {
-            Tmin = FileValue[TMIN] + Adjust.temp[mon-1];                       //(5.1.007)
-            Tmax = FileValue[TMAX] + Adjust.temp[mon-1];                       //(5.1.007)
+            Tmin = FileValue[TMIN] + sp->Adjust.temp[mon-1];                       //(5.1.007)
+            Tmax = FileValue[TMAX] + sp->Adjust.temp[mon-1];                       //(5.1.007)
             if ( Tmin > Tmax )
             {
                 tmp = Tmin;
@@ -778,10 +778,10 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         }
 
         // --- compute snow melt coefficients based on day of year
-        Snow.season = sin(0.0172615*(day-81.0));
+        sp->Snow.season = sin(0.0172615*(day-81.0));
         for (j=0; j<sp->Nobjects[SNOWMELT]; j++)
         {
-            snow_setMeltCoeffs(j, Snow.season);
+            snow_setMeltCoeffs(j, sp->Snow.season);
         }
 
         // --- update date of last day analyzed
@@ -817,7 +817,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
             }
 
             // --- apply climate change adjustment factor                      //(5.1.007)
-            sp->Temp.ta += Adjust.temp[mon-1];                                     //(5.1.007)
+            sp->Temp.ta += sp->Adjust.temp[mon-1];                                     //(5.1.007)
         }
     }
 
@@ -865,7 +865,7 @@ void setEvap(SWMM_Project *sp, DateTime theDate)
     }
 
     // --- apply climate change adjustment                                     //(5.1.007)
-    sp->Evap.rate += Adjust.evap[mon-1];                                           //(5.1.007)
+    sp->Evap.rate += sp->Adjust.evap[mon-1];                                           //(5.1.007)
 
     // --- set soil recovery factor
     sp->Evap.recoveryFactor = 1.0;
@@ -887,18 +887,18 @@ void setWind(SWMM_Project *sp, DateTime theDate)
 {
     int yr, mon, day;
 
-    switch ( Wind.type )
+    switch ( sp->Wind.type )
     {
       case MONTHLY_WIND:
         datetime_decodeDate(theDate, &yr, &mon, &day);
-        Wind.ws = Wind.aws[mon-1] / UCF(sp, WINDSPEED);
+        sp->Wind.ws = sp->Wind.aws[mon-1] / UCF(sp, WINDSPEED);
         break;
 
       case FILE_WIND:
-        Wind.ws = FileValue[WIND];
+        sp->Wind.ws = FileValue[WIND];
         break;
 
-      default: Wind.ws = 0.0;
+      default: sp->Wind.ws = 0.0;
     }
 }
 

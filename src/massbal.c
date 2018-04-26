@@ -752,7 +752,7 @@ double massbal_getRunoffError(SWMM_Project *sp)
     }
 
     // --- get snow removed from system
-    RunoffTotals.snowRemoved = Snow.removed;
+    RunoffTotals.snowRemoved = sp->Snow.removed;
 
     // --- compute % difference between total inflow and outflow
     totalInflow  = RunoffTotals.rainfall +

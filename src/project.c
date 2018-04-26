@@ -859,18 +859,18 @@ void setDefaults(SWMM_Project *sp)
    sp->Temp.tmax        = MISSING;
 
    // Wind speed data
-   Wind.type = MONTHLY_WIND;
-   for ( i=0; i<12; i++ ) Wind.aws[i] = 0.0;
+   sp->Wind.type = MONTHLY_WIND;
+   for ( i=0; i<12; i++ ) sp->Wind.aws[i] = 0.0;
 
    // Snowmelt parameters
-   Snow.snotmp      = 34.0;
-   Snow.tipm        = 0.5;
-   Snow.rnm         = 0.6;
+   sp->Snow.snotmp      = 34.0;
+   sp->Snow.tipm        = 0.5;
+   sp->Snow.rnm         = 0.6;
 
    // Snow areal depletion curves for pervious and impervious surfaces
    for ( i=0; i<2; i++ )
    {
-       for ( j=0; j<10; j++) Snow.adc[i][j] = 1.0;
+       for ( j=0; j<10; j++) sp->Snow.adc[i][j] = 1.0;
    }
 
    // Evaporation rates
@@ -890,13 +890,13 @@ void setDefaults(SWMM_Project *sp)
    // Climate adjustments
    for (i = 0; i < 12; i++)
    {
-       Adjust.temp[i] = 0.0;   // additive adjustments
-       Adjust.evap[i] = 0.0;   // additive adjustments
-       Adjust.rain[i] = 1.0;   // multiplicative adjustments
-       Adjust.hydcon[i] = 1.0; // hyd. conductivity adjustments                //(5.1.008)
+       sp->Adjust.temp[i] = 0.0;   // additive adjustments
+       sp->Adjust.evap[i] = 0.0;   // additive adjustments
+       sp->Adjust.rain[i] = 1.0;   // multiplicative adjustments
+       sp->Adjust.hydcon[i] = 1.0; // hyd. conductivity adjustments                //(5.1.008)
    }
-   Adjust.rainFactor = 1.0;
-   Adjust.hydconFactor = 1.0;                                                  //(5.1.008)
+   sp->Adjust.rainFactor = 1.0;
+   sp->Adjust.hydconFactor = 1.0;                                                  //(5.1.008)
 ////
 }
 

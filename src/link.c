@@ -1345,7 +1345,7 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
             // compute seepage loss rate across length of conduit
             seepLossRate = Link[j].seepRate * xsect_getWofY(xsect, depth) *    //(5.1.012)
                            length;
-            seepLossRate *= Adjust.hydconFactor;                               //(5.1.008)
+            seepLossRate *= sp->Adjust.hydconFactor;                               //(5.1.008)
         }
 
         // --- compute total loss rate

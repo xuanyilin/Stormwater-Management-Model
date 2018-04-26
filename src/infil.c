@@ -374,8 +374,8 @@ double horton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
     double fa, fp = 0.0;
     double Fp, F1, t1, tlim, ex, kt;
     double FF, FF1, r;
-    double f0   = infil->f0 * Adjust.hydconFactor;                             //(5.1.008)
-    double fmin = infil->fmin * Adjust.hydconFactor;                           //(5.1.008)
+    double f0   = infil->f0 * sp->Adjust.hydconFactor;                             //(5.1.008)
+    double fmin = infil->fmin * sp->Adjust.hydconFactor;                           //(5.1.008)
     double Fmax = infil->Fmax;
     double tp   = infil->tp;
     double df   = f0 - fmin;                                                   //(5.1.008)
@@ -485,8 +485,8 @@ double modHorton_getInfil(SWMM_Project *sp, THorton *infil, double tstep,
     // --- assign local variables
     double f  = 0.0;
     double fp, fa;
-    double f0 = infil->f0 * Adjust.hydconFactor;                               //(5.1.008)
-    double fmin = infil->fmin * Adjust.hydconFactor;                           //(5.1.008)
+    double f0 = infil->f0 * sp->Adjust.hydconFactor;                               //(5.1.008)
+    double fmin = infil->fmin * sp->Adjust.hydconFactor;                           //(5.1.008)
     double df = f0 - fmin;                                                     //(5.1.008)
     double kd = infil->decay;
     double kr = infil->regen * sp->Evap.recoveryFactor;
@@ -609,7 +609,7 @@ double grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
 //
 {
     // --- find saturated upper soil zone water volume
-    Fumax = infil->IMDmax * infil->Lu * sqrt(Adjust.hydconFactor);             //(5.1.011)
+    Fumax = infil->IMDmax * infil->Lu * sqrt(sp->Adjust.hydconFactor);             //(5.1.011)
 
     // --- reduce time until next event
     infil->T -= tstep;
@@ -639,8 +639,8 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
 //
 {
     double ia, c1, F2, dF, Fs, kr, ts;
-    double ks = infil->Ks * Adjust.hydconFactor;                               //(5.1.008)
-    double lu = infil->Lu * sqrt(Adjust.hydconFactor);                         //(5.1.011)
+    double ks = infil->Ks * sp->Adjust.hydconFactor;                               //(5.1.008)
+    double lu = infil->Lu * sqrt(sp->Adjust.hydconFactor);                         //(5.1.011)
 
     // --- get available infiltration rate (rainfall + ponded water)
     ia = irate + depth / tstep;
@@ -747,8 +747,8 @@ double grnampt_getSatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
 //
 {
     double ia, c1, dF, F2;
-    double ks = infil->Ks * Adjust.hydconFactor;                               //(5.1.008)
-    double lu = infil->Lu * sqrt(Adjust.hydconFactor);                         //(5.1.011)
+    double ks = infil->Ks * sp->Adjust.hydconFactor;                               //(5.1.008)
+    double lu = infil->Lu * sqrt(sp->Adjust.hydconFactor);                         //(5.1.011)
 
     // --- get available infiltration rate (rainfall + ponded water)
     ia = irate + depth / tstep;

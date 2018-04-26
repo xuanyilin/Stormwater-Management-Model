@@ -160,7 +160,7 @@ double exfil_getLoss(SWMM_Project *sp, TExfil* exfil, double tStep, double depth
     // --- find infiltration through bottom of unit
     if ( exfil->btmExfil->IMDmax == 0.0 )
     {
-        exfilRate = exfil->btmExfil->Ks * Adjust.hydconFactor;                 //(5.1.008)
+        exfilRate = exfil->btmExfil->Ks * sp->Adjust.hydconFactor;                 //(5.1.008)
     }
     else exfilRate = grnampt_getInfil(sp, exfil->btmExfil, tStep, 0.0, depth,
                                       MOD_GREEN_AMPT);                         //(5.1.010)
@@ -176,7 +176,7 @@ double exfil_getLoss(SWMM_Project *sp, TExfil* exfil, double tStep, double depth
             // --- if infil. rate not a function of depth
             if ( exfil->btmExfil->IMDmax == 0.0 )
             {    
-                exfilRate += area * exfil->btmExfil->Ks * Adjust.hydconFactor; //(5.1.008)
+                exfilRate += area * exfil->btmExfil->Ks * sp->Adjust.hydconFactor; //(5.1.008)
             }
 
             // --- infil. rate depends on depth above bank

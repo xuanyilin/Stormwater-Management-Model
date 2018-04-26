@@ -1187,7 +1187,7 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
             // --- get rainfall volume over gage's recording interval
             //     at gage'a current date (in original depth units)
             gageDate = UHGroup[j].gageDate;
-            Adjust.rainFactor = Adjust.rain[datetime_monthOfYear(gageDate)-1]; //(5.1.007)
+            sp->Adjust.rainFactor = sp->Adjust.rain[datetime_monthOfYear(gageDate)-1]; //(5.1.007)
             if (!Gage[g].isCurrent)
             {
                 gage_setState(sp, g, gageDate);

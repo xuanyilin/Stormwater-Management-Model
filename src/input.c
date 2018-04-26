@@ -466,7 +466,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return climate_readEvapParams(sp, Tok, Ntokens);
 
       case s_ADJUST:                                                           //(5.1.007)
-        return climate_readAdjustments(Tok, Ntokens);                          //(5.1.007)
+        return climate_readAdjustments(sp, Tok, Ntokens);                      //(5.1.007)
 
       case s_SUBCATCH:
         j = Mobjects[SUBCATCH];

@@ -41,7 +41,7 @@ static int    readGageSeriesFormat(char* tok[], int ntoks, double x[]);
 static int    readGageFileFormat(char* tok[], int ntoks, double x[]);
 static int    getFirstRainfall(SWMM_Project *sp, int gage);
 static int    getNextRainfall(SWMM_Project *sp, int gage);
-static double convertRainfall(int gage, double rain);
+static double convertRainfall(SWMM_Project *sp, int gage, double rain);
 
 
 //=============================================================================
@@ -413,7 +413,7 @@ double gage_getPrecip(SWMM_Project *sp, int j, double *rainfall, double *snowfal
 {
     *rainfall = 0.0;
     *snowfall = 0.0;
-    if ( !sp->IgnoreSnowmelt && sp->Temp.ta <= Snow.snotmp )
+    if ( !sp->IgnoreSnowmelt && sp->Temp.ta <= sp->Snow.snotmp )
     {
        *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(sp, RAINFALL);
     }
@@ -489,7 +489,7 @@ int getFirstRainfall(SWMM_Project *sp, int j)
             Gage[j].currentFilePos = ftell(sp->Frain.file);
 
             // --- convert rainfall to intensity
-            Gage[j].rainfall = convertRainfall(j, (double)vFirst);
+            Gage[j].rainfall = convertRainfall(sp, j, (double)vFirst);
             return 1;
         }
         return 0;
@@ -506,7 +506,7 @@ int getFirstRainfall(SWMM_Project *sp, int j)
                                      &rFirst) )
             {
                 // --- convert rainfall to intensity
-                Gage[j].rainfall = convertRainfall(j, rFirst);
+                Gage[j].rainfall = convertRainfall(sp, j, rFirst);
                 return 1;
             }
         }
@@ -549,7 +549,7 @@ int getNextRainfall(SWMM_Project *sp, int j)
 			fread(&Gage[j].nextDate, sizeof(DateTime), 1, sp->Frain.file);
 			fread(&vNext, sizeof(float), 1, sp->Frain.file);
 			Gage[j].currentFilePos = ftell(sp->Frain.file);
-			rNext = convertRainfall(j, (double)vNext);
+			rNext = convertRainfall(sp, j, (double)vNext);
 		    }
 		    else return 0;
 		}
@@ -561,7 +561,7 @@ int getNextRainfall(SWMM_Project *sp, int j)
 		    {
 			if ( !table_getNextEntry(&Tseries[k],
 				&Gage[j].nextDate, &rNext) ) return 0;
-			rNext = convertRainfall(j, rNext);
+			rNext = convertRainfall(sp, j, rNext);
 		    }
 		    else return 0;
 		}
@@ -575,7 +575,7 @@ int getNextRainfall(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-double convertRainfall(int j, double r)
+double convertRainfall(SWMM_Project *sp, int j, double r)
 //
 //  Input:   j = rain gage index
 //           r = rainfall value (user units)
@@ -603,7 +603,7 @@ double convertRainfall(int j, double r)
 
       default: r1 = r;
     }
-    return r1 * Gage[j].unitsFactor * Adjust.rainFactor;                       //(5.1.007)
+    return r1 * Gage[j].unitsFactor * sp->Adjust.rainFactor;                       //(5.1.007)
 }
 
 //=============================================================================
