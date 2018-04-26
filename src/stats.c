@@ -628,8 +628,8 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
     double dq;
 
     // --- update max. flow
-    dq = Link[j].newFlow - Link[j].oldFlow;
-    q = fabs(Link[j].newFlow);
+    dq = sp->Link[j].newFlow - sp->Link[j].oldFlow;
+    q = fabs(sp->Link[j].newFlow);
     if ( q > LinkStats[j].maxFlow )
     {
         LinkStats[j].maxFlow = q;
@@ -637,7 +637,7 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
     }
 
     // --- update max. velocity
-    v = link_getVelocity(j, q, Link[j].newDepth);
+    v = link_getVelocity(sp, j, q, sp->Link[j].newDepth);
     if ( v > LinkStats[j].maxVeloc )
     {
         LinkStats[j].maxVeloc = v;
@@ -645,29 +645,29 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
     }
 
     // --- update max. depth
-    if ( Link[j].newDepth > LinkStats[j].maxDepth )
+    if ( sp->Link[j].newDepth > LinkStats[j].maxDepth )
     {
-        LinkStats[j].maxDepth = Link[j].newDepth;
+        LinkStats[j].maxDepth = sp->Link[j].newDepth;
     }
 
-    if ( Link[j].type == PUMP )
+    if ( sp->Link[j].type == PUMP )
     {
-        if ( q >= Link[j].qFull )
+        if ( q >= sp->Link[j].qFull )
             LinkStats[j].timeFullFlow += tStep;
         if ( q > MIN_RUNOFF_FLOW )
         {
-            k = Link[j].subIndex;
+            k = sp->Link[j].subIndex;
             PumpStats[k].minFlow = MIN(PumpStats[k].minFlow, q);
             PumpStats[k].maxFlow = LinkStats[j].maxFlow;
             PumpStats[k].avgFlow += q;
             PumpStats[k].volume += q*tStep;
             PumpStats[k].utilized += tStep;
             PumpStats[k].energy += link_getPower(sp, j)*tStep/3600.0;
-            if ( Link[j].flowClass == DN_DRY )
+            if ( sp->Link[j].flowClass == DN_DRY )
                 PumpStats[k].offCurveLow += tStep;
-            if ( Link[j].flowClass == UP_DRY )
+            if ( sp->Link[j].flowClass == UP_DRY )
                 PumpStats[k].offCurveHigh += tStep;
-            if ( Link[j].oldFlow < MIN_RUNOFF_FLOW )
+            if ( sp->Link[j].oldFlow < MIN_RUNOFF_FLOW )
                 PumpStats[k].startUps++;
             PumpStats[k].totalPeriods++;
             LinkStats[j].timeSurcharged += tStep;
@@ -675,23 +675,23 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
             LinkStats[j].timeFullDnstream += tStep;
         }
     }
-    else if ( Link[j].type == CONDUIT )
+    else if ( sp->Link[j].type == CONDUIT )
     {
 
         // --- update time under normal flow & inlet control 
-        if ( Link[j].normalFlow ) LinkStats[j].timeNormalFlow += tStep;
-        if ( Link[j].inletControl ) LinkStats[j].timeInletControl += tStep;
+        if ( sp->Link[j].normalFlow ) LinkStats[j].timeNormalFlow += tStep;
+        if ( sp->Link[j].inletControl ) LinkStats[j].timeInletControl += tStep;
     
         // --- update flow classification distribution
-        k = Link[j].flowClass;
+        k = sp->Link[j].flowClass;
         if ( k >= 0 && k < MAX_FLOW_CLASSES )
         {
             ++LinkStats[j].timeInFlowClass[k];
         }
 
         // --- update time conduit is full
-        k = Link[j].subIndex;
-        if ( q >= Link[j].qFull * (double)Conduit[k].barrels )                 //(5.1.012)
+        k = sp->Link[j].subIndex;
+        if ( q >= sp->Link[j].qFull * (double)Conduit[k].barrels )                 //(5.1.012)
             LinkStats[j].timeFullFlow += tStep; 
         if ( Conduit[k].capacityLimited )
             LinkStats[j].timeCapacityLimited += tStep;
@@ -1028,7 +1028,7 @@ int stats_getPumpStat(SWMM_Project *sp, int index, TPumpStats *pumpStats)
 	}
 	
 	// Check if pump
-	else if (Link[index].type != PUMP)
+	else if (sp->Link[index].type != PUMP)
 	{
 		errorcode = ERR_API_WRONG_TYPE;
 	}
@@ -1036,7 +1036,7 @@ int stats_getPumpStat(SWMM_Project *sp, int index, TPumpStats *pumpStats)
 	else
 	{
 		// fetch sub index
-		int k = Link[index].subIndex;
+		int k = sp->Link[index].subIndex;
 		// Copy Structure
 		memcpy(pumpStats, &PumpStats[k], sizeof(TPumpStats));
 	}

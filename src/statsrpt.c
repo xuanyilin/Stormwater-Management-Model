@@ -712,13 +712,13 @@ void writeLinkFlows(SWMM_Project *sp)
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         // --- print link ID
-        k = Link[j].subIndex;
-        fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
+        k = sp->Link[j].subIndex;
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
 
         // --- print link type
-        if ( Link[j].xsect.type == DUMMY ) fprintf(sp->Frpt.file, " DUMMY   ");
-        else if ( Link[j].xsect.type == IRREGULAR ) fprintf(sp->Frpt.file, " CHANNEL ");
-        else fprintf(sp->Frpt.file, " %-7s ", LinkTypeWords[Link[j].type]);
+        if ( sp->Link[j].xsect.type == DUMMY ) fprintf(sp->Frpt.file, " DUMMY   ");
+        else if ( sp->Link[j].xsect.type == IRREGULAR ) fprintf(sp->Frpt.file, " CHANNEL ");
+        else fprintf(sp->Frpt.file, " %-7s ", LinkTypeWords[sp->Link[j].type]);
 
         // --- print max. flow & time of occurrence
         getElapsedTime(sp, LinkStats[j].maxFlowDate, &days, &hrs, &mins);
@@ -726,34 +726,34 @@ void writeLinkFlows(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days, hrs, mins);
 
         // --- print max flow / flow capacity for pumps
-        if ( Link[j].type == PUMP && Link[j].qFull > 0.0)
+        if ( sp->Link[j].type == PUMP && sp->Link[j].qFull > 0.0)
         {
             fprintf(sp->Frpt.file, "          ");
             fprintf(sp->Frpt.file, "  %6.2f",
-                LinkStats[j].maxFlow / Link[j].qFull);
+                LinkStats[j].maxFlow / sp->Link[j].qFull);
             continue;
         }
 
         // --- stop printing for dummy conduits
-        if ( Link[j].xsect.type == DUMMY ) continue;
+        if ( sp->Link[j].xsect.type == DUMMY ) continue;
 
         // --- stop printing for outlet links (since they don't have xsections)
-        if ( Link[j].type == OUTLET ) continue;
+        if ( sp->Link[j].type == OUTLET ) continue;
 
         // --- print max velocity & max/full flow for conduits
-        if ( Link[j].type == CONDUIT )
+        if ( sp->Link[j].type == CONDUIT )
         {
             v = LinkStats[j].maxVeloc*UCF(sp, LENGTH);
             if ( v > 50.0 ) fprintf(sp->Frpt.file, "    >50.00");
             else fprintf(sp->Frpt.file, "   %7.2f", v);
-            fprintf(sp->Frpt.file, "  %6.2f", LinkStats[j].maxFlow / Link[j].qFull /
+            fprintf(sp->Frpt.file, "  %6.2f", LinkStats[j].maxFlow / sp->Link[j].qFull /
                                           (double)Conduit[k].barrels);
         }
         else fprintf(sp->Frpt.file, "                  ");
 
         // --- print max/full depth
-        fullDepth = Link[j].xsect.yFull;
-        if ( Link[j].type == ORIFICE &&
+        fullDepth = sp->Link[j].xsect.yFull;
+        if ( sp->Link[j].type == ORIFICE &&
              Orifice[k].type == BOTTOM_ORIFICE ) fullDepth = 0.0;
         if ( fullDepth > 0.0 )
         {
@@ -789,10 +789,10 @@ void writeFlowClass(SWMM_Project *sp)
 "\n  -------------------------------------------------------------------------------------");
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
-        if ( Link[j].type != CONDUIT ) continue;
-        if ( Link[j].xsect.type == DUMMY ) continue;
-        k = Link[j].subIndex;
-        fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
+        if ( sp->Link[j].type != CONDUIT ) continue;
+        if ( sp->Link[j].xsect.type == DUMMY ) continue;
+        k = sp->Link[j].subIndex;
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
         fprintf(sp->Frpt.file, "  %6.2f ", Conduit[k].modLength / Conduit[k].length);
         for ( i=0; i<MAX_FLOW_CLASSES; i++ )
         {
@@ -821,8 +821,8 @@ void writeLinkSurcharge(SWMM_Project *sp)
     WRITE("");
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
-        if ( Link[j].type != CONDUIT ||
-			 Link[j].xsect.type == DUMMY ) continue; 
+        if ( sp->Link[j].type != CONDUIT ||
+			 sp->Link[j].xsect.type == DUMMY ) continue; 
         t[0] = LinkStats[j].timeSurcharged / 3600.0;
         t[1] = LinkStats[j].timeFullUpstream / 3600.0;
         t[2] = LinkStats[j].timeFullDnstream / 3600.0;
@@ -840,7 +840,7 @@ void writeLinkSurcharge(SWMM_Project *sp)
 "\n  ----------------------------------------------------------------------------");
             n = 1;
         }
-        fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
         fprintf(sp->Frpt.file, "    %8.2f  %8.2f  %8.2f  %8.2f     %8.2f",
                 t[0], t[1], t[2], t[3], t[4]);
     }
@@ -878,9 +878,9 @@ void writePumpFlows(SWMM_Project *sp)
         FlowUnitWords[sp->FlowUnits], VolUnitsWords[sp->UnitSystem]);
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
-        if ( Link[j].type != PUMP ) continue;
-        k = Link[j].subIndex;
-        fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
+        if ( sp->Link[j].type != PUMP ) continue;
+        k = sp->Link[j].subIndex;
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
         totalSeconds = sp->NewRoutingTime / 1000.0;
         pctUtilized = PumpStats[k].utilized / totalSeconds * 100.0;
         avgFlow = PumpStats[k].avgFlow;
@@ -936,10 +936,10 @@ void writeLinkLoads(SWMM_Project *sp)
     // --- print the pollutant loadings carried by each link
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
-        fprintf(sp->Frpt.file, "\n  %-20s", Link[j].ID);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            x = Link[j].totalLoad[p] * LperFT3 * Pollut[p].mcf;
+            x = sp->Link[j].totalLoad[p] * LperFT3 * Pollut[p].mcf;
             if ( Pollut[p].units == COUNT ) x = LOG10(x);
             if ( x < 10000. ) fprintf(sp->Frpt.file, "%14.3f", x);
             else fprintf(sp->Frpt.file, "%14.3e", x);

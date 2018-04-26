@@ -80,12 +80,12 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
             // --- if upstream node is an outfall, then increment outflow
             //     count for downstream node, otherwise increment count
             //     for upstream node
-            n = Link[i].node1;
-            if ( Link[i].direction < 0 ) n = Link[i].node2;
+            n = sp->Link[i].node1;
+            if ( sp->Link[i].direction < 0 ) n = sp->Link[i].node2;
             if ( sp->Node[n].type == OUTFALL )
             {
-                if ( Link[i].direction < 0 ) n = Link[i].node1;
-                else n = Link[i].node2;
+                if ( sp->Link[i].direction < 0 ) n = sp->Link[i].node1;
+                else n = sp->Link[i].node2;
                 sp->Node[n].degree++;
             }
             else sp->Node[n].degree++;
@@ -114,7 +114,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
 
         // --- find number of links entering each node
         for (i = 0; i < sp->Nobjects[NODE]; i++) InDegree[i] = 0;
-        for (i = 0; i < sp->Nobjects[LINK]; i++) InDegree[ Link[i].node2 ]++;
+        for (i = 0; i < sp->Nobjects[LINK]; i++) InDegree[ sp->Link[i].node2 ]++;
 
         // --- topo sort the links
         n = topoSort(sp, sortedLinks);
@@ -151,8 +151,8 @@ void createAdjList(SWMM_Project *sp ,int listType)
     for (i = 0; i < sp->Nobjects[NODE]; i++) sp->Node[i].degree = 0;
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        sp->Node[ Link[j].node1 ].degree++;
-        if ( listType == UNDIRECTED ) sp->Node[ Link[j].node2 ].degree++;
+        sp->Node[ sp->Link[j].node1 ].degree++;
+        if ( listType == UNDIRECTED ) sp->Node[ sp->Link[j].node2 ].degree++;
     }
 
     // --- determine start position of each node in the adjacency list
@@ -171,13 +171,13 @@ void createAdjList(SWMM_Project *sp ,int listType)
     //     position in the adjacency list
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        i = Link[j].node1;
+        i = sp->Link[j].node1;
         k = StartPos[i] + sp->Node[i].degree;
         AdjList[k] = j;
         sp->Node[i].degree++;
         if ( listType == UNDIRECTED )
         {
-            i = Link[j].node2;
+            i = sp->Link[j].node2;
             k = StartPos[i] + sp->Node[i].degree;
             AdjList[k] = j;
             sp->Node[i].degree++;
@@ -262,7 +262,7 @@ int topoSort(SWMM_Project *sp, int sortedLinks[])
             n++;
 
             // --- reduce in-degree of link's downstream node
-            i2 = Link[j].node2;
+            i2 = sp->Link[j].node2;
             InDegree[i2]--;
 
             // --- add downstream node to stack if its in-degree is zero
@@ -340,8 +340,8 @@ void  findSpanningTree(SWMM_Project *sp, int startNode)
     {
         // --- find which node (j) connects link k from start node
         k = AdjList[m];
-        if ( Link[k].node1 == startNode ) j = Link[k].node2;
-        else j = Link[k].node1;
+        if ( sp->Link[k].node1 == startNode ) j = sp->Link[k].node2;
+        else j = sp->Link[k].node1;
 
         // --- if link k is not in the tree
         if ( InTree[k] == 0 )
@@ -399,19 +399,19 @@ void evalLoop(SWMM_Project *sp, int startLink)
 
     // --- trace a path on the spanning tree that starts at the
     //     tail node of startLink and ends at its head node
-    i1 = Link[startLink].node1;
-    i2 = Link[startLink].node2;
+    i1 = sp->Link[startLink].node1;
+    i2 = sp->Link[startLink].node2;
     if ( !traceLoop(sp, i1, i2, startLink) ) return;
 
     // --- check if all links on the path are oriented head-to-tail
     isCycle = TRUE;
     j = LoopLinks[0];
-    i2 = Link[j].node2;
+    i2 = sp->Link[j].node2;
     for (i=1; i<=LoopLinksLast; i++)
     {
         j = LoopLinks[i];
-        i1 = Link[j].node1;
-        if ( i1 == i2 ) i2 = Link[j].node2;
+        i1 = sp->Link[j].node1;
+        if ( i1 == i2 ) i2 = sp->Link[j].node2;
         else
         {
             isCycle = FALSE;
@@ -427,7 +427,7 @@ void evalLoop(SWMM_Project *sp, int startLink)
         {
             if ( kount % 5 == 0 ) fprintf(sp->Frpt.file, "\n");
             kount++;
-            fprintf(sp->Frpt.file, "  %s", Link[LoopLinks[i]].ID);
+            fprintf(sp->Frpt.file, "  %s", sp->Link[LoopLinks[i]].ID);
             if ( i < LoopLinksLast ) fprintf(sp->Frpt.file, "  -->");
         }
     }
@@ -458,8 +458,8 @@ int traceLoop(SWMM_Project *sp, int i1, int i2, int k1)
         if ( k == k1 || InTree[k] != 1 ) continue;
 
         // --- identify other node that link is connected to
-        if ( Link[k].node1 == i1 ) j = Link[k].node2;
-        else                       j = Link[k].node1;
+        if ( sp->Link[k].node1 == i1 ) j = sp->Link[k].node2;
+        else                       j = sp->Link[k].node1;
 
         // --- try to continue tracing the loop from this node;
         //     if successful, then add link to loop and return
@@ -500,11 +500,11 @@ void checkDummyLinks(SWMM_Project *sp)
     //     either dummy links or ideal pumps
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-        j = Link[i].node2;
-        if ( Link[i].direction < 0 ) j = Link[i].node1;
-        if ( (Link[i].type == CONDUIT && Link[i].xsect.type == DUMMY) ||
-             (Link[i].type == PUMP &&
-              Pump[Link[i].subIndex].type == IDEAL_PUMP) )
+        j = sp->Link[i].node2;
+        if ( sp->Link[i].direction < 0 ) j = sp->Link[i].node1;
+        if ( (sp->Link[i].type == CONDUIT && sp->Link[i].xsect.type == DUMMY) ||
+             (sp->Link[i].type == PUMP &&
+              Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
         {
             if ( marked[j] == 0 ) marked[j] = 1;
         }
@@ -514,11 +514,11 @@ void checkDummyLinks(SWMM_Project *sp)
     // --- find marked nodes with outgoing dummy links or ideal pumps
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-        if ( (Link[i].type == CONDUIT && Link[i].xsect.type == DUMMY) ||
-             (Link[i].type == PUMP && 
-              Pump[Link[i].subIndex].type == IDEAL_PUMP) )
+        if ( (sp->Link[i].type == CONDUIT && sp->Link[i].xsect.type == DUMMY) ||
+             (sp->Link[i].type == PUMP && 
+              Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
         {
-            j = Link[i].node1;
+            j = sp->Link[i].node1;
             if ( marked[j] > 0 )
             {
                 report_writeErrorMsg(sp, ERR_DUMMY_LINK, sp->Node[j].ID);

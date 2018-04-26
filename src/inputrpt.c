@@ -188,30 +188,30 @@ void inputrpt_writeInput(SWMM_Project *sp)
         for (i = 0; i < sp->Nobjects[LINK]; i++)
         {
             // --- list end nodes in their original orientation
-            if ( Link[i].direction == 1 )
+            if ( sp->Link[i].direction == 1 )
                 fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, sp->Node[Link[i].node1].ID, sp->Node[Link[i].node2].ID);
+                    sp->Link[i].ID, sp->Node[sp->Link[i].node1].ID, sp->Node[sp->Link[i].node2].ID);
             else
                 fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, sp->Node[Link[i].node2].ID, sp->Node[Link[i].node1].ID);
+                    sp->Link[i].ID, sp->Node[sp->Link[i].node2].ID, sp->Node[sp->Link[i].node1].ID);
 
             // --- list link type
-            if ( Link[i].type == PUMP )
+            if ( sp->Link[i].type == PUMP )
             {
-                k = Link[i].subIndex;
+                k = sp->Link[i].subIndex;
                 fprintf(sp->Frpt.file, "%-5s PUMP  ",
                     PumpTypeWords[Pump[k].type]);
             }
             else fprintf(sp->Frpt.file, "%-12s",
-                LinkTypeWords[Link[i].type-CONDUIT]);
+                LinkTypeWords[sp->Link[i].type-CONDUIT]);
 
             // --- list length, slope and roughness for conduit links
-            if (Link[i].type == CONDUIT)
+            if (sp->Link[i].type == CONDUIT)
             {
-                k = Link[i].subIndex;
+                k = sp->Link[i].subIndex;
                 fprintf(sp->Frpt.file, "%10.1f%10.4f%10.4f",
                     Conduit[k].length*UCF(sp, LENGTH),
-                    Conduit[k].slope*100.0*Link[i].direction,
+                    Conduit[k].slope*100.0*sp->Link[i].direction,
                     Conduit[k].roughness);
             }
         }
@@ -229,24 +229,24 @@ void inputrpt_writeInput(SWMM_Project *sp)
 "\n  ---------------------------------------------------------------------------------------");
         for (i = 0; i < sp->Nobjects[LINK]; i++)
         {
-            if (Link[i].type == CONDUIT)
+            if (sp->Link[i].type == CONDUIT)
             {
-                k = Link[i].subIndex;
-                fprintf(sp->Frpt.file, "\n  %-16s ", Link[i].ID);
-                if ( Link[i].xsect.type == CUSTOM )
-                    fprintf(sp->Frpt.file, "%-16s ", Curve[Link[i].xsect.transect].ID);
-                else if ( Link[i].xsect.type == IRREGULAR )
+                k = sp->Link[i].subIndex;
+                fprintf(sp->Frpt.file, "\n  %-16s ", sp->Link[i].ID);
+                if ( sp->Link[i].xsect.type == CUSTOM )
+                    fprintf(sp->Frpt.file, "%-16s ", Curve[sp->Link[i].xsect.transect].ID);
+                else if ( sp->Link[i].xsect.type == IRREGULAR )
                     fprintf(sp->Frpt.file, "%-16s ",
-                    Transect[Link[i].xsect.transect].ID);
+                    Transect[sp->Link[i].xsect.transect].ID);
                 else fprintf(sp->Frpt.file, "%-16s ",
-                    XsectTypeWords[Link[i].xsect.type]);
+                    XsectTypeWords[sp->Link[i].xsect.type]);
                 fprintf(sp->Frpt.file, "%8.2f %8.2f %8.2f %8.2f      %3d %8.2f",
-                    Link[i].xsect.yFull*UCF(sp, LENGTH),
-                    Link[i].xsect.aFull*UCF(sp, LENGTH)*UCF(sp, LENGTH),
-                    Link[i].xsect.rFull*UCF(sp, LENGTH),
-                    Link[i].xsect.wMax*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.yFull*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.aFull*UCF(sp, LENGTH)*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.rFull*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.wMax*UCF(sp, LENGTH),
                     Conduit[k].barrels,
-                    Link[i].qFull*UCF(sp, FLOW));
+                    sp->Link[i].qFull*UCF(sp, FLOW));
             }
         }
     }

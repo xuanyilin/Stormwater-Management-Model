@@ -446,7 +446,7 @@ int     link_readLossParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    link_validate(SWMM_Project *sp, int link);
 void    link_initState(SWMM_Project *sp, int link);
-void    link_setOldHydState(int link);
+void    link_setOldHydState(SWMM_Project *sp, int link);
 void    link_setOldQualState(SWMM_Project *sp, int link);
 
 void    link_setTargetSetting(SWMM_Project *sp, int j);
@@ -456,10 +456,10 @@ int     link_setFlapGate(SWMM_Project *sp, int link, int n1, int n2, double q);
 double  link_getInflow(SWMM_Project *sp, int link);
 void    link_setOutfallDepth(SWMM_Project *sp, int link);
 double  link_getLength(SWMM_Project *sp, int link);
-double  link_getYcrit(int link, double q);
+double  link_getYcrit(SWMM_Project *sp, int link, double q);
 double  link_getYnorm(SWMM_Project *sp, int link, double q);
-double  link_getVelocity(int link, double q, double y);
-double  link_getFroude(int link, double v, double y);
+double  link_getVelocity(SWMM_Project *sp, int link, double q, double y);
+double  link_getFroude(SWMM_Project *sp, int link, double v, double y);
 double  link_getPower(SWMM_Project *sp, int link);
 double  link_getLossRate(SWMM_Project *sp, int link, double q, double tStep);                    //(5.1.008)
 char    link_getFullState(double a1, double a2, double aFull);                 //(5.1.008)

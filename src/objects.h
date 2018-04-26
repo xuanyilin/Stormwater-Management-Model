@@ -1208,7 +1208,7 @@ struct SWMM_Project {
    TOutfall*     Outfall;                  // Array of outfall nodes
    TDivider*     Divider;                  // Array of divider nodes
    TStorage*     Storage;                  // Array of storage nodes
-//    EXTERN TLink*     Link;                     // Array of links
+   TLink*        Link;                     // Array of links
 //    EXTERN TConduit*  Conduit;                  // Array of conduit links
 //    EXTERN TPump*     Pump;                     // Array of pump links
 //    EXTERN TOrifice*  Orifice;                  // Array of orifice links

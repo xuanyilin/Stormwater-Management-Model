@@ -164,7 +164,7 @@ int massbal_open(SWMM_Project *sp)
     for (j = 0; j < sp->Nobjects[NODE]; j++)
         FlowTotals.initStorage += sp->Node[j].newVolume;
     for (j = 0; j < sp->Nobjects[LINK]; j++)
-        FlowTotals.initStorage += Link[j].newVolume;
+        FlowTotals.initStorage += sp->Link[j].newVolume;
     StepFlowTotals = FlowTotals;
 
     // --- add contribution of minimum surface area (i.e., manhole area)
@@ -698,7 +698,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
     // --- add on volume stored in links
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        totalStorage += Link[j].newVolume;
+        totalStorage += sp->Link[j].newVolume;
     }
     return totalStorage;
 }
@@ -1080,7 +1080,7 @@ double massbal_getStoredMass(SWMM_Project *sp, int p)
     if ( sp->RouteModel != SF )                                                    //(5.1.011)
     {
         for (j = 0; j < sp->Nobjects[LINK]; j++)
-            storedMass += Link[j].newVolume * Link[j].newQual[p];
+            storedMass += sp->Link[j].newVolume * sp->Link[j].newQual[p];
     }
     return storedMass;
 }

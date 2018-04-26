@@ -895,19 +895,19 @@ double storage_getOutflow(SWMM_Project *sp, int j, int i)
     double a, y;
 
     // --- link must be a conduit
-    if ( Link[i].type != CONDUIT ) return 0.0;
+    if ( sp->Link[i].type != CONDUIT ) return 0.0;
 
     // --- find depth of water in conduit
-    y = sp->Node[j].newDepth - Link[i].offset1;
+    y = sp->Node[j].newDepth - sp->Link[i].offset1;
 
     // --- return 0 if conduit empty or full flow if full
     if ( y <= 0.0 ) return 0.0;
-    if ( y >= Link[i].xsect.yFull ) return Link[i].qFull;
+    if ( y >= sp->Link[i].xsect.yFull ) return sp->Link[i].qFull;
 
     // --- if partially full, return normal flow
-    k = Link[i].subIndex;
-    a = xsect_getAofY(&Link[i].xsect, y);
-    return Conduit[k].beta * xsect_getSofA(&Link[i].xsect, a);
+    k = sp->Link[i].subIndex;
+    a = xsect_getAofY(&sp->Link[i].xsect, y);
+    return Conduit[k].beta * xsect_getSofA(&sp->Link[i].xsect, a);
 }
 
 //=============================================================================
@@ -1093,7 +1093,7 @@ void  divider_validate(SWMM_Project *sp, int j)
     // --- check that diverted link is attached to divider
     k = sp->Node[j].subIndex;
     i = sp->Divider[k].link;
-    if ( i < 0 || ( Link[i].node1 != j && Link[i].node2 != j) )
+    if ( i < 0 || ( sp->Link[i].node1 != j && sp->Link[i].node2 != j) )
     {
         report_writeErrorMsg(sp, ERR_DIVIDER_LINK, sp->Node[j].ID);
     }

@@ -166,7 +166,7 @@ DateTime CurrentTime;                  // current time of day (decimal)
 int    addPremise(SWMM_Project *sp, int r, int type, char* Tok[], int nToks);
 int    getPremiseVariable(char* tok[], int* k, struct TVariable* v);
 int    getPremiseValue(char* token, int attrib, double* value);
-int    addAction(int r, char* Tok[], int nToks);
+int    addAction(SWMM_Project *sp, int r, char* Tok[], int nToks);
 
 int    evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep);
 double getVariableValue(SWMM_Project *sp, struct TVariable v);
@@ -183,8 +183,9 @@ void   deleteRules(void);
 int    findExactMatch(char *s, char *keyword[]);
 int    setActionSetting(char* tok[], int nToks, int* curve, int* tseries,
        int* attrib, double* value);
-void   updateActionValue(struct TAction* a, DateTime currentTime, double dt);
-double getPIDSetting(struct TAction* a, double dt);
+void   updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTime,
+        double dt);
+double getPIDSetting(SWMM_Project *sp, struct TAction* a, double dt);
 
 //=============================================================================
 
@@ -258,7 +259,7 @@ int  controls_addRuleClause(SWMM_Project *sp, int r, int keyword, char* tok[],
       case r_AND:
         if ( InputState == r_IF ) return addPremise(sp, r, r_AND, tok, nToks);
         else if ( InputState == r_THEN || InputState == r_ELSE )
-            return addAction(r, tok, nToks);
+            return addAction(sp, r, tok, nToks);
         else return ERR_RULE;
 
       case r_OR:
@@ -268,12 +269,12 @@ int  controls_addRuleClause(SWMM_Project *sp, int r, int keyword, char* tok[],
       case r_THEN:
         if ( InputState != r_IF ) return ERR_RULE;
         InputState = r_THEN;
-        return addAction(r, tok, nToks);
+        return addAction(sp, r, tok, nToks);
 
       case r_ELSE:
         if ( InputState != r_THEN ) return ERR_RULE;
         InputState = r_ELSE;
-        return addAction(r, tok, nToks);
+        return addAction(sp, r, tok, nToks);
 
       case r_PRIORITY:
         if ( InputState != r_THEN && InputState != r_ELSE ) return ERR_RULE;
@@ -336,7 +337,7 @@ int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
         else                  a = Rules[r].elseActions;
         while (a)
         {
-            updateActionValue(a, currentTime, tStep);
+            updateActionValue(sp, a, currentTime, tStep);
             updateActionList(a);
             a = a->next;
         }
@@ -605,7 +606,7 @@ int getPremiseValue(char* token, int attrib, double* value)
 
 //=============================================================================
 
-int  addAction(int r, char* tok[], int nToks)
+int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
 //
 //  Input:   r = control rule index
 //           tok = array of string tokens containing action statement
@@ -637,23 +638,23 @@ int  addAction(int r, char* tok[], int nToks)
     switch (obj)
     {
       case r_CONDUIT:
-	if ( Link[link].type != CONDUIT )
+	if ( sp->Link[link].type != CONDUIT )
 	    return error_setInpError(ERR_NAME, tok[2]);
 	break;
       case r_PUMP:
-        if ( Link[link].type != PUMP )
+        if ( sp->Link[link].type != PUMP )
             return error_setInpError(ERR_NAME, tok[2]);
         break;
       case r_ORIFICE:
-        if ( Link[link].type != ORIFICE )
+        if ( sp->Link[link].type != ORIFICE )
             return error_setInpError(ERR_NAME, tok[2]);
         break;
       case r_WEIR:
-        if ( Link[link].type != WEIR )
+        if ( sp->Link[link].type != WEIR )
             return error_setInpError(ERR_NAME, tok[2]);
         break;
       case r_OUTLET:
-        if ( Link[link].type != OUTLET )
+        if ( sp->Link[link].type != OUTLET )
             return error_setInpError(ERR_NAME, tok[2]);
         break;
     }
@@ -802,7 +803,8 @@ int  setActionSetting(char* tok[], int nToks, int* curve, int* tseries,
 
 //=============================================================================
 
-void  updateActionValue(struct TAction* a, DateTime currentTime, double dt)
+void  updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTime,
+        double dt)
 //
 //  Input:   a = an action object
 //           currentTime = current simulation date/time (days)
@@ -821,13 +823,13 @@ void  updateActionValue(struct TAction* a, DateTime currentTime, double dt)
     }
     else if ( a->attribute == r_PID )
     {
-        a->value = getPIDSetting(a, dt);
+        a->value = getPIDSetting(sp, a, dt);
     }
 }
 
 //=============================================================================
 
-double getPIDSetting(struct TAction* a, double dt)
+double getPIDSetting(SWMM_Project *sp, struct TAction* a, double dt)
 //
 //  Input:   a = an action object
 //           dt = current time step (days)
@@ -870,7 +872,7 @@ double getPIDSetting(struct TAction* a, double dt)
 	d = a->kd * (e0 - 2.0*a->e1 + a->e2) / dt;
 	update = a->kp * (p + i + d);
 	if ( fabs(update) < tolerance ) update = 0.0;
-	setting = Link[a->link].targetSetting + update;
+	setting = sp->Link[a->link].targetSetting + update;
 
 	// --- update previous errors
     a->e2 = a->e1;
@@ -878,7 +880,7 @@ double getPIDSetting(struct TAction* a, double dt)
 
     // --- check that new setting lies within feasible limits
     if ( setting < 0.0 ) setting = 0.0;
-    if (Link[a->link].type != PUMP && setting > 1.0 ) setting = 1.0;
+    if (sp->Link[a->link].type != PUMP && setting > 1.0 ) setting = 1.0;
     return setting;
 }
 
@@ -941,12 +943,12 @@ int executeActionList(SWMM_Project *sp, DateTime currentTime)
         if ( !a1 ) break;
         if ( a1->link >= 0 )
         {
-            if ( Link[a1->link].targetSetting != a1->value )
+            if ( sp->Link[a1->link].targetSetting != a1->value )
             {
-                Link[a1->link].targetSetting = a1->value;
+                sp->Link[a1->link].targetSetting = a1->value;
                 if ( sp->RptFlags.controls && a1->curve < 0                        //(5.1.011)
                      && a1->tseries < 0 && a1->attribute != r_PID )            //(5.1.011)
-                    report_writeControlAction(sp, currentTime, Link[a1->link].ID,
+                    report_writeControlAction(sp, currentTime, sp->Link[a1->link].ID,
                                               a1->value, Rules[a1->rule].ID);
                 count++;
             }
@@ -1020,20 +1022,20 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
 
       case r_STATUS:
         if ( j < 0 ||
-            (Link[j].type != CONDUIT && Link[j].type != PUMP) ) return MISSING;
-        else return Link[j].setting;
+            (sp->Link[j].type != CONDUIT && sp->Link[j].type != PUMP) ) return MISSING;
+        else return sp->Link[j].setting;
         
       case r_SETTING:
-        if ( j < 0 || (Link[j].type != ORIFICE && Link[j].type != WEIR) )
+        if ( j < 0 || (sp->Link[j].type != ORIFICE && sp->Link[j].type != WEIR) )
             return MISSING;
-        else return Link[j].setting;
+        else return sp->Link[j].setting;
 
       case r_FLOW:
         if ( j < 0 ) return MISSING;
-        else return Link[j].direction*Link[j].newFlow*UCF(sp, FLOW);
+        else return sp->Link[j].direction*sp->Link[j].newFlow*UCF(sp, FLOW);
 
       case r_DEPTH:
-        if ( j >= 0 ) return Link[j].newDepth*UCF(sp, LENGTH);
+        if ( j >= 0 ) return sp->Link[j].newDepth*UCF(sp, LENGTH);
         else if ( i >= 0 )
             return sp->Node[i].newDepth*UCF(sp, LENGTH);
         else return MISSING;
@@ -1053,13 +1055,13 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
 ////  This section added to release 5.1.010.  ////                             //(5.1.010)
       case r_TIMEOPEN:
           if ( j < 0 ) return MISSING;
-          if ( Link[j].setting <= 0.0 ) return MISSING;
-          return CurrentDate + CurrentTime - Link[j].timeLastSet;
+          if ( sp->Link[j].setting <= 0.0 ) return MISSING;
+          return CurrentDate + CurrentTime - sp->Link[j].timeLastSet;
 
       case r_TIMECLOSED:
           if ( j < 0 ) return MISSING;
-          if ( Link[j].setting > 0.0 ) return MISSING;
-          return CurrentDate + CurrentTime - Link[j].timeLastSet;
+          if ( sp->Link[j].setting > 0.0 ) return MISSING;
+          return CurrentDate + CurrentTime - sp->Link[j].timeLastSet;
 ////
 
       default: return MISSING;

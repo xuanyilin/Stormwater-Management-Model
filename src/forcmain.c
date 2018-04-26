@@ -45,7 +45,7 @@ double forcemain_getEquivN(SWMM_Project *sp, int j, int k)
 //           flow equations.
 //
 {
-    TXsect xsect = Link[j].xsect;
+    TXsect xsect = sp->Link[j].xsect;
     double f;
     double d = xsect.yFull;
     switch ( sp->ForceMainEqn )
@@ -70,7 +70,7 @@ double forcemain_getRoughFactor(SWMM_Project *sp, int j, double lengthFactor)
 //           any artificial lengthening the pipe may have received.
 //
 {
-    TXsect xsect = Link[j].xsect;
+    TXsect xsect = sp->Link[j].xsect;
     double r;
     switch ( sp->ForceMainEqn )
     {
@@ -99,7 +99,7 @@ double forcemain_getFricSlope(SWMM_Project *sp, int j, double v, double hrad)
 //
 {
     double re, f;
-    TXsect xsect = Link[j].xsect;
+    TXsect xsect = sp->Link[j].xsect;
     switch ( sp->ForceMainEqn )
     {
       case H_W:

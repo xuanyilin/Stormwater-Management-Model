@@ -90,7 +90,7 @@ static void   findBypassedLinks(SWMM_Project *sp);
 static void   findLimitedLinks(SWMM_Project *sp);
 
 static void   findLinkFlows(SWMM_Project *sp, double dt);
-static int    isTrueConduit(int link);
+static int    isTrueConduit(SWMM_Project *sp, int link);
 static void   findNonConduitFlow(SWMM_Project *sp, int link, double dt);
 static void   findNonConduitSurfArea(SWMM_Project *sp, int link);
 static double getModPumpFlow(SWMM_Project *sp, int link, double q, double dt);
@@ -142,14 +142,14 @@ void dynwave_init(SWMM_Project *sp)
     // --- update node crown elev. & initialize links
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        j = Link[i].node1;
-        z = sp->Node[j].invertElev + Link[i].offset1 + Link[i].xsect.yFull;
+        j = sp->Link[i].node1;
+        z = sp->Node[j].invertElev + sp->Link[i].offset1 + sp->Link[i].xsect.yFull;
         sp->Node[j].crownElev = MAX(sp->Node[j].crownElev, z);
-        j = Link[i].node2;
-        z = sp->Node[j].invertElev + Link[i].offset2 + Link[i].xsect.yFull;
+        j = sp->Link[i].node2;
+        z = sp->Node[j].invertElev + sp->Link[i].offset2 + sp->Link[i].xsect.yFull;
         sp->Node[j].crownElev = MAX(sp->Node[j].crownElev, z);
-        Link[i].flowClass = DRY;
-        Link[i].dqdh = 0.0;
+        sp->Link[i].flowClass = DRY;
+        sp->Link[i].dqdh = 0.0;
     }
 }
 
@@ -268,9 +268,9 @@ void   initRoutingStep(SWMM_Project *sp)
     }
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        Link[i].bypassed = FALSE;
-        Link[i].surfArea1 = 0.0;
-        Link[i].surfArea2 = 0.0;
+        sp->Link[i].bypassed = FALSE;
+        sp->Link[i].surfArea1 = 0.0;
+        sp->Link[i].surfArea2 = 0.0;
     }
 
     // --- a2 preserves conduit area from solution at last time step
@@ -327,10 +327,10 @@ void   findBypassedLinks(SWMM_Project *sp)
     int i;
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( Xnode[Link[i].node1].converged &&
-             Xnode[Link[i].node2].converged )
-             Link[i].bypassed = TRUE;
-        else Link[i].bypassed = FALSE;
+        if ( Xnode[sp->Link[i].node1].converged &&
+             Xnode[sp->Link[i].node2].converged )
+             sp->Link[i].bypassed = TRUE;
+        else sp->Link[i].bypassed = FALSE;
     }
 }
 
@@ -349,16 +349,16 @@ void  findLimitedLinks(SWMM_Project *sp)
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         // ---- check only non-dummy conduit links
-        if ( !isTrueConduit(j) ) continue;                                     //(5.1.008)
+        if ( !isTrueConduit(sp, j) ) continue;                                     //(5.1.008)
 
         // --- check that upstream end is full
-        k = Link[j].subIndex;
+        k = sp->Link[j].subIndex;
         Conduit[k].capacityLimited = FALSE;
-        if ( Conduit[k].a1 >= Link[j].xsect.aFull )
+        if ( Conduit[k].a1 >= sp->Link[j].xsect.aFull )
         {
             // --- check if HGL slope > conduit slope
-            n1 = Link[j].node1;
-            n2 = Link[j].node2;
+            n1 = sp->Link[j].node1;
+            n2 = sp->Link[j].node2;
             h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
             h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
             if ( (h1 - h2) > fabs(Conduit[k].slope) * Conduit[k].length )
@@ -379,7 +379,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     #pragma omp for                                                            //(5.1.008)
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( isTrueConduit(i) && !Link[i].bypassed )
+        if ( isTrueConduit(sp, i) && !sp->Link[i].bypassed )
             dwflow_findConduitFlow(sp, i, Steps, Omega, dt);
     }
 }
@@ -387,15 +387,15 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     // --- update inflow/outflows for nodes attached to non-dummy conduits
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( isTrueConduit(i) ) updateNodeFlows(sp, i);
+        if ( isTrueConduit(sp, i) ) updateNodeFlows(sp, i);
     }
 
     // --- find new flows for all dummy conduits, pumps & regulators
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( !isTrueConduit(i) )
+        if ( !isTrueConduit(sp, i) )
         {	
-            if ( !Link[i].bypassed ) findNonConduitFlow(sp, i, dt);
+            if ( !sp->Link[i].bypassed ) findNonConduitFlow(sp, i, dt);
             updateNodeFlows(sp, i);
         }
     }
@@ -403,9 +403,9 @@ void findLinkFlows(SWMM_Project *sp, double dt)
 
 //=============================================================================
 
-int isTrueConduit(int j)
+int isTrueConduit(SWMM_Project *sp, int j)
 {
-    return ( Link[j].type == CONDUIT && Link[j].xsect.type != DUMMY );
+    return ( sp->Link[j].type == CONDUIT && sp->Link[j].xsect.type != DUMMY );
 }
 
 //=============================================================================
@@ -422,25 +422,25 @@ void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
     double qNew;                       // new link flow (cfs)
 
     // --- get link flow from last iteration
-    qLast = Link[i].newFlow;
-    Link[i].dqdh = 0.0;
+    qLast = sp->Link[i].newFlow;
+    sp->Link[i].dqdh = 0.0;
 
     // --- get new inflow to link from its upstream node
     //     (link_getInflow returns 0 if flap gate closed or pump is offline)
     qNew = link_getInflow(sp, i);
-    if ( Link[i].type == PUMP ) qNew = getModPumpFlow(sp, i, qNew, dt);
+    if ( sp->Link[i].type == PUMP ) qNew = getModPumpFlow(sp, i, qNew, dt);
 
     // --- find surface area at each end of link
     findNonConduitSurfArea(sp, i);
 
     // --- apply under-relaxation with flow from previous iteration;
     // --- do not allow flow to change direction without first being 0
-    if ( Steps > 0 && Link[i].type != PUMP ) 
+    if ( Steps > 0 && sp->Link[i].type != PUMP ) 
     {
         qNew = (1.0 - Omega) * qLast + Omega * qNew;
         if ( qNew * qLast < 0.0 ) qNew = 0.001 * SGN(qNew);
     }
-    Link[i].newFlow = qNew;
+    sp->Link[i].newFlow = qNew;
 }
 
 //=============================================================================
@@ -455,8 +455,8 @@ double getModPumpFlow(SWMM_Project *sp, int i, double q, double dt)
 //           available at pump's inlet node.
 //
 {
-    int    j = Link[i].node1;          // pump's inlet node index
-    int    k = Link[i].subIndex;       // pump's index
+    int    j = sp->Link[i].node1;          // pump's inlet node index
+    int    k = sp->Link[i].subIndex;       // pump's index
     double newNetInflow;               // inflow - outflow rate (cfs)
     double netFlowVolume;              // inflow - outflow volume (ft3)
     double y;                          // node depth (ft)
@@ -498,25 +498,25 @@ void  findNonConduitSurfArea(SWMM_Project *sp, int i)
 //           link to its upstream and downstream nodes.
 //
 {
-    if ( Link[i].type == ORIFICE )
+    if ( sp->Link[i].type == ORIFICE )
     {
-        Link[i].surfArea1 = Orifice[Link[i].subIndex].surfArea / 2.;
+        sp->Link[i].surfArea1 = Orifice[sp->Link[i].subIndex].surfArea / 2.;
     }
 
     // --- no surface area for weirs to maintain SWMM 4 compatibility
 /*
-    else if ( Link[i].type == WEIR )
+    else if ( sp->Link[i].type == WEIR )
     {
-        Xlink[i].surfArea1 = Weir[Link[i].subIndex].surfArea / 2.;
+        Xlink[i].surfArea1 = Weir[sp->Link[i].subIndex].surfArea / 2.;
     }
 */
 
-    else Link[i].surfArea1 = 0.0;
-    Link[i].surfArea2 = Link[i].surfArea1;
-    if ( Link[i].flowClass == UP_CRITICAL ||
-        sp->Node[Link[i].node1].type == STORAGE ) Link[i].surfArea1 = 0.0;
-    if ( Link[i].flowClass == DN_CRITICAL ||
-        sp->Node[Link[i].node2].type == STORAGE ) Link[i].surfArea2 = 0.0;
+    else sp->Link[i].surfArea1 = 0.0;
+    sp->Link[i].surfArea2 = sp->Link[i].surfArea1;
+    if ( sp->Link[i].flowClass == UP_CRITICAL ||
+        sp->Node[sp->Link[i].node1].type == STORAGE ) sp->Link[i].surfArea1 = 0.0;
+    if ( sp->Link[i].flowClass == DN_CRITICAL ||
+        sp->Node[sp->Link[i].node2].type == STORAGE ) sp->Link[i].surfArea2 = 0.0;
 }
 
 //=============================================================================
@@ -531,15 +531,15 @@ void updateNodeFlows(SWMM_Project *sp, int i)
 {
     int    k;                                                                  //(5.1.011)
     int    barrels = 1;
-    int    n1 = Link[i].node1;
-    int    n2 = Link[i].node2;
-    double q = Link[i].newFlow;
+    int    n1 = sp->Link[i].node1;
+    int    n2 = sp->Link[i].node2;
+    double q = sp->Link[i].newFlow;
     double uniformLossRate = 0.0;
 
     // --- compute any uniform seepage loss from a conduit
-    if ( Link[i].type == CONDUIT )
+    if ( sp->Link[i].type == CONDUIT )
     {
-        k = Link[i].subIndex;
+        k = sp->Link[i].subIndex;
         uniformLossRate = Conduit[k].evapLossRate + Conduit[k].seepLossRate; 
         barrels = Conduit[k].barrels;
     }
@@ -557,20 +557,20 @@ void updateNodeFlows(SWMM_Project *sp, int i)
     }
 
     // --- add surf. area contributions to upstream/downstream nodes
-    Xnode[Link[i].node1].newSurfArea += Link[i].surfArea1 * barrels;
-    Xnode[Link[i].node2].newSurfArea += Link[i].surfArea2 * barrels;
+    Xnode[sp->Link[i].node1].newSurfArea += sp->Link[i].surfArea1 * barrels;
+    Xnode[sp->Link[i].node2].newSurfArea += sp->Link[i].surfArea2 * barrels;
 
     // --- update summed value of dqdh at each end node
-    Xnode[Link[i].node1].sumdqdh += Link[i].dqdh;
-    if ( Link[i].type == PUMP )
+    Xnode[sp->Link[i].node1].sumdqdh += sp->Link[i].dqdh;
+    if ( sp->Link[i].type == PUMP )
     {
-        k = Link[i].subIndex;
+        k = sp->Link[i].subIndex;
         if ( Pump[k].type != TYPE4_PUMP )                                      //(5.1.011)
         {
-            Xnode[n2].sumdqdh += Link[i].dqdh;
+            Xnode[n2].sumdqdh += sp->Link[i].dqdh;
         }
     }
-    else Xnode[n2].sumdqdh += Link[i].dqdh;
+    else Xnode[n2].sumdqdh += sp->Link[i].dqdh;
 }
 
 //=============================================================================
@@ -806,20 +806,20 @@ double getLinkStep(SWMM_Project *sp, double tMin, int *minLink)
     // --- examine each conduit link
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-        if ( Link[i].type == CONDUIT )
+        if ( sp->Link[i].type == CONDUIT )
         {
             // --- skip conduits with negligible flow, area or Fr
-            k = Link[i].subIndex;
-            q = fabs(Link[i].newFlow) / Conduit[k].barrels;
-            if ( q <= 0.05 * Link[i].qFull
+            k = sp->Link[i].subIndex;
+            q = fabs(sp->Link[i].newFlow) / Conduit[k].barrels;
+            if ( q <= 0.05 * sp->Link[i].qFull
             ||   Conduit[k].a1 <= FUDGE
-            ||   Link[i].froude <= 0.01 
+            ||   sp->Link[i].froude <= 0.01 
                ) continue;
 
             // --- compute time step to satisfy Courant condition
-            t = Link[i].newVolume / Conduit[k].barrels / q;
+            t = sp->Link[i].newVolume / Conduit[k].barrels / q;
             t = t * Conduit[k].modLength / link_getLength(sp, i);
-            t = t * Link[i].froude / (1.0 + Link[i].froude) * sp->CourantFactor;
+            t = t * sp->Link[i].froude / (1.0 + sp->Link[i].froude) * sp->CourantFactor;
 
             // --- update critical link time step
             if ( t < tLink )

@@ -253,7 +253,7 @@ void project_validate(SWMM_Project *sp)
     if ( sp->RptFlags.nodes == ALL )
         for (i=0; i<sp->Nobjects[NODE]; i++) sp->Node[i].rptFlag = TRUE;
     if ( sp->RptFlags.links == ALL )
-        for (i=0; i<sp->Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[LINK]; i++) sp->Link[i].rptFlag = TRUE;
 
     // --- validate dynamic wave options
     if ( sp->RouteModel == DW ) dynwave_validate(sp);                                //(5.1.008)
@@ -735,7 +735,7 @@ void initPointers(SWMM_Project *sp)
     sp->Outfall  = NULL;
     sp->Divider  = NULL;
     sp->Storage  = NULL;
-    Link     = NULL;
+    sp->Link     = NULL;
     Conduit  = NULL;
     Pump     = NULL;
     Orifice  = NULL;
@@ -967,7 +967,7 @@ void createObjects(SWMM_Project *sp)
     sp->Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
     sp->Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
     sp->Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
-    Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
+    sp->Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
     Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
     Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
     Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
@@ -1025,9 +1025,9 @@ void createObjects(SWMM_Project *sp)
     }
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        Link[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Link[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Link[j].totalLoad = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Link[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Link[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Link[j].totalLoad = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
     }
 
     // --- allocate memory for land use buildup/washoff functions
@@ -1098,18 +1098,18 @@ void createObjects(SWMM_Project *sp)
     // --- initialize link properties
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        Link[j].xsect.type   = -1;
-        Link[j].cLossInlet   = 0.0;
-        Link[j].cLossOutlet  = 0.0;
-        Link[j].cLossAvg     = 0.0;
-        Link[j].hasFlapGate  = FALSE;
+        sp->Link[j].xsect.type   = -1;
+        sp->Link[j].cLossInlet   = 0.0;
+        sp->Link[j].cLossOutlet  = 0.0;
+        sp->Link[j].cLossAvg     = 0.0;
+        sp->Link[j].hasFlapGate  = FALSE;
     }
     for (j = 0; j < sp->Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
 
     // --- initialize reporting flags
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) sp->Subcatch[j].rptFlag = FALSE;
     for (j = 0; j < sp->Nobjects[NODE]; j++) sp->Node[j].rptFlag = FALSE;
-    for (j = 0; j < sp->Nobjects[LINK]; j++) Link[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[LINK]; j++) sp->Link[j].rptFlag = FALSE;
 
     //  --- initialize curves, time series, and time patterns
     for (j = 0; j < sp->Nobjects[CURVE]; j++)   table_init(&Curve[j]);
@@ -1166,11 +1166,11 @@ void deleteObjects(SWMM_Project *sp)
         FREE(sp->Node[j].oldQual);
         FREE(sp->Node[j].newQual);
     }
-    if ( Link ) for (j = 0; j < sp->Nobjects[LINK]; j++)
+    if ( sp->Link ) for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        FREE(Link[j].oldQual);
-        FREE(Link[j].newQual);
-        FREE(Link[j].totalLoad);
+        FREE(sp->Link[j].oldQual);
+        FREE(sp->Link[j].newQual);
+        FREE(sp->Link[j].totalLoad);
     }
 
     // --- free memory used for rainfall infiltration
@@ -1225,7 +1225,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Outfall);
     FREE(sp->Divider);
     FREE(sp->Storage);
-    FREE(Link);
+    FREE(sp->Link);
     FREE(Conduit);
     FREE(Pump);
     FREE(Orifice);

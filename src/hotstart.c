@@ -263,13 +263,13 @@ void  saveRouting(SWMM_Project *sp)
     }
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        x[0] = (float)Link[i].newFlow;
-        x[1] = (float)Link[i].newDepth;
-        x[2] = (float)Link[i].setting;
+        x[0] = (float)sp->Link[i].newFlow;
+        x[1] = (float)sp->Link[i].newDepth;
+        x[2] = (float)sp->Link[i].setting;
         fwrite(x, sizeof(float), 3, sp->Fhotstart2.file);
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
-            x[0] = (float)Link[i].newQual[j];
+            x[0] = (float)sp->Link[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
     }
@@ -346,22 +346,22 @@ void readRouting(SWMM_Project *sp)
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( !readFloat(sp, &x, f) ) return;
-        Link[i].newFlow = x;
+        sp->Link[i].newFlow = x;
         if ( !readFloat(sp, &x, f) ) return;
-        Link[i].newDepth = x;
+        sp->Link[i].newDepth = x;
         if ( !readFloat(sp, &x, f) ) return;
-        Link[i].setting = x;
+        sp->Link[i].setting = x;
 
 ////  Following code section moved to here.  ////                              //(5.1.011)
         // --- set link's target setting to saved setting 
-        Link[i].targetSetting = x;
+        sp->Link[i].targetSetting = x;
         link_setTargetSetting(sp, i);
         link_setSetting(sp, i, 0.0);
 ////
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             if ( !readFloat(sp, &x, f) ) return;
-            Link[i].newQual[j] = x;
+            sp->Link[i].newQual[j] = x;
         }
 
     }

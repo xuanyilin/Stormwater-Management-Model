@@ -187,13 +187,13 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
 	TCulvert culvert;                   //intermediate results
 
     // --- check that we have a culvert conduit
-    if ( Link[j].type != CONDUIT ) return q0;
-    culvert.xsect = &Link[j].xsect;
+    if ( sp->Link[j].type != CONDUIT ) return q0;
+    culvert.xsect = &sp->Link[j].xsect;
     code = culvert.xsect->culvertCode;
     if ( code <= 0 || code > MAX_CULVERT_CODE ) return q0;
 
     // --- compute often-used variables
-    k = Link[j].subIndex;
+    k = sp->Link[j].subIndex;
     culvert.yFull = culvert.xsect->yFull;
     culvert.ad = culvert.xsect->aFull * sqrt(culvert.yFull);
 
@@ -208,7 +208,7 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
 
     // --- find head relative to culvert's upstream invert
     //     (can be greater than yFull when inlet is submerged)
-    y = h - (sp->Node[Link[j].node1].invertElev + Link[j].offset1);
+    y = h - (sp->Node[sp->Link[j].node1].invertElev + sp->Link[j].offset1);
 
     // --- check for submerged flow (based on FHWA criteria of Q/AD > 4)
     y2 = culvert.yFull * (16.0 * Params[code][C] + Params[code][Y] - culvert.scf);
@@ -241,8 +241,8 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
         //if ( RptFlags.controls ) report_CulvertControl(j, q0, q, condition,
 		//                                               y / culvert.yFull);
 
-        Link[j].inletControl = TRUE;
-        Link[j].dqdh = culvert.dQdH;
+        sp->Link[j].inletControl = TRUE;
+        sp->Link[j].dqdh = culvert.dQdH;
         return q;
     }
     else return q0;
@@ -404,5 +404,5 @@ void report_CulvertControl(SWMM_Project *sp, int j, double q0, double q, int con
 
     fprintf(sp->Frpt.file,
             "\n  %11s: %8s Culvert %s flow reduced from %.3f to %.3f cfs for %s flow (%.2f).",
-            theDate, theTime, Link[j].ID, q0, q, conditionTxt[condition], yRatio);
+            theDate, theTime, sp->Link[j].ID, q0, q, conditionTxt[condition], yRatio);
 }

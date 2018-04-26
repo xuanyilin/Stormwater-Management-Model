@@ -210,11 +210,11 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- change each link's actual setting if it differs from its target
     for (j=0; j<sp->Nobjects[LINK]; j++)
     {
-        if ( Link[j].targetSetting != Link[j].setting )
+        if ( sp->Link[j].targetSetting != sp->Link[j].setting )
         {
             // --- update time when link was switched between open & closed
-            if ( Link[j].targetSetting * Link[j].setting == 0.0 )
-                Link[j].timeLastSet = currentDate;
+            if ( sp->Link[j].targetSetting * sp->Link[j].setting == 0.0 )
+                sp->Link[j].timeLastSet = currentDate;
 
             // --- implement the change in the link's setting
             link_setSetting(sp, j, routingStep);
@@ -290,7 +290,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         if ( inSteadyState == FALSE )
         {
             // --- replace old hydraulic state values with current ones
-            for (j = 0; j < sp->Nobjects[LINK]; j++) link_setOldHydState(j);
+            for (j = 0; j < sp->Nobjects[LINK]; j++) link_setOldHydState(sp, j);
             for (j = 0; j < sp->Nobjects[NODE]; j++)
             {
                 node_setOldHydState(sp, j);
@@ -756,10 +756,10 @@ void removeConduitLosses(SWMM_Project *sp)
 
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-	if (Link[i].type == CONDUIT)
+	if (sp->Link[i].type == CONDUIT)
         {
             // --- retrieve number of barrels
-            k = Link[i].subIndex;
+            k = sp->Link[i].subIndex;
             barrels = Conduit[k].barrels;
 
             // --- update total conduit losses

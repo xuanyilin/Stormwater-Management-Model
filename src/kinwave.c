@@ -78,16 +78,16 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
 
     // --- no routing for non-conduit link
     (*qoutflow) = (*qinflow); 
-    if ( Link[j].type != CONDUIT ) return result;
+    if ( sp->Link[j].type != CONDUIT ) return result;
 
     // --- no routing for dummy xsection
-    if ( Link[j].xsect.type == DUMMY ) return result;
+    if ( sp->Link[j].xsect.type == DUMMY ) return result;
 
     // --- assign module-level variables
-    pXsect = &Link[j].xsect;
-    Qfull = Link[j].qFull;
-    Afull = Link[j].xsect.aFull;
-    k = Link[j].subIndex;
+    pXsect = &sp->Link[j].xsect;
+    Qfull = sp->Link[j].qFull;
+    Afull = sp->Link[j].xsect.aFull;
+    k = sp->Link[j].subIndex;
     Beta1 = Conduit[k].beta / Qfull;
  
     // --- normalize previous flows
@@ -139,7 +139,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
         // --- report error if continuity eqn. not solved
         if ( result == -1 )
         {
-            report_writeErrorMsg(sp, ERR_KINWAVE, Link[j].ID);
+            report_writeErrorMsg(sp, ERR_KINWAVE, sp->Link[j].ID);
             return 1;
         }
         if ( result <= 0 ) result = 1;

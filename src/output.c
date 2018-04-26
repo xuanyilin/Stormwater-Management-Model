@@ -122,7 +122,7 @@ int output_open(SWMM_Project *sp)
     NumLinks = 0;
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (sp->Subcatch[j].rptFlag) NumSubcatch++;
     for (j=0; j<sp->Nobjects[NODE]; j++) if (sp->Node[j].rptFlag) NumNodes++;
-    for (j=0; j<sp->Nobjects[LINK]; j++) if (Link[j].rptFlag) NumLinks++;
+    for (j=0; j<sp->Nobjects[LINK]; j++) if (sp->Link[j].rptFlag) NumLinks++;
 
     BytesPerPeriod = sizeof(REAL8)
         + NumSubcatch * NsubcatchResults * sizeof(REAL4)
@@ -171,7 +171,7 @@ int output_open(SWMM_Project *sp)
     }
     for (j=0; j<sp->Nobjects[LINK];     j++)
     {
-        if ( Link[j].rptFlag ) output_saveID(Link[j].ID, sp->Fout.file);
+        if ( sp->Link[j].rptFlag ) output_saveID(sp->Link[j].ID, sp->Fout.file);
     }
     for (j=0; j<NumPolluts; j++) output_saveID(Pollut[j].ID, sp->Fout.file);
 
@@ -231,27 +231,27 @@ int output_open(SWMM_Project *sp)
 
     for (j=0; j<sp->Nobjects[LINK]; j++)
     {
-        if ( !Link[j].rptFlag ) continue;
-        k = Link[j].type;
+        if ( !sp->Link[j].rptFlag ) continue;
+        k = sp->Link[j].type;
         if ( k == PUMP )
         {
             for (m=0; m<4; m++) LinkResults[m] = 0.0f;
         }
         else
         {
-            LinkResults[0] = (REAL4)(Link[j].offset1 * UCF(sp, LENGTH));
-            LinkResults[1] = (REAL4)(Link[j].offset2 * UCF(sp, LENGTH));
-            if ( Link[j].direction < 0 )
+            LinkResults[0] = (REAL4)(sp->Link[j].offset1 * UCF(sp, LENGTH));
+            LinkResults[1] = (REAL4)(sp->Link[j].offset2 * UCF(sp, LENGTH));
+            if ( sp->Link[j].direction < 0 )
             {
                 x = LinkResults[0];
                 LinkResults[0] = LinkResults[1];
                 LinkResults[1] = x;
             }
             if ( k == OUTLET ) LinkResults[2] = 0.0f;
-            else LinkResults[2] = (REAL4)(Link[j].xsect.yFull * UCF(sp, LENGTH));
+            else LinkResults[2] = (REAL4)(sp->Link[j].xsect.yFull * UCF(sp, LENGTH));
             if ( k == CONDUIT )
             {
-                m = Link[j].subIndex;
+                m = sp->Link[j].subIndex;
                 LinkResults[3] = (REAL4)(Conduit[m].length * UCF(sp, LENGTH));
             }
             else LinkResults[3] = 0.0f;
@@ -623,11 +623,11 @@ void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
     {
         // --- retrieve interpolated results for reporting time & write to file
         link_getResults(sp, j, f, LinkResults);
-        if ( Link[j].rptFlag ) 
+        if ( sp->Link[j].rptFlag ) 
             fwrite(LinkResults, sizeof(REAL4), NlinkResults, file);
 
         // --- update system-wide results
-        z = ((1.0-f)*Link[j].oldVolume + f*Link[j].newVolume) * UCF(sp, VOLUME);
+        z = ((1.0-f)*sp->Link[j].oldVolume + f*sp->Link[j].newVolume) * UCF(sp, VOLUME);
         SysResults[SYS_STORAGE] += (REAL4)z;
     }
 }

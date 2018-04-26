@@ -96,8 +96,8 @@ double roadway_getInflow(SWMM_Project *sp,
            dqdh = 0.0;       // derivative of flow w.r.t. head (ft2/sec)
 
     // --- get road width & surface type
-    if ( Link[j].type != WEIR ) return 0.0;
-    k = Link[j].subIndex;
+    if ( sp->Link[j].type != WEIR ) return 0.0;
+    k = sp->Link[j].subIndex;
     roadWidth = Weir[k].roadWidth;
     roadSurf = Weir[k].roadSurface;
 
@@ -118,7 +118,7 @@ double roadway_getInflow(SWMM_Project *sp,
         if ( useVariableCd ) cD = getCd(hWr, ht, roadWidth, roadSurf);
 
         // --- use user-supplied weir length
-        length = Link[j].xsect.wMax;
+        length = sp->Link[j].xsect.wMax;
 
         // --- weir eqn. for discharge across roadway
         q = cD * length * pow(hWr, 1.5);
@@ -126,13 +126,13 @@ double roadway_getInflow(SWMM_Project *sp,
     }
 
     // --- assign output values
-    Link[j].dqdh = dqdh;
-    Link[j].newDepth = MAX(h1 - hRoad, 0.0);
-    Link[j].flowClass = SUBCRITICAL;
+    sp->Link[j].dqdh = dqdh;
+    sp->Link[j].newDepth = MAX(h1 - hRoad, 0.0);
+    sp->Link[j].flowClass = SUBCRITICAL;
     if ( hRoad > h2 )
     {
-        if ( dir == 1.0 ) Link[j].flowClass = DN_CRITICAL;
-        else              Link[j].flowClass = UP_CRITICAL;
+        if ( dir == 1.0 ) sp->Link[j].flowClass = DN_CRITICAL;
+        else              sp->Link[j].flowClass = UP_CRITICAL;
     }
     return dir * q;
 }

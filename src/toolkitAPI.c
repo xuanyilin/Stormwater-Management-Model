@@ -350,7 +350,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_NODE:
                 strcpy(id,sp->Node[index].ID); break;
             case SM_LINK:
-                strcpy(id,Link[index].ID); break;
+                strcpy(id,sp->Link[index].ID); break;
             case SM_POLLUT:
                 strcpy(id,Pollut[index].ID); break;
             case SM_LANDUSE:
@@ -432,7 +432,7 @@ int DLLEXPORT swmm_getLinkType_project(SWMM_Project *sp, int index, int *Ltype)
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
-    else *Ltype = Link[index].type;
+    else *Ltype = sp->Link[index].type;
 
     return(errcode);
 }
@@ -462,8 +462,8 @@ int DLLEXPORT swmm_getLinkConnections_project(SWMM_Project *sp, int index, int *
     }
     else
     {
-        *Node1 = Link[index].node1;
-        *Node2 = Link[index].node2;
+        *Node1 = sp->Link[index].node1;
+        *Node2 = sp->Link[index].node2;
     }
     return(errcode);
 }
@@ -493,7 +493,7 @@ int DLLEXPORT swmm_getLinkDirection_project(SWMM_Project *sp, int index, signed 
     }
     else
     {
-        *value = Link[index].direction;
+        *value = sp->Link[index].direction;
     }
     return(errcode);
 }
@@ -622,19 +622,19 @@ int DLLEXPORT swmm_getLinkParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_OFFSET1:
-                *value = Link[index].offset1 * UCF(sp, LENGTH); break;
+                *value = sp->Link[index].offset1 * UCF(sp, LENGTH); break;
             case SM_OFFSET2:
-                *value = Link[index].offset2 * UCF(sp, LENGTH); break;
+                *value = sp->Link[index].offset2 * UCF(sp, LENGTH); break;
             case SM_INITFLOW:
-                *value = Link[index].q0 * UCF(sp, FLOW); break;
+                *value = sp->Link[index].q0 * UCF(sp, FLOW); break;
             case SM_FLOWLIMIT:
-                *value = Link[index].qLimit * UCF(sp, FLOW); break;
+                *value = sp->Link[index].qLimit * UCF(sp, FLOW); break;
             case SM_INLETLOSS:
-                *value = Link[index].cLossInlet; break;
+                *value = sp->Link[index].cLossInlet; break;
             case SM_OUTLETLOSS:
-                *value = Link[index].cLossOutlet; break;
+                *value = sp->Link[index].cLossOutlet; break;
             case SM_AVELOSS:
-                *value = Link[index].cLossAvg; break;
+                *value = sp->Link[index].cLossAvg; break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -676,24 +676,24 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_Project *sp, int index, int Param, 
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
-                Link[index].offset1 = value / UCF(sp, LENGTH); break;
+                sp->Link[index].offset1 = value / UCF(sp, LENGTH); break;
             case SM_OFFSET2:
                 // Check if Simulation is Running
                 if(swmm_IsStartedFlag() == TRUE)
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
-                Link[index].offset2 = value / UCF(sp, LENGTH); break;
+                sp->Link[index].offset2 = value / UCF(sp, LENGTH); break;
             case SM_INITFLOW:
-                Link[index].q0 = value / UCF(sp, FLOW); break;
+                sp->Link[index].q0 = value / UCF(sp, FLOW); break;
             case SM_FLOWLIMIT:
-                Link[index].qLimit = value / UCF(sp, FLOW); break;
+                sp->Link[index].qLimit = value / UCF(sp, FLOW); break;
 //            case SM_INLETLOSS:
-//                Link[index].cLossInlet; break;
+//                sp->Link[index].cLossInlet; break;
 //            case SM_OUTLETLOSS:
-//                Link[index].cLossOutlet; break;
+//                sp->Link[index].cLossOutlet; break;
 //            case SM_AVELOSS:
-//                Link[index].cLossAvg; break;
+//                sp->Link[index].cLossAvg; break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
         // re-validated link
@@ -964,21 +964,21 @@ int DLLEXPORT swmm_getLinkResult_project(SWMM_Project *sp, int index, int type, 
         switch (type)
         {
             case SM_LINKFLOW:
-                *result = Link[index].newFlow * UCF(sp, FLOW) ; break;
+                *result = sp->Link[index].newFlow * UCF(sp, FLOW) ; break;
             case SM_LINKDEPTH:
-                *result = Link[index].newDepth * UCF(sp, LENGTH); break;
+                *result = sp->Link[index].newDepth * UCF(sp, LENGTH); break;
             case SM_LINKVOL:
-                *result = Link[index].newVolume * UCF(sp, VOLUME); break;
+                *result = sp->Link[index].newVolume * UCF(sp, VOLUME); break;
             case SM_USSURFAREA:
-                *result = Link[index].surfArea1 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
+                *result = sp->Link[index].surfArea1 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_DSSURFAREA:
-                *result = Link[index].surfArea2 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
+                *result = sp->Link[index].surfArea2 * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_SETTING:
-                *result = Link[index].setting; break;
+                *result = sp->Link[index].setting; break;
             case SM_TARGETSETTING:
-                *result = Link[index].targetSetting; break;
+                *result = sp->Link[index].targetSetting; break;
             case SM_FROUDE:
-                *result = Link[index].froude; break;
+                *result = sp->Link[index].froude; break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -1506,9 +1506,9 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
     {
         // --- check that new setting lies within feasible limits
         if (targetSetting < 0.0) targetSetting = 0.0;
-        if (Link[index].type != PUMP && targetSetting > 1.0) targetSetting = 1.0;
+        if (sp->Link[index].type != PUMP && targetSetting > 1.0) targetSetting = 1.0;
 
-        Link[index].targetSetting = targetSetting;
+        sp->Link[index].targetSetting = targetSetting;
 
         // Use internal function to apply the new setting
         link_setSetting(sp, index, 0.0);
@@ -1517,7 +1517,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
         if (sp->RptFlags.controls)
         {
             currentTime = getDateTime(sp, sp->NewRoutingTime);
-            report_writeControlAction(sp, currentTime, Link[index].ID,
+            report_writeControlAction(sp, currentTime, sp->Link[index].ID,
                     targetSetting, _rule_);
         }
     }

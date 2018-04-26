@@ -169,7 +169,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
     {
         // --- see if upstream node is a storage unit whose state needs updating
         j = links[i];
-        n1 = Link[j].node1;
+        n1 = sp->Link[j].node1;
         if ( sp->Node[n1].type == STORAGE ) updateStorageState(sp, n1, i, links, tStep);
 
         // --- retrieve inflow at upstream end of link
@@ -179,11 +179,11 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
         if ( routingModel == SF )
             steps += steadyflow_execute(sp, j, &qin, &qout, tStep);
         else steps += kinwave_execute(sp, j, &qin, &qout, tStep);
-        Link[j].newFlow = qout;
+        sp->Link[j].newFlow = qout;
 
         // adjust outflow at upstream node and inflow at downstream node
-        sp->Node[ Link[j].node1 ].outflow += qin;
-        sp->Node[ Link[j].node2 ].inflow += qout;
+        sp->Node[ sp->Link[j].node1 ].outflow += qin;
+        sp->Node[ sp->Link[j].node2 ].inflow += qout;
     }
     if ( sp->Nobjects[LINK] > 0 ) steps /= sp->Nobjects[LINK];
 
@@ -241,14 +241,14 @@ void validateTreeLayout(SWMM_Project *sp)
     // ---  check links 
     for (j=0; j<sp->Nobjects[LINK]; j++)
     {
-        switch ( Link[j].type )
+        switch ( sp->Link[j].type )
         {
           // --- non-dummy conduits cannot have adverse slope
           case CONDUIT:
-              if ( Conduit[Link[j].subIndex].slope < 0.0 &&
-                   Link[j].xsect.type != DUMMY )
+              if ( Conduit[sp->Link[j].subIndex].slope < 0.0 &&
+                   sp->Link[j].xsect.type != DUMMY )
               {
-                  report_writeErrorMsg(sp, ERR_SLOPE, Link[j].ID);
+                  report_writeErrorMsg(sp, ERR_SLOPE, sp->Link[j].ID);
               }
               break;
 
@@ -256,9 +256,9 @@ void validateTreeLayout(SWMM_Project *sp)
           case ORIFICE:
           case WEIR:
           case OUTLET:
-            if ( sp->Node[Link[j].node1].type != STORAGE )
+            if ( sp->Node[sp->Link[j].node1].type != STORAGE )
             {
-                report_writeErrorMsg(sp, ERR_REGULATOR, Link[j].ID);
+                report_writeErrorMsg(sp, ERR_REGULATOR, sp->Link[j].ID);
             }
         }
     }
@@ -283,18 +283,18 @@ void validateGeneralLayout(SWMM_Project *sp)
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         // --- update inflow link count of downstream node
-        i = Link[j].node1;
-        if ( sp->Node[i].type != OUTFALL ) i = Link[j].node2;
+        i = sp->Link[j].node1;
+        if ( sp->Node[i].type != OUTFALL ) i = sp->Link[j].node2;
         sp->Node[i].inflow += 1.0;
 
         // --- if link is dummy link or ideal pump then it must
         //     be the only link exiting the upstream node 
-        if ( (Link[j].type == CONDUIT && Link[j].xsect.type == DUMMY) ||
-             (Link[j].type == PUMP &&
-              Pump[Link[j].subIndex].type == IDEAL_PUMP) )
+        if ( (sp->Link[j].type == CONDUIT && sp->Link[j].xsect.type == DUMMY) ||
+             (sp->Link[j].type == PUMP &&
+              Pump[sp->Link[j].subIndex].type == IDEAL_PUMP) )
         {
-            i = Link[j].node1;
-            if ( Link[j].direction < 0 ) i = Link[j].node2;
+            i = sp->Link[j].node1;
+            if ( sp->Link[j].direction < 0 ) i = sp->Link[j].node2;
             if ( sp->Node[i].degree > 1 )
             {
                 report_writeErrorMsg(sp, ERR_DUMMY_LINK, sp->Node[i].ID);
@@ -352,12 +352,12 @@ void initNodeDepths(SWMM_Project *sp)
     // --- total up flow depths in all connecting links into nodes
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( Link[i].newDepth > FUDGE ) y = Link[i].newDepth + Link[i].offset1;
+        if ( sp->Link[i].newDepth > FUDGE ) y = sp->Link[i].newDepth + sp->Link[i].offset1;
         else y = 0.0;
-        n = Link[i].node1;
+        n = sp->Link[i].node1;
         sp->Node[n].inflow += y;
         sp->Node[n].outflow += 1.0;
-        n = Link[i].node2;
+        n = sp->Link[i].node2;
         sp->Node[n].inflow += y;
         sp->Node[n].outflow += 1.0;
     }
@@ -395,22 +395,22 @@ void initLinkDepths(SWMM_Project *sp)
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         // --- examine each conduit
-        if ( Link[i].type == CONDUIT )
+        if ( sp->Link[i].type == CONDUIT )
         {
             // --- skip conduits with user-assigned initial flows
             //     (their depths have already been set to normal depth)
-            if ( Link[i].q0 != 0.0 ) continue;
+            if ( sp->Link[i].q0 != 0.0 ) continue;
 
             // --- set depth to average of depths at end nodes
-            y1 = sp->Node[Link[i].node1].newDepth - Link[i].offset1;
+            y1 = sp->Node[sp->Link[i].node1].newDepth - sp->Link[i].offset1;
             y1 = MAX(y1, 0.0);
-            y1 = MIN(y1, Link[i].xsect.yFull);
-            y2 = sp->Node[Link[i].node2].newDepth - Link[i].offset2;
+            y1 = MIN(y1, sp->Link[i].xsect.yFull);
+            y2 = sp->Node[sp->Link[i].node2].newDepth - sp->Link[i].offset2;
             y2 = MAX(y2, 0.0);
-            y2 = MIN(y2, Link[i].xsect.yFull);
+            y2 = MIN(y2, sp->Link[i].xsect.yFull);
             y = 0.5 * (y1 + y2);
             y = MAX(y, FUDGE);
-            Link[i].newDepth = y;
+            sp->Link[i].newDepth = y;
         }
     }
 }
@@ -451,15 +451,15 @@ void initNodes(SWMM_Project *sp)
     //     (needed for Steady Flow & Kin. Wave routing)
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-        if ( Link[i].newFlow >= 0.0 )
+        if ( sp->Link[i].newFlow >= 0.0 )
         {
-            sp->Node[Link[i].node1].outflow += Link[i].newFlow;
-            sp->Node[Link[i].node2].inflow  += Link[i].newFlow;
+            sp->Node[sp->Link[i].node1].outflow += sp->Link[i].newFlow;
+            sp->Node[sp->Link[i].node2].inflow  += sp->Link[i].newFlow;
         }
         else
         {
-            sp->Node[Link[i].node1].inflow   -= Link[i].newFlow;
-            sp->Node[Link[i].node2].outflow  -= Link[i].newFlow;
+            sp->Node[sp->Link[i].node1].inflow   -= sp->Link[i].newFlow;
+            sp->Node[sp->Link[i].node2].outflow  -= sp->Link[i].newFlow;
         }
     }
 }
@@ -481,26 +481,26 @@ void initLinks(SWMM_Project *sp, int routingModel)
     // --- examine each link
     for ( i = 0; i < sp->Nobjects[LINK]; i++ )
     {
-        if ( routingModel == SF) Link[i].newFlow = 0.0;
+        if ( routingModel == SF) sp->Link[i].newFlow = 0.0;
 
         // --- otherwise if link is a conduit
-        else if ( Link[i].type == CONDUIT )
+        else if ( sp->Link[i].type == CONDUIT )
         {
             // --- assign initial flow to both ends of conduit
-            k = Link[i].subIndex;
-            Conduit[k].q1 = Link[i].newFlow / Conduit[k].barrels;
+            k = sp->Link[i].subIndex;
+            Conduit[k].q1 = sp->Link[i].newFlow / Conduit[k].barrels;
             Conduit[k].q2 = Conduit[k].q1;
 
             // --- find areas based on initial flow depth
-            Conduit[k].a1 = xsect_getAofY(&Link[i].xsect, Link[i].newDepth);
+            Conduit[k].a1 = xsect_getAofY(&sp->Link[i].xsect, sp->Link[i].newDepth);
             Conduit[k].a2 = Conduit[k].a1;
 
             // --- compute initial volume from area
             {
-                Link[i].newVolume = Conduit[k].a1 * link_getLength(sp, i) *
+                sp->Link[i].newVolume = Conduit[k].a1 * link_getLength(sp, i) *
                                     Conduit[k].barrels;
             }
-            Link[i].oldVolume = Link[i].newVolume;
+            sp->Link[i].oldVolume = sp->Link[i].newVolume;
         }
     }
 }
@@ -516,10 +516,10 @@ double getLinkInflow(SWMM_Project *sp, int j, double dt)
 //           Steady or Kin. Wave routing.
 //
 {
-    int   n1 = Link[j].node1;
+    int   n1 = sp->Link[j].node1;
     double q;
-    if ( Link[j].type == CONDUIT ||
-         Link[j].type == PUMP ||
+    if ( sp->Link[j].type == CONDUIT ||
+         sp->Link[j].type == PUMP ||
          sp->Node[n1].type == STORAGE ) q = link_getInflow(sp, j);
     else q = 0.0;
     return node_getMaxOutflow(sp, n1, q, dt);
@@ -618,7 +618,7 @@ double getStorageOutflow(SWMM_Project *sp, int i, int j, int links[], double dt)
     for (k = j; k < sp->Nobjects[LINK]; k++)
     {
         m = links[k];
-        if ( Link[m].node1 != i ) break;
+        if ( sp->Link[m].node1 != i ) break;
         outflow += getLinkInflow(sp, m, dt);
     }
     return outflow;        
@@ -684,25 +684,25 @@ void setNewLinkState(SWMM_Project *sp, int j)
     int   k;
     double a, y1, y2;
 
-    Link[j].newDepth = 0.0;
-    Link[j].newVolume = 0.0;
+    sp->Link[j].newDepth = 0.0;
+    sp->Link[j].newVolume = 0.0;
 
-    if ( Link[j].type == CONDUIT )
+    if ( sp->Link[j].type == CONDUIT )
     {
         // --- find avg. depth from entry/exit conditions
-        k = Link[j].subIndex;
+        k = sp->Link[j].subIndex;
         a = 0.5 * (Conduit[k].a1 + Conduit[k].a2);
-        Link[j].newVolume = a * link_getLength(sp, j) * Conduit[k].barrels;
-        y1 = xsect_getYofA(&Link[j].xsect, Conduit[k].a1);
-        y2 = xsect_getYofA(&Link[j].xsect, Conduit[k].a2);
-        Link[j].newDepth = 0.5 * (y1 + y2);
+        sp->Link[j].newVolume = a * link_getLength(sp, j) * Conduit[k].barrels;
+        y1 = xsect_getYofA(&sp->Link[j].xsect, Conduit[k].a1);
+        y2 = xsect_getYofA(&sp->Link[j].xsect, Conduit[k].a2);
+        sp->Link[j].newDepth = 0.5 * (y1 + y2);
 
         // --- update depths at end nodes
-        updateNodeDepth(sp, Link[j].node1, y1 + Link[j].offset1);
-        updateNodeDepth(sp, Link[j].node2, y2 + Link[j].offset2);
+        updateNodeDepth(sp, sp->Link[j].node1, y1 + sp->Link[j].offset1);
+        updateNodeDepth(sp, sp->Link[j].node2, y2 + sp->Link[j].offset2);
 
         // --- check if capacity limited
-        if ( Conduit[k].a1 >= Link[j].xsect.aFull )
+        if ( Conduit[k].a1 >= sp->Link[j].xsect.aFull )
         {
              Conduit[k].capacityLimited = TRUE;
              Conduit[k].fullState = ALL_FULL;                                  //(5.1.008)
@@ -764,11 +764,11 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
     double q;
 
     // --- use Manning eqn. to compute flow area for conduits
-    if ( Link[j].type == CONDUIT )
+    if ( sp->Link[j].type == CONDUIT )
     {
-        k = Link[j].subIndex;
+        k = sp->Link[j].subIndex;
         q = (*qin) / Conduit[k].barrels;
-        if ( Link[j].xsect.type == DUMMY ) Conduit[k].a1 = 0.0;
+        if ( sp->Link[j].xsect.type == DUMMY ) Conduit[k].a1 = 0.0;
         else 
         {
             // --- subtract evap and infil losses from inflow
@@ -776,10 +776,10 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
             if ( q < 0.0 ) q = 0.0;
 
             // --- flow can't exceed full flow 
-            if ( q > Link[j].qFull )
+            if ( q > sp->Link[j].qFull )
             {
-                q = Link[j].qFull;
-                Conduit[k].a1 = Link[j].xsect.aFull;
+                q = sp->Link[j].qFull;
+                Conduit[k].a1 = sp->Link[j].xsect.aFull;
                 (*qin) = q * Conduit[k].barrels;
             }
 
@@ -787,7 +787,7 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
             else
             {
                 s = q / Conduit[k].beta;
-                Conduit[k].a1 = xsect_getAofS(sp, &Link[j].xsect, s);
+                Conduit[k].a1 = xsect_getAofS(sp, &sp->Link[j].xsect, s);
             }
         }
         Conduit[k].a2 = Conduit[k].a1;

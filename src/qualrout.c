@@ -79,13 +79,13 @@ void    qualrout_init(SWMM_Project *sp)
 
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        isWet = ( Link[i].newDepth > FUDGE );
+        isWet = ( sp->Link[i].newDepth > FUDGE );
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
             if ( isWet ) c = Pollut[p].initConcen;
-            Link[i].oldQual[p] = c;
-            Link[i].newQual[p] = c;
+            sp->Link[i].oldQual[p] = c;
+            sp->Link[i].newQual[p] = c;
         }
     }
 }
@@ -186,22 +186,22 @@ void findLinkMassFlow(SWMM_Project *sp, int i, double tStep)
     double qLink, w;
 
     // --- find inflow to downstream node
-    qLink = Link[i].newFlow;
+    qLink = sp->Link[i].newFlow;
 
     // --- identify index of downstream node
-    j = Link[i].node2;
-    if ( qLink < 0.0 ) j = Link[i].node1;
+    j = sp->Link[i].node2;
+    if ( qLink < 0.0 ) j = sp->Link[i].node1;
     qLink = fabs(qLink);
 
     // --- examine each pollutant
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- temporarily accumulate inflow load in sp->Node[j].newQual
-        w = qLink * Link[i].oldQual[p];
+        w = qLink * sp->Link[i].oldQual[p];
         sp->Node[j].newQual[p] += w;
 
         // --- update total load transported by link
-        Link[i].totalLoad[p] += w * tStep;
+        sp->Link[i].totalLoad[p] += w * tStep;
     }
 }
 
@@ -257,30 +257,30 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
            barrels;          // number of barrels in conduit
 
     // --- identify index of upstream node
-    j = Link[i].node1;
-    if ( Link[i].newFlow < 0.0 ) j = Link[i].node2;
+    j = sp->Link[i].node1;
+    if ( sp->Link[i].newFlow < 0.0 ) j = sp->Link[i].node2;
 
     // --- link quality is that of upstream node when
     //     link is not a conduit or is a dummy link
-    if ( Link[i].type != CONDUIT || Link[i].xsect.type == DUMMY )
+    if ( sp->Link[i].type != CONDUIT || sp->Link[i].xsect.type == DUMMY )
     {
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            Link[i].newQual[p] = sp->Node[j].newQual[p];
+            sp->Link[i].newQual[p] = sp->Node[j].newQual[p];
         }
         return;
     }
 
     // --- get flow rates and evaporation loss
-    k = Link[i].subIndex;
+    k = sp->Link[i].subIndex;
     barrels = Conduit[k].barrels;
     qIn  = fabs(Conduit[k].q1) * barrels;
     qSeep = Conduit[k].seepLossRate * barrels;
     vEvap = Conduit[k].evapLossRate * barrels * tStep;
 
     // --- get starting and ending volumes
-    v1 = Link[i].oldVolume;
-    v2 = Link[i].newVolume;
+    v1 = sp->Link[i].oldVolume;
+    v2 = sp->Link[i].newVolume;
     vLosses = qSeep*tStep + vEvap;
 
     // --- compute factor by which concentrations are increased due to
@@ -308,7 +308,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- start with concen. at start of time step
-        c1 = Link[i].oldQual[p];
+        c1 = sp->Link[i].oldQual[p];
 
         // --- update mass balance accounting for seepage loss
         massbal_addSeepageLoss(sp, p, qSeep*c1);
@@ -331,7 +331,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
         }
 
         // --- assign new concen. to link
-        Link[i].newQual[p] = c2;
+        sp->Link[i].newQual[p] = c2;
     }
 }
 
@@ -346,7 +346,7 @@ void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double
 //           Steady Flow routing.
 //
 {
-    int j = Link[i].node1;
+    int j = sp->Link[i].node1;
     int p;
     double c1, c2;
     double lossRate;
@@ -369,10 +369,10 @@ void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double
         {
             c2 = c1 * exp(-Pollut[p].kDecay * tStep);
             c2 = MAX(0.0, c2);
-            lossRate = (c1 - c2) * Link[i].newFlow;
+            lossRate = (c1 - c2) * sp->Link[i].newFlow;
             massbal_addReactedMass(sp, p, lossRate);
         }
-        Link[i].newQual[p] = c2;
+        sp->Link[i].newQual[p] = c2;
     }
 }
 
