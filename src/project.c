@@ -749,7 +749,7 @@ void initPointers(SWMM_Project *sp)
     Transect = NULL;
     Shape    = NULL;
     sp->Aquifer    = NULL;
-    UnitHyd    = NULL;
+    sp->UnitHyd    = NULL;
     sp->Snowmelt   = NULL;
     Event      = NULL;                                                         //(5.1.011)
     MemPoolAllocated = FALSE;
@@ -979,7 +979,7 @@ void createObjects(SWMM_Project *sp)
     Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
     Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
     sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
-    UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
+    sp->UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
     sp->Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
     Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
 
@@ -1087,7 +1087,7 @@ void createObjects(SWMM_Project *sp)
     }
 
     // --- initialize RDII unit hydrograph properties
-    for ( j = 0; j < sp->Nobjects[UNITHYD]; j++ ) rdii_initUnitHyd(j);
+    for ( j = 0; j < sp->Nobjects[UNITHYD]; j++ ) rdii_initUnitHyd(sp, j);
 
     // --- initialize snowmelt properties
     for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(sp, j);
@@ -1237,7 +1237,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(Curve);
     FREE(Tseries);
     FREE(sp->Aquifer);
-    FREE(UnitHyd);
+    FREE(sp->UnitHyd);
     FREE(sp->Snowmelt);
     FREE(Shape);
     FREE(Event);                                                               //(5.1.011)

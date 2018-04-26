@@ -110,8 +110,8 @@ extern double Qcf[];                   // flow units conversion factors
 // Function Declarations
 //-----------------------------------------------------------------------------
 // --- functions used to create a RDII file
-static int    readOldUHFormat(int j, int m, char* tok[], int ntoks);
-static void   setUnitHydParams(int j, int i, int m, double x[]);
+static int    readOldUHFormat(SWMM_Project *sp, int j, int m, char* tok[], int ntoks);
+static void   setUnitHydParams(SWMM_Project *sp, int j, int i, int m, double x[]);
 static void   createRdiiFile(SWMM_Project *sp);
 static int    getNumRdiiNodes(SWMM_Project *sp);
 static void   validateRdii(SWMM_Project *sp);
@@ -119,18 +119,18 @@ static void   validateRdii(SWMM_Project *sp);
 static void   openRdiiProcessor(SWMM_Project *sp);
 static int    allocRdiiMemory(SWMM_Project *sp);
 static int    getRainInterval(SWMM_Project *sp, int i);
-static int    getMaxPeriods(int i, int k);
+static int    getMaxPeriods(SWMM_Project *sp, int i, int k);
 static void   initGageData(SWMM_Project *sp);
 static void   initUnitHydData(SWMM_Project *sp);
 static int    openNewRdiiFile(SWMM_Project *sp);
 static void   getRainfall(SWMM_Project *sp, DateTime currentDate);
 
-static double applyIA(int j, int k, DateTime aDate, double dt,
+static double applyIA(SWMM_Project *sp, int j, int k, DateTime aDate, double dt,
               double rainDepth);
 static void   updateDryPeriod(int j, int k, double rain, int gageInterval);
 static void   getUnitHydRdii(SWMM_Project *sp, DateTime currentDate);
-static double getUnitHydConvol(int j, int k, int gageInterval);
-static double getUnitHydOrd(int j, int m, int k, double t);
+static double getUnitHydConvol(SWMM_Project *sp, int j, int k, int gageInterval);
+static double getUnitHydOrd(SWMM_Project *sp, int j, int m, int k, double t);
 
 static int    getNodeRdii(SWMM_Project *sp);
 static void   saveRdiiFlows(SWMM_Project *sp, DateTime currentDate);
@@ -195,7 +195,7 @@ int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-void rdii_initUnitHyd(int j)
+void rdii_initUnitHyd(SWMM_Project *sp, int j)
 //
 //  Input:   j = UH group index
 //  Output:  none
@@ -209,19 +209,19 @@ void rdii_initUnitHyd(int j)
     {
         for (i=0; i<3; i++)
         {
-            UnitHyd[j].iaMax[m][i]   = 0.0;
-            UnitHyd[j].iaRecov[m][i] = 0.0;
-            UnitHyd[j].iaInit[m][i]  = 0.0;
-            UnitHyd[j].r[m][i]       = 0.0;
-            UnitHyd[j].tPeak[m][i]   = 0;
-            UnitHyd[j].tBase[m][i]   = 0;
+            sp->UnitHyd[j].iaMax[m][i]   = 0.0;
+            sp->UnitHyd[j].iaRecov[m][i] = 0.0;
+            sp->UnitHyd[j].iaInit[m][i]  = 0.0;
+            sp->UnitHyd[j].r[m][i]       = 0.0;
+            sp->UnitHyd[j].tPeak[m][i]   = 0;
+            sp->UnitHyd[j].tBase[m][i]   = 0;
         }
     }
 }
 
 //=============================================================================
 
-int rdii_readUnitHydParams(char* tok[], int ntoks)
+int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -237,15 +237,15 @@ int rdii_readUnitHydParams(char* tok[], int ntoks)
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- assign UH ID to name in hash table
-    if ( UnitHyd[j].ID == NULL )
-        UnitHyd[j].ID = project_findID(UNITHYD, tok[0]);
+    if ( sp->UnitHyd[j].ID == NULL )
+        sp->UnitHyd[j].ID = project_findID(UNITHYD, tok[0]);
 
     // --- line has 2 tokens; assign rain gage to UH object
     if ( ntoks == 2 )
     {
         g = project_findObject(GAGE, tok[1]);
         if ( g < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-        UnitHyd[j].rainGage = g;
+        sp->UnitHyd[j].rainGage = g;
         return 0;
     }
     else if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
@@ -262,7 +262,7 @@ int rdii_readUnitHydParams(char* tok[], int ntoks)
     k = findmatch(tok[2], UHTypeWords);
 
     // --- if no type match, try using older UH line format
-    if ( k < 0 ) return readOldUHFormat(j, m, tok, ntoks);
+    if ( k < 0 ) return readOldUHFormat(sp, j, m, tok, ntoks);
 
     // --- read the R-T-K parameters
     for ( i = 0; i < 3; i++ )
@@ -283,13 +283,13 @@ int rdii_readUnitHydParams(char* tok[], int ntoks)
     }
 
     // --- save UH params
-    setUnitHydParams(j, k, m, x);
+    setUnitHydParams(sp, j, k, m, x);
     return 0;
 }
 
 //=============================================================================
 
-int readOldUHFormat(int j, int m, char* tok[], int ntoks)
+int readOldUHFormat(SWMM_Project *sp, int j, int m, char* tok[], int ntoks)
 //
 //  Input:   j = unit hydrograph index
 //           m = month of year (0 = all months)
@@ -330,7 +330,7 @@ int readOldUHFormat(int j, int m, char* tok[], int ntoks)
         for ( i = 0; i < 3; i++)
         {
             x[i] = p[3*k + i];
-            setUnitHydParams(j, k, m, x);
+            setUnitHydParams(sp, j, k, m, x);
         }
     }
     return 0;
@@ -338,7 +338,7 @@ int readOldUHFormat(int j, int m, char* tok[], int ntoks)
 
 //=============================================================================
 
-void setUnitHydParams(int j, int i, int m, double x[])
+void setUnitHydParams(SWMM_Project *sp, int j, int i, int m, double x[])
 //
 //  Input:   j = unit hydrograph index
 //           i = type of UH response (short, medium or long term)
@@ -369,17 +369,17 @@ void setUnitHydParams(int j, int i, int m, double x[])
     for (m=m1; m<=m2; m++)
     {
         // --- set UH response ratio, time to peak, & base time
-        UnitHyd[j].r[m][i] = x[0];
+        sp->UnitHyd[j].r[m][i] = x[0];
         t = x[1];
         k = x[2];
         tBase = t * (1.0 + k);                              // hours
-        UnitHyd[j].tPeak[m][i] = (long)(t * 3600.);         // seconds
-        UnitHyd[j].tBase[m][i] = (long)(tBase * 3600.);     // seconds
+        sp->UnitHyd[j].tPeak[m][i] = (long)(t * 3600.);         // seconds
+        sp->UnitHyd[j].tBase[m][i] = (long)(tBase * 3600.);     // seconds
 
         // -- set initial abstraction parameters
-        UnitHyd[j].iaMax[m][i]   = x[3];
-        UnitHyd[j].iaRecov[m][i] = x[4];
-        UnitHyd[j].iaInit[m][i]  = x[5];
+        sp->UnitHyd[j].iaMax[m][i]   = x[3];
+        sp->UnitHyd[j].iaRecov[m][i] = x[4];
+        sp->UnitHyd[j].iaInit[m][i]  = x[5];
     }
 }
 
@@ -826,27 +826,27 @@ void validateRdii(SWMM_Project *sp)
             for (k=0; k<3; k++)
             {
                 // --- if no base time then UH doesn't exist
-                if ( UnitHyd[j].tBase[m][k] == 0 ) continue;
+                if ( sp->UnitHyd[j].tBase[m][k] == 0 ) continue;
 
                 // --- restriction on time to peak being less than the
                 //     rain gage's recording interval no longer applies
 
                 // --- can't have negative UH parameters
-                if ( UnitHyd[j].tPeak[m][k] < 0.0 )
+                if ( sp->UnitHyd[j].tPeak[m][k] < 0.0 )
                 {
-                    report_writeErrorMsg(sp, ERR_UNITHYD_TIMES, UnitHyd[j].ID);
+                    report_writeErrorMsg(sp, ERR_UNITHYD_TIMES, sp->UnitHyd[j].ID);
                 }
 
                 // --- can't have negative UH response ratio
-                if ( UnitHyd[j].r[m][k] < 0.0 )
+                if ( sp->UnitHyd[j].r[m][k] < 0.0 )
                 {
-                    report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
+                    report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, sp->UnitHyd[j].ID);
                 }
-                else rsum += UnitHyd[j].r[m][k];
+                else rsum += sp->UnitHyd[j].r[m][k];
             }
             if ( rsum > 1.01 )
             {
-                report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, UnitHyd[j].ID);
+                report_writeErrorMsg(sp, ERR_UNITHYD_RATIOS, sp->UnitHyd[j].ID);
             }
         }
     }
@@ -936,7 +936,7 @@ int  allocRdiiMemory(SWMM_Project *sp)
         {
             UHGroup[i].uh[k].pastRain = NULL;
             UHGroup[i].uh[k].pastMonth = NULL;
-            UHGroup[i].uh[k].maxPeriods = getMaxPeriods(i, k);
+            UHGroup[i].uh[k].maxPeriods = getMaxPeriods(sp, i, k);
             n = UHGroup[i].uh[k].maxPeriods;
             if ( n > 0 )
             {
@@ -980,12 +980,12 @@ int  getRainInterval(SWMM_Project *sp, int i)
         for (k=0; k<3; k++)
         {
             // --- make sure the UH exists
-            if ( UnitHyd[i].tPeak[m][k] > 0 )
+            if ( sp->UnitHyd[i].tPeak[m][k] > 0 )
             {
                 // --- reduce time step if rising/falling limb is smaller
-                tLimb = UnitHyd[i].tPeak[m][k];
+                tLimb = sp->UnitHyd[i].tPeak[m][k];
                 ri = MIN(ri, tLimb);
-                tLimb = UnitHyd[i].tBase[m][k] - tLimb;
+                tLimb = sp->UnitHyd[i].tBase[m][k] - tLimb;
                 if ( tLimb > 0 ) ri = MIN(ri, tLimb);
             }
         }
@@ -995,7 +995,7 @@ int  getRainInterval(SWMM_Project *sp, int i)
 
 //=============================================================================
 
-int  getMaxPeriods(int i, int k)
+int  getMaxPeriods(SWMM_Project *sp, int i, int k)
 //
 //  Input:   i = UH group index
 //           k = UH index
@@ -1014,7 +1014,7 @@ int  getMaxPeriods(int i, int k)
     for (m=0; m<12; m++)
     {
         // --- compute number of time periods in UH base
-        n = (UnitHyd[i].tBase[m][k] / rainInterval) + 1;
+        n = (sp->UnitHyd[i].tBase[m][k] / rainInterval) + 1;
 
         // --- update number of time periods to be saved
         nMax = MAX(n, nMax);
@@ -1047,7 +1047,7 @@ void initGageData(SWMM_Project *sp)
     // --- then flag each gage that is used by a Unit Hydrograph set
     for (i=0; i<sp->Nobjects[UNITHYD]; i++)
     {
-        g = UnitHyd[i].rainGage;
+        g = sp->UnitHyd[i].rainGage;
         if ( g >= 0 )
         {
             sp->Gage[g].isUsed = TRUE;
@@ -1056,7 +1056,7 @@ void initGageData(SWMM_Project *sp)
             //     then assign the latter gage to the UH
             if ( sp->Gage[g].coGage >= 0 )
             {
-                UnitHyd[i].rainGage = sp->Gage[g].coGage;
+                sp->UnitHyd[i].rainGage = sp->Gage[g].coGage;
                 sp->Gage[sp->Gage[g].coGage].isUsed = TRUE;
             }
         }
@@ -1093,7 +1093,7 @@ void initUnitHydData(SWMM_Project *sp)
             UHGroup[i].uh[k].hasPastRain = FALSE;
 
             // --- assign initial abstraction used
-            UHGroup[i].uh[k].iaUsed = UnitHyd[i].iaInit[month][k];
+            UHGroup[i].uh[k].iaUsed = sp->UnitHyd[i].iaInit[month][k];
         }
 
         // --- initialize gage date to simulation start date
@@ -1180,7 +1180,7 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
     for (j = 0; j < sp->Nobjects[UNITHYD]; j++)
     {
         // --- repeat until gage's date reaches or exceeds current date
-        g = UnitHyd[j].rainGage;
+        g = sp->UnitHyd[j].rainGage;
         rainInterval = UHGroup[j].rainInterval;
         while ( UHGroup[j].gageDate < currentDate )
         {
@@ -1202,7 +1202,7 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
             for (k=0; k<3; k++)
             {
                 // --- adjust rainfall volume for any initial abstraction
-                excessDepth = applyIA(j, k, gageDate, rainInterval, rainDepth);
+                excessDepth = applyIA(sp, j, k, gageDate, rainInterval, rainDepth);
 
                 // --- adjust extent of dry period for the UH
                 updateDryPeriod(j, k, excessDepth, rainInterval);
@@ -1224,7 +1224,8 @@ void getRainfall(SWMM_Project *sp, DateTime currentDate)
 
 //=============================================================================
 
-double  applyIA(int j, int k, DateTime aDate, double dt, double rainDepth)
+double  applyIA(SWMM_Project *sp, int j, int k, DateTime aDate, double dt,
+        double rainDepth)
 //
 //  Input:   j = UH group index
 //           k = unit hydrograph index
@@ -1241,7 +1242,7 @@ double  applyIA(int j, int k, DateTime aDate, double dt, double rainDepth)
 
     // --- determine amount of unused IA
     m = datetime_monthOfYear(aDate) - 1;
-    ia = UnitHyd[j].iaMax[m][k] - UHGroup[j].uh[k].iaUsed;
+    ia = sp->UnitHyd[j].iaMax[m][k] - UHGroup[j].uh[k].iaUsed;
     ia = MAX(ia, 0.0);
 
     // --- case where there's some rainfall
@@ -1260,7 +1261,7 @@ double  applyIA(int j, int k, DateTime aDate, double dt, double rainDepth)
     else
     {
         // --- recover a portion of the IA already used
-        UHGroup[j].uh[k].iaUsed -= dt / 86400. * UnitHyd[j].iaRecov[m][k];
+        UHGroup[j].uh[k].iaUsed -= dt / 86400. * sp->UnitHyd[j].iaRecov[m][k];
         UHGroup[j].uh[k].iaUsed = MAX(UHGroup[j].uh[k].iaUsed, 0.0);
         netRainDepth = 0.0;
     }
@@ -1343,7 +1344,7 @@ void getUnitHydRdii(SWMM_Project *sp, DateTime currentDate)
         {
             if ( UHGroup[j].uh[k].hasPastRain )
             {
-                UHGroup[j].rdii += getUnitHydConvol(j, k, rainInterval);
+                UHGroup[j].rdii += getUnitHydConvol(sp, j, k, rainInterval);
             }
         }
     }
@@ -1351,7 +1352,7 @@ void getUnitHydRdii(SWMM_Project *sp, DateTime currentDate)
 
 //=============================================================================
 
-double getUnitHydConvol(int j, int k, int rainInterval)
+double getUnitHydConvol(SWMM_Project *sp, int j, int k, int rainInterval)
 //
 //  Input:   j = UH group index
 //           k = UH index
@@ -1390,7 +1391,7 @@ double getUnitHydConvol(int j, int k, int rainInterval)
             t = ((double)(p) - 0.5) * (double)rainInterval;
 
             // --- convolute rain volume with UH ordinate
-            u = getUnitHydOrd(j, m, k, t) * UnitHyd[j].r[m][k];
+            u = getUnitHydOrd(sp, j, m, k, t) * sp->UnitHyd[j].r[m][k];
             rdii += u * v;
         }
 
@@ -1404,7 +1405,7 @@ double getUnitHydConvol(int j, int k, int rainInterval)
 
 //=============================================================================
 
-double getUnitHydOrd(int h, int m, int k, double t)
+double getUnitHydOrd(SWMM_Project *sp, int h, int m, int k, double t)
 //
 //  Input:   h = index of UH group
 //           m = month index
@@ -1421,14 +1422,14 @@ double getUnitHydOrd(int h, int m, int k, double t)
     double tBase;                      // base time of UH (sec)
 
     // --- return 0 if past end of UH time base
-    tBase = UnitHyd[h].tBase[m][k];
+    tBase = sp->UnitHyd[h].tBase[m][k];
     if ( t >= tBase ) return 0.0;
 
     // --- compute peak value of UH in original rainfall units (in/hr or mm/hr)
     qPeak = 2. / tBase * 3600.0;
 
     // --- break UH base into times before & after peak flow
-    t1 = UnitHyd[h].tPeak[m][k];
+    t1 = sp->UnitHyd[h].tPeak[m][k];
     t2 = tBase - t1;
 
     // --- find UH flow at time t

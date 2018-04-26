@@ -1203,7 +1203,7 @@ struct SWMM_Project {
    TGage*        Gage;                     // Array of rain gages
    TSubcatch*    Subcatch;                 // Array of subcatchments
    TAquifer*     Aquifer;                  // Array of groundwater aquifers
-//    EXTERN TUnitHyd*  UnitHyd;                  // Array of unit hydrographs
+   TUnitHyd*     UnitHyd;                  // Array of unit hydrographs
 //    EXTERN TNode*     Node;                     // Array of nodes
 //    EXTERN TOutfall*  Outfall;                  // Array of outfall nodes
 //    EXTERN TDivider*  Divider;                  // Array of divider nodes

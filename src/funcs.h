@@ -219,8 +219,8 @@ double  gwater_getVolume(SWMM_Project *sp, int subcatch);
 //-----------------------------------------------------------------------------
 int     rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks);
 void    rdii_deleteRdiiInflow(int node);
-void    rdii_initUnitHyd(int unitHyd);
-int     rdii_readUnitHydParams(char* tok[], int ntoks);
+void    rdii_initUnitHyd(SWMM_Project *sp, int unitHyd);
+int     rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    rdii_openRdii(SWMM_Project *sp);
 void    rdii_closeRdii(SWMM_Project *sp);
 int     rdii_getNumRdiiFlows(SWMM_Project *sp, DateTime aDate);

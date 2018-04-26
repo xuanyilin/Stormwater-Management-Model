@@ -565,7 +565,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return rdii_readRdiiInflow(sp, Tok, Ntokens);
 
       case s_UNITHYD:
-        return rdii_readUnitHydParams(Tok, Ntokens);
+        return rdii_readUnitHydParams(sp, Tok, Ntokens);
 
       case s_LOADING:
         return subcatch_readInitBuildup(sp, Tok, Ntokens);
