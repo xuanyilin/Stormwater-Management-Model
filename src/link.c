@@ -638,7 +638,7 @@ int link_setFlapGate(SWMM_Project *sp, int j, int n1, int n2, double q)
     if ( q > 0.0 ) n = n1;
     if ( n >= 0 &&
          sp->Node[n].type == OUTFALL &&
-         Outfall[sp->Node[n].subIndex].hasFlapGate ) return TRUE;
+         sp->Outfall[sp->Node[n].subIndex].hasFlapGate ) return TRUE;
     return FALSE;
 }
 

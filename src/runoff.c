@@ -502,25 +502,25 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
     for (i = 0; i < sp->Nnodes[OUTFALL]; i++)
     {
         // --- ignore node if outflow not re-routed onto a subcatchment
-        k = Outfall[i].routeTo;
+        k = sp->Outfall[i].routeTo;
         if ( k < 0 ) continue;
         if ( sp->Subcatch[k].area == 0.0 ) continue;
 
         // --- add outfall's flow to subcatchment as runon and re-set routed
         //     flow volume to 0
-        subcatch_addRunonFlow(sp, k, Outfall[i].vRouted/tStep);
-        massbal_updateRunoffTotals(RUNOFF_RUNON, Outfall[i].vRouted);
-        Outfall[i].vRouted = 0.0;
+        subcatch_addRunonFlow(sp, k, sp->Outfall[i].vRouted/tStep);
+        massbal_updateRunoffTotals(RUNOFF_RUNON, sp->Outfall[i].vRouted);
+        sp->Outfall[i].vRouted = 0.0;
 
         // --- add outfall's pollutant load on to subcatchment's wet
         //     deposition load and re-set routed load to 0
         //     (Subcatch.newQual is being used as a temporary load accumulator)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            w = Outfall[i].wRouted[p] * LperFT3;
+            w = sp->Outfall[i].wRouted[p] * LperFT3;
             massbal_updateLoadingTotals(DEPOSITION_LOAD, p, w * Pollut[p].mcf);
             sp->Subcatch[k].newQual[p] += w / tStep;
-            Outfall[i].wRouted[p] = 0.0;
+            sp->Outfall[i].wRouted[p] = 0.0;
         }
     }
 }

@@ -1620,12 +1620,12 @@ int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double s
     else
     {
         int k = sp->Node[index].subIndex;
-        if ( Outfall[k].type != STAGED_OUTFALL )
+        if ( sp->Outfall[k].type != STAGED_OUTFALL )
         {
             // Change Boundary Conditions Setting Type
-            Outfall[k].type = STAGED_OUTFALL;
+            sp->Outfall[k].type = STAGED_OUTFALL;
         }
-        Outfall[k].outfallStage = stage / UCF(sp, LENGTH);
+        sp->Outfall[k].outfallStage = stage / UCF(sp, LENGTH);
     }
     return(errcode);
 }

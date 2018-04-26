@@ -144,19 +144,19 @@ void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
         break;
 
       case OUTFALL:
-        Outfall[k].type        = (int)x[1];
-        Outfall[k].outfallStage= x[2] / UCF(sp, LENGTH);
-        Outfall[k].tideCurve   = (int)x[3];
-        Outfall[k].stageSeries = (int)x[4];
-        Outfall[k].hasFlapGate = (char)x[5];
+        sp->Outfall[k].type        = (int)x[1];
+        sp->Outfall[k].outfallStage= x[2] / UCF(sp, LENGTH);
+        sp->Outfall[k].tideCurve   = (int)x[3];
+        sp->Outfall[k].stageSeries = (int)x[4];
+        sp->Outfall[k].hasFlapGate = (char)x[5];
 
 ////  Following code segment added to release 5.1.008.  ////                   //(5.1.008)
 
-        Outfall[k].routeTo     = (int)x[6];
-        Outfall[k].wRouted     = NULL;
-        if ( Outfall[k].routeTo >= 0 )
+        sp->Outfall[k].routeTo     = (int)x[6];
+        sp->Outfall[k].wRouted     = NULL;
+        if ( sp->Outfall[k].routeTo >= 0 )
         {
-            Outfall[k].wRouted =
+            sp->Outfall[k].wRouted =
                 (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
         }
 ////
@@ -273,10 +273,10 @@ void node_initState(SWMM_Project *sp, int j)
     if ( sp->Node[j].type == OUTFALL )
     {
         k = sp->Node[j].subIndex;
-        if ( Outfall[k].routeTo >= 0 )
+        if ( sp->Outfall[k].routeTo >= 0 )
         {
-            Outfall[k].vRouted = 0.0;
-            for (p = 0; p < sp->Nobjects[POLLUT]; p++) Outfall[k].wRouted[p] = 0.0;
+            sp->Outfall[k].vRouted = 0.0;
+            for (p = 0; p < sp->Nobjects[POLLUT]; p++) sp->Outfall[k].wRouted[p] = 0.0;
         }
     }
 ////
@@ -1295,7 +1295,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
     int      i = sp->Node[j].subIndex;     // outfall index
     DateTime currentDate;              // current date/time in days
 
-    switch ( Outfall[i].type )
+    switch ( sp->Outfall[i].type )
     {
       case FREE_OUTFALL:
         if ( z > 0.0 ) sp->Node[j].newDepth = 0.0;
@@ -1308,11 +1308,11 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
         return;
 
       case STAGED_OUTFALL:
-        stage = Outfall[i].outfallStage;
+        stage = sp->Outfall[i].outfallStage;
         break;
 
       case TIDAL_OUTFALL:
-        k = Outfall[i].tideCurve;
+        k = sp->Outfall[i].tideCurve;
         table_getFirstEntry(&Curve[k], &x, &y);
         currentDate = sp->NewRoutingTime / MSECperDAY;
         x += ( currentDate - floor(currentDate) ) * 24.0;
@@ -1320,7 +1320,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
         break;
 
       case TIMESERIES_OUTFALL:
-        k = Outfall[i].stageSeries;
+        k = sp->Outfall[i].stageSeries;
         currentDate = sp->StartDateTime + sp->NewRoutingTime / MSECperDAY;
         stage = table_tseriesLookup(&Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);

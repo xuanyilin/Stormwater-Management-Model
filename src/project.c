@@ -732,7 +732,7 @@ void initPointers(SWMM_Project *sp)
     sp->Gage     = NULL;
     sp->Subcatch = NULL;
     sp->Node     = NULL;
-    Outfall  = NULL;
+    sp->Outfall  = NULL;
     Divider  = NULL;
     Storage  = NULL;
     Link     = NULL;
@@ -964,7 +964,7 @@ void createObjects(SWMM_Project *sp)
     sp->Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
     sp->Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     sp->Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
-    Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
+    sp->Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
     Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
     Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
     Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
@@ -1192,7 +1192,7 @@ void deleteObjects(SWMM_Project *sp)
 
     // --- free memory used for outfall pollutants loads                       //(5.1.008)
     if ( sp->Node ) for (j = 0; j < sp->Nnodes[OUTFALL]; j++)                          //(5.1.008)
-        FREE(Outfall[j].wRouted);                                              //(5.1.008)
+        FREE(sp->Outfall[j].wRouted);                                              //(5.1.008)
 
     // --- free memory used for nodal inflows & treatment functions
     if ( sp->Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
@@ -1222,7 +1222,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Gage);
     FREE(sp->Subcatch);
     FREE(sp->Node);
-    FREE(Outfall);
+    FREE(sp->Outfall);
     FREE(Divider);
     FREE(Storage);
     FREE(Link);

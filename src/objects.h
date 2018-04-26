@@ -1205,7 +1205,7 @@ struct SWMM_Project {
    TAquifer*     Aquifer;                  // Array of groundwater aquifers
    TUnitHyd*     UnitHyd;                  // Array of unit hydrographs
    TNode*        Node;                     // Array of nodes
-//    EXTERN TOutfall*  Outfall;                  // Array of outfall nodes
+   TOutfall*     Outfall;                  // Array of outfall nodes
 //    EXTERN TDivider*  Divider;                  // Array of divider nodes
 //    EXTERN TStorage*  Storage;                  // Array of storage nodes
 //    EXTERN TLink*     Link;                     // Array of links

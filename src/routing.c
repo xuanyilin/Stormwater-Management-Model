@@ -792,12 +792,12 @@ void removeOutflows(SWMM_Project *sp, double tStep)
         if ( sp->Node[i].type == OUTFALL && sp->Node[i].inflow > 0.0 )
         {
             k = sp->Node[i].subIndex;
-            if ( Outfall[k].routeTo >= 0 )
+            if ( sp->Outfall[k].routeTo >= 0 )
             {
                 v = sp->Node[i].inflow * tStep;
-                Outfall[k].vRouted += v;
+                sp->Outfall[k].vRouted += v;
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    Outfall[k].wRouted[p] += sp->Node[i].newQual[p] * v;
+                    sp->Outfall[k].wRouted[p] += sp->Node[i].newQual[p] * v;
             }
         }
 
