@@ -209,7 +209,7 @@ void adjustAdjList(SWMM_Project *sp)
         k = sp->Node[i].subIndex;
         m = StartPos[i];
         j = AdjList[m];
-        if ( j == Divider[k].link )
+        if ( j == sp->Divider[k].link )
         {
             AdjList[m] = AdjList[m+1];
             AdjList[m+1] = j;

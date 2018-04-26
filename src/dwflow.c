@@ -322,7 +322,7 @@ int getFlowClass(SWMM_Project *sp, int j, double q, double h1, double h2,
             //     conduit offset exists
             if ( z1 > 0.0 )
             {
-                *yN = link_getYnorm(j, fabs(q));
+                *yN = link_getYnorm(sp, j, fabs(q));
                 *yC = link_getYcrit(j, fabs(q));
                 ycMin = MIN(*yN, *yC);
                 if ( y1 < ycMin ) flowClass = UP_CRITICAL;
@@ -337,7 +337,7 @@ int getFlowClass(SWMM_Project *sp, int j, double q, double h1, double h2,
             //     conduit offset exists
             if ( z2 > 0.0 )
             {
-                *yN = link_getYnorm(j, fabs(q));
+                *yN = link_getYnorm(sp, j, fabs(q));
                 *yC = link_getYcrit(j, fabs(q));
                 ycMin = MIN(*yN, *yC);
                 ycMax = MAX(*yN, *yC);
@@ -367,7 +367,7 @@ int getFlowClass(SWMM_Project *sp, int j, double q, double h1, double h2,
         //     offset exists (otherwise subcritical condition is maintained)
         else if ( z1 > 0.0 )
         {
-            *yN = link_getYnorm(j, fabs(q));
+            *yN = link_getYnorm(sp, j, fabs(q));
             *yC = link_getYcrit(j, fabs(q));
             flowClass = UP_CRITICAL;
         }
@@ -385,7 +385,7 @@ int getFlowClass(SWMM_Project *sp, int j, double q, double h1, double h2,
         //     subcritical condition is maintained)
         else if ( z2 > 0.0 )
         {
-            *yN = link_getYnorm(j, fabs(q));
+            *yN = link_getYnorm(sp, j, fabs(q));
             *yC = link_getYcrit(j, fabs(q));
             flowClass = DN_CRITICAL;
         }

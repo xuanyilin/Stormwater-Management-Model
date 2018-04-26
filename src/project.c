@@ -733,8 +733,8 @@ void initPointers(SWMM_Project *sp)
     sp->Subcatch = NULL;
     sp->Node     = NULL;
     sp->Outfall  = NULL;
-    Divider  = NULL;
-    Storage  = NULL;
+    sp->Divider  = NULL;
+    sp->Storage  = NULL;
     Link     = NULL;
     Conduit  = NULL;
     Pump     = NULL;
@@ -965,8 +965,8 @@ void createObjects(SWMM_Project *sp)
     sp->Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
     sp->Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
     sp->Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
-    Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
-    Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
+    sp->Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
+    sp->Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
     Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
     Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
     Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
@@ -1093,7 +1093,7 @@ void createObjects(SWMM_Project *sp)
     for ( j = 0; j < sp->Nobjects[SNOWMELT]; j++ ) snow_initSnowmelt(sp, j);
 
     // --- initialize storage node exfiltration                                //(5.1.007)
-    for (j = 0; j < sp->Nnodes[STORAGE]; j++) Storage[j].exfil = NULL;             //(5.1.007)
+    for (j = 0; j < sp->Nnodes[STORAGE]; j++) sp->Storage[j].exfil = NULL;             //(5.1.007)
 
     // --- initialize link properties
     for (j = 0; j < sp->Nobjects[LINK]; j++)
@@ -1181,11 +1181,11 @@ void deleteObjects(SWMM_Project *sp)
     // --- free memory used for storage exfiltration
     if ( sp->Node ) for (j = 0; j < sp->Nnodes[STORAGE]; j++)
     {
-        if ( Storage[j].exfil )
+        if ( sp->Storage[j].exfil )
         {
-            FREE(Storage[j].exfil->btmExfil);
-            FREE(Storage[j].exfil->bankExfil);
-            FREE(Storage[j].exfil);
+            FREE(sp->Storage[j].exfil->btmExfil);
+            FREE(sp->Storage[j].exfil->bankExfil);
+            FREE(sp->Storage[j].exfil);
         }
     }
 ////
@@ -1223,8 +1223,8 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Subcatch);
     FREE(sp->Node);
     FREE(sp->Outfall);
-    FREE(Divider);
-    FREE(Storage);
+    FREE(sp->Divider);
+    FREE(sp->Storage);
     FREE(Link);
     FREE(Conduit);
     FREE(Pump);

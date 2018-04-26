@@ -410,8 +410,8 @@ void  findStorageQual(SWMM_Project *sp, int j, double tStep)
 
         // --- get exfiltration rate and evaporation loss
         k = sp->Node[j].subIndex;
-        qExfil = Storage[k].exfilLoss / tStep;
-        vEvap = Storage[k].evapLoss;
+        qExfil = sp->Storage[k].exfilLoss / tStep;
+        vEvap = sp->Storage[k].evapLoss;
 
         // --- compute factor by which concentrations are increased due to
         //     evaporation loss (avoiding huge factors as storage unit
@@ -469,10 +469,10 @@ void updateHRT(SWMM_Project *sp, int j, double v, double q, double tStep)
 //
 {
     int    k = sp->Node[j].subIndex;
-    double hrt = Storage[k].hrt;
+    double hrt = sp->Storage[k].hrt;
     if ( v < ZERO ) hrt = 0.0;
     else hrt = (hrt + tStep) * v / (v + q*tStep);
-    Storage[k].hrt = MAX(hrt, 0.0);
+    sp->Storage[k].hrt = MAX(hrt, 0.0);
 }
 
 //=============================================================================

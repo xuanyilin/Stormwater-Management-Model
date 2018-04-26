@@ -354,7 +354,7 @@ double getVariableValue(SWMM_Project *sp, int varCode)
           case pvHRT:                                 // HRT in hours
             if ( sp->Node[J].type == STORAGE )
             {
-                return Storage[sp->Node[J].subIndex].hrt / 3600.0;
+                return sp->Storage[sp->Node[J].subIndex].hrt / 3600.0;
             }
             else return 0.0;
 

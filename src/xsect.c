@@ -103,8 +103,8 @@ typedef struct
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static double generic_getAofS(TXsect* xsect, double s);
-static void   evalSofA(double a, double* f, double* df, void* p);
+static double generic_getAofS(SWMM_Project *sp, TXsect* xsect, double s);
+static void   evalSofA(SWMM_Project *sp, double a, double* f, double* df, void* p);
 static double tabular_getdSdA(TXsect* xsect, double a, double *table, int nItems);
 static double generic_getdSdA(TXsect* xsect, double a);
 static double lookup(double x, double *table, int nItems);
@@ -1120,7 +1120,7 @@ double xsect_getRofA(TXsect *xsect, double a)
 
 //=============================================================================
 
-double xsect_getAofS(TXsect* xsect, double s)
+double xsect_getAofS(SWMM_Project *sp, TXsect* xsect, double s)
 //
 //  Input:   xsect = ptr. to a cross section data structure
 //           s = section factor (ft^(8/3))
@@ -1159,7 +1159,7 @@ double xsect_getAofS(TXsect* xsect, double s)
       case SEMICIRCULAR:
         return xsect->aFull * invLookup(psi, S_SemiCirc, N_S_SemiCirc);
 
-      default: return generic_getAofS(xsect, s);
+      default: return generic_getAofS(sp, xsect, s);
     }
 }
 
@@ -1294,7 +1294,7 @@ double xsect_getYcrit(TXsect* xsect, double q)
 
 //=============================================================================
 
-double generic_getAofS(TXsect* xsect, double s)
+double generic_getAofS(SWMM_Project *sp, TXsect* xsect, double s)
 //
 //  Input:   xsect = ptr. to a cross section data structure
 //           s = section factor (ft^8/3)
@@ -1333,13 +1333,13 @@ double generic_getAofS(TXsect* xsect, double s)
 
     // use the Newton-Raphson root finder function to find A
     tol = 0.0001 * xsect->aFull;
-    findroot_Newton(a1, a2, &a, tol, evalSofA, &xsectStar);
+    findroot_Newton(sp, a1, a2, &a, tol, evalSofA, &xsectStar);
     return a;
 }
 
 //=============================================================================
 
-void evalSofA(double a, double* f, double* df, void* p)
+void evalSofA(SWMM_Project *sp, double a, double* f, double* df, void* p)
 //
 //  Input:   a = area
 //  Output:  f = root finding function

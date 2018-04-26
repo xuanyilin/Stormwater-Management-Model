@@ -17,9 +17,9 @@
 #define MAXIT 60
 
 
-int findroot_Newton(double x1, double x2, double* rts, double xacc,
-                    void (*func) (double x, double* f, double* df, void* p),
-					void* p)
+int findroot_Newton(SWMM_Project *sp, double x1, double x2, double* rts, double xacc,
+        void (*func) (SWMM_Project *sp, double x, double* f, double* df,
+                void* p), void* p)
 //
 //  Using a combination of Newton-Raphson and bisection, find the root of a
 //  function func bracketed between x1 and x2. The root, returned in rts,
@@ -47,7 +47,7 @@ int findroot_Newton(double x1, double x2, double* rts, double xacc,
     xhi = x2;
     dxold = fabs(x2-x1);
     dx = dxold;
-    func(x, &f, &df, p);
+    func(sp, x, &f, &df, p);
     n++;
 
     // Loop over allowed iterations.
@@ -77,7 +77,7 @@ int findroot_Newton(double x1, double x2, double* rts, double xacc,
         if ( fabs(dx) < xacc ) break;
  
         // Evaluate function. Maintain bracket on the root.
-        func(x, &f, &df, p);
+        func(sp, x, &f, &df, p);
         n++;
         if ( f < 0.0 ) xlo = x;
         else           xhi = x;

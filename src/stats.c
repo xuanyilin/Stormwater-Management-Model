@@ -562,9 +562,9 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
         k = sp->Node[j].subIndex;
         StorageStats[k].avgVol += newVolume;
         StorageStats[k].evapLosses += 
-            Storage[sp->Node[j].subIndex].evapLoss; 
+            sp->Storage[sp->Node[j].subIndex].evapLoss; 
         StorageStats[k].exfilLosses +=
-            Storage[sp->Node[j].subIndex].exfilLoss; 
+            sp->Storage[sp->Node[j].subIndex].exfilLoss; 
 
         newVolume = MIN(newVolume, sp->Node[j].fullVolume);
         if ( newVolume > StorageStats[k].maxVol )

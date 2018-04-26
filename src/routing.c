@@ -728,8 +728,8 @@ void removeStorageLosses(SWMM_Project *sp, double tStep)
         if (sp->Node[i].type == STORAGE)
         {
             // --- update total system storage losses
-            evapLoss += Storage[sp->Node[i].subIndex].evapLoss;
-            exfilLoss += Storage[sp->Node[i].subIndex].exfilLoss;
+            evapLoss += sp->Storage[sp->Node[i].subIndex].evapLoss;
+            exfilLoss += sp->Storage[sp->Node[i].subIndex].exfilLoss;
         }
     }
 

@@ -45,8 +45,8 @@ static TXsect*  pXsect;
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int   solveContinuity(double qin, double ain, double* aout);
-static void  evalContinuity(double a, double* f, double* df, void* p);
+static int   solveContinuity(SWMM_Project *sp, double qin, double ain, double* aout);
+static void  evalContinuity(SWMM_Project *sp, double a, double* f, double* df, void* p);
 
 //=============================================================================
 
@@ -108,7 +108,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     if ( qin >= 1.0 ) ain = 1.0;
 
     // --- get normalized inlet area corresponding to inlet flow
-    else ain = xsect_getAofS(pXsect, qin/Beta1) / Afull;
+    else ain = xsect_getAofS(sp, pXsect, qin/Beta1) / Afull;
 
     // --- check for no flow
     if ( qin <= TINY && q2 <= TINY )
@@ -134,7 +134,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
         aout = a2;
 
         // --- solve continuity equation for aout
-        result = solveContinuity(qin, ain, &aout);
+        result = solveContinuity(sp, qin, ain, &aout);
 
         // --- report error if continuity eqn. not solved
         if ( result == -1 )
@@ -163,7 +163,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
 
 //=============================================================================
 
-int solveContinuity(double qin, double ain, double* aout)
+int solveContinuity(SWMM_Project *sp, double qin, double ain, double* aout)
 //
 //  Input:   qin = upstream normalized flow
 //           ain = upstream normalized area
@@ -228,7 +228,7 @@ int solveContinuity(double qin, double ain, double* aout)
         // --- call the Newton root finder method passing it the 
         //     evalContinuity function to evaluate the function
         //     and its derivatives
-        n = findroot_Newton(aLo, aHi, aout, tol, evalContinuity, NULL);
+        n = findroot_Newton(sp, aLo, aHi, aout, tol, evalContinuity, NULL);
 
         // --- check if root finder succeeded
         if ( n <= 0 ) n = -1;
@@ -254,7 +254,7 @@ int solveContinuity(double qin, double ain, double* aout)
 
 //=============================================================================
 
-void evalContinuity(double a, double* f, double* df, void* p)
+void evalContinuity(SWMM_Project *sp, double a, double* f, double* df, void* p)
 //
 //  Input:   a = outlet normalized area
 //  Output:  f = value of continuity eqn.

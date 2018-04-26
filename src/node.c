@@ -78,7 +78,8 @@ static int    storage_readParams(SWMM_Project *sp, int j, int k, char* tok[],
 static double storage_getDepth(SWMM_Project *sp, int j, double v);
 static double storage_getVolume(SWMM_Project *sp, int j, double d);
 static double storage_getSurfArea(SWMM_Project *sp, int j, double d);
-static void   storage_getVolDiff(double y, double* f, double* df, void* p);
+static void   storage_getVolDiff(SWMM_Project *sp, double y, double* f,
+        double* df, void* p);
 static double storage_getOutflow(SWMM_Project *sp, int j, int i);
 static double storage_getLosses(SWMM_Project *sp, int j, double tStep);
 
@@ -165,21 +166,21 @@ void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
       case STORAGE:
         sp->Node[j].fullDepth  = x[1] / UCF(sp, LENGTH);
         sp->Node[j].initDepth  = x[2] / UCF(sp, LENGTH);
-        Storage[k].aCoeff  = x[3];
-        Storage[k].aExpon  = x[4];
-        Storage[k].aConst  = x[5];
-        Storage[k].aCurve  = (int)x[6];
+        sp->Storage[k].aCoeff  = x[3];
+        sp->Storage[k].aExpon  = x[4];
+        sp->Storage[k].aConst  = x[5];
+        sp->Storage[k].aCurve  = (int)x[6];
         // x[7] (ponded depth) is deprecated.                                  //(5.1.007)
-        Storage[k].fEvap   = x[8];
+        sp->Storage[k].fEvap   = x[8];
         break;
 
       case DIVIDER:
-        Divider[k].link      = (int)x[1];
-        Divider[k].type      = (int)x[2];
-        Divider[k].flowCurve = (int)x[3];
-        Divider[k].qMin      = x[4] / UCF(sp, FLOW);
-        Divider[k].dhMax     = x[5];
-        Divider[k].cWeir     = x[6];
+        sp->Divider[k].link      = (int)x[1];
+        sp->Divider[k].type      = (int)x[2];
+        sp->Divider[k].flowCurve = (int)x[3];
+        sp->Divider[k].qMin      = x[4] / UCF(sp, FLOW);
+        sp->Divider[k].dhMax     = x[5];
+        sp->Divider[k].cWeir     = x[6];
         sp->Node[j].fullDepth    = x[7] / UCF(sp, LENGTH);
         sp->Node[j].initDepth    = x[8] / UCF(sp, LENGTH);
         sp->Node[j].surDepth     = x[9] / UCF(sp, LENGTH);
@@ -260,10 +261,10 @@ void node_initState(SWMM_Project *sp, int j)
     {
         // --- set hydraulic residence time to 0
         k = sp->Node[j].subIndex;
-        Storage[k].hrt = 0.0;
+        sp->Storage[k].hrt = 0.0;
 
         // --- initialize exfiltration properties
-        if ( Storage[k].exfil ) exfil_initState(sp, k);
+        if ( sp->Storage[k].exfil ) exfil_initState(sp, k);
     }
 ////
 
@@ -748,7 +749,7 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
 //
 {
     int    k = sp->Node[j].subIndex;
-    int    i = Storage[k].aCurve;
+    int    i = sp->Storage[k].aCurve;
     double d, e;
 	TStorageVol storageVol;
 
@@ -766,21 +767,21 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
     else
     {
         v *= UCF(sp, VOLUME);
-        if ( Storage[k].aExpon == 0.0 )
+        if ( sp->Storage[k].aExpon == 0.0 )
         {
-            d = v / (Storage[k].aConst + Storage[k].aCoeff);
+            d = v / (sp->Storage[k].aConst + sp->Storage[k].aCoeff);
         }
-        else if ( Storage[k].aConst == 0.0 )
+        else if ( sp->Storage[k].aConst == 0.0 )
         {
-            e = 1.0 / (Storage[k].aExpon + 1.0);
-            d = pow(v / (Storage[k].aCoeff * e), e);
+            e = 1.0 / (sp->Storage[k].aExpon + 1.0);
+            d = pow(v / (sp->Storage[k].aCoeff * e), e);
         }
         else
         {
             storageVol.k = k;
             storageVol.v = v;
-            d = v / (Storage[k].aConst + Storage[k].aCoeff);
-            findroot_Newton(0.0, sp->Node[j].fullDepth*UCF(sp, LENGTH), &d,
+            d = v / (sp->Storage[k].aConst + sp->Storage[k].aCoeff);
+            findroot_Newton(sp, 0.0, sp->Node[j].fullDepth*UCF(sp, LENGTH), &d,
                             0.001, storage_getVolDiff, &storageVol);            
         }
         d /= UCF(sp, LENGTH);
@@ -791,7 +792,8 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
 
 //=============================================================================
 
-void  storage_getVolDiff(double y, double* f, double* df, void* p)
+void  storage_getVolDiff(SWMM_Project *sp, double y, double* f, double* df,
+        void* p)
 //
 //  Input:   y = depth of water (ft)
 //  Output:  f = volume of water (ft3)
@@ -809,13 +811,13 @@ void  storage_getVolDiff(double y, double* f, double* df, void* p)
     k = storageVol->k;
 
     // ... find storage volume at depth y
-    e = Storage[k].aExpon + 1.0;
-    v = Storage[k].aConst * y + Storage[k].aCoeff / e * pow(y, e);
+    e = sp->Storage[k].aExpon + 1.0;
+    v = sp->Storage[k].aConst * y + sp->Storage[k].aCoeff / e * pow(y, e);
 
     // ... compute difference between this volume and target volume
     //     as well as its derivative w.r.t. y
     *f = v - storageVol->v;
-    *df = Storage[k].aConst + Storage[k].aCoeff * pow(y, e-1.0);
+    *df = sp->Storage[k].aConst + sp->Storage[k].aCoeff * pow(y, e-1.0);
 }
 
 //=============================================================================
@@ -829,7 +831,7 @@ double storage_getVolume(SWMM_Project *sp, int j, double d)
 //
 {
     int    k = sp->Node[j].subIndex;
-    int    i = Storage[k].aCurve;
+    int    i = sp->Storage[k].aCurve;
     double v;
 
     // --- return full volume if depth >= max. depth
@@ -845,9 +847,9 @@ double storage_getVolume(SWMM_Project *sp, int j, double d)
     else
     {
         d *= UCF(sp, LENGTH);
-        v = Storage[k].aConst * d;
-        v += Storage[k].aCoeff / (Storage[k].aExpon+1.0) *
-             pow(d, Storage[k].aExpon+1.0);
+        v = sp->Storage[k].aConst * d;
+        v += sp->Storage[k].aCoeff / (sp->Storage[k].aExpon+1.0) *
+             pow(d, sp->Storage[k].aExpon+1.0);
         return v / UCF(sp, VOLUME);
     }
 }
@@ -864,16 +866,16 @@ double storage_getSurfArea(SWMM_Project *sp, int j, double d)
 {
     double area;
     int k = sp->Node[j].subIndex;
-    int i = Storage[k].aCurve;
+    int i = sp->Storage[k].aCurve;
     if ( i >= 0 )
         area = table_lookupEx(&Curve[i], d*UCF(sp, LENGTH));
     else
     {
-        if ( Storage[k].aCoeff <= 0.0 ) area = Storage[k].aConst;
-        else if ( Storage[k].aExpon == 0.0 )
-            area = Storage[k].aConst + Storage[k].aCoeff;
-        else area = Storage[k].aConst + Storage[k].aCoeff *
-                    pow(d*UCF(sp, LENGTH), Storage[k].aExpon);
+        if ( sp->Storage[k].aCoeff <= 0.0 ) area = sp->Storage[k].aConst;
+        else if ( sp->Storage[k].aExpon == 0.0 )
+            area = sp->Storage[k].aConst + sp->Storage[k].aCoeff;
+        else area = sp->Storage[k].aConst + sp->Storage[k].aCoeff *
+                    pow(d*UCF(sp, LENGTH), sp->Storage[k].aExpon);
     }
     return area / UCF(sp, LENGTH) / UCF(sp, LENGTH);
 }
@@ -935,8 +937,8 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
     {
         // --- get node's evap. rate (ft/s) &  exfiltration object
         k = sp->Node[j].subIndex;
-        evapRate = sp->Evap.rate * Storage[k].fEvap;
-        exfil = Storage[k].exfil;
+        evapRate = sp->Evap.rate * sp->Storage[k].fEvap;
+        exfil = sp->Storage[k].exfil;
 
         // --- if either of these apply
         if ( evapRate > 0.0 || exfil != NULL) 
@@ -966,8 +968,8 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
     }
 
     // --- save evap & infil losses at the node
-    Storage[sp->Node[j].subIndex].evapLoss = evapRate * tStep;
-    Storage[sp->Node[j].subIndex].exfilLoss = exfilRate * tStep;
+    sp->Storage[sp->Node[j].subIndex].evapLoss = evapRate * tStep;
+    sp->Storage[sp->Node[j].subIndex].exfilLoss = exfilRate * tStep;
     return evapRate + exfilRate;
 }
 
@@ -1090,23 +1092,23 @@ void  divider_validate(SWMM_Project *sp, int j)
 
     // --- check that diverted link is attached to divider
     k = sp->Node[j].subIndex;
-    i = Divider[k].link;
+    i = sp->Divider[k].link;
     if ( i < 0 || ( Link[i].node1 != j && Link[i].node2 != j) )
     {
         report_writeErrorMsg(sp, ERR_DIVIDER_LINK, sp->Node[j].ID);
     }
 
     // --- validate parameters supplied for weir-type divider
-    if ( Divider[k].type == WEIR_DIVIDER )
+    if ( sp->Divider[k].type == WEIR_DIVIDER )
     {
-        if ( Divider[k].dhMax <= 0.0 || Divider[k].cWeir <= 0.0 )
+        if ( sp->Divider[k].dhMax <= 0.0 || sp->Divider[k].cWeir <= 0.0 )
             report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, sp->Node[j].ID);
         else
         {
             // --- find flow when weir is full
-            Divider[k].qMax = Divider[k].cWeir * pow(Divider[k].dhMax, 1.5)
+            sp->Divider[k].qMax = sp->Divider[k].cWeir * pow(sp->Divider[k].dhMax, 1.5)
                               / UCF(sp, FLOW);
-            if ( Divider[k].qMin > Divider[k].qMax )
+            if ( sp->Divider[k].qMin > sp->Divider[k].qMax )
                 report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, sp->Node[j].ID);
         }
     }
@@ -1132,16 +1134,16 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
 
     qIn = sp->Node[j].inflow + sp->Node[j].overflow;
     i = sp->Node[j].subIndex;
-    switch ( Divider[i].type )
+    switch ( sp->Divider[i].type )
     {
       case CUTOFF_DIVIDER:
-        if ( qIn <= Divider[i].qMin ) qOut = 0.0;
-        else qOut = qIn - Divider[i].qMin;
+        if ( qIn <= sp->Divider[i].qMin ) qOut = 0.0;
+        else qOut = qIn - sp->Divider[i].qMin;
         break;
 
       case OVERFLOW_DIVIDER:
         // --- outflow sent into non-diversion link is simply node's inflow
-        if ( k != Divider[i].link ) qOut = qIn;
+        if ( k != sp->Divider[i].link ) qOut = qIn;
 
         // --- diversion link receives any excess of node's inflow and
         //     outflow sent previously into non-diversion link
@@ -1151,26 +1153,26 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
 
       case WEIR_DIVIDER:
         // --- no flow if inflow < qMin
-        if ( qIn <= Divider[i].qMin ) qOut = 0.0;
+        if ( qIn <= sp->Divider[i].qMin ) qOut = 0.0;
 
         // --- otherwise use weir eqn.
         else
         {
             // --- find fractional depth of flow over weir
-            f = (qIn - Divider[i].qMin) /
-                (Divider[i].qMax - Divider[i].qMin);
+            f = (qIn - sp->Divider[i].qMin) /
+                (sp->Divider[i].qMax - sp->Divider[i].qMin);
 
             // --- if weir surcharged, use orifice eqn.
-            if ( f > 1.0 ) qOut = Divider[i].qMax * sqrt(f);
+            if ( f > 1.0 ) qOut = sp->Divider[i].qMax * sqrt(f);
             
             // --- otherwise use weir eqn.
-            else qOut = Divider[i].cWeir *
-                        pow(f*Divider[i].dhMax, 1.5) / UCF(sp, FLOW);
+            else qOut = sp->Divider[i].cWeir *
+                        pow(f*sp->Divider[i].dhMax, 1.5) / UCF(sp, FLOW);
         }
         break;
 
       case TABULAR_DIVIDER:
-        m = Divider[i].flowCurve;
+        m = sp->Divider[i].flowCurve;
         if ( m >= 0 )
             qOut = table_lookup(&Curve[m], qIn * UCF(sp, FLOW)) / UCF(sp, FLOW);
         else qOut = 0.0;
@@ -1184,7 +1186,7 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
 
     // --- if link k not the diversion link, then re-define qOut as 
     //     the undiverted flow
-    if ( k != Divider[i].link )
+    if ( k != sp->Divider[i].link )
     {
         qOut = qIn - qOut;
     }

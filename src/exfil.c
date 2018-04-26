@@ -83,7 +83,7 @@ void  exfil_initState(SWMM_Project *sp, int k)
     int i;
     double a, alast, d;
     TTable* aCurve;
-    TExfil* exfil = Storage[k].exfil;
+    TExfil* exfil = sp->Storage[k].exfil;
 
     // --- initialize exfiltration object
     if ( exfil != NULL )
@@ -93,12 +93,12 @@ void  exfil_initState(SWMM_Project *sp, int k)
         grnampt_initState(exfil->bankExfil);
 
         // --- shape given by a Storage Curve
-        i = Storage[k].aCurve;
+        i = sp->Storage[k].aCurve;
         if ( i >= 0 )
         {
             // --- get bottom area
             aCurve = &Curve[i];
-            Storage[k].exfil->btmArea = table_lookupEx(aCurve, 0.0);
+            sp->Storage[k].exfil->btmArea = table_lookupEx(aCurve, 0.0);
 
             // --- find min/max bank depths and max. bank area
             table_getFirstEntry(aCurve, &d, &a);
@@ -132,8 +132,8 @@ void  exfil_initState(SWMM_Project *sp, int k)
         // --- functional storage shape curve
         else
         {
-            exfil->btmArea = Storage[k].aConst;
-            if ( Storage[k].aExpon == 0.0 ) exfil->btmArea +=Storage[k].aCoeff;
+            exfil->btmArea = sp->Storage[k].aConst;
+            if ( sp->Storage[k].aExpon == 0.0 ) exfil->btmArea +=sp->Storage[k].aCoeff;
             exfil->bankMinDepth = 0.0;
             exfil->bankMaxDepth = BIG;
             exfil->bankMaxArea = BIG;
@@ -217,12 +217,12 @@ int  createStorageExfil(SWMM_Project *sp, int k, double x[])
     TExfil*   exfil;
 
     // --- create an exfiltration object for the storage node
-    exfil = Storage[k].exfil;
+    exfil = sp->Storage[k].exfil;
     if ( exfil == NULL )
     {
         exfil = (TExfil *) malloc(sizeof(TExfil));
         if ( exfil == NULL ) return error_setInpError(ERR_MEMORY, "");
-        Storage[k].exfil = exfil;
+        sp->Storage[k].exfil = exfil;
 
         // --- create Green-Ampt infiltration objects for the bottom & banks
         exfil->btmExfil = NULL;

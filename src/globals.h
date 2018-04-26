@@ -151,8 +151,8 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TUnitHyd*  UnitHyd;                  // Array of unit hydrographs
 //EXTERN TNode*     Node;                     // Array of nodes
 //EXTERN TOutfall*  Outfall;                  // Array of outfall nodes
-EXTERN TDivider*  Divider;                  // Array of divider nodes
-EXTERN TStorage*  Storage;                  // Array of storage nodes
+//EXTERN TDivider*  Divider;                  // Array of divider nodes
+//EXTERN TStorage*  Storage;                  // Array of storage nodes
 EXTERN TLink*     Link;                     // Array of links
 EXTERN TConduit*  Conduit;                  // Array of conduit links
 EXTERN TPump*     Pump;                     // Array of pump links

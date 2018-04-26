@@ -787,7 +787,7 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
             else
             {
                 s = q / Conduit[k].beta;
-                Conduit[k].a1 = xsect_getAofS(&Link[j].xsect, s);
+                Conduit[k].a1 = xsect_getAofS(sp, &Link[j].xsect, s);
             }
         }
         Conduit[k].a2 = Conduit[k].a1;

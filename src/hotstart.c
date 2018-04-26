@@ -250,7 +250,7 @@ void  saveRouting(SWMM_Project *sp)
         if ( sp->Node[i].type == STORAGE )
         {
             j = sp->Node[i].subIndex;
-            x[0] = (float)Storage[j].hrt;
+            x[0] = (float)sp->Storage[j].hrt;
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
 ////
@@ -322,7 +322,7 @@ void readRouting(SWMM_Project *sp)
         {
             if ( !readFloat(sp, &x, f) ) return;
             j = sp->Node[i].subIndex;
-            Storage[j].hrt = x;
+            sp->Storage[j].hrt = x;
         }
 ////
 

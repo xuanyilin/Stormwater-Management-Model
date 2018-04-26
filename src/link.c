@@ -87,7 +87,7 @@ static double link_getOffsetHeight(SWMM_Project *sp, int j, double offset,
 static int    conduit_readParams(SWMM_Project *sp, int j, int k, char* tok[],
         int ntoks);
 static void   conduit_validate(SWMM_Project *sp, int j, int k);
-static void   conduit_initState(int j, int k);
+static void   conduit_initState(SWMM_Project *sp, int j, int k);
 static void   conduit_reverse(int j, int k);
 static double conduit_getLength(SWMM_Project *sp, int j);
 static double conduit_getLengthFactor(SWMM_Project *sp, int j, int k,
@@ -497,7 +497,7 @@ void link_initState(SWMM_Project *sp, int j)
     Link[j].timeLastSet = sp->StartDate;                                           //(5.1.010)
     Link[j].inletControl  = FALSE;
     Link[j].normalFlow    = FALSE;
-    if ( Link[j].type == CONDUIT ) conduit_initState(j, Link[j].subIndex);
+    if ( Link[j].type == CONDUIT ) conduit_initState(sp, j, Link[j].subIndex);
     if ( Link[j].type == PUMP    ) pump_initState(j, Link[j].subIndex);
 
     // --- initialize water quality state
@@ -730,7 +730,7 @@ void link_setOutfallDepth(SWMM_Project *sp, int j)
     {
         k = Link[j].subIndex;
         q = fabs(Link[j].newFlow / Conduit[k].barrels);
-        yNorm = link_getYnorm(j, q);
+        yNorm = link_getYnorm(sp, j, q);
         yCrit = link_getYcrit(j, q);
     }
 
@@ -753,7 +753,7 @@ double link_getYcrit(int j, double q)
 
 //=============================================================================
 
-double  link_getYnorm(int j, double q)
+double  link_getYnorm(SWMM_Project *sp, int j, double q)
 //
 //  Input:   j = link index
 //           q = link flow rate (cfs)
@@ -771,7 +771,7 @@ double  link_getYnorm(int j, double q)
     if ( q > Conduit[k].qMax ) q = Conduit[k].qMax;
     if ( q <= 0.0 ) return 0.0;
     s = q / Conduit[k].beta;
-    a = xsect_getAofS(&Link[j].xsect, s);
+    a = xsect_getAofS(sp, &Link[j].xsect, s);
     y = xsect_getYofA(&Link[j].xsect, a);
     return y;
 }
@@ -1267,7 +1267,7 @@ double conduit_getSlope(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void  conduit_initState(int j, int k)
+void  conduit_initState(SWMM_Project *sp, int j, int k)
 //
 //  Input:   j = link index
 //           k = conduit index
@@ -1275,7 +1275,7 @@ void  conduit_initState(int j, int k)
 //  Purpose: sets initial conduit depth to normal depth of initial flow
 //
 {
-    Link[j].newDepth = link_getYnorm(j, Link[j].q0 / Conduit[k].barrels);
+    Link[j].newDepth = link_getYnorm(sp, j, Link[j].q0 / Conduit[k].barrels);
     Link[j].oldDepth = Link[j].newDepth;
 }
 

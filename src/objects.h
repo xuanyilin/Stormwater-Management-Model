@@ -1206,8 +1206,8 @@ struct SWMM_Project {
    TUnitHyd*     UnitHyd;                  // Array of unit hydrographs
    TNode*        Node;                     // Array of nodes
    TOutfall*     Outfall;                  // Array of outfall nodes
-//    EXTERN TDivider*  Divider;                  // Array of divider nodes
-//    EXTERN TStorage*  Storage;                  // Array of storage nodes
+   TDivider*     Divider;                  // Array of divider nodes
+   TStorage*     Storage;                  // Array of storage nodes
 //    EXTERN TLink*     Link;                     // Array of links
 //    EXTERN TConduit*  Conduit;                  // Array of conduit links
 //    EXTERN TPump*     Pump;                     // Array of pump links
