@@ -748,7 +748,7 @@ void initPointers(SWMM_Project *sp)
     Tseries  = NULL;
     Transect = NULL;
     Shape    = NULL;
-    Aquifer    = NULL;
+    sp->Aquifer    = NULL;
     UnitHyd    = NULL;
     sp->Snowmelt   = NULL;
     Event      = NULL;                                                         //(5.1.011)
@@ -978,7 +978,7 @@ void createObjects(SWMM_Project *sp)
     Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
     Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
     Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
-    Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
+    sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
     UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
     sp->Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
     Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
@@ -1236,7 +1236,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(Pattern);
     FREE(Curve);
     FREE(Tseries);
-    FREE(Aquifer);
+    FREE(sp->Aquifer);
     FREE(UnitHyd);
     FREE(sp->Snowmelt);
     FREE(Shape);

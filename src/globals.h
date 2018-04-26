@@ -147,7 +147,7 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TSnowmelt* Snowmelt;                 // Array of snow melt objects
 //EXTERN TGage*     Gage;                     // Array of rain gages
 //EXTERN TSubcatch* Subcatch;                 // Array of subcatchments
-EXTERN TAquifer*  Aquifer;                  // Array of groundwater aquifers
+//EXTERN TAquifer*  Aquifer;                  // Array of groundwater aquifers
 EXTERN TUnitHyd*  UnitHyd;                  // Array of unit hydrographs
 EXTERN TNode*     Node;                     // Array of nodes
 EXTERN TOutfall*  Outfall;                  // Array of outfall nodes

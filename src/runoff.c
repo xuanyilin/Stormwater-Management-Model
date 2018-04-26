@@ -457,7 +457,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
         if ( gw )
         {
             gw->newFlow    = SubcatchResults[SUBCATCH_GW_FLOW] / UCF(sp, FLOW);
-            gw->lowerDepth = Aquifer[gw->aquifer].bottomElev -
+            gw->lowerDepth = sp->Aquifer[gw->aquifer].bottomElev -
                              (SubcatchResults[SUBCATCH_GW_ELEV] / UCF(sp, LENGTH));
             gw->theta      = SubcatchResults[SUBCATCH_SOIL_MOIST];
         }

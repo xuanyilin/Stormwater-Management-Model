@@ -366,7 +366,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_TRANSECT:
                 strcpy(id,Transect[index].ID); break;
             case SM_AQUIFER:
-                strcpy(id,Aquifer[index].ID); break;
+                strcpy(id,sp->Aquifer[index].ID); break;
             case SM_UNITHYD:
                 strcpy(id,UnitHyd[index].ID); break;
             case SM_SNOWMELT:

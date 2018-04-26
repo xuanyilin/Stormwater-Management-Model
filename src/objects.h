@@ -1202,7 +1202,7 @@ struct SWMM_Project {
    TSnowmelt*    Snowmelt;                 // Array of snow melt objects
    TGage*        Gage;                     // Array of rain gages
    TSubcatch*    Subcatch;                 // Array of subcatchments
-//    EXTERN TAquifer*  Aquifer;                  // Array of groundwater aquifers
+   TAquifer*     Aquifer;                  // Array of groundwater aquifers
 //    EXTERN TUnitHyd*  UnitHyd;                  // Array of unit hydrographs
 //    EXTERN TNode*     Node;                     // Array of nodes
 //    EXTERN TOutfall*  Outfall;                  // Array of outfall nodes

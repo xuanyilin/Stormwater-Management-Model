@@ -161,20 +161,20 @@ int gwater_readAquiferParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     }
 
     // --- assign parameters to aquifer object
-    Aquifer[j].ID = id;
-    Aquifer[j].porosity       = x[0];
-    Aquifer[j].wiltingPoint   = x[1];
-    Aquifer[j].fieldCapacity  = x[2];
-    Aquifer[j].conductivity   = x[3] / UCF(sp, RAINFALL);
-    Aquifer[j].conductSlope   = x[4];
-    Aquifer[j].tensionSlope   = x[5] / UCF(sp, LENGTH);
-    Aquifer[j].upperEvapFrac  = x[6];
-    Aquifer[j].lowerEvapDepth = x[7] / UCF(sp, LENGTH);
-    Aquifer[j].lowerLossCoeff = x[8] / UCF(sp, RAINFALL);
-    Aquifer[j].bottomElev     = x[9] / UCF(sp, LENGTH);
-    Aquifer[j].waterTableElev = x[10] / UCF(sp, LENGTH);
-    Aquifer[j].upperMoisture  = x[11];
-    Aquifer[j].upperEvapPat   = p;
+    sp->Aquifer[j].ID = id;
+    sp->Aquifer[j].porosity       = x[0];
+    sp->Aquifer[j].wiltingPoint   = x[1];
+    sp->Aquifer[j].fieldCapacity  = x[2];
+    sp->Aquifer[j].conductivity   = x[3] / UCF(sp, RAINFALL);
+    sp->Aquifer[j].conductSlope   = x[4];
+    sp->Aquifer[j].tensionSlope   = x[5] / UCF(sp, LENGTH);
+    sp->Aquifer[j].upperEvapFrac  = x[6];
+    sp->Aquifer[j].lowerEvapDepth = x[7] / UCF(sp, LENGTH);
+    sp->Aquifer[j].lowerLossCoeff = x[8] / UCF(sp, RAINFALL);
+    sp->Aquifer[j].bottomElev     = x[9] / UCF(sp, LENGTH);
+    sp->Aquifer[j].waterTableElev = x[10] / UCF(sp, LENGTH);
+    sp->Aquifer[j].upperMoisture  = x[11];
+    sp->Aquifer[j].upperEvapPat   = p;
     return 0;
 }
 
@@ -340,23 +340,23 @@ void  gwater_validateAquifer(SWMM_Project *sp, int j)
 {
 	int p;
 
-    if ( Aquifer[j].porosity          <= 0.0 
-    ||   Aquifer[j].fieldCapacity     >= Aquifer[j].porosity
-    ||   Aquifer[j].wiltingPoint      >= Aquifer[j].fieldCapacity
-    ||   Aquifer[j].conductivity      <= 0.0
-    ||   Aquifer[j].conductSlope      <  0.0
-    ||   Aquifer[j].tensionSlope      <  0.0
-    ||   Aquifer[j].upperEvapFrac     <  0.0
-    ||   Aquifer[j].lowerEvapDepth    <  0.0
-    ||   Aquifer[j].waterTableElev    <  Aquifer[j].bottomElev
-    ||   Aquifer[j].upperMoisture     >  Aquifer[j].porosity 
-    ||   Aquifer[j].upperMoisture     <  Aquifer[j].wiltingPoint )
-        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, Aquifer[j].ID);
+    if ( sp->Aquifer[j].porosity          <= 0.0 
+    ||   sp->Aquifer[j].fieldCapacity     >= sp->Aquifer[j].porosity
+    ||   sp->Aquifer[j].wiltingPoint      >= sp->Aquifer[j].fieldCapacity
+    ||   sp->Aquifer[j].conductivity      <= 0.0
+    ||   sp->Aquifer[j].conductSlope      <  0.0
+    ||   sp->Aquifer[j].tensionSlope      <  0.0
+    ||   sp->Aquifer[j].upperEvapFrac     <  0.0
+    ||   sp->Aquifer[j].lowerEvapDepth    <  0.0
+    ||   sp->Aquifer[j].waterTableElev    <  sp->Aquifer[j].bottomElev
+    ||   sp->Aquifer[j].upperMoisture     >  sp->Aquifer[j].porosity 
+    ||   sp->Aquifer[j].upperMoisture     <  sp->Aquifer[j].wiltingPoint )
+        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, sp->Aquifer[j].ID);
 
-    p = Aquifer[j].upperEvapPat;
+    p = sp->Aquifer[j].upperEvapPat;
     if ( p >= 0 && Pattern[p].type != MONTHLY_PATTERN )
     {
-        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, Aquifer[j].ID);
+        report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, sp->Aquifer[j].ID);
     }
 }
 
@@ -370,7 +370,7 @@ void  gwater_validate(SWMM_Project *sp, int j)
     gw = sp->Subcatch[j].groundwater;
     if ( gw )
     {
-        a = Aquifer[gw->aquifer];
+        a = sp->Aquifer[gw->aquifer];
 
         // ... use aquifer values for missing groundwater parameters
         if ( gw->bottomElev == MISSING ) gw->bottomElev = a.bottomElev;
@@ -398,7 +398,7 @@ void  gwater_initState(SWMM_Project *sp, int j)
     gw = sp->Subcatch[j].groundwater;
     if ( gw )
     {
-        a = Aquifer[gw->aquifer];
+        a = sp->Aquifer[gw->aquifer];
 
         // ... initial moisture content
         gw->theta = gw->upperMoisture;
@@ -473,7 +473,7 @@ double gwater_getVolume(SWMM_Project *sp, int j)
     double upperDepth;
     gw = sp->Subcatch[j].groundwater;
     if ( gw == NULL ) return 0.0;
-    a = Aquifer[gw->aquifer];
+    a = sp->Aquifer[gw->aquifer];
     upperDepth = gw->surfElev - gw->bottomElev - gw->lowerDepth;
     return (upperDepth * gw->theta) + (gw->lowerDepth * a.porosity);
 }
@@ -505,7 +505,7 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     if ( GW == NULL ) return;
     LatFlowExpr = sp->Subcatch[j].gwLatFlowExpr;                                   //(5.1.007)
     DeepFlowExpr = sp->Subcatch[j].gwDeepFlowExpr;                                 //(5.1.007)
-    A = Aquifer[GW->aquifer];
+    A = sp->Aquifer[GW->aquifer];
 
     // --- get fraction of total area that is pervious
     FracPerv = subcatch_getFracPerv(sp, j);
