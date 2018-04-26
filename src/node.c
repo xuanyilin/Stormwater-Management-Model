@@ -79,7 +79,7 @@ static double storage_getDepth(SWMM_Project *sp, int j, double v);
 static double storage_getVolume(SWMM_Project *sp, int j, double d);
 static double storage_getSurfArea(SWMM_Project *sp, int j, double d);
 static void   storage_getVolDiff(double y, double* f, double* df, void* p);
-static double storage_getOutflow(int j, int i);
+static double storage_getOutflow(SWMM_Project *sp, int j, int i);
 static double storage_getLosses(SWMM_Project *sp, int j, double tStep);
 
 static int    divider_readParams(SWMM_Project *sp, int j, int k, char* tok[],
@@ -123,24 +123,24 @@ void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
 //  Purpose: assigns property values to a node.
 //
 {
-    Node[j].type       = type;
-    Node[j].subIndex   = k;
-    Node[j].invertElev = x[0] / UCF(sp, LENGTH);
-    Node[j].crownElev  = Node[j].invertElev;
-    Node[j].initDepth  = 0.0;
-    Node[j].newVolume  = 0.0;
-    Node[j].fullVolume = 0.0;
-    Node[j].fullDepth  = 0.0;
-    Node[j].surDepth   = 0.0;
-    Node[j].pondedArea = 0.0;
-    Node[j].degree     = 0;
+    sp->Node[j].type       = type;
+    sp->Node[j].subIndex   = k;
+    sp->Node[j].invertElev = x[0] / UCF(sp, LENGTH);
+    sp->Node[j].crownElev  = sp->Node[j].invertElev;
+    sp->Node[j].initDepth  = 0.0;
+    sp->Node[j].newVolume  = 0.0;
+    sp->Node[j].fullVolume = 0.0;
+    sp->Node[j].fullDepth  = 0.0;
+    sp->Node[j].surDepth   = 0.0;
+    sp->Node[j].pondedArea = 0.0;
+    sp->Node[j].degree     = 0;
     switch (type)
     {
       case JUNCTION:
-        Node[j].fullDepth = x[1] / UCF(sp, LENGTH);
-        Node[j].initDepth = x[2] / UCF(sp, LENGTH);
-        Node[j].surDepth  = x[3] / UCF(sp, LENGTH);
-        Node[j].pondedArea = x[4] / (UCF(sp, LENGTH)*UCF(sp, LENGTH));
+        sp->Node[j].fullDepth = x[1] / UCF(sp, LENGTH);
+        sp->Node[j].initDepth = x[2] / UCF(sp, LENGTH);
+        sp->Node[j].surDepth  = x[3] / UCF(sp, LENGTH);
+        sp->Node[j].pondedArea = x[4] / (UCF(sp, LENGTH)*UCF(sp, LENGTH));
         break;
 
       case OUTFALL:
@@ -163,8 +163,8 @@ void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
         break;
 
       case STORAGE:
-        Node[j].fullDepth  = x[1] / UCF(sp, LENGTH);
-        Node[j].initDepth  = x[2] / UCF(sp, LENGTH);
+        sp->Node[j].fullDepth  = x[1] / UCF(sp, LENGTH);
+        sp->Node[j].initDepth  = x[2] / UCF(sp, LENGTH);
         Storage[k].aCoeff  = x[3];
         Storage[k].aExpon  = x[4];
         Storage[k].aConst  = x[5];
@@ -180,10 +180,10 @@ void  node_setParams(SWMM_Project *sp, int j, int type, int k, double x[])
         Divider[k].qMin      = x[4] / UCF(sp, FLOW);
         Divider[k].dhMax     = x[5];
         Divider[k].cWeir     = x[6];
-        Node[j].fullDepth    = x[7] / UCF(sp, LENGTH);
-        Node[j].initDepth    = x[8] / UCF(sp, LENGTH);
-        Node[j].surDepth     = x[9] / UCF(sp, LENGTH);
-        Node[j].pondedArea   = x[10] / (UCF(sp, LENGTH)*UCF(sp, LENGTH));
+        sp->Node[j].fullDepth    = x[7] / UCF(sp, LENGTH);
+        sp->Node[j].initDepth    = x[8] / UCF(sp, LENGTH);
+        sp->Node[j].surDepth     = x[9] / UCF(sp, LENGTH);
+        sp->Node[j].pondedArea   = x[10] / (UCF(sp, LENGTH)*UCF(sp, LENGTH));
         break;
     }
 }
@@ -200,19 +200,19 @@ void  node_validate(SWMM_Project *sp, int j)
     TDwfInflow* inflow;
 
     // --- see if full depth was increased to accommodate conduit crown
-    if ( Node[j].fullDepth > Node[j].oldDepth && Node[j].oldDepth > 0.0 )
+    if ( sp->Node[j].fullDepth > sp->Node[j].oldDepth && sp->Node[j].oldDepth > 0.0 )
     {
-        report_writeWarningMsg(sp, WARN02, Node[j].ID);
+        report_writeWarningMsg(sp, WARN02, sp->Node[j].ID);
     }
 
     // --- check that initial depth does not exceed max. depth
-    if ( Node[j].initDepth > Node[j].fullDepth + Node[j].surDepth )
-        report_writeErrorMsg(sp, ERR_NODE_DEPTH, Node[j].ID);
+    if ( sp->Node[j].initDepth > sp->Node[j].fullDepth + sp->Node[j].surDepth )
+        report_writeErrorMsg(sp, ERR_NODE_DEPTH, sp->Node[j].ID);
 
-    if ( Node[j].type == DIVIDER ) divider_validate(sp, j);
+    if ( sp->Node[j].type == DIVIDER ) divider_validate(sp, j);
 
     // --- initialize dry weather inflows
-    inflow = Node[j].dwfInflow;
+    inflow = sp->Node[j].dwfInflow;
     while (inflow)
     {
         inflow_initDwfInflow(inflow);
@@ -232,34 +232,34 @@ void node_initState(SWMM_Project *sp, int j)
     int p, k;                                                                  //(5.1.007)
 
     // --- initialize depth
-    Node[j].oldDepth = Node[j].initDepth;
-    Node[j].newDepth = Node[j].oldDepth;
-    Node[j].crownElev = Node[j].invertElev;
+    sp->Node[j].oldDepth = sp->Node[j].initDepth;
+    sp->Node[j].newDepth = sp->Node[j].oldDepth;
+    sp->Node[j].crownElev = sp->Node[j].invertElev;
 
-    Node[j].fullVolume = node_getVolume(sp, j, Node[j].fullDepth);
-    Node[j].oldVolume = node_getVolume(sp, j, Node[j].oldDepth);
-    Node[j].newVolume = Node[j].oldVolume;
+    sp->Node[j].fullVolume = node_getVolume(sp, j, sp->Node[j].fullDepth);
+    sp->Node[j].oldVolume = node_getVolume(sp, j, sp->Node[j].oldDepth);
+    sp->Node[j].newVolume = sp->Node[j].oldVolume;
 
     // --- initialize water quality state
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
-        Node[j].oldQual[p]  = 0.0;
-        Node[j].newQual[p]  = 0.0;
+        sp->Node[j].oldQual[p]  = 0.0;
+        sp->Node[j].newQual[p]  = 0.0;
     }
 
     // --- initialize any inflow
-    Node[j].oldLatFlow = 0.0;
-    Node[j].newLatFlow = 0.0;
-    Node[j].losses = 0.0;                                                      //(5.1.007)
+    sp->Node[j].oldLatFlow = 0.0;
+    sp->Node[j].newLatFlow = 0.0;
+    sp->Node[j].losses = 0.0;                                                      //(5.1.007)
 
 
 ////  Following code section added to release 5.1.007.  ////                   //(5.1.007)
 
     // --- initialize storage nodes
-    if ( Node[j].type == STORAGE )
+    if ( sp->Node[j].type == STORAGE )
     {
         // --- set hydraulic residence time to 0
-        k = Node[j].subIndex;
+        k = sp->Node[j].subIndex;
         Storage[k].hrt = 0.0;
 
         // --- initialize exfiltration properties
@@ -270,9 +270,9 @@ void node_initState(SWMM_Project *sp, int j)
 ////  Following code section added to release 5.1.008.  ////                   //(5.1.008)
 
     // --- initialize flow stream routed from outfall onto a subcatchment
-    if ( Node[j].type == OUTFALL )
+    if ( sp->Node[j].type == OUTFALL )
     {
-        k = Node[j].subIndex;
+        k = sp->Node[j].subIndex;
         if ( Outfall[k].routeTo >= 0 )
         {
             Outfall[k].vRouted = 0.0;
@@ -284,16 +284,16 @@ void node_initState(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void node_setOldHydState(int j)
+void node_setOldHydState(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
 //  Purpose: replaces a node's old hydraulic state values with new ones.
 //
 {
-    Node[j].oldDepth    = Node[j].newDepth;
-    Node[j].oldLatFlow  = Node[j].newLatFlow;
-    Node[j].oldVolume   = Node[j].newVolume;
+    sp->Node[j].oldDepth    = sp->Node[j].newDepth;
+    sp->Node[j].oldLatFlow  = sp->Node[j].newLatFlow;
+    sp->Node[j].oldVolume   = sp->Node[j].newVolume;
 }
 
 //=============================================================================
@@ -308,14 +308,14 @@ void node_setOldQualState(SWMM_Project *sp, int j)
     int p;
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
-        Node[j].oldQual[p] = Node[j].newQual[p];
-        Node[j].newQual[p] = 0.0;
+        sp->Node[j].oldQual[p] = sp->Node[j].newQual[p];
+        sp->Node[j].newQual[p] = 0.0;
     }
 }
 
 //=============================================================================
 
-void node_initInflow(int j, double tStep)
+void node_initInflow(SWMM_Project *sp, int j, double tStep)
 //
 //  Input:   j = node index
 //           tStep = time step (sec)
@@ -324,15 +324,15 @@ void node_initInflow(int j, double tStep)
 //
 {
     // --- initialize inflow & outflow
-    Node[j].oldFlowInflow = Node[j].inflow;
-    Node[j].oldNetInflow  = Node[j].inflow - Node[j].outflow;
-    Node[j].inflow = Node[j].newLatFlow;
-    Node[j].outflow = Node[j].losses;                                          //(5.1.007)
+    sp->Node[j].oldFlowInflow = sp->Node[j].inflow;
+    sp->Node[j].oldNetInflow  = sp->Node[j].inflow - sp->Node[j].outflow;
+    sp->Node[j].inflow = sp->Node[j].newLatFlow;
+    sp->Node[j].outflow = sp->Node[j].losses;                                          //(5.1.007)
 
     // --- set overflow to any excess stored volume
-    if ( Node[j].newVolume > Node[j].fullVolume )
-        Node[j].overflow = (Node[j].newVolume - Node[j].fullVolume) / tStep;
-    else Node[j].overflow = 0.0;
+    if ( sp->Node[j].newVolume > sp->Node[j].fullVolume )
+        sp->Node[j].overflow = (sp->Node[j].newVolume - sp->Node[j].fullVolume) / tStep;
+    else sp->Node[j].overflow = 0.0;
 }
 
 //=============================================================================
@@ -345,7 +345,7 @@ double node_getDepth(SWMM_Project *sp, int j, double v)
 //  Purpose: computes a node's water depth from its volume.
 //
 {
-    switch ( Node[j].type )
+    switch ( sp->Node[j].type )
     {
       case STORAGE: return storage_getDepth(sp, j, v);
       default:      return 0.0;
@@ -362,13 +362,13 @@ double node_getVolume(SWMM_Project *sp, int j, double d)
 //  Purpose: computes volume stored at a node from its water depth.
 //
 {
-    switch ( Node[j].type )
+    switch ( sp->Node[j].type )
     {
       case STORAGE: return storage_getVolume(sp, j, d);
 
       default:
-        if ( Node[j].fullDepth > 0.0 )
-            return Node[j].fullVolume * (d / Node[j].fullDepth);
+        if ( sp->Node[j].fullDepth > 0.0 )
+            return sp->Node[j].fullVolume * (d / sp->Node[j].fullDepth);
         else return 0.0;
     }
 }
@@ -383,7 +383,7 @@ double  node_getSurfArea(SWMM_Project *sp, int j, double d)
 //  Purpose: computes surface area of water stored at a node from water depth.
 //
 {
-    switch (Node[j].type)
+    switch (sp->Node[j].type)
     {
       case STORAGE: return storage_getSurfArea(sp, j, d);
       default:      return 0.0;        
@@ -400,17 +400,17 @@ double node_getOutflow(SWMM_Project *sp, int j, int k)
 //  Purpose: computes outflow from node available for inflow into a link.
 //
 {
-    switch ( Node[j].type )
+    switch ( sp->Node[j].type )
     {
       case DIVIDER: return divider_getOutflow(sp, j, k);
-      case STORAGE: return storage_getOutflow(j, k);
-      default:      return Node[j].inflow + Node[j].overflow;
+      case STORAGE: return storage_getOutflow(sp, j, k);
+      default:      return sp->Node[j].inflow + sp->Node[j].overflow;
     }
 }
 
 //=============================================================================
 
-double node_getMaxOutflow(int j, double q, double tStep)
+double node_getMaxOutflow(SWMM_Project *sp, int j, double q, double tStep)
 //
 //  Input:   j = node index
 //           q = original outflow rate (cfs)
@@ -420,9 +420,9 @@ double node_getMaxOutflow(int j, double q, double tStep)
 //
 {
     double qMax;
-    if ( Node[j].fullVolume > 0.0 )
+    if ( sp->Node[j].fullVolume > 0.0 )
     {
-        qMax = Node[j].inflow + Node[j].oldVolume / tStep;
+        qMax = sp->Node[j].inflow + sp->Node[j].oldVolume / tStep;
         if ( q > qMax ) q = qMax;
     }
     return MAX(0.0, q);
@@ -444,10 +444,10 @@ double node_getSystemOutflow(SWMM_Project *sp, int j, int *isFlooded)
     *isFlooded = FALSE;
 
     // --- if node is an outfall
-    if ( Node[j].type == OUTFALL )
+    if ( sp->Node[j].type == OUTFALL )
     {
         // --- node receives inflow from outfall conduit
-        if ( Node[j].outflow == 0.0 ) outflow = Node[j].inflow;
+        if ( sp->Node[j].outflow == 0.0 ) outflow = sp->Node[j].inflow;
 
         // --- node sends flow into outfall conduit
         //     (therefore it has a negative outflow)
@@ -455,35 +455,35 @@ double node_getSystemOutflow(SWMM_Project *sp, int j, int *isFlooded)
 
 ////  Following code segment modified for release 5.1.007.  ////               //(5.1.007)
         {
-            if ( Node[j].inflow == 0.0 )
+            if ( sp->Node[j].inflow == 0.0 )
             {
-                outflow = -Node[j].outflow;
-                Node[j].inflow = fabs(outflow);
+                outflow = -sp->Node[j].outflow;
+                sp->Node[j].inflow = fabs(outflow);
             }
         }
 
         // --- set overflow and volume to 0
-        Node[j].overflow = 0.0;
-        Node[j].newVolume = 0.0;
+        sp->Node[j].overflow = 0.0;
+        sp->Node[j].newVolume = 0.0;
     }
 
     // --- node is a terminal node under Steady or Kin. Wave routing
     else if ( sp->RouteModel != DW &&
-              Node[j].degree == 0 &&
-              Node[j].type != STORAGE
+              sp->Node[j].degree == 0 &&
+              sp->Node[j].type != STORAGE
             )
     {
-        if ( Node[j].outflow == 0.0 ) outflow = Node[j].inflow;
-        Node[j].overflow = 0.0;
-        Node[j].newVolume = 0.0;
+        if ( sp->Node[j].outflow == 0.0 ) outflow = sp->Node[j].inflow;
+        sp->Node[j].overflow = 0.0;
+        sp->Node[j].newVolume = 0.0;
     }
 
     // --- otherwise node is an interior node and any
     //     overflow is considered as system outflow and flooding
     else 
     {
-        if ( Node[j].newVolume <= Node[j].fullVolume)
-            outflow = Node[j].overflow;
+        if ( sp->Node[j].newVolume <= sp->Node[j].fullVolume)
+            outflow = sp->Node[j].overflow;
         if ( outflow > 0.0 ) *isFlooded = TRUE;
     }
     return outflow;
@@ -504,22 +504,22 @@ void node_getResults(SWMM_Project *sp, int j, double f, float x[])
     double z;
     double f1 = 1.0 - f;
 
-    z = (f1 * Node[j].oldDepth + f * Node[j].newDepth) * UCF(sp, LENGTH);
+    z = (f1 * sp->Node[j].oldDepth + f * sp->Node[j].newDepth) * UCF(sp, LENGTH);
     x[NODE_DEPTH] = (float)z;
-    z = Node[j].invertElev * UCF(sp, LENGTH);
+    z = sp->Node[j].invertElev * UCF(sp, LENGTH);
     x[NODE_HEAD] = x[NODE_DEPTH] + (float)z;
-    z = (f1*Node[j].oldVolume + f*Node[j].newVolume) * UCF(sp, VOLUME);
+    z = (f1*sp->Node[j].oldVolume + f*sp->Node[j].newVolume) * UCF(sp, VOLUME);
     x[NODE_VOLUME]  = (float)z;
-    z = (f1*Node[j].oldLatFlow + f*Node[j].newLatFlow) * UCF(sp, FLOW); 
+    z = (f1*sp->Node[j].oldLatFlow + f*sp->Node[j].newLatFlow) * UCF(sp, FLOW); 
     x[NODE_LATFLOW] = (float)z;
-    z = (f1*Node[j].oldFlowInflow + f*Node[j].inflow) * UCF(sp, FLOW);
+    z = (f1*sp->Node[j].oldFlowInflow + f*sp->Node[j].inflow) * UCF(sp, FLOW);
     x[NODE_INFLOW] = (float)z;
-    z = Node[j].overflow * UCF(sp, FLOW);
+    z = sp->Node[j].overflow * UCF(sp, FLOW);
     x[NODE_OVERFLOW] = (float)z;
 
     if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
-        z = f1*Node[j].oldQual[p] + f*Node[j].newQual[p];
+        z = f1*sp->Node[j].oldQual[p] + f*sp->Node[j].newQual[p];
         x[NODE_QUAL+p] = (float)z;
     }
 }
@@ -536,7 +536,7 @@ void   node_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit, 
 //  Purpose: sets water depth at a node that serves as an outlet point.
 //
 {
-    switch (Node[j].type)
+    switch (sp->Node[j].type)
     {
       // --- do nothing if outlet is a storage unit
       case STORAGE:
@@ -549,8 +549,8 @@ void   node_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit, 
 
       // --- for all other nodes, use min. of critical & normal depths
       default:
-        if ( z > 0.0 ) Node[j].newDepth = 0.0;
-        else Node[j].newDepth = MIN(yNorm, yCrit);
+        if ( z > 0.0 ) sp->Node[j].newDepth = 0.0;
+        else sp->Node[j].newDepth = MIN(yNorm, yCrit);
     }
 }
 
@@ -567,17 +567,17 @@ double node_getPondedArea(SWMM_Project *sp, int j, double d)
     double a;
 
     // --- use regular getSurfArea function if node not flooded
-    if ( d <= Node[j].fullDepth || Node[j].pondedArea == 0.0 )
+    if ( d <= sp->Node[j].fullDepth || sp->Node[j].pondedArea == 0.0 )
     {
         return node_getSurfArea(sp, j, d);
     }
 
     // --- compute ponded depth
-    d = d - Node[j].fullDepth;
+    d = d - sp->Node[j].fullDepth;
 
     // --- use ponded area for flooded node
-    a = Node[j].pondedArea;
-    if ( a <= 0.0 ) a = node_getSurfArea(sp, j, Node[j].fullDepth);
+    a = sp->Node[j].pondedArea;
+    if ( a <= 0.0 ) a = node_getSurfArea(sp, j, sp->Node[j].fullDepth);
     return a;
 }
 
@@ -592,7 +592,7 @@ double node_getLosses(SWMM_Project *sp, int j, double tStep)
 //           time step for a node.
 //
 {
-    if ( Node[j].type == STORAGE ) return storage_getLosses(sp, j, tStep);
+    if ( sp->Node[j].type == STORAGE ) return storage_getLosses(sp, j, tStep);
     else return 0.0;
 }
 
@@ -639,7 +639,7 @@ int junc_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     }
 
     // --- add parameters to junction object
-    Node[j].ID = id;
+    sp->Node[j].ID = id;
     node_setParams(sp, j, JUNCTION, k, x);
     return 0;
 }
@@ -729,7 +729,7 @@ int storage_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     }
 
     // --- add parameters to storage unit object
-    Node[j].ID = id;
+    sp->Node[j].ID = id;
     node_setParams(sp, j, STORAGE, k, x);
 
     // --- read exfiltration parameters if present
@@ -747,15 +747,15 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
 //  Purpose: computes a storage node's water depth from its volume.
 //
 {
-    int    k = Node[j].subIndex;
+    int    k = sp->Node[j].subIndex;
     int    i = Storage[k].aCurve;
     double d, e;
 	TStorageVol storageVol;
 
     // --- return max depth if a max. volume has been computed
     //     and volume is > max. volume
-    if ( Node[j].fullVolume > 0.0
-    &&   v >= Node[j].fullVolume ) return Node[j].fullDepth;
+    if ( sp->Node[j].fullVolume > 0.0
+    &&   v >= sp->Node[j].fullVolume ) return sp->Node[j].fullDepth;
     if ( v == 0.0 ) return 0.0;
 
     // --- use tabular area v. depth curve
@@ -780,11 +780,11 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
             storageVol.k = k;
             storageVol.v = v;
             d = v / (Storage[k].aConst + Storage[k].aCoeff);
-            findroot_Newton(0.0, Node[j].fullDepth*UCF(sp, LENGTH), &d,
+            findroot_Newton(0.0, sp->Node[j].fullDepth*UCF(sp, LENGTH), &d,
                             0.001, storage_getVolDiff, &storageVol);            
         }
         d /= UCF(sp, LENGTH);
-        if ( d > Node[j].fullDepth ) d = Node[j].fullDepth;
+        if ( d > sp->Node[j].fullDepth ) d = sp->Node[j].fullDepth;
         return d;
     }
 }
@@ -828,14 +828,14 @@ double storage_getVolume(SWMM_Project *sp, int j, double d)
 //  Purpose: computes a storage node's water volume from its depth.
 //
 {
-    int    k = Node[j].subIndex;
+    int    k = sp->Node[j].subIndex;
     int    i = Storage[k].aCurve;
     double v;
 
     // --- return full volume if depth >= max. depth
     if ( d == 0.0 ) return 0.0;
-    if ( d >= Node[j].fullDepth
-    &&   Node[j].fullVolume > 0.0 ) return Node[j].fullVolume;
+    if ( d >= sp->Node[j].fullDepth
+    &&   sp->Node[j].fullVolume > 0.0 ) return sp->Node[j].fullVolume;
 
     // --- use table integration if area v. depth table exists
     if ( i >= 0 )
@@ -863,7 +863,7 @@ double storage_getSurfArea(SWMM_Project *sp, int j, double d)
 //
 {
     double area;
-    int k = Node[j].subIndex;
+    int k = sp->Node[j].subIndex;
     int i = Storage[k].aCurve;
     if ( i >= 0 )
         area = table_lookupEx(&Curve[i], d*UCF(sp, LENGTH));
@@ -880,7 +880,7 @@ double storage_getSurfArea(SWMM_Project *sp, int j, double d)
 
 //=============================================================================
 
-double storage_getOutflow(int j, int i)
+double storage_getOutflow(SWMM_Project *sp, int j, int i)
 //
 //  Input:   j = node index
 //           i = link index
@@ -896,7 +896,7 @@ double storage_getOutflow(int j, int i)
     if ( Link[i].type != CONDUIT ) return 0.0;
 
     // --- find depth of water in conduit
-    y = Node[j].newDepth - Link[i].offset1;
+    y = sp->Node[j].newDepth - Link[i].offset1;
 
     // --- return 0 if conduit empty or full flow if full
     if ( y <= 0.0 ) return 0.0;
@@ -931,10 +931,10 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
     TExfil* exfil;
 
     // --- if node has some stored volume
-    if ( Node[j].newVolume > FUDGE )                                           //(5.1.010)
+    if ( sp->Node[j].newVolume > FUDGE )                                           //(5.1.010)
     {
         // --- get node's evap. rate (ft/s) &  exfiltration object
-        k = Node[j].subIndex;
+        k = sp->Node[j].subIndex;
         evapRate = sp->Evap.rate * Storage[k].fEvap;
         exfil = Storage[k].exfil;
 
@@ -942,7 +942,7 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
         if ( evapRate > 0.0 || exfil != NULL) 
         {
             // --- obtain storage depth & surface area 
-            depth = Node[j].newDepth;                                          //(5.1.010)
+            depth = sp->Node[j].newDepth;                                          //(5.1.010)
             area = storage_getSurfArea(sp, j, depth);
 
             // --- compute evap rate over this area (cfs)
@@ -956,9 +956,9 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
 
             // --- total loss over time step cannot exceed stored volume
             totalLoss = (evapRate + exfilRate) * tStep;
-            if ( totalLoss > Node[j].newVolume )                               //(5.1.010)
+            if ( totalLoss > sp->Node[j].newVolume )                               //(5.1.010)
             {
-                lossRatio = Node[j].newVolume / totalLoss;                     //(5.1.010)
+                lossRatio = sp->Node[j].newVolume / totalLoss;                     //(5.1.010)
                 evapRate *= lossRatio;
                 exfilRate *= lossRatio; 
             }
@@ -966,8 +966,8 @@ double storage_getLosses(SWMM_Project *sp, int j, double tStep)
     }
 
     // --- save evap & infil losses at the node
-    Storage[Node[j].subIndex].evapLoss = evapRate * tStep;
-    Storage[Node[j].subIndex].exfilLoss = exfilRate * tStep;
+    Storage[sp->Node[j].subIndex].evapLoss = evapRate * tStep;
+    Storage[sp->Node[j].subIndex].exfilLoss = exfilRate * tStep;
     return evapRate + exfilRate;
 }
 
@@ -1072,7 +1072,7 @@ int divider_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     }
  
     // --- add parameters to data base
-    Node[j].ID = id;
+    sp->Node[j].ID = id;
     node_setParams(sp, j, DIVIDER, k, x);
     return 0;
 }
@@ -1089,25 +1089,25 @@ void  divider_validate(SWMM_Project *sp, int j)
     int i, k;
 
     // --- check that diverted link is attached to divider
-    k = Node[j].subIndex;
+    k = sp->Node[j].subIndex;
     i = Divider[k].link;
     if ( i < 0 || ( Link[i].node1 != j && Link[i].node2 != j) )
     {
-        report_writeErrorMsg(sp, ERR_DIVIDER_LINK, Node[j].ID);
+        report_writeErrorMsg(sp, ERR_DIVIDER_LINK, sp->Node[j].ID);
     }
 
     // --- validate parameters supplied for weir-type divider
     if ( Divider[k].type == WEIR_DIVIDER )
     {
         if ( Divider[k].dhMax <= 0.0 || Divider[k].cWeir <= 0.0 )
-            report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, Node[j].ID);
+            report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, sp->Node[j].ID);
         else
         {
             // --- find flow when weir is full
             Divider[k].qMax = Divider[k].cWeir * pow(Divider[k].dhMax, 1.5)
                               / UCF(sp, FLOW);
             if ( Divider[k].qMin > Divider[k].qMax )
-                report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_WEIR_DIVIDER, sp->Node[j].ID);
         }
     }
 }
@@ -1130,8 +1130,8 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
     double qOut;                  // diverted outflow
     double f;                     // fraction of weir divider full
 
-    qIn = Node[j].inflow + Node[j].overflow;
-    i = Node[j].subIndex;
+    qIn = sp->Node[j].inflow + sp->Node[j].overflow;
+    i = sp->Node[j].subIndex;
     switch ( Divider[i].type )
     {
       case CUTOFF_DIVIDER:
@@ -1145,7 +1145,7 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
 
         // --- diversion link receives any excess of node's inflow and
         //     outflow sent previously into non-diversion link
-        else qOut = qIn - Node[j].outflow;
+        else qOut = qIn - sp->Node[j].outflow;
         if ( qOut < FLOW_TOL ) qOut = 0.0;
         return qOut;
 
@@ -1271,7 +1271,7 @@ int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     }
 ////
 
-    Node[j].ID = id;
+    sp->Node[j].ID = id;
     node_setParams(sp, j, OUTFALL, k, x);
     return 0;
 }
@@ -1292,19 +1292,19 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
     double   yNew;                     // new depth above invert elev. (ft)
     double   stage;                    // water elevation at outfall (ft)
     int      k;                        // table index
-    int      i = Node[j].subIndex;     // outfall index
+    int      i = sp->Node[j].subIndex;     // outfall index
     DateTime currentDate;              // current date/time in days
 
     switch ( Outfall[i].type )
     {
       case FREE_OUTFALL:
-        if ( z > 0.0 ) Node[j].newDepth = 0.0;
-        else Node[j].newDepth = MIN(yNorm, yCrit);
+        if ( z > 0.0 ) sp->Node[j].newDepth = 0.0;
+        else sp->Node[j].newDepth = MIN(yNorm, yCrit);
         return;
 
       case NORMAL_OUTFALL:
-        if ( z > 0.0 ) Node[j].newDepth = 0.0;
-        else Node[j].newDepth = yNorm;
+        if ( z > 0.0 ) sp->Node[j].newDepth = 0.0;
+        else sp->Node[j].newDepth = yNorm;
         return;
 
       case STAGED_OUTFALL:
@@ -1325,7 +1325,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
         stage = table_tseriesLookup(&Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);
         break;
-      default: stage = Node[j].invertElev;
+      default: stage = sp->Node[j].invertElev;
     }
 
     // --- now determine depth at node given outfall stage elev.
@@ -1335,9 +1335,9 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
 
     // --- if elev. of critical depth is below outfall stage elev. then
     //     the outfall stage determines node depth
-    if ( yCrit + z + Node[j].invertElev < stage )
+    if ( yCrit + z + sp->Node[j].invertElev < stage )
     {
-        yNew = stage - Node[j].invertElev;
+        yNew = stage - sp->Node[j].invertElev;
     }
 
     // --- otherwise if the outfall conduit lies above the outfall invert
@@ -1345,8 +1345,8 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
     {
         // --- if the outfall stage lies below the bottom of the outfall
         //     conduit then the result is distance from node invert to stage
-        if ( stage < Node[j].invertElev + z )
-            yNew = MAX(0.0, (stage - Node[j].invertElev));
+        if ( stage < sp->Node[j].invertElev + z )
+            yNew = MAX(0.0, (stage - sp->Node[j].invertElev));
 
         // --- otherwise stage lies between bottom of conduit and critical
         //     depth in conduit so result is elev. of critical depth
@@ -1356,7 +1356,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
     // --- and for case where there is no conduit offset and outfall stage
     //     lies below critical depth, then node depth = critical depth 
     else yNew = yCrit;
-    Node[j].newDepth = yNew;
+    sp->Node[j].newDepth = yNew;
 }
 
 //=============================================================================

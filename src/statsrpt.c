@@ -326,13 +326,13 @@ void writeNodeDepths(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
-        fprintf(sp->Frpt.file, " %-9s ", NodeTypeWords[Node[j].type]);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
+        fprintf(sp->Frpt.file, " %-9s ", NodeTypeWords[sp->Node[j].type]);
         getElapsedTime(sp, NodeStats[j].maxDepthDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "%7.2f  %7.2f  %7.2f  %4d  %02d:%02d  %10.2f",
             NodeStats[j].avgDepth / sp->StepCount * UCF(sp, LENGTH),
             NodeStats[j].maxDepth * UCF(sp, LENGTH),
-            (NodeStats[j].maxDepth + Node[j].invertElev) * UCF(sp, LENGTH),
+            (NodeStats[j].maxDepth + sp->Node[j].invertElev) * UCF(sp, LENGTH),
             days, hrs, mins, NodeStats[j].maxRptDepth);                        //(5.1.011)
     }
     WRITE("");
@@ -369,8 +369,8 @@ void writeNodeFlows(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
-        fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[Node[j].type]);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
+        fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[sp->Node[j].type]);
         getElapsedTime(sp, NodeStats[j].maxInflowDate, &days1, &hrs1, &mins1);
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxLatFlow * UCF(sp, FLOW));
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxInflow * UCF(sp, FLOW));
@@ -403,7 +403,7 @@ void writeNodeSurcharge(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        if ( Node[j].type == OUTFALL ) continue;
+        if ( sp->Node[j].type == OUTFALL ) continue;
         if ( NodeStats[j].timeSurcharged == 0.0 ) continue;
         t = MAX(0.01, (NodeStats[j].timeSurcharged / 3600.0));
         if ( n == 0 )
@@ -421,11 +421,11 @@ void writeNodeSurcharge(SWMM_Project *sp)
 "\n  ---------------------------------------------------------------------");
             n = 1;
         }
-        fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
-        fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[Node[j].type]);
-        d1 = NodeStats[j].maxDepth + Node[j].invertElev - Node[j].crownElev;
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
+        fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[sp->Node[j].type]);
+        d1 = NodeStats[j].maxDepth + sp->Node[j].invertElev - sp->Node[j].crownElev;
         if ( d1 < 0.0 ) d1 = 0.0;
-        d2 = Node[j].fullDepth - NodeStats[j].maxDepth;
+        d2 = sp->Node[j].fullDepth - NodeStats[j].maxDepth;
         if ( d2 < 0.0 ) d2 = 0.0;
         fprintf(sp->Frpt.file, "  %9.2f      %9.3f    %9.3f",
                 t, d1*UCF(sp, LENGTH), d2*UCF(sp, LENGTH));
@@ -450,7 +450,7 @@ void writeNodeFlooding(SWMM_Project *sp)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        if ( Node[j].type == OUTFALL ) continue;
+        if ( sp->Node[j].type == OUTFALL ) continue;
         if ( NodeStats[j].timeFlooded == 0.0 ) continue;
         t = MAX(0.01, (NodeStats[j].timeFlooded / 3600.0));
 
@@ -475,7 +475,7 @@ void writeNodeFlooding(SWMM_Project *sp)
 "\n  --------------------------------------------------------------------------");
             n = 1;
         }
-        fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
+        fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
         fprintf(sp->Frpt.file, " %7.2f ", t);
         fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxOverflow * UCF(sp, FLOW));
         getElapsedTime(sp, NodeStats[j].maxOverflowDate, &days, &hrs, &mins);
@@ -483,7 +483,7 @@ void writeNodeFlooding(SWMM_Project *sp)
 		fprintf(sp->Frpt.file, "%12.3f", NodeStats[j].volFlooded * Vcf);
         if ( sp->RouteModel == DW )
             fprintf(sp->Frpt.file, " %9.3f",
-                (NodeStats[j].maxDepth - Node[j].fullDepth) * UCF(sp, LENGTH));
+                (NodeStats[j].maxDepth - sp->Node[j].fullDepth) * UCF(sp, LENGTH));
         else
             fprintf(sp->Frpt.file, " %9.3f", NodeStats[j].maxPondedVol /
                                          1000.0 * UCF(sp, VOLUME));
@@ -528,17 +528,17 @@ void writeStorageVolumes(SWMM_Project *sp)
 
         for ( j = 0; j < sp->Nobjects[NODE]; j++ )
         {
-            if ( Node[j].type != STORAGE ) continue;
-            k = Node[j].subIndex;
-            fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
+            if ( sp->Node[j].type != STORAGE ) continue;
+            k = sp->Node[j].subIndex;
+            fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
             avgVol = StorageStats[k].avgVol / sp->StepCount;
             maxVol = StorageStats[k].maxVol;
             pctMaxVol = 0.0;
             pctAvgVol = 0.0;
-            if ( Node[j].fullVolume > 0.0 )
+            if ( sp->Node[j].fullVolume > 0.0 )
             {
-                pctAvgVol = avgVol / Node[j].fullVolume * 100.0;
-                pctMaxVol = maxVol / Node[j].fullVolume * 100.0;
+                pctAvgVol = avgVol / sp->Node[j].fullVolume * 100.0;
+                pctMaxVol = maxVol / sp->Node[j].fullVolume * 100.0;
             }
             pctEvapLoss = 0.0;
             pctSeepLoss = 0.0;
@@ -621,12 +621,12 @@ void writeOutfallLoads(SWMM_Project *sp)
         // --- identify each outfall node
         for (j=0; j<sp->Nobjects[NODE]; j++)
         {
-            if ( Node[j].type != OUTFALL ) continue;
-            k = Node[j].subIndex;
+            if ( sp->Node[j].type != OUTFALL ) continue;
+            k = sp->Node[j].subIndex;
             flowCount = OutfallStats[k].totalPeriods;
 
             // --- print node ID, flow freq., avg. flow, max. flow & flow vol.
-            fprintf(sp->Frpt.file, "\n  %-20s", Node[j].ID);
+            fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
             x = 100.*flowCount/(double)sp->StepCount;
             fprintf(sp->Frpt.file, "%7.2f", x);
             freqSum += x;

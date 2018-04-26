@@ -61,7 +61,7 @@ static double getStorageOutflow(SWMM_Project *sp, int node, int j, int links[], 
 static double getLinkInflow(SWMM_Project *sp, int link, double dt);
 static void   setNewNodeState(SWMM_Project *sp, int node, double dt);
 static void   setNewLinkState(SWMM_Project *sp, int link);
-static void   updateNodeDepth(int node, double y);
+static void   updateNodeDepth(SWMM_Project *sp, int node, double y);
 static int    steadyflow_execute(SWMM_Project *sp, int link, double* qin,
         double* qout, double tStep);
 
@@ -148,12 +148,12 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
     if ( sp->ErrorCode ) return 0;
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        Node[j].updated = FALSE;
-        Node[j].overflow = 0.0;
-        if ( Node[j].type != STORAGE
-        &&   Node[j].newVolume > Node[j].fullVolume )
+        sp->Node[j].updated = FALSE;
+        sp->Node[j].overflow = 0.0;
+        if ( sp->Node[j].type != STORAGE
+        &&   sp->Node[j].newVolume > sp->Node[j].fullVolume )
         {
-            Node[j].overflow = (Node[j].newVolume - Node[j].fullVolume)/tStep;
+            sp->Node[j].overflow = (sp->Node[j].newVolume - sp->Node[j].fullVolume)/tStep;
         }
     }
 
@@ -170,7 +170,7 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
         // --- see if upstream node is a storage unit whose state needs updating
         j = links[i];
         n1 = Link[j].node1;
-        if ( Node[n1].type == STORAGE ) updateStorageState(sp, n1, i, links, tStep);
+        if ( sp->Node[n1].type == STORAGE ) updateStorageState(sp, n1, i, links, tStep);
 
         // --- retrieve inflow at upstream end of link
         qin  = getLinkInflow(sp, j, tStep);
@@ -182,8 +182,8 @@ int flowrout_execute(SWMM_Project *sp, int links[], int routingModel, double tSt
         Link[j].newFlow = qout;
 
         // adjust outflow at upstream node and inflow at downstream node
-        Node[ Link[j].node1 ].outflow += qin;
-        Node[ Link[j].node2 ].inflow += qout;
+        sp->Node[ Link[j].node1 ].outflow += qin;
+        sp->Node[ Link[j].node2 ].inflow += qout;
     }
     if ( sp->Nobjects[LINK] > 0 ) steps /= sp->Nobjects[LINK];
 
@@ -208,21 +208,21 @@ void validateTreeLayout(SWMM_Project *sp)
     // --- check nodes
     for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        switch ( Node[j].type )
+        switch ( sp->Node[j].type )
         {
           // --- dividers must have only 2 outlet links
           case DIVIDER:
-            if ( Node[j].degree > 2 )
+            if ( sp->Node[j].degree > 2 )
             {
-                report_writeErrorMsg(sp, ERR_DIVIDER, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_DIVIDER, sp->Node[j].ID);
             }
             break;
 
           // --- outfalls cannot have any outlet links
           case OUTFALL:
-            if ( Node[j].degree > 0 )
+            if ( sp->Node[j].degree > 0 )
             {
-                report_writeErrorMsg(sp, ERR_OUTFALL, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_OUTFALL, sp->Node[j].ID);
             }
             break;
 
@@ -231,9 +231,9 @@ void validateTreeLayout(SWMM_Project *sp)
 
           // --- all other nodes allowed only one outlet link
           default:
-            if ( Node[j].degree > 1 )
+            if ( sp->Node[j].degree > 1 )
             {
-                report_writeErrorMsg(sp, ERR_MULTI_OUTLET, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_MULTI_OUTLET, sp->Node[j].ID);
             }
         }
     }
@@ -256,7 +256,7 @@ void validateTreeLayout(SWMM_Project *sp)
           case ORIFICE:
           case WEIR:
           case OUTLET:
-            if ( Node[Link[j].node1].type != STORAGE )
+            if ( sp->Node[Link[j].node1].type != STORAGE )
             {
                 report_writeErrorMsg(sp, ERR_REGULATOR, Link[j].ID);
             }
@@ -277,15 +277,15 @@ void validateGeneralLayout(SWMM_Project *sp)
     int outletCount = 0;
 
     // --- use node inflow attribute to count inflow connections
-    for ( i=0; i<sp->Nobjects[NODE]; i++ ) Node[i].inflow = 0.0;
+    for ( i=0; i<sp->Nobjects[NODE]; i++ ) sp->Node[i].inflow = 0.0;
 
     // --- examine each link
     for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
         // --- update inflow link count of downstream node
         i = Link[j].node1;
-        if ( Node[i].type != OUTFALL ) i = Link[j].node2;
-        Node[i].inflow += 1.0;
+        if ( sp->Node[i].type != OUTFALL ) i = Link[j].node2;
+        sp->Node[i].inflow += 1.0;
 
         // --- if link is dummy link or ideal pump then it must
         //     be the only link exiting the upstream node 
@@ -295,9 +295,9 @@ void validateGeneralLayout(SWMM_Project *sp)
         {
             i = Link[j].node1;
             if ( Link[j].direction < 0 ) i = Link[j].node2;
-            if ( Node[i].degree > 1 )
+            if ( sp->Node[i].degree > 1 )
             {
-                report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_DUMMY_LINK, sp->Node[i].ID);
             }
         }
     }
@@ -308,11 +308,11 @@ void validateGeneralLayout(SWMM_Project *sp)
     {
         // --- if node is of type Outfall, check that it has only 1
         //     connecting link (which can either be an outflow or inflow link)
-        if ( Node[i].type == OUTFALL )
+        if ( sp->Node[i].type == OUTFALL )
         {
-            if ( Node[i].degree + (int)Node[i].inflow > 1 )
+            if ( sp->Node[i].degree + (int)sp->Node[i].inflow > 1 )
             {
-                report_writeErrorMsg(sp, ERR_OUTFALL, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_OUTFALL, sp->Node[i].ID);
             }
             else outletCount++;
         }
@@ -322,8 +322,8 @@ void validateGeneralLayout(SWMM_Project *sp)
     // --- reset node inflows back to zero
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
-        if ( Node[i].inflow == 0.0 ) Node[i].degree = -Node[i].degree;
-        Node[i].inflow = 0.0;
+        if ( sp->Node[i].inflow == 0.0 ) sp->Node[i].degree = -sp->Node[i].degree;
+        sp->Node[i].inflow = 0.0;
     }
 }
 
@@ -340,13 +340,13 @@ void initNodeDepths(SWMM_Project *sp)
     int   n;                           // node index
     double y;                          // node water depth (ft)
 
-    // --- use Node[].inflow as a temporary accumulator for depth in 
-    //     connecting links and Node[].outflow as a temporary counter
+    // --- use sp->Node[].inflow as a temporary accumulator for depth in 
+    //     connecting links and sp->Node[].outflow as a temporary counter
     //     for the number of connecting links
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
-        Node[i].inflow  = 0.0;
-        Node[i].outflow = 0.0;
+        sp->Node[i].inflow  = 0.0;
+        sp->Node[i].outflow = 0.0;
     }
 
     // --- total up flow depths in all connecting links into nodes
@@ -355,23 +355,23 @@ void initNodeDepths(SWMM_Project *sp)
         if ( Link[i].newDepth > FUDGE ) y = Link[i].newDepth + Link[i].offset1;
         else y = 0.0;
         n = Link[i].node1;
-        Node[n].inflow += y;
-        Node[n].outflow += 1.0;
+        sp->Node[n].inflow += y;
+        sp->Node[n].outflow += 1.0;
         n = Link[i].node2;
-        Node[n].inflow += y;
-        Node[n].outflow += 1.0;
+        sp->Node[n].inflow += y;
+        sp->Node[n].outflow += 1.0;
     }
 
     // --- if no user-supplied depth then set initial depth at non-storage/
     //     non-outfall nodes to average of depths in connecting links
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
-        if ( Node[i].type == OUTFALL ) continue;
-        if ( Node[i].type == STORAGE ) continue;
-        if ( Node[i].initDepth > 0.0 ) continue;
-        if ( Node[i].outflow > 0.0 )
+        if ( sp->Node[i].type == OUTFALL ) continue;
+        if ( sp->Node[i].type == STORAGE ) continue;
+        if ( sp->Node[i].initDepth > 0.0 ) continue;
+        if ( sp->Node[i].outflow > 0.0 )
         {
-            Node[i].newDepth = Node[i].inflow / Node[i].outflow;
+            sp->Node[i].newDepth = sp->Node[i].inflow / sp->Node[i].outflow;
         }
     }
 
@@ -402,10 +402,10 @@ void initLinkDepths(SWMM_Project *sp)
             if ( Link[i].q0 != 0.0 ) continue;
 
             // --- set depth to average of depths at end nodes
-            y1 = Node[Link[i].node1].newDepth - Link[i].offset1;
+            y1 = sp->Node[Link[i].node1].newDepth - Link[i].offset1;
             y1 = MAX(y1, 0.0);
             y1 = MIN(y1, Link[i].xsect.yFull);
-            y2 = Node[Link[i].node2].newDepth - Link[i].offset2;
+            y2 = sp->Node[Link[i].node2].newDepth - Link[i].offset2;
             y2 = MAX(y2, 0.0);
             y2 = MIN(y2, Link[i].xsect.yFull);
             y = 0.5 * (y1 + y2);
@@ -431,20 +431,20 @@ void initNodes(SWMM_Project *sp)
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- initialize node inflow and outflow
-        Node[i].inflow = Node[i].newLatFlow;
-        Node[i].outflow = 0.0;
+        sp->Node[i].inflow = sp->Node[i].newLatFlow;
+        sp->Node[i].outflow = 0.0;
 
         // --- initialize node volume
-        Node[i].newVolume = 0.0;
+        sp->Node[i].newVolume = 0.0;
         if ( sp->AllowPonding &&
-             Node[i].pondedArea > 0.0 &&
-             Node[i].newDepth > Node[i].fullDepth )
+             sp->Node[i].pondedArea > 0.0 &&
+             sp->Node[i].newDepth > sp->Node[i].fullDepth )
         {
-            Node[i].newVolume = Node[i].fullVolume +
-                                (Node[i].newDepth - Node[i].fullDepth) *
-                                Node[i].pondedArea;
+            sp->Node[i].newVolume = sp->Node[i].fullVolume +
+                                (sp->Node[i].newDepth - sp->Node[i].fullDepth) *
+                                sp->Node[i].pondedArea;
         }
-        else Node[i].newVolume = node_getVolume(sp, i, Node[i].newDepth);
+        else sp->Node[i].newVolume = node_getVolume(sp, i, sp->Node[i].newDepth);
     }
 
     // --- update nodal inflow/outflow at ends of each link
@@ -453,13 +453,13 @@ void initNodes(SWMM_Project *sp)
     {
         if ( Link[i].newFlow >= 0.0 )
         {
-            Node[Link[i].node1].outflow += Link[i].newFlow;
-            Node[Link[i].node2].inflow  += Link[i].newFlow;
+            sp->Node[Link[i].node1].outflow += Link[i].newFlow;
+            sp->Node[Link[i].node2].inflow  += Link[i].newFlow;
         }
         else
         {
-            Node[Link[i].node1].inflow   -= Link[i].newFlow;
-            Node[Link[i].node2].outflow  -= Link[i].newFlow;
+            sp->Node[Link[i].node1].inflow   -= Link[i].newFlow;
+            sp->Node[Link[i].node2].outflow  -= Link[i].newFlow;
         }
     }
 }
@@ -520,9 +520,9 @@ double getLinkInflow(SWMM_Project *sp, int j, double dt)
     double q;
     if ( Link[j].type == CONDUIT ||
          Link[j].type == PUMP ||
-         Node[n1].type == STORAGE ) q = link_getInflow(sp, j);
+         sp->Node[n1].type == STORAGE ) q = link_getInflow(sp, j);
     else q = 0.0;
-    return node_getMaxOutflow(n1, q, dt);
+    return node_getMaxOutflow(sp, n1, q, dt);
 }
 
 //=============================================================================
@@ -547,16 +547,16 @@ void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
     double d2;                         // updated value of storage depth (ft)
 
     // --- see if storage node needs updating
-    if ( Node[i].type != STORAGE ) return;
-    if ( Node[i].updated ) return;
+    if ( sp->Node[i].type != STORAGE ) return;
+    if ( sp->Node[i].updated ) return;
 
     // --- compute terms of flow balance eqn.
     //       v2 = v1 + (inflow - outflow)*dt
     //     that do not depend on storage depth at end of time step
-    vFixed = Node[i].oldVolume + 
-             0.5 * (Node[i].oldNetInflow + Node[i].inflow - 
-                    Node[i].outflow) * dt;                                     //(5.1.007)
-    d1 = Node[i].newDepth;
+    vFixed = sp->Node[i].oldVolume + 
+             0.5 * (sp->Node[i].oldNetInflow + sp->Node[i].inflow - 
+                    sp->Node[i].outflow) * dt;                                     //(5.1.007)
+    d1 = sp->Node[i].newDepth;
 
     // --- iterate finding outflow (which depends on depth) and subsequent
     //     new volume and depth until negligible depth change occurs
@@ -570,20 +570,20 @@ void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
         // --- limit volume to full volume if no ponding
         //     and compute overflow rate
         v2 = MAX(0.0, v2);
-        Node[i].overflow = 0.0;
-        if ( v2 > Node[i].fullVolume )
+        sp->Node[i].overflow = 0.0;
+        if ( v2 > sp->Node[i].fullVolume )
         {
-            Node[i].overflow = (v2 - MAX(Node[i].oldVolume,
-                                         Node[i].fullVolume)) / dt;
-            if ( Node[i].overflow < FUDGE ) Node[i].overflow = 0.0;            //(5.1.012)
-            if ( !sp->AllowPonding || Node[i].pondedArea == 0.0 )
-                v2 = Node[i].fullVolume;
+            sp->Node[i].overflow = (v2 - MAX(sp->Node[i].oldVolume,
+                                         sp->Node[i].fullVolume)) / dt;
+            if ( sp->Node[i].overflow < FUDGE ) sp->Node[i].overflow = 0.0;            //(5.1.012)
+            if ( !sp->AllowPonding || sp->Node[i].pondedArea == 0.0 )
+                v2 = sp->Node[i].fullVolume;
         }
 
         // --- update node's volume & depth 
-        Node[i].newVolume = v2;
+        sp->Node[i].newVolume = v2;
         d2 = node_getDepth(sp, i, v2);
-        Node[i].newDepth = d2;
+        sp->Node[i].newDepth = d2;
 
         // --- use under-relaxation to estimate new depth value
         //     and stop if close enough to previous value
@@ -591,13 +591,13 @@ void updateStorageState(SWMM_Project *sp, int i, int j, int links[], double dt)
         if ( fabs(d2 - d1) <= STOPTOL ) stopped = TRUE;
 
         // --- update old depth with new value and continue to iterate
-        Node[i].newDepth = d2;
+        sp->Node[i].newDepth = d2;
         d1 = d2;
         iter++;
     }
 
     // --- mark node as being updated
-    Node[i].updated = TRUE;
+    sp->Node[i].updated = TRUE;
 }
 
 //=============================================================================
@@ -640,35 +640,35 @@ void setNewNodeState(SWMM_Project *sp, int j, double dt)
 
 ////  Following section revised for release 5.1.012.  ////                     //(5.1.012)
     // --- update terminal storage nodes
-    if ( Node[j].type == STORAGE )
+    if ( sp->Node[j].type == STORAGE )
     {	
-	if ( Node[j].updated == FALSE )
+	if ( sp->Node[j].updated == FALSE )
 	    updateStorageState(sp, j, sp->Nobjects[LINK], NULL, dt);
         return; 
     }
 //////////////////////////////////////////////////////////
 
     // --- update stored volume using mid-point integration
-    newNetInflow = Node[j].inflow - Node[j].outflow - Node[j].losses;          //(5.1.007)
-    Node[j].newVolume = Node[j].oldVolume +
-                        0.5 * (Node[j].oldNetInflow + newNetInflow) * dt;
-    if ( Node[j].newVolume < FUDGE ) Node[j].newVolume = 0.0;
+    newNetInflow = sp->Node[j].inflow - sp->Node[j].outflow - sp->Node[j].losses;          //(5.1.007)
+    sp->Node[j].newVolume = sp->Node[j].oldVolume +
+                        0.5 * (sp->Node[j].oldNetInflow + newNetInflow) * dt;
+    if ( sp->Node[j].newVolume < FUDGE ) sp->Node[j].newVolume = 0.0;
 
     // --- determine any overflow lost from system
-    Node[j].overflow = 0.0;
-    canPond = (sp->AllowPonding && Node[j].pondedArea > 0.0);
-    if ( Node[j].newVolume > Node[j].fullVolume )
+    sp->Node[j].overflow = 0.0;
+    canPond = (sp->AllowPonding && sp->Node[j].pondedArea > 0.0);
+    if ( sp->Node[j].newVolume > sp->Node[j].fullVolume )
     {
-        Node[j].overflow = (Node[j].newVolume - MAX(Node[j].oldVolume,
-                            Node[j].fullVolume)) / dt;
-        if ( Node[j].overflow < FUDGE ) Node[j].overflow = 0.0;
-        if ( !canPond ) Node[j].newVolume = Node[j].fullVolume;
+        sp->Node[j].overflow = (sp->Node[j].newVolume - MAX(sp->Node[j].oldVolume,
+                            sp->Node[j].fullVolume)) / dt;
+        if ( sp->Node[j].overflow < FUDGE ) sp->Node[j].overflow = 0.0;
+        if ( !canPond ) sp->Node[j].newVolume = sp->Node[j].fullVolume;
     }
 
     // --- compute a depth from volume
     //     (depths at upstream nodes are subsequently adjusted in
     //     setNewLinkState to reflect depths in connected conduit)
-    Node[j].newDepth = node_getDepth(sp, j, Node[j].newVolume);
+    sp->Node[j].newDepth = node_getDepth(sp, j, sp->Node[j].newVolume);
 }
 
 //=============================================================================
@@ -698,8 +698,8 @@ void setNewLinkState(SWMM_Project *sp, int j)
         Link[j].newDepth = 0.5 * (y1 + y2);
 
         // --- update depths at end nodes
-        updateNodeDepth(Link[j].node1, y1 + Link[j].offset1);
-        updateNodeDepth(Link[j].node2, y2 + Link[j].offset2);
+        updateNodeDepth(sp, Link[j].node1, y1 + Link[j].offset1);
+        updateNodeDepth(sp, Link[j].node2, y2 + Link[j].offset2);
 
         // --- check if capacity limited
         if ( Conduit[k].a1 >= Link[j].xsect.aFull )
@@ -717,7 +717,7 @@ void setNewLinkState(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void updateNodeDepth(int i, double y)
+void updateNodeDepth(SWMM_Project *sp, int i, double y)
 //
 //  Input:   i = node index
 //           y = flow depth (ft)
@@ -726,22 +726,22 @@ void updateNodeDepth(int i, double y)
 //
 {
     // --- storage nodes were updated elsewhere
-    if ( Node[i].type == STORAGE ) return;
+    if ( sp->Node[i].type == STORAGE ) return;
 
     // --- if non-outfall node is flooded, then use full depth
-    if ( Node[i].type != OUTFALL &&
-         Node[i].overflow > 0.0 ) y = Node[i].fullDepth;
+    if ( sp->Node[i].type != OUTFALL &&
+         sp->Node[i].overflow > 0.0 ) y = sp->Node[i].fullDepth;
 
     // --- if current new depth below y
-    if ( Node[i].newDepth < y )
+    if ( sp->Node[i].newDepth < y )
     {
         // --- update new depth
-        Node[i].newDepth = y;
+        sp->Node[i].newDepth = y;
 
         // --- depth cannot exceed full depth (if value exists)
-        if ( Node[i].fullDepth > 0.0 && y > Node[i].fullDepth )
+        if ( sp->Node[i].fullDepth > 0.0 && y > sp->Node[i].fullDepth )
         {
-            Node[i].newDepth = Node[i].fullDepth;
+            sp->Node[i].newDepth = sp->Node[i].fullDepth;
         }
     }
 }

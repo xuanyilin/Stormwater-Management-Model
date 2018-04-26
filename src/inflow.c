@@ -195,7 +195,7 @@ int inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type, int tserie
 		TExtInflow* inflow;            // external inflow object
 
 		// --- check if an external inflow object for this constituent already exists
-		inflow = Node[j].extInflow;
+		inflow = sp->Node[j].extInflow;
 		while ( inflow )
 		{
 			if ( inflow->param == param ) break;
@@ -210,8 +210,8 @@ int inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type, int tserie
 			{
 				return error_setInpError(ERR_MEMORY, "");
 			}
-			inflow->next = Node[j].extInflow;
-			Node[j].extInflow = inflow;
+			inflow->next = sp->Node[j].extInflow;
+			sp->Node[j].extInflow = inflow;
 		}
 		
 		// Assigning Values to the inflow object 
@@ -229,7 +229,7 @@ int inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type, int tserie
 
 //=============================================================================
 
-void inflow_deleteExtInflows(int j)
+void inflow_deleteExtInflows(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -238,7 +238,7 @@ void inflow_deleteExtInflows(int j)
 {
     TExtInflow* inflow1;
     TExtInflow* inflow2;
-    inflow1 = Node[j].extInflow;
+    inflow1 = sp->Node[j].extInflow;
     while ( inflow1 )
     {
         inflow2 = inflow1->next;
@@ -329,7 +329,7 @@ int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
     }
 
     // --- check if inflow for this constituent already exists
-    inflow = Node[j].dwfInflow;
+    inflow = sp->Node[j].dwfInflow;
     while ( inflow )
     {
         if ( inflow->param == k ) break;
@@ -341,8 +341,8 @@ int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
     {
         inflow = (TDwfInflow *) malloc(sizeof(TDwfInflow));
         if ( inflow == NULL ) return error_setInpError(ERR_MEMORY, "");
-        inflow->next = Node[j].dwfInflow;
-        Node[j].dwfInflow = inflow;
+        inflow->next = sp->Node[j].dwfInflow;
+        sp->Node[j].dwfInflow = inflow;
     }
 
     // --- assign property values to the inflow object
@@ -354,7 +354,7 @@ int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-void inflow_deleteDwfInflows(int j)
+void inflow_deleteDwfInflows(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -363,7 +363,7 @@ void inflow_deleteDwfInflows(int j)
 {
     TDwfInflow* inflow1;
     TDwfInflow* inflow2;
-    inflow1 = Node[j].dwfInflow;
+    inflow1 = sp->Node[j].dwfInflow;
     while ( inflow1 )
     {
         inflow2 = inflow1->next;

@@ -223,9 +223,9 @@ int  stats_open(SWMM_Project *sp)
         }
         else for ( k = 0; k < sp->Nobjects[NODE]; k++ )
         {
-            if ( Node[k].type != STORAGE ) continue;
-            j = Node[k].subIndex;
-            StorageStats[j].initVol = Node[k].newVolume;
+            if ( sp->Node[k].type != STORAGE ) continue;
+            j = sp->Node[k].subIndex;
+            StorageStats[j].initVol = sp->Node[k].newVolume;
             StorageStats[j].avgVol = 0.0;
             StorageStats[j].maxVol = 0.0;
             StorageStats[j].maxFlow = 0.0;
@@ -523,9 +523,9 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
 //
 {
     int    k, p;
-    double newVolume = Node[j].newVolume;
-    double newDepth = Node[j].newDepth;
-    int    canPond = (sp->AllowPonding && Node[j].pondedArea > 0.0);
+    double newVolume = sp->Node[j].newVolume;
+    double newDepth = sp->Node[j].newDepth;
+    int    canPond = (sp->AllowPonding && sp->Node[j].pondedArea > 0.0);
 
     // --- update depth statistics
     NodeStats[j].avgDepth += newDepth;
@@ -536,78 +536,78 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     }
     
     // --- update flooding, ponding, and surcharge statistics
-    if ( Node[j].type != OUTFALL )
+    if ( sp->Node[j].type != OUTFALL )
     {
-        if ( newVolume > Node[j].fullVolume || Node[j].overflow > 0.0 )
+        if ( newVolume > sp->Node[j].fullVolume || sp->Node[j].overflow > 0.0 )
         {
             NodeStats[j].timeFlooded += tStep;
-            NodeStats[j].volFlooded += Node[j].overflow * tStep;
+            NodeStats[j].volFlooded += sp->Node[j].overflow * tStep;
             if ( canPond ) NodeStats[j].maxPondedVol =
                 MAX(NodeStats[j].maxPondedVol,
-                    (newVolume - Node[j].fullVolume));
+                    (newVolume - sp->Node[j].fullVolume));
         }
 
         // --- for dynamic wave routing, classify a non-storage node as        //(5.1.011)
         //     surcharged if its water level exceeds its crown elev.           //(5.1.011)
-        if ( sp->RouteModel == DW && Node[j].type != STORAGE &&                    //(5.1.011)
-             newDepth + Node[j].invertElev + FUDGE >= Node[j].crownElev )
+        if ( sp->RouteModel == DW && sp->Node[j].type != STORAGE &&                    //(5.1.011)
+             newDepth + sp->Node[j].invertElev + FUDGE >= sp->Node[j].crownElev )
         {
             NodeStats[j].timeSurcharged += tStep;
         }
     }
 
     // --- update storage statistics
-    if ( Node[j].type == STORAGE )
+    if ( sp->Node[j].type == STORAGE )
     {
-        k = Node[j].subIndex;
+        k = sp->Node[j].subIndex;
         StorageStats[k].avgVol += newVolume;
         StorageStats[k].evapLosses += 
-            Storage[Node[j].subIndex].evapLoss; 
+            Storage[sp->Node[j].subIndex].evapLoss; 
         StorageStats[k].exfilLosses +=
-            Storage[Node[j].subIndex].exfilLoss; 
+            Storage[sp->Node[j].subIndex].exfilLoss; 
 
-        newVolume = MIN(newVolume, Node[j].fullVolume);
+        newVolume = MIN(newVolume, sp->Node[j].fullVolume);
         if ( newVolume > StorageStats[k].maxVol )
         {
             StorageStats[k].maxVol = newVolume;
             StorageStats[k].maxVolDate = aDate;
         }
-        StorageStats[k].maxFlow = MAX(StorageStats[k].maxFlow, Node[j].outflow);
+        StorageStats[k].maxFlow = MAX(StorageStats[k].maxFlow, sp->Node[j].outflow);
     }
 
     // --- update outfall statistics
-    if ( Node[j].type == OUTFALL ) 
+    if ( sp->Node[j].type == OUTFALL ) 
     {
-        k = Node[j].subIndex;
-        if ( Node[j].inflow >= MIN_RUNOFF_FLOW )
+        k = sp->Node[j].subIndex;
+        if ( sp->Node[j].inflow >= MIN_RUNOFF_FLOW )
         {
-            OutfallStats[k].avgFlow += Node[j].inflow;
-            OutfallStats[k].maxFlow = MAX(OutfallStats[k].maxFlow, Node[j].inflow);
+            OutfallStats[k].avgFlow += sp->Node[j].inflow;
+            OutfallStats[k].maxFlow = MAX(OutfallStats[k].maxFlow, sp->Node[j].inflow);
             OutfallStats[k].totalPeriods++;
         }
         for (p=0; p<sp->Nobjects[POLLUT]; p++)
         {
-            OutfallStats[k].totalLoad[p] += Node[j].inflow * 
-                Node[j].newQual[p] * tStep;
+            OutfallStats[k].totalLoad[p] += sp->Node[j].inflow * 
+                sp->Node[j].newQual[p] * tStep;
         }
-        SysOutfallFlow += Node[j].inflow;
+        SysOutfallFlow += sp->Node[j].inflow;
     }
 
     // --- update inflow statistics
-    NodeStats[j].totLatFlow += ( (Node[j].oldLatFlow + Node[j].newLatFlow) * 
+    NodeStats[j].totLatFlow += ( (sp->Node[j].oldLatFlow + sp->Node[j].newLatFlow) * 
                                  0.5 * tStep );
-    if ( fabs(Node[j].newLatFlow) > fabs(NodeStats[j].maxLatFlow) )
-        NodeStats[j].maxLatFlow = Node[j].newLatFlow;
-    if ( Node[j].inflow > NodeStats[j].maxInflow )
+    if ( fabs(sp->Node[j].newLatFlow) > fabs(NodeStats[j].maxLatFlow) )
+        NodeStats[j].maxLatFlow = sp->Node[j].newLatFlow;
+    if ( sp->Node[j].inflow > NodeStats[j].maxInflow )
     {
-        NodeStats[j].maxInflow = Node[j].inflow;
+        NodeStats[j].maxInflow = sp->Node[j].inflow;
         NodeStats[j].maxInflowDate = aDate;
     }
 
     // --- update overflow statistics
-    if ( Node[j].overflow > NodeStats[j].maxOverflow )
+    if ( sp->Node[j].overflow > NodeStats[j].maxOverflow )
     {
-        NodeStats[j].maxOverflow = Node[j].overflow;
+        NodeStats[j].maxOverflow = sp->Node[j].overflow;
         NodeStats[j].maxOverflowDate = aDate;
     }
 }
@@ -662,7 +662,7 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
             PumpStats[k].avgFlow += q;
             PumpStats[k].volume += q*tStep;
             PumpStats[k].utilized += tStep;
-            PumpStats[k].energy += link_getPower(j)*tStep/3600.0;
+            PumpStats[k].energy += link_getPower(sp, j)*tStep/3600.0;
             if ( Link[j].flowClass == DN_DRY )
                 PumpStats[k].offCurveLow += tStep;
             if ( Link[j].flowClass == UP_DRY )
@@ -760,7 +760,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
         // --- skip terminal nodes and nodes with negligible inflow
-        if ( Node[j].degree <= 0  ) continue;
+        if ( sp->Node[j].degree <= 0  ) continue;
         if ( NodeInflow[j] <= 0.1 ) continue;
 
         // --- evaluate mass balance error
@@ -886,7 +886,7 @@ int stats_getStorageStat(SWMM_Project *sp, int index, TStorageStats *storageStat
 	}
 
 	// Check Node Type is storage
-	else if (Node[index].type != STORAGE)
+	else if (sp->Node[index].type != STORAGE)
 	{
 		errorcode = ERR_API_WRONG_TYPE;
 	}
@@ -894,7 +894,7 @@ int stats_getStorageStat(SWMM_Project *sp, int index, TStorageStats *storageStat
 	else
 	{
 		// fetch sub index
-		int k = Node[index].subIndex;
+		int k = sp->Node[index].subIndex;
 		// Copy Structure
 		memcpy(storageStats, &StorageStats[k], sizeof(TStorageStats));
 	}
@@ -931,7 +931,7 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
 	}
 
 	// Check Node Type is outfall
-	else if (Node[index].type != OUTFALL)
+	else if (sp->Node[index].type != OUTFALL)
 	{
 		errorcode = ERR_API_WRONG_TYPE;
 	}
@@ -939,7 +939,7 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
 	else
 	{
 		// fetch sub index
-		int k = Node[index].subIndex;
+		int k = sp->Node[index].subIndex;
 		// Copy Structure
 		memcpy(outfallStats, &OutfallStats[k], sizeof(TOutfallStats));
 		

@@ -177,7 +177,7 @@ int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
         return error_setInpError(ERR_NUMBER, tok[2]);
 
     // --- create the RDII inflow object if it doesn't already exist
-    inflow = Node[j].rdiiInflow;
+    inflow = sp->Node[j].rdiiInflow;
     if ( inflow == NULL )
     {
         inflow = (TRdiiInflow *) malloc(sizeof(TRdiiInflow));
@@ -189,7 +189,7 @@ int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
     inflow->area = a / UCF(sp, LANDAREA);
 
     // --- assign inflow object to node
-    Node[j].rdiiInflow = inflow;
+    sp->Node[j].rdiiInflow = inflow;
     return 0;
 }
 
@@ -385,17 +385,17 @@ void setUnitHydParams(SWMM_Project *sp, int j, int i, int m, double x[])
 
 //=============================================================================
 
-void rdii_deleteRdiiInflow(int j)
+void rdii_deleteRdiiInflow(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
 //  Purpose: deletes the RDII inflow object for a node.
 //
 {
-    if ( Node[j].rdiiInflow )
+    if ( sp->Node[j].rdiiInflow )
     {
-        free(Node[j].rdiiInflow);
-        Node[j].rdiiInflow = NULL;
+        free(sp->Node[j].rdiiInflow);
+        sp->Node[j].rdiiInflow = NULL;
     }
 }
 
@@ -583,7 +583,7 @@ int readRdiiFileHeader(SWMM_Project *sp)
     for ( i=0; i<NumRdiiNodes; i++ )
     {
         j = RdiiNodeIndex[i];
-        if ( Node[j].rdiiInflow == NULL ) return ERR_RDII_FILE_FORMAT;
+        if ( sp->Node[j].rdiiInflow == NULL ) return ERR_RDII_FILE_FORMAT;
     }
     if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
     return 0;
@@ -796,7 +796,7 @@ int  getNumRdiiNodes(SWMM_Project *sp)
     n = 0;
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
-        if ( Node[j].rdiiInflow ) n++;
+        if ( sp->Node[j].rdiiInflow ) n++;
     }
     return n;
 }
@@ -854,12 +854,12 @@ void validateRdii(SWMM_Project *sp)
     // --- check each node's RDII inflow object
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
-        if ( Node[i].rdiiInflow )
+        if ( sp->Node[i].rdiiInflow )
         {
             // --- check that sewer area is non-negative
-            if ( Node[i].rdiiInflow->area < 0.0 )
+            if ( sp->Node[i].rdiiInflow->area < 0.0 )
             {
-                report_writeErrorMsg(sp, ERR_RDII_AREA, Node[i].ID);
+                report_writeErrorMsg(sp, ERR_RDII_AREA, sp->Node[i].ID);
             }
         }
     }
@@ -902,7 +902,7 @@ void openRdiiProcessor(SWMM_Project *sp)
     n = 0;
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
-        if ( Node[j].rdiiInflow )
+        if ( sp->Node[j].rdiiInflow )
         {
             RdiiNodeIndex[n] = j;
             n++;
@@ -1110,12 +1110,12 @@ void initUnitHydData(SWMM_Project *sp)
     {
         // --- mark as used the UH group associated with the node
         j = RdiiNodeIndex[n];
-        i = Node[j].rdiiInflow->unitHyd;
+        i = sp->Node[j].rdiiInflow->unitHyd;
         UHGroup[i].isUsed = TRUE;
 
         // --- add node's sewer area to UH group's area
         UHGroup[i].lastDate = sp->StartDateTime;
-        UHGroup[i].area += Node[j].rdiiInflow->area;
+        UHGroup[i].area += sp->Node[j].rdiiInflow->area;
     }
 }
 
@@ -1149,7 +1149,7 @@ int openNewRdiiFile(SWMM_Project *sp)
     fwrite(&NumRdiiNodes, sizeof(INT4), 1, sp->Frdii.file);
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
-        if ( Node[j].rdiiInflow ) fwrite(&j, sizeof(INT4), 1, sp->Frdii.file);
+        if ( sp->Node[j].rdiiInflow ) fwrite(&j, sizeof(INT4), 1, sp->Frdii.file);
     }
     return TRUE;
 }
@@ -1460,8 +1460,8 @@ int getNodeRdii(SWMM_Project *sp)
         j = RdiiNodeIndex[n];
 
         // --- apply node's sewer area to UH RDII to get node RDII in CFS
-        i = Node[j].rdiiInflow->unitHyd;
-        rdii = UHGroup[i].rdii * Node[j].rdiiInflow->area / UCF(sp, RAINFALL);
+        i = sp->Node[j].rdiiInflow->unitHyd;
+        rdii = UHGroup[i].rdii * sp->Node[j].rdiiInflow->area / UCF(sp, RAINFALL);
         if ( rdii < ZERO_RDII ) rdii = 0.0;
         else hasRdii = TRUE;
 

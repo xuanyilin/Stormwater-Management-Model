@@ -150,7 +150,7 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
             switch ( m )
             {
               case SUBCATCH:  sp->Subcatch[j].rptFlag = TRUE;  break;
-              case NODE:      Node[j].rptFlag = TRUE;  break;
+              case NODE:      sp->Node[j].rptFlag = TRUE;  break;
               case LINK:      Link[j].rptFlag = TRUE;  break;
             }
         }
@@ -960,7 +960,7 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
             j = maxMassBalErrs[i].index;
             if ( j < 0 ) continue;
             fprintf(sp->Frpt.file, "\n  Node %s (%.2f%%)",
-                Node[j].ID, maxMassBalErrs[i].value);
+                sp->Node[j].ID, maxMassBalErrs[i].value);
         }
         WRITE("");
     }
@@ -977,7 +977,7 @@ void report_writeMaxStats(SWMM_Project *sp, TMaxStats maxMassBalErrs[],
         if ( j < 0 ) continue;
         k++;
         if ( maxCourantCrit[i].objType == NODE )
-             fprintf(sp->Frpt.file, "\n  Node %s", Node[j].ID);
+             fprintf(sp->Frpt.file, "\n  Node %s", sp->Node[j].ID);
         else fprintf(sp->Frpt.file, "\n  Link %s", Link[j].ID);
         fprintf(sp->Frpt.file, " (%.2f%%)", maxCourantCrit[i].value);
     }
@@ -1234,9 +1234,9 @@ void report_Nodes(SWMM_Project *sp)
     k = 0;
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        if ( Node[j].rptFlag == TRUE )
+        if ( sp->Node[j].rptFlag == TRUE )
         {
-            report_NodeHeader(sp, Node[j].ID);
+            report_NodeHeader(sp, sp->Node[j].ID);
             for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);

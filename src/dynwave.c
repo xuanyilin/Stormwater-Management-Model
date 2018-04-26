@@ -92,14 +92,14 @@ static void   findLimitedLinks(SWMM_Project *sp);
 static void   findLinkFlows(SWMM_Project *sp, double dt);
 static int    isTrueConduit(int link);
 static void   findNonConduitFlow(SWMM_Project *sp, int link, double dt);
-static void   findNonConduitSurfArea(int link);
-static double getModPumpFlow(int link, double q, double dt);
-static void   updateNodeFlows(int link);
+static void   findNonConduitSurfArea(SWMM_Project *sp, int link);
+static double getModPumpFlow(SWMM_Project *sp, int link, double q, double dt);
+static void   updateNodeFlows(SWMM_Project *sp, int link);
 
 static int    findNodeDepths(SWMM_Project *sp, double dt);
 static void   setNodeDepth(SWMM_Project *sp, int node, double dt);
-static double getFloodedDepth(int node, int canPond, double dV, double yNew,
-              double yMax, double dt);
+static double getFloodedDepth(SWMM_Project *sp, int node, int canPond, double dV,
+        double yNew, double yMax, double dt);
 
 static double getVariableStep(SWMM_Project *sp, double maxStep);
 static double getLinkStep(SWMM_Project *sp, double tMin, int *minLink);
@@ -136,18 +136,18 @@ void dynwave_init(SWMM_Project *sp)
     {
         Xnode[i].newSurfArea = 0.0;
         Xnode[i].oldSurfArea = 0.0;
-        Node[i].crownElev = Node[i].invertElev;
+        sp->Node[i].crownElev = sp->Node[i].invertElev;
     }
 
     // --- update node crown elev. & initialize links
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
         j = Link[i].node1;
-        z = Node[j].invertElev + Link[i].offset1 + Link[i].xsect.yFull;
-        Node[j].crownElev = MAX(Node[j].crownElev, z);
+        z = sp->Node[j].invertElev + Link[i].offset1 + Link[i].xsect.yFull;
+        sp->Node[j].crownElev = MAX(sp->Node[j].crownElev, z);
         j = Link[i].node2;
-        z = Node[j].invertElev + Link[i].offset2 + Link[i].xsect.yFull;
-        Node[j].crownElev = MAX(Node[j].crownElev, z);
+        z = sp->Node[j].invertElev + Link[i].offset2 + Link[i].xsect.yFull;
+        sp->Node[j].crownElev = MAX(sp->Node[j].crownElev, z);
         Link[i].flowClass = DRY;
         Link[i].dqdh = 0.0;
     }
@@ -293,11 +293,11 @@ void initNodeStates(SWMM_Project *sp)
         // --- initialize nodal surface area
         if ( sp->AllowPonding )
         {
-            Xnode[i].newSurfArea = node_getPondedArea(sp, i, Node[i].newDepth);
+            Xnode[i].newSurfArea = node_getPondedArea(sp, i, sp->Node[i].newDepth);
         }
         else
         {
-            Xnode[i].newSurfArea = node_getSurfArea(sp, i, Node[i].newDepth);
+            Xnode[i].newSurfArea = node_getSurfArea(sp, i, sp->Node[i].newDepth);
         }
         if ( Xnode[i].newSurfArea < sp->MinSurfArea )
         {
@@ -306,15 +306,15 @@ void initNodeStates(SWMM_Project *sp)
 
 ////  Following code section modified for release 5.1.007  ////                //(5.1.007)
         // --- initialize nodal inflow & outflow
-        Node[i].inflow = 0.0;
-        Node[i].outflow = Node[i].losses;
-        if ( Node[i].newLatFlow >= 0.0 )
+        sp->Node[i].inflow = 0.0;
+        sp->Node[i].outflow = sp->Node[i].losses;
+        if ( sp->Node[i].newLatFlow >= 0.0 )
         {    
-            Node[i].inflow += Node[i].newLatFlow;
+            sp->Node[i].inflow += sp->Node[i].newLatFlow;
         }
         else
         {    
-            Node[i].outflow -= Node[i].newLatFlow;
+            sp->Node[i].outflow -= sp->Node[i].newLatFlow;
         }
         Xnode[i].sumdqdh = 0.0;
     }
@@ -359,8 +359,8 @@ void  findLimitedLinks(SWMM_Project *sp)
             // --- check if HGL slope > conduit slope
             n1 = Link[j].node1;
             n2 = Link[j].node2;
-            h1 = Node[n1].newDepth + Node[n1].invertElev;
-            h2 = Node[n2].newDepth + Node[n2].invertElev;
+            h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+            h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
             if ( (h1 - h2) > fabs(Conduit[k].slope) * Conduit[k].length )
                 Conduit[k].capacityLimited = TRUE;
         }
@@ -387,7 +387,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     // --- update inflow/outflows for nodes attached to non-dummy conduits
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( isTrueConduit(i) ) updateNodeFlows(i);
+        if ( isTrueConduit(i) ) updateNodeFlows(sp, i);
     }
 
     // --- find new flows for all dummy conduits, pumps & regulators
@@ -396,7 +396,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
         if ( !isTrueConduit(i) )
         {	
             if ( !Link[i].bypassed ) findNonConduitFlow(sp, i, dt);
-            updateNodeFlows(i);
+            updateNodeFlows(sp, i);
         }
     }
 }
@@ -428,10 +428,10 @@ void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
     // --- get new inflow to link from its upstream node
     //     (link_getInflow returns 0 if flap gate closed or pump is offline)
     qNew = link_getInflow(sp, i);
-    if ( Link[i].type == PUMP ) qNew = getModPumpFlow(i, qNew, dt);
+    if ( Link[i].type == PUMP ) qNew = getModPumpFlow(sp, i, qNew, dt);
 
     // --- find surface area at each end of link
-    findNonConduitSurfArea(i);
+    findNonConduitSurfArea(sp, i);
 
     // --- apply under-relaxation with flow from previous iteration;
     // --- do not allow flow to change direction without first being 0
@@ -445,7 +445,7 @@ void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
 
 //=============================================================================
 
-double getModPumpFlow(int i, double q, double dt)
+double getModPumpFlow(SWMM_Project *sp, int i, double q, double dt)
 //
 //  Input:   i = link index
 //           q = pump flow from pump curve (cfs)
@@ -465,7 +465,7 @@ double getModPumpFlow(int i, double q, double dt)
 
     // --- case where inlet node is a storage node: 
     //     prevent node volume from going negative
-    if ( Node[j].type == STORAGE ) return node_getMaxOutflow(j, q, dt); 
+    if ( sp->Node[j].type == STORAGE ) return node_getMaxOutflow(sp, j, q, dt);
 
     // --- case where inlet is a non-storage node
     switch ( Pump[k].type )
@@ -473,24 +473,24 @@ double getModPumpFlow(int i, double q, double dt)
       // --- for Type1 pump, a volume is computed for inlet node,
       //     so make sure it doesn't go negative
       case TYPE1_PUMP:
-        return node_getMaxOutflow(j, q, dt);
+        return node_getMaxOutflow(sp, j, q, dt);
 
       // --- for other types of pumps, if pumping rate would make depth
       //     at upstream node negative, then set pumping rate = inflow
       case TYPE2_PUMP:
       case TYPE4_PUMP:
       case TYPE3_PUMP:
-         newNetInflow = Node[j].inflow - Node[j].outflow - q;
-         netFlowVolume = 0.5 * (Node[j].oldNetInflow + newNetInflow ) * dt;
-         y = Node[j].oldDepth + netFlowVolume / Xnode[j].newSurfArea;
-         if ( y <= 0.0 ) return Node[j].inflow;
+         newNetInflow = sp->Node[j].inflow - sp->Node[j].outflow - q;
+         netFlowVolume = 0.5 * (sp->Node[j].oldNetInflow + newNetInflow ) * dt;
+         y = sp->Node[j].oldDepth + netFlowVolume / Xnode[j].newSurfArea;
+         if ( y <= 0.0 ) return sp->Node[j].inflow;
     }
     return q;
 }
 
 //=============================================================================
 
-void  findNonConduitSurfArea(int i)
+void  findNonConduitSurfArea(SWMM_Project *sp, int i)
 //
 //  Input:   i = link index
 //  Output:  none
@@ -514,14 +514,14 @@ void  findNonConduitSurfArea(int i)
     else Link[i].surfArea1 = 0.0;
     Link[i].surfArea2 = Link[i].surfArea1;
     if ( Link[i].flowClass == UP_CRITICAL ||
-        Node[Link[i].node1].type == STORAGE ) Link[i].surfArea1 = 0.0;
+        sp->Node[Link[i].node1].type == STORAGE ) Link[i].surfArea1 = 0.0;
     if ( Link[i].flowClass == DN_CRITICAL ||
-        Node[Link[i].node2].type == STORAGE ) Link[i].surfArea2 = 0.0;
+        sp->Node[Link[i].node2].type == STORAGE ) Link[i].surfArea2 = 0.0;
 }
 
 //=============================================================================
 
-void updateNodeFlows(int i)
+void updateNodeFlows(SWMM_Project *sp, int i)
 //
 //  Input:   i = link index
 //           q = link flow rate (cfs)
@@ -547,13 +547,13 @@ void updateNodeFlows(int i)
     // --- update total inflow & outflow at upstream/downstream nodes
     if ( q >= 0.0 )
     {
-        Node[n1].outflow += q + uniformLossRate;
-        Node[n2].inflow  += q;
+        sp->Node[n1].outflow += q + uniformLossRate;
+        sp->Node[n2].inflow  += q;
     }
     else
     {
-        Node[n1].inflow   -= q;
-        Node[n2].outflow  -= q - uniformLossRate;
+        sp->Node[n1].inflow   -= q;
+        sp->Node[n2].outflow  -= q - uniformLossRate;
     }
 
     // --- add surf. area contributions to upstream/downstream nodes
@@ -592,11 +592,11 @@ int findNodeDepths(SWMM_Project *sp, double dt)
     #pragma omp for private(yOld)                                              //(5.1.008)
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
-        if ( Node[i].type == OUTFALL ) continue;
-        yOld = Node[i].newDepth;
+        if ( sp->Node[i].type == OUTFALL ) continue;
+        yOld = sp->Node[i].newDepth;
         setNodeDepth(sp, i, dt);
         Xnode[i].converged = TRUE;
-        if ( fabs(yOld - Node[i].newDepth) > sp->HeadTol )
+        if ( fabs(yOld - sp->Node[i].newDepth) > sp->HeadTol )
         {
             converged = FALSE;
             Xnode[i].converged = FALSE;
@@ -632,22 +632,22 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     double  f;                         // relative surcharge depth
 
     // --- see if node can pond water above it
-    canPond = (sp->AllowPonding && Node[i].pondedArea > 0.0);
-    isPonded = (canPond && Node[i].newDepth > Node[i].fullDepth);
+    canPond = (sp->AllowPonding && sp->Node[i].pondedArea > 0.0);
+    isPonded = (canPond && sp->Node[i].newDepth > sp->Node[i].fullDepth);
 
     // --- initialize values
-    yCrown = Node[i].crownElev - Node[i].invertElev;
-    yOld = Node[i].oldDepth;
-    yLast = Node[i].newDepth;
-    Node[i].overflow = 0.0;
+    yCrown = sp->Node[i].crownElev - sp->Node[i].invertElev;
+    yOld = sp->Node[i].oldDepth;
+    yLast = sp->Node[i].newDepth;
+    sp->Node[i].overflow = 0.0;
     surfArea = Xnode[i].newSurfArea;
 
     // --- determine average net flow volume into node over the time step
-    dQ = Node[i].inflow - Node[i].outflow;
-    dV = 0.5 * (Node[i].oldNetInflow + dQ) * dt;
+    dQ = sp->Node[i].inflow - sp->Node[i].outflow;
+    dV = 0.5 * (sp->Node[i].oldNetInflow + dQ) * dt;
 
     // --- if node not surcharged, base depth change on surface area        
-    if ( yLast <= yCrown || Node[i].type == STORAGE || isPonded )
+    if ( yLast <= yCrown || sp->Node[i].type == STORAGE || isPonded )
     {
         dy = dV / surfArea;
         yNew = yOld + dy;
@@ -662,8 +662,8 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
         }
 
         // --- don't allow a ponded node to drop much below full depth
-        if ( isPonded && yNew < Node[i].fullDepth )
-            yNew = Node[i].fullDepth - FUDGE;
+        if ( isPonded && yNew < sp->Node[i].fullDepth )
+            yNew = sp->Node[i].fullDepth - FUDGE;
     }
 
     // --- if node surcharged, base depth change on dqdh
@@ -673,7 +673,7 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     {
         // --- apply correction factor for upstream terminal nodes
         corr = 1.0;
-        if ( Node[i].degree < 0 ) corr = 0.6;
+        if ( sp->Node[i].degree < 0 ) corr = 0.6;
 
         // --- allow surface area from last non-surcharged condition
         //     to influence dqdh if depth close to crown depth
@@ -692,35 +692,35 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
         if ( yNew < yCrown ) yNew = yCrown - FUDGE;
 
         // --- don't allow a newly ponded node to rise much above full depth
-        if ( canPond && yNew > Node[i].fullDepth )
-            yNew = Node[i].fullDepth + FUDGE;
+        if ( canPond && yNew > sp->Node[i].fullDepth )
+            yNew = sp->Node[i].fullDepth + FUDGE;
     }
 
     // --- depth cannot be negative
     if ( yNew < 0 ) yNew = 0.0;
 
     // --- determine max. non-flooded depth
-    yMax = Node[i].fullDepth;
-    if ( canPond == FALSE ) yMax += Node[i].surDepth;
+    yMax = sp->Node[i].fullDepth;
+    if ( canPond == FALSE ) yMax += sp->Node[i].surDepth;
 
     // --- find flooded depth & volume
     if ( yNew > yMax )
     {
-        yNew = getFloodedDepth(i, canPond, dV, yNew, yMax, dt);
+        yNew = getFloodedDepth(sp, i, canPond, dV, yNew, yMax, dt);
     }
-    else Node[i].newVolume = node_getVolume(sp, i, yNew);
+    else sp->Node[i].newVolume = node_getVolume(sp, i, yNew);
 
     // --- compute change in depth w.r.t. time
     Xnode[i].dYdT = fabs(yNew - yOld) / dt;
 
     // --- save new depth for node
-    Node[i].newDepth = yNew;
+    sp->Node[i].newDepth = yNew;
 }
 
 //=============================================================================
 
-double getFloodedDepth(int i, int canPond, double dV, double yNew,
-                       double yMax, double dt)
+double getFloodedDepth(SWMM_Project *sp, int i, int canPond, double dV,
+        double yNew, double yMax, double dt)
 //
 //  Input:   i  = node index
 //           canPond = TRUE if water can pond over node
@@ -735,17 +735,17 @@ double getFloodedDepth(int i, int canPond, double dV, double yNew,
 {
     if ( canPond == FALSE )
     {
-        Node[i].overflow = dV / dt;
-        Node[i].newVolume = Node[i].fullVolume;
+        sp->Node[i].overflow = dV / dt;
+        sp->Node[i].newVolume = sp->Node[i].fullVolume;
         yNew = yMax;
     }
     else
     {
-        Node[i].newVolume = MAX((Node[i].oldVolume+dV), Node[i].fullVolume);
-        Node[i].overflow = (Node[i].newVolume - 
-            MAX(Node[i].oldVolume, Node[i].fullVolume)) / dt;
+        sp->Node[i].newVolume = MAX((sp->Node[i].oldVolume+dV), sp->Node[i].fullVolume);
+        sp->Node[i].overflow = (sp->Node[i].newVolume - 
+            MAX(sp->Node[i].oldVolume, sp->Node[i].fullVolume)) / dt;
     }
-    if ( Node[i].overflow < FUDGE ) Node[i].overflow = 0.0;
+    if ( sp->Node[i].overflow < FUDGE ) sp->Node[i].overflow = 0.0;
     return yNew;
 
 }
@@ -854,13 +854,13 @@ double getNodeStep(SWMM_Project *sp, double tMin, int *minNode)
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- see if node can be skipped
-        if ( Node[i].type == OUTFALL ) continue;
-        if ( Node[i].newDepth <= FUDGE) continue;
-        if ( Node[i].newDepth  + FUDGE >=
-             Node[i].crownElev - Node[i].invertElev ) continue;
+        if ( sp->Node[i].type == OUTFALL ) continue;
+        if ( sp->Node[i].newDepth <= FUDGE) continue;
+        if ( sp->Node[i].newDepth  + FUDGE >=
+             sp->Node[i].crownElev - sp->Node[i].invertElev ) continue;
 
         // --- define max. allowable depth change using crown elevation
-        maxDepth = (Node[i].crownElev - Node[i].invertElev) * 0.25;
+        maxDepth = (sp->Node[i].crownElev - sp->Node[i].invertElev) * 0.25;
         if ( maxDepth < FUDGE ) continue;
         dYdT = Xnode[i].dYdT;
         if (dYdT < FUDGE ) continue;

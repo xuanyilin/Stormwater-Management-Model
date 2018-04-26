@@ -49,7 +49,7 @@ static void  findNodeQual(SWMM_Project *sp, int j);
 static void  findLinkQual(SWMM_Project *sp, int i, double tStep);
 static void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double tStep);
 static void  findStorageQual(SWMM_Project *sp, int j, double tStep);
-static void  updateHRT(int j, double v, double q, double tStep);
+static void  updateHRT(SWMM_Project *sp, int j, double v, double q, double tStep);
 static double getReactedQual(SWMM_Project *sp, int p, double c, double v1, double tStep);
 static double getMixedQual(double c, double v1, double wIn, double qIn,
               double tStep);
@@ -67,13 +67,13 @@ void    qualrout_init(SWMM_Project *sp)
 
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
-        isWet = ( Node[i].newDepth > FUDGE );
+        isWet = ( sp->Node[i].newDepth > FUDGE );
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
             if ( isWet ) c = Pollut[p].initConcen;
-            Node[i].oldQual[p] = c;
-            Node[i].newQual[p] = c;
+            sp->Node[i].oldQual[p] = c;
+            sp->Node[i].newQual[p] = c;
         }
     }
 
@@ -110,25 +110,25 @@ void qualrout_execute(SWMM_Project *sp, double tStep)
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         // --- get node inflow and average volume
-        qIn = Node[j].inflow;
-        vAvg = (Node[j].oldVolume + Node[j].newVolume) / 2.0;
+        qIn = sp->Node[j].inflow;
+        vAvg = (sp->Node[j].oldVolume + sp->Node[j].newVolume) / 2.0;
         
         // --- save inflow concentrations if treatment applied
-        if ( Node[j].treatment )
+        if ( sp->Node[j].treatment )
         {
             if ( qIn < ZERO ) qIn = 0.0;
-            treatmnt_setInflow(sp, qIn, Node[j].newQual);
+            treatmnt_setInflow(sp, qIn, sp->Node[j].newQual);
         }
        
         // --- find new quality at the node 
-        if ( Node[j].type == STORAGE || Node[j].oldVolume > FUDGE )
+        if ( sp->Node[j].type == STORAGE || sp->Node[j].oldVolume > FUDGE )
         {
             findStorageQual(sp, j, tStep);
         }
         else findNodeQual(sp, j);
 
         // --- apply treatment to new quality values
-        if ( Node[j].treatment ) treatmnt_treat(sp, j, qIn, vAvg, tStep);
+        if ( sp->Node[j].treatment ) treatmnt_treat(sp, j, qIn, vAvg, tStep);
     }
 
     // --- find new water quality in each link
@@ -178,7 +178,7 @@ void findLinkMassFlow(SWMM_Project *sp, int i, double tStep)
 //  Purpose: adds constituent mass flow out of link to the total
 //           accumulation at the link's downstream node.
 //
-//  Note:    Node[].newQual[], the accumulator variable, already contains
+//  Note:    sp->Node[].newQual[], the accumulator variable, already contains
 //           contributions from runoff and other external inflows from
 //           calculations made in routing_execute().
 {
@@ -196,9 +196,9 @@ void findLinkMassFlow(SWMM_Project *sp, int i, double tStep)
     // --- examine each pollutant
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
-        // --- temporarily accumulate inflow load in Node[j].newQual
+        // --- temporarily accumulate inflow load in sp->Node[j].newQual
         w = qLink * Link[i].oldQual[p];
-        Node[j].newQual[p] += w;
+        sp->Node[j].newQual[p] += w;
 
         // --- update total load transported by link
         Link[i].totalLoad[p] += w * tStep;
@@ -218,17 +218,17 @@ void findNodeQual(SWMM_Project *sp, int j)
     double qNode;
 
     // --- if there is flow into node then concen. = mass inflow/node flow
-    qNode = Node[j].inflow;
+    qNode = sp->Node[j].inflow;
     if ( qNode > ZERO )
     {
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            Node[j].newQual[p] /= qNode;
+            sp->Node[j].newQual[p] /= qNode;
         }
     }
 
     // --- otherwise concen. is 0
-    else for (p = 0; p < sp->Nobjects[POLLUT]; p++) Node[j].newQual[p] = 0.0;
+    else for (p = 0; p < sp->Nobjects[POLLUT]; p++) sp->Node[j].newQual[p] = 0.0;
 }
 
 //=============================================================================
@@ -266,7 +266,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
     {
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            Link[i].newQual[p] = Node[j].newQual[p];
+            Link[i].newQual[p] = sp->Node[j].newQual[p];
         }
         return;
     }
@@ -320,7 +320,7 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
         c2 = getReactedQual(sp, p, c1, v1, tStep);
 
         // --- mix resulting contents with inflow from upstream node
-        wIn = Node[j].newQual[p]*qIn;
+        wIn = sp->Node[j].newQual[p]*qIn;
         c2 = getMixedQual(c2, v1, wIn, qIn, tStep);
 
         // --- set concen. to zero if remaining volume is negligible
@@ -355,7 +355,7 @@ void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- conduit's quality equals upstream node quality
-        c1 = Node[j].newQual[p];
+        c1 = sp->Node[j].newQual[p];
 
         // --- update mass balance accounting for seepage loss
         massbal_addSeepageLoss(sp, p, qSeep*c1);
@@ -398,18 +398,18 @@ void  findStorageQual(SWMM_Project *sp, int j, double tStep)
            fEvap = 1.0;      // evaporation concentration factor
 
     // --- get inflow rate & initial volume
-    qIn = Node[j].inflow;
-    v1 = Node[j].oldVolume;
+    qIn = sp->Node[j].inflow;
+    v1 = sp->Node[j].oldVolume;
 
     // -- for storage nodes
-    if ( Node[j].type == STORAGE )
+    if ( sp->Node[j].type == STORAGE )
     {    
         // --- update hydraulic residence time
         //     (HRT can be used in treatment functions)
-        updateHRT(j, Node[j].oldVolume, qIn, tStep);
+        updateHRT(sp, j, sp->Node[j].oldVolume, qIn, tStep);
 
         // --- get exfiltration rate and evaporation loss
-        k = Node[j].subIndex;
+        k = sp->Node[j].subIndex;
         qExfil = Storage[k].exfilLoss / tStep;
         vEvap = Storage[k].evapLoss;
 
@@ -423,7 +423,7 @@ void  findStorageQual(SWMM_Project *sp, int j, double tStep)
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- start with concen. at start of time step 
-        c1 = Node[j].oldQual[p];
+        c1 = sp->Node[j].oldQual[p];
 
         // --- update mass balance accounting for exfiltration loss
         massbal_addSeepageLoss(sp, p, qExfil*c1);
@@ -432,32 +432,32 @@ void  findStorageQual(SWMM_Project *sp, int j, double tStep)
         c1 *= fEvap;
 
         // --- apply first order reaction only if no separate treatment function
-        if ( Node[j].treatment == NULL ||
-             Node[j].treatment[p].equation == NULL )
+        if ( sp->Node[j].treatment == NULL ||
+             sp->Node[j].treatment[p].equation == NULL )
         {
             c1 = getReactedQual(sp, p, c1, v1, tStep);
         }
 
         // --- mix resulting contents with inflow from all sources
-        //     (temporarily accumulated in Node[j].newQual)
-        wIn = Node[j].newQual[p];
+        //     (temporarily accumulated in sp->Node[j].newQual)
+        wIn = sp->Node[j].newQual[p];
         c2 = getMixedQual(c1, v1, wIn, qIn, tStep);
 
         // --- set concen. to zero if remaining volume is negligible
-        if ( Node[j].newVolume <= ZeroVolume )
+        if ( sp->Node[j].newVolume <= ZeroVolume )
         {
-            massbal_addToFinalStorage(sp, p, c2 * Node[j].newVolume);
+            massbal_addToFinalStorage(sp, p, c2 * sp->Node[j].newVolume);
             c2 = 0.0;
         }
 
         // --- assign new concen. to node
-        Node[j].newQual[p] = c2;
+        sp->Node[j].newQual[p] = c2;
     }
 }
 
 //=============================================================================
 
-void updateHRT(int j, double v, double q, double tStep)
+void updateHRT(SWMM_Project *sp, int j, double v, double q, double tStep)
 //
 //  Input:   j = node index
 //           v = storage volume (ft3)
@@ -468,7 +468,7 @@ void updateHRT(int j, double v, double q, double tStep)
 //           storage node.
 //
 {
-    int    k = Node[j].subIndex;
+    int    k = sp->Node[j].subIndex;
     double hrt = Storage[k].hrt;
     if ( v < ZERO ) hrt = 0.0;
     else hrt = (hrt + tStep) * v / (v + q*tStep);

@@ -167,7 +167,7 @@ static void report_CulvertControl(SWMM_Project *pr, int j, double q0, double q,
 
 //=============================================================================
 
-double culvert_getInflow(int j, double q0, double h)
+double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
 //
 //  Input:   j  = link index
 //           q0 = unmodified flow rate (cfs)
@@ -208,7 +208,7 @@ double culvert_getInflow(int j, double q0, double h)
 
     // --- find head relative to culvert's upstream invert
     //     (can be greater than yFull when inlet is submerged)
-    y = h - (Node[Link[j].node1].invertElev + Link[j].offset1);
+    y = h - (sp->Node[Link[j].node1].invertElev + Link[j].offset1);
 
     // --- check for submerged flow (based on FHWA criteria of Q/AD > 4)
     y2 = culvert.yFull * (16.0 * Params[code][C] + Params[code][Y] - culvert.scf);

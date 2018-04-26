@@ -218,7 +218,7 @@ double  gwater_getVolume(SWMM_Project *sp, int subcatch);
 //   RDII Methods
 //-----------------------------------------------------------------------------
 int     rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks);
-void    rdii_deleteRdiiInflow(int node);
+void    rdii_deleteRdiiInflow(SWMM_Project *sp, int node);
 void    rdii_initUnitHyd(SWMM_Project *sp, int unitHyd);
 int     rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    rdii_openRdii(SWMM_Project *sp);
@@ -377,8 +377,8 @@ int     node_readParams(SWMM_Project *sp, int node, int type, int subIndex,
 void    node_validate(SWMM_Project *sp, int node);
 
 void    node_initState(SWMM_Project *sp, int node);
-void    node_initInflow(int node, double tStep);
-void    node_setOldHydState(int node);
+void    node_initInflow(SWMM_Project *sp, int node, double tStep);
+void    node_setOldHydState(SWMM_Project *sp, int node);
 void    node_setOldQualState(SWMM_Project *sp, int node);
 
 void    node_setOutletDepth(SWMM_Project *sp, int node, double yNorm, double yCrit, double z);
@@ -392,7 +392,7 @@ double  node_getPondedArea(SWMM_Project *sp, int node, double depth);
 
 double  node_getOutflow(SWMM_Project *sp, int node, int link);
 double  node_getLosses(SWMM_Project *sp, int node, double tStep);
-double  node_getMaxOutflow(int node, double q, double tStep);
+double  node_getMaxOutflow(SWMM_Project *sp, int node, double q, double tStep);
 double  node_getSystemOutflow(SWMM_Project *sp, int node, int *isFlooded);
 void    node_getResults(SWMM_Project *sp, int node, double wt, float x[]);
 
@@ -415,8 +415,8 @@ double  inflow_getExtInflow(TExtInflow* inflow, DateTime aDate);
 double  inflow_getDwfInflow(TDwfInflow* inflow, int m, int d, int h);
 double  inflow_getPatternFactor(int p, int month, int day, int hour);
 
-void    inflow_deleteExtInflows(int node);
-void    inflow_deleteDwfInflows(int node);
+void    inflow_deleteExtInflows(SWMM_Project *sp, int node);
+void    inflow_deleteDwfInflows(SWMM_Project *sp, int node);
 
 //-----------------------------------------------------------------------------
 //   Routing Interface File Methods
@@ -449,9 +449,9 @@ void    link_initState(SWMM_Project *sp, int link);
 void    link_setOldHydState(int link);
 void    link_setOldQualState(SWMM_Project *sp, int link);
 
-void    link_setTargetSetting(int j);
+void    link_setTargetSetting(SWMM_Project *sp, int j);
 void    link_setSetting(SWMM_Project *sp, int j, double tstep);
-int     link_setFlapGate(int link, int n1, int n2, double q);
+int     link_setFlapGate(SWMM_Project *sp, int link, int n1, int n2, double q);
 
 double  link_getInflow(SWMM_Project *sp, int link);
 void    link_setOutfallDepth(SWMM_Project *sp, int link);
@@ -460,7 +460,7 @@ double  link_getYcrit(int link, double q);
 double  link_getYnorm(int link, double q);
 double  link_getVelocity(int link, double q, double y);
 double  link_getFroude(int link, double v, double y);
-double  link_getPower(int link);
+double  link_getPower(SWMM_Project *sp, int link);
 double  link_getLossRate(SWMM_Project *sp, int link, double q, double tStep);                    //(5.1.008)
 char    link_getFullState(double a1, double a2, double aFull);                 //(5.1.008)
 
@@ -488,7 +488,7 @@ double  xsect_getYcrit(TXsect* xsect, double q);
 //-----------------------------------------------------------------------------
 //   Culvert/Roadway Methods                                                   //(5.1.010)
 //-----------------------------------------------------------------------------
-double  culvert_getInflow(int link, double q, double h);
+double  culvert_getInflow(SWMM_Project *sp, int link, double q, double h);
 double  roadway_getInflow(SWMM_Project *sp, int link, double dir, double hcrest,
         double h1, double h2);                                                 //(5.1.010)
 

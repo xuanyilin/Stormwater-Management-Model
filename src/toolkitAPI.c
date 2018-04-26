@@ -348,7 +348,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_SUBCATCH:
                 strcpy(id,sp->Subcatch[index].ID); break;
             case SM_NODE:
-                strcpy(id,Node[index].ID); break;
+                strcpy(id,sp->Node[index].ID); break;
             case SM_LINK:
                 strcpy(id,Link[index].ID); break;
             case SM_POLLUT:
@@ -404,7 +404,7 @@ int DLLEXPORT swmm_getNodeType_project(SWMM_Project *sp, int index, int *Ntype)
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
-    else *Ntype = Node[index].type;
+    else *Ntype = sp->Node[index].type;
 
     return(errcode);
 }
@@ -527,15 +527,15 @@ int DLLEXPORT swmm_getNodeParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_INVERTEL:
-                *value = Node[index].invertElev * UCF(sp, LENGTH); break;
+                *value = sp->Node[index].invertElev * UCF(sp, LENGTH); break;
             case SM_FULLDEPTH:
-                *value = Node[index].fullDepth * UCF(sp, LENGTH); break;
+                *value = sp->Node[index].fullDepth * UCF(sp, LENGTH); break;
             case SM_SURCHDEPTH:
-                *value = Node[index].surDepth * UCF(sp, LENGTH); break;
+                *value = sp->Node[index].surDepth * UCF(sp, LENGTH); break;
             case SM_PONDAREA:
-                *value = Node[index].pondedArea * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
+                *value = sp->Node[index].pondedArea * UCF(sp, LENGTH) * UCF(sp, LENGTH); break;
             case SM_INITDEPTH:
-                *value = Node[index].initDepth * UCF(sp, LENGTH); break;
+                *value = sp->Node[index].initDepth * UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -576,15 +576,15 @@ int DLLEXPORT swmm_setNodeParam_project(SWMM_Project *sp, int index, int Param, 
         switch(Param)
         {
             case SM_INVERTEL:
-                Node[index].invertElev = value / UCF(sp, LENGTH); break;
+                sp->Node[index].invertElev = value / UCF(sp, LENGTH); break;
             case SM_FULLDEPTH:
-                Node[index].fullDepth = value / UCF(sp, LENGTH); break;
+                sp->Node[index].fullDepth = value / UCF(sp, LENGTH); break;
             case SM_SURCHDEPTH:
-                Node[index].surDepth = value / UCF(sp, LENGTH); break;
+                sp->Node[index].surDepth = value / UCF(sp, LENGTH); break;
             case SM_PONDAREA:
-                Node[index].pondedArea = value / ( UCF(sp, LENGTH) * UCF(sp, LENGTH) ); break;
+                sp->Node[index].pondedArea = value / ( UCF(sp, LENGTH) * UCF(sp, LENGTH) ); break;
             case SM_INITDEPTH:
-                Node[index].initDepth = value / UCF(sp, LENGTH); break;
+                sp->Node[index].initDepth = value / UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -913,22 +913,22 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_Project *sp, int index, int type, 
         switch (type)
         {
             case SM_TOTALINFLOW:
-                *result = Node[index].inflow * UCF(sp, FLOW); break;
+                *result = sp->Node[index].inflow * UCF(sp, FLOW); break;
             case SM_TOTALOUTFLOW:
-                *result = Node[index].outflow * UCF(sp, FLOW); break;
+                *result = sp->Node[index].outflow * UCF(sp, FLOW); break;
             case SM_LOSSES:
-                *result = Node[index].losses * UCF(sp, FLOW); break;
+                *result = sp->Node[index].losses * UCF(sp, FLOW); break;
             case SM_NODEVOL:
-                *result = Node[index].newVolume * UCF(sp, VOLUME); break;
+                *result = sp->Node[index].newVolume * UCF(sp, VOLUME); break;
             case SM_NODEFLOOD:
-                *result = Node[index].overflow * UCF(sp, FLOW); break;
+                *result = sp->Node[index].overflow * UCF(sp, FLOW); break;
             case SM_NODEDEPTH:
-                *result = Node[index].newDepth * UCF(sp, LENGTH); break;
+                *result = sp->Node[index].newDepth * UCF(sp, LENGTH); break;
             case SM_NODEHEAD:
-                *result = (Node[index].newDepth
-                            + Node[index].invertElev) * UCF(sp, LENGTH); break;
+                *result = (sp->Node[index].newDepth
+                            + sp->Node[index].invertElev) * UCF(sp, LENGTH); break;
             case SM_LATINFLOW:
-                *result = Node[index].newLatFlow * UCF(sp, FLOW); break;
+                *result = sp->Node[index].newLatFlow * UCF(sp, FLOW); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
     }
@@ -1554,7 +1554,7 @@ int DLLEXPORT swmm_setNodeInflow_project(SWMM_Project *sp, int index, double flo
         TExtInflow* inflow;
 
         // --- check if an external inflow object for this constituent already exists
-        inflow = Node[index].extInflow;
+        inflow = sp->Node[index].extInflow;
         while (inflow)
         {
             if (inflow->param == -1) break;
@@ -1578,7 +1578,7 @@ int DLLEXPORT swmm_setNodeInflow_project(SWMM_Project *sp, int index, double flo
             // Get The Inflow Object
             if ( errcode == 0 )
             {
-                inflow = Node[index].extInflow;
+                inflow = sp->Node[index].extInflow;
             }
         }
         // Assign new flow rate
@@ -1613,13 +1613,13 @@ int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double s
     {
         errcode = ERR_API_OBJECT_INDEX;
     }
-    else if ( Node[index].type != OUTFALL )
+    else if ( sp->Node[index].type != OUTFALL )
     {
         errcode = ERR_API_WRONG_TYPE;
     }
     else
     {
-        int k = Node[index].subIndex;
+        int k = sp->Node[index].subIndex;
         if ( Outfall[k].type != STAGED_OUTFALL )
         {
             // Change Boundary Conditions Setting Type

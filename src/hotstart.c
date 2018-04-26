@@ -242,14 +242,14 @@ void  saveRouting(SWMM_Project *sp)
 
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
-        x[0] = (float)Node[i].newDepth;
-        x[1] = (float)Node[i].newLatFlow;
+        x[0] = (float)sp->Node[i].newDepth;
+        x[1] = (float)sp->Node[i].newLatFlow;
         fwrite(x, sizeof(float), 2, sp->Fhotstart2.file);
 
 ////  New code added to release 5.1.008.  ////                                 //(5.1.008)
-        if ( Node[i].type == STORAGE )
+        if ( sp->Node[i].type == STORAGE )
         {
-            j = Node[i].subIndex;
+            j = sp->Node[i].subIndex;
             x[0] = (float)Storage[j].hrt;
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
@@ -257,7 +257,7 @@ void  saveRouting(SWMM_Project *sp)
 
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
-            x[0] = (float)Node[i].newQual[j];
+            x[0] = (float)sp->Node[i].newQual[j];
             fwrite(&x[0], sizeof(float), 1, sp->Fhotstart2.file);
         }
     }
@@ -313,15 +313,15 @@ void readRouting(SWMM_Project *sp)
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         if ( !readFloat(sp, &x, f) ) return;
-        Node[i].newDepth = x;
+        sp->Node[i].newDepth = x;
         if ( !readFloat(sp, &x, f) ) return;
-        Node[i].newLatFlow = x;
+        sp->Node[i].newLatFlow = x;
 
 ////  New code added to release 5.1.008.  ////                                 //(5.1.008)
-        if ( fileVersion >= 4 &&  Node[i].type == STORAGE )
+        if ( fileVersion >= 4 &&  sp->Node[i].type == STORAGE )
         {
             if ( !readFloat(sp, &x, f) ) return;
-            j = Node[i].subIndex;
+            j = sp->Node[i].subIndex;
             Storage[j].hrt = x;
         }
 ////
@@ -329,7 +329,7 @@ void readRouting(SWMM_Project *sp)
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)
         {
             if ( !readFloat(sp, &x, f) ) return;
-            Node[i].newQual[j] = x;
+            sp->Node[i].newQual[j] = x;
         }
 
         // --- read in zeros here for backwards compatibility
@@ -355,7 +355,7 @@ void readRouting(SWMM_Project *sp)
 ////  Following code section moved to here.  ////                              //(5.1.011)
         // --- set link's target setting to saved setting 
         Link[i].targetSetting = x;
-        link_setTargetSetting(i);
+        link_setTargetSetting(sp, i);
         link_setSetting(sp, i, 0.0);
 ////
         for (j = 0; j < sp->Nobjects[POLLUT]; j++)

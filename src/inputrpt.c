@@ -136,7 +136,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
                 sp->Subcatch[i].slope*100.0, sp->Gage[sp->Subcatch[i].gage].ID);
             if ( sp->Subcatch[i].outNode >= 0 )
             {
-                fprintf(sp->Frpt.file, "%-20s", Node[sp->Subcatch[i].outNode].ID);
+                fprintf(sp->Frpt.file, "%-20s", sp->Node[sp->Subcatch[i].outNode].ID);
             }
             else if ( sp->Subcatch[i].outSubcatch >= 0 )
             {
@@ -162,12 +162,12 @@ void inputrpt_writeInput(SWMM_Project *sp)
 "\n  -------------------------------------------------------------------------------");
         for (i = 0; i < sp->Nobjects[NODE]; i++)
         {
-            fprintf(sp->Frpt.file, "\n  %-20s %-16s%10.2f%10.2f%10.1f", Node[i].ID,
-                NodeTypeWords[Node[i].type-JUNCTION],
-                Node[i].invertElev*UCF(sp, LENGTH),
-                Node[i].fullDepth*UCF(sp, LENGTH),
-                Node[i].pondedArea*UCF(sp, LENGTH)*UCF(sp, LENGTH));
-            if ( Node[i].extInflow || Node[i].dwfInflow || Node[i].rdiiInflow )
+            fprintf(sp->Frpt.file, "\n  %-20s %-16s%10.2f%10.2f%10.1f", sp->Node[i].ID,
+                NodeTypeWords[sp->Node[i].type-JUNCTION],
+                sp->Node[i].invertElev*UCF(sp, LENGTH),
+                sp->Node[i].fullDepth*UCF(sp, LENGTH),
+                sp->Node[i].pondedArea*UCF(sp, LENGTH)*UCF(sp, LENGTH));
+            if ( sp->Node[i].extInflow || sp->Node[i].dwfInflow || sp->Node[i].rdiiInflow )
             {
                 fprintf(sp->Frpt.file, "    Yes");
             }
@@ -190,10 +190,10 @@ void inputrpt_writeInput(SWMM_Project *sp)
             // --- list end nodes in their original orientation
             if ( Link[i].direction == 1 )
                 fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, Node[Link[i].node1].ID, Node[Link[i].node2].ID);
+                    Link[i].ID, sp->Node[Link[i].node1].ID, sp->Node[Link[i].node2].ID);
             else
                 fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, Node[Link[i].node2].ID, Node[Link[i].node1].ID);
+                    Link[i].ID, sp->Node[Link[i].node2].ID, sp->Node[Link[i].node1].ID);
 
             // --- list link type
             if ( Link[i].type == PUMP )

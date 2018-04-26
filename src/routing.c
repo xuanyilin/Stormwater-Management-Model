@@ -200,7 +200,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
 
     // --- find new link target settings that are not related to
     // --- control rules (e.g., pump on/off depth limits)
-    for (j=0; j<sp->Nobjects[LINK]; j++) link_setTargetSetting(j);
+    for (j=0; j<sp->Nobjects[LINK]; j++) link_setTargetSetting(sp, j);
 
     // --- find new target settings due to control rules
     currentDate = getDateTime(sp, sp->NewRoutingTime);
@@ -240,8 +240,8 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- initialize lateral inflows at nodes
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        Node[j].oldLatFlow  = Node[j].newLatFlow;
-        Node[j].newLatFlow  = 0.0;
+        sp->Node[j].oldLatFlow  = sp->Node[j].newLatFlow;
+        sp->Node[j].newLatFlow  = 0.0;
     }
 
     // --- check if can skip non-event periods
@@ -264,7 +264,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
         // --- find evap. & seepage losses from storage nodes
         for (j = 0; j < sp->Nobjects[NODE]; j++)
         {
-            Node[j].losses = node_getLosses(sp, j, routingStep);
+            sp->Node[j].losses = node_getLosses(sp, j, routingStep);
         }
 
         // --- add lateral inflows and evap/seepage losses at nodes
@@ -293,8 +293,8 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
             for (j = 0; j < sp->Nobjects[LINK]; j++) link_setOldHydState(j);
             for (j = 0; j < sp->Nobjects[NODE]; j++)
             {
-                node_setOldHydState(j);
-                node_initInflow(j, routingStep);
+                node_setOldHydState(sp, j);
+                node_initInflow(sp, j, routingStep);
             }
 
             // --- route flow through the drainage network
@@ -345,7 +345,7 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
     // --- for each node with a defined external inflow
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        inflow = Node[j].extInflow;
+        inflow = sp->Node[j].extInflow;
         if ( !inflow ) continue;
 
         // --- get flow inflow
@@ -362,17 +362,17 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
         if ( fabs(q) < FLOW_TOL ) q = 0.0;
 
         // --- add flow inflow to node's lateral inflow
-        Node[j].newLatFlow += q;
+        sp->Node[j].newLatFlow += q;
         massbal_addInflowFlow(EXTERNAL_INFLOW, q);
 
         // --- add on any inflow (i.e., reverse flow) through an outfall
-        if ( Node[j].type == OUTFALL && Node[j].oldNetInflow < 0.0 ) 
+        if ( sp->Node[j].type == OUTFALL && sp->Node[j].oldNetInflow < 0.0 ) 
         {
-            q = q - Node[j].oldNetInflow;
+            q = q - sp->Node[j].oldNetInflow;
         }
 
         // --- get pollutant mass inflows
-        inflow = Node[j].extInflow;
+        inflow = sp->Node[j].extInflow;
         while ( inflow )
         {
             if ( inflow->type != FLOW_INFLOW )
@@ -380,7 +380,7 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
                 p = inflow->param;
                 w = inflow_getExtInflow(inflow, currentDate);
                 if ( inflow->type == CONCEN_INFLOW ) w *= q;
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, EXTERNAL_INFLOW, p, w);
             }
             inflow = inflow->next;
@@ -411,7 +411,7 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
     // --- for each node with a defined dry weather inflow
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        inflow = Node[j].dwfInflow;
+        inflow = sp->Node[j].dwfInflow;
         if ( !inflow ) continue;
 
         // --- get flow inflow (i.e., the inflow whose param code is -1)
@@ -428,7 +428,7 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
         if ( fabs(q) < FLOW_TOL ) q = 0.0;
 
         // --- add flow inflow to node's lateral inflow
-        Node[j].newLatFlow += q;
+        sp->Node[j].newLatFlow += q;
         massbal_addInflowFlow(DRY_WEATHER_INFLOW, q);
 
         // --- stop if inflow is non-positive
@@ -440,27 +440,27 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
             if ( Pollut[p].dwfConcen > 0.0 )
             {
                 w = q * Pollut[p].dwfConcen;
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, w);
             }
         }
 
         // --- get pollutant mass inflows
-        inflow = Node[j].dwfInflow;
+        inflow = sp->Node[j].dwfInflow;
         while ( inflow )
         {
             if ( inflow->param >= 0 )
             {
                 p = inflow->param;
                 w = q * inflow_getDwfInflow(inflow, month, day, hour);
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, w);
 
                 // --- subtract off any default inflow
                 if ( Pollut[p].dwfConcen > 0.0 )
                 {
                     w = q * Pollut[p].dwfConcen;
-                    Node[j].newQual[p] -= w;
+                    sp->Node[j].newQual[p] -= w;
                     massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, -w);
                 }
             }
@@ -497,14 +497,14 @@ void addWetWeatherInflows(SWMM_Project *sp, double routingTime)
         {
             // add runoff flow to lateral inflow
             q = subcatch_getWtdOutflow(sp, i, f);     // current runoff flow
-            Node[j].newLatFlow += q;
+            sp->Node[j].newLatFlow += q;
             massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
 
             // add pollutant load
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 w = surfqual_getWtdWashoff(sp, i, p, f);                           //(5.1.008)
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, WET_WEATHER_INFLOW, p, w);
             }
         }
@@ -546,7 +546,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
                 q = ( (1.0 - f)*(gw->oldFlow) + f*(gw->newFlow) )
                     * sp->Subcatch[i].area;
                 if ( fabs(q) < FLOW_TOL ) continue;
-                Node[j].newLatFlow += q;
+                sp->Node[j].newLatFlow += q;
                 massbal_addInflowFlow(GROUNDWATER_INFLOW, q);
 
                 // add pollutant load (for positive inflow)
@@ -555,7 +555,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
                     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                     {
                         w = q * Pollut[p].gwConcen;
-                        Node[j].newQual[p] += w;
+                        sp->Node[j].newQual[p] += w;
                         massbal_addInflowQual(sp, GROUNDWATER_INFLOW, p, w);
                     }
                 }
@@ -612,7 +612,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
         rdii_getRdiiFlow(i, &j, &q);
         if ( j < 0 ) continue;
         if ( fabs(q) < FLOW_TOL ) continue;
-        Node[j].newLatFlow += q;
+        sp->Node[j].newLatFlow += q;
         massbal_addInflowFlow(RDII_INFLOW, q);
 
         // add pollutant load (for positive inflow)
@@ -621,7 +621,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 w = q * Pollut[p].rdiiConcen;
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, RDII_INFLOW, p, w);
             }
         }
@@ -652,7 +652,7 @@ void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
         if ( j < 0 ) continue;
         q = iface_getIfaceFlow(i);
         if ( fabs(q) < FLOW_TOL ) continue;
-        Node[j].newLatFlow += q;
+        sp->Node[j].newLatFlow += q;
         massbal_addInflowFlow(EXTERNAL_INFLOW, q);
 
         // add pollutant load (for positive inflow)
@@ -661,7 +661,7 @@ void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 w = q * iface_getIfaceQual(i, p);
-                Node[j].newQual[p] += w;
+                sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, EXTERNAL_INFLOW, p, w);
             }
         }
@@ -687,16 +687,16 @@ int  inflowHasChanged(SWMM_Project *sp)
     // --- check if external inflows or outfall flows have changed 
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        qOld = Node[j].oldLatFlow;
-        qNew = Node[j].newLatFlow;
+        qOld = sp->Node[j].oldLatFlow;
+        qNew = sp->Node[j].newLatFlow;
         if      ( fabs(qOld) > TINY ) diff = (qNew / qOld) - 1.0;
         else if ( fabs(qNew) > TINY ) diff = 1.0;
         else                    diff = 0.0;
         if ( fabs(diff) > sp->LatFlowTol ) return TRUE;
-        if ( Node[j].type == OUTFALL || Node[j].degree == 0 )
+        if ( sp->Node[j].type == OUTFALL || sp->Node[j].degree == 0 )
         {
-            qOld = Node[j].oldFlowInflow;
-            qNew = Node[j].inflow;
+            qOld = sp->Node[j].oldFlowInflow;
+            qNew = sp->Node[j].inflow;
             if      ( fabs(qOld) > TINY ) diff = (qNew / qOld) - 1.0;
             else if ( fabs(qNew) > TINY ) diff = 1.0;
             else                          diff = 0.0;
@@ -725,11 +725,11 @@ void removeStorageLosses(SWMM_Project *sp, double tStep)
     // --- check each storage node
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
-        if (Node[i].type == STORAGE)
+        if (sp->Node[i].type == STORAGE)
         {
             // --- update total system storage losses
-            evapLoss += Storage[Node[i].subIndex].evapLoss;
-            exfilLoss += Storage[Node[i].subIndex].exfilLoss;
+            evapLoss += Storage[sp->Node[i].subIndex].evapLoss;
+            exfilLoss += Storage[sp->Node[i].subIndex].exfilLoss;
         }
     }
 
@@ -789,15 +789,15 @@ void removeOutflows(SWMM_Project *sp, double tStep)
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
     {
         // --- accumulate inflow volume & pollut. load at outfalls
-        if ( Node[i].type == OUTFALL && Node[i].inflow > 0.0 )
+        if ( sp->Node[i].type == OUTFALL && sp->Node[i].inflow > 0.0 )
         {
-            k = Node[i].subIndex;
+            k = sp->Node[i].subIndex;
             if ( Outfall[k].routeTo >= 0 )
             {
-                v = Node[i].inflow * tStep;
+                v = sp->Node[i].inflow * tStep;
                 Outfall[k].vRouted += v;
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    Outfall[k].wRouted[p] += Node[i].newQual[p] * v;
+                    Outfall[k].wRouted[p] += sp->Node[i].newQual[p] * v;
             }
         }
 
@@ -809,19 +809,19 @@ void removeOutflows(SWMM_Project *sp, double tStep)
             massbal_addOutflowFlow(q, isFlooded);
             for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
             {
-                w = q * Node[i].newQual[p];
+                w = q * sp->Node[i].newQual[p];
                 massbal_addOutflowQual(sp, p, w, isFlooded);
             }
         }
 
         // --- update mass balance with mass leaving system through negative
         //     lateral inflows (lateral flow was previously accounted for)
-        q = Node[i].newLatFlow;
+        q = sp->Node[i].newLatFlow;
         if ( q < 0.0 )
         {
             for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
             {
-                w = -q * Node[i].newQual[p];
+                w = -q * sp->Node[i].newQual[p];
                 massbal_addOutflowQual(sp, p, w, FALSE);
             }
         }

@@ -231,7 +231,7 @@ void project_validate(SWMM_Project *sp)
 
     // --- validate links before nodes, since the latter can
     //     result in adjustment of node depths
-    for ( i=0; i<sp->Nobjects[NODE]; i++) Node[i].oldDepth = Node[i].fullDepth;
+    for ( i=0; i<sp->Nobjects[NODE]; i++) sp->Node[i].oldDepth = sp->Node[i].fullDepth;
     for ( i=0; i<sp->Nobjects[LINK]; i++) link_validate(sp, i);
     for ( i=0; i<sp->Nobjects[NODE]; i++) node_validate(sp, i);
 
@@ -251,7 +251,7 @@ void project_validate(SWMM_Project *sp)
     if ( sp->RptFlags.subcatchments == ALL )
         for (i=0; i<sp->Nobjects[SUBCATCH]; i++) sp->Subcatch[i].rptFlag = TRUE;
     if ( sp->RptFlags.nodes == ALL )
-        for (i=0; i<sp->Nobjects[NODE]; i++) Node[i].rptFlag = TRUE;
+        for (i=0; i<sp->Nobjects[NODE]; i++) sp->Node[i].rptFlag = TRUE;
     if ( sp->RptFlags.links == ALL )
         for (i=0; i<sp->Nobjects[LINK]; i++) Link[i].rptFlag = TRUE;
 
@@ -731,7 +731,7 @@ void initPointers(SWMM_Project *sp)
 {
     sp->Gage     = NULL;
     sp->Subcatch = NULL;
-    Node     = NULL;
+    sp->Node     = NULL;
     Outfall  = NULL;
     Divider  = NULL;
     Storage  = NULL;
@@ -963,7 +963,7 @@ void createObjects(SWMM_Project *sp)
     if ( sp->ErrorCode ) return;
     sp->Gage     = (TGage *)     calloc(sp->Nobjects[GAGE],     sizeof(TGage));
     sp->Subcatch = (TSubcatch *) calloc(sp->Nobjects[SUBCATCH], sizeof(TSubcatch));
-    Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
+    sp->Node     = (TNode *)     calloc(sp->Nobjects[NODE],     sizeof(TNode));
     Outfall  = (TOutfall *)  calloc(sp->Nnodes[OUTFALL],    sizeof(TOutfall));
     Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
     Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
@@ -1016,12 +1016,12 @@ void createObjects(SWMM_Project *sp)
     }
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        Node[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Node[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        Node[j].extInflow = NULL;
-        Node[j].dwfInflow = NULL;
-        Node[j].rdiiInflow = NULL;
-        Node[j].treatment = NULL;
+        sp->Node[j].oldQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Node[j].newQual = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        sp->Node[j].extInflow = NULL;
+        sp->Node[j].dwfInflow = NULL;
+        sp->Node[j].rdiiInflow = NULL;
+        sp->Node[j].treatment = NULL;
     }
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
@@ -1108,7 +1108,7 @@ void createObjects(SWMM_Project *sp)
 
     // --- initialize reporting flags
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) sp->Subcatch[j].rptFlag = FALSE;
-    for (j = 0; j < sp->Nobjects[NODE]; j++) Node[j].rptFlag = FALSE;
+    for (j = 0; j < sp->Nobjects[NODE]; j++) sp->Node[j].rptFlag = FALSE;
     for (j = 0; j < sp->Nobjects[LINK]; j++) Link[j].rptFlag = FALSE;
 
     //  --- initialize curves, time series, and time patterns
@@ -1161,10 +1161,10 @@ void deleteObjects(SWMM_Project *sp)
         FREE(sp->Subcatch[j].pondedQual);
         FREE(sp->Subcatch[j].totalLoad);
     }
-    if ( Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
+    if ( sp->Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        FREE(Node[j].oldQual);
-        FREE(Node[j].newQual);
+        FREE(sp->Node[j].oldQual);
+        FREE(sp->Node[j].newQual);
     }
     if ( Link ) for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
@@ -1179,7 +1179,7 @@ void deleteObjects(SWMM_Project *sp)
 ////  Added for release 5.1.007.  ////                                         //(5.1.007)
 ////
     // --- free memory used for storage exfiltration
-    if ( Node ) for (j = 0; j < sp->Nnodes[STORAGE]; j++)
+    if ( sp->Node ) for (j = 0; j < sp->Nnodes[STORAGE]; j++)
     {
         if ( Storage[j].exfil )
         {
@@ -1191,15 +1191,15 @@ void deleteObjects(SWMM_Project *sp)
 ////
 
     // --- free memory used for outfall pollutants loads                       //(5.1.008)
-    if ( Node ) for (j = 0; j < sp->Nnodes[OUTFALL]; j++)                          //(5.1.008)
+    if ( sp->Node ) for (j = 0; j < sp->Nnodes[OUTFALL]; j++)                          //(5.1.008)
         FREE(Outfall[j].wRouted);                                              //(5.1.008)
 
     // --- free memory used for nodal inflows & treatment functions
-    if ( Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
+    if ( sp->Node ) for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        inflow_deleteExtInflows(j);
-        inflow_deleteDwfInflows(j);
-        rdii_deleteRdiiInflow(j);
+        inflow_deleteExtInflows(sp, j);
+        inflow_deleteDwfInflows(sp, j);
+        rdii_deleteRdiiInflow(sp, j);
         treatmnt_delete(sp, j);
     }
 
@@ -1221,7 +1221,7 @@ void deleteObjects(SWMM_Project *sp)
     // --- now free each major category of object
     FREE(sp->Gage);
     FREE(sp->Subcatch);
-    FREE(Node);
+    FREE(sp->Node);
     FREE(Outfall);
     FREE(Divider);
     FREE(Storage);

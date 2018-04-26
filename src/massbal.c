@@ -162,7 +162,7 @@ int massbal_open(SWMM_Project *sp)
     FlowTotals.reacted  = 0.0;
     FlowTotals.initStorage = 0.0;
     for (j = 0; j < sp->Nobjects[NODE]; j++)
-        FlowTotals.initStorage += Node[j].newVolume;
+        FlowTotals.initStorage += sp->Node[j].newVolume;
     for (j = 0; j < sp->Nobjects[LINK]; j++)
         FlowTotals.initStorage += Link[j].newVolume;
     StepFlowTotals = FlowTotals;
@@ -173,9 +173,9 @@ int massbal_open(SWMM_Project *sp)
     {
         for (j = 0; j < sp->Nobjects[NODE]; j++)
 	{
-            if ( Node[j].type != STORAGE &&
-                Node[j].initDepth <= Node[j].crownElev - Node[j].invertElev )  //(5.1.007)
-                FlowTotals.initStorage += Node[j].initDepth * sp->MinSurfArea;
+            if ( sp->Node[j].type != STORAGE &&
+                sp->Node[j].initDepth <= sp->Node[j].crownElev - sp->Node[j].invertElev )  //(5.1.007)
+                FlowTotals.initStorage += sp->Node[j].initDepth * sp->MinSurfArea;
 	}
     }
 
@@ -254,7 +254,7 @@ int massbal_open(SWMM_Project *sp)
              report_writeErrorMsg(sp, ERR_MEMORY, "");
              return sp->ErrorCode;
         }
-        for (j = 0; j < sp->Nobjects[NODE]; j++) NodeInflow[j] = Node[j].newVolume;
+        for (j = 0; j < sp->Nobjects[NODE]; j++) NodeInflow[j] = sp->Node[j].newVolume;
     }
     return sp->ErrorCode;
 }
@@ -644,17 +644,17 @@ void massbal_updateRoutingTotals(SWMM_Project *sp, double tStep)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        NodeInflow[j] += Node[j].inflow * tStep;
-        if ( Node[j].type == OUTFALL || 
-            (Node[j].degree == 0 && Node[j].type != STORAGE) )                 //(5.1.012)
+        NodeInflow[j] += sp->Node[j].inflow * tStep;
+        if ( sp->Node[j].type == OUTFALL || 
+            (sp->Node[j].degree == 0 && sp->Node[j].type != STORAGE) )                 //(5.1.012)
         {
-            NodeOutflow[j] += Node[j].inflow * tStep;
+            NodeOutflow[j] += sp->Node[j].inflow * tStep;
         }
         else
         {
-            NodeOutflow[j] += Node[j].outflow * tStep; 
-            if ( Node[j].newVolume <= Node[j].fullVolume ) 
-                NodeOutflow[j] += Node[j].overflow * tStep; 
+            NodeOutflow[j] += sp->Node[j].outflow * tStep; 
+            if ( sp->Node[j].newVolume <= sp->Node[j].fullVolume ) 
+                NodeOutflow[j] += sp->Node[j].overflow * tStep; 
         }
     }
 }
@@ -675,7 +675,7 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
     // --- get volume in nodes
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        nodeStorage = Node[j].newVolume;
+        nodeStorage = sp->Node[j].newVolume;
         if ( isFinalStorage ) NodeOutflow[j] += nodeStorage;
         totalStorage += nodeStorage;
     }
@@ -686,9 +686,9 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
     {
         for (j = 0; j < sp->Nobjects[NODE]; j++)
         {
-            if ( Node[j].type != STORAGE &&
-                 Node[j].newDepth <= Node[j].crownElev - Node[j].invertElev )  //(5.1.007)
-                totalStorage +=	Node[j].newDepth * sp->MinSurfArea;
+            if ( sp->Node[j].type != STORAGE &&
+                 sp->Node[j].newDepth <= sp->Node[j].crownElev - sp->Node[j].invertElev )  //(5.1.007)
+                totalStorage +=	sp->Node[j].newDepth * sp->MinSurfArea;
 	}
     }
 
@@ -1074,7 +1074,7 @@ double massbal_getStoredMass(SWMM_Project *sp, int p)
 
     // --- get mass stored in nodes
     for (j = 0; j < sp->Nobjects[NODE]; j++)
-        storedMass += Node[j].newVolume * Node[j].newQual[p];
+        storedMass += sp->Node[j].newVolume * sp->Node[j].newQual[p];
 
     // --- get mass stored in links (except for Steady Flow routing)
     if ( sp->RouteModel != SF )                                                    //(5.1.011)

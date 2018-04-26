@@ -50,7 +50,7 @@ static int  topoSort(SWMM_Project *sp, int sortedLinks[]);
 static void findCycles(SWMM_Project *sp);
 static void findSpanningTree(SWMM_Project *sp, int startNode);
 static void evalLoop(SWMM_Project *sp, int startLink);
-static int  traceLoop(int i1, int i2, int k);
+static int  traceLoop(SWMM_Project *sp, int i1, int i2, int k);
 static void checkDummyLinks(SWMM_Project *sp);
 //=============================================================================
 
@@ -74,7 +74,7 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
         if ( sp->ErrorCode ) return;
 
         // --- find number of outflow links for each node
-        for ( i=0; i<sp->Nobjects[NODE]; i++ ) Node[i].degree = 0;
+        for ( i=0; i<sp->Nobjects[NODE]; i++ ) sp->Node[i].degree = 0;
         for ( i=0; i<sp->Nobjects[LINK]; i++ )
         {
             // --- if upstream node is an outfall, then increment outflow
@@ -82,13 +82,13 @@ void toposort_sortLinks(SWMM_Project *sp, int sortedLinks[])
             //     for upstream node
             n = Link[i].node1;
             if ( Link[i].direction < 0 ) n = Link[i].node2;
-            if ( Node[n].type == OUTFALL )
+            if ( sp->Node[n].type == OUTFALL )
             {
                 if ( Link[i].direction < 0 ) n = Link[i].node1;
                 else n = Link[i].node2;
-                Node[n].degree++;
+                sp->Node[n].degree++;
             }
-            else Node[n].degree++;
+            else sp->Node[n].degree++;
         }
         return;
     }
@@ -148,11 +148,11 @@ void createAdjList(SWMM_Project *sp ,int listType)
     // --- determine degree of each node
     //     (for DIRECTED list only count link at its upstream node;
     //      for UNDIRECTED list count link at both end nodes)
-    for (i = 0; i < sp->Nobjects[NODE]; i++) Node[i].degree = 0;
+    for (i = 0; i < sp->Nobjects[NODE]; i++) sp->Node[i].degree = 0;
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
-        Node[ Link[j].node1 ].degree++;
-        if ( listType == UNDIRECTED ) Node[ Link[j].node2 ].degree++;
+        sp->Node[ Link[j].node1 ].degree++;
+        if ( listType == UNDIRECTED ) sp->Node[ Link[j].node2 ].degree++;
     }
 
     // --- determine start position of each node in the adjacency list
@@ -161,10 +161,10 @@ void createAdjList(SWMM_Project *sp ,int listType)
     StartPos[0] = 0;
     for (i = 0; i < sp->Nobjects[NODE]-1; i++)
     {
-        StartPos[i+1] = StartPos[i] + Node[i].degree;
-        Node[i].degree = 0;
+        StartPos[i+1] = StartPos[i] + sp->Node[i].degree;
+        sp->Node[i].degree = 0;
     }
-    Node[sp->Nobjects[NODE]-1].degree = 0;
+    sp->Node[sp->Nobjects[NODE]-1].degree = 0;
 
     // --- traverse the list of links once more,
     //     adding each link's index to the proper 
@@ -172,15 +172,15 @@ void createAdjList(SWMM_Project *sp ,int listType)
     for (j = 0; j < sp->Nobjects[LINK]; j++)
     {
         i = Link[j].node1;
-        k = StartPos[i] + Node[i].degree;
+        k = StartPos[i] + sp->Node[i].degree;
         AdjList[k] = j;
-        Node[i].degree++;
+        sp->Node[i].degree++;
         if ( listType == UNDIRECTED )
         {
             i = Link[j].node2;
-            k = StartPos[i] + Node[i].degree;
+            k = StartPos[i] + sp->Node[i].degree;
             AdjList[k] = j;
-            Node[i].degree++;
+            sp->Node[i].degree++;
         }
     }
 }
@@ -201,12 +201,12 @@ void adjustAdjList(SWMM_Project *sp)
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
         // --- skip nodes that are not Dividers
-        if ( Node[i].type != DIVIDER ) continue;
-        if ( Node[i].degree != 2 ) continue;
+        if ( sp->Node[i].type != DIVIDER ) continue;
+        if ( sp->Node[i].degree != 2 ) continue;
 
         // --- switch position of outgoing links at the node if the
         //     diversion link appears first in the adjacency list
-        k = Node[i].subIndex;
+        k = sp->Node[i].subIndex;
         m = StartPos[i];
         j = AdjList[m];
         if ( j == Divider[k].link )
@@ -251,7 +251,7 @@ int topoSort(SWMM_Project *sp, int sortedLinks[])
         //     first node remaining on the stack
         i1 = Stack[First];
         k1 = StartPos[i1];
-        k2 = k1 + Node[i1].degree;
+        k2 = k1 + sp->Node[i1].degree;
 
         // --- for each outgoing link from first node on stack
         for (k = k1; k < k2; k++)
@@ -336,7 +336,7 @@ void  findSpanningTree(SWMM_Project *sp, int startNode)
 
     // --- examine each link connected to node i
     for ( m = StartPos[startNode];
-          m < StartPos[startNode]+Node[startNode].degree; m++ )
+          m < StartPos[startNode]+sp->Node[startNode].degree; m++ )
     {
         // --- find which node (j) connects link k from start node
         k = AdjList[m];
@@ -401,7 +401,7 @@ void evalLoop(SWMM_Project *sp, int startLink)
     //     tail node of startLink and ends at its head node
     i1 = Link[startLink].node1;
     i2 = Link[startLink].node2;
-    if ( !traceLoop(i1, i2, startLink) ) return;
+    if ( !traceLoop(sp, i1, i2, startLink) ) return;
 
     // --- check if all links on the path are oriented head-to-tail
     isCycle = TRUE;
@@ -435,7 +435,7 @@ void evalLoop(SWMM_Project *sp, int startLink)
 
 //=============================================================================
 
-int traceLoop(int i1, int i2, int k1)
+int traceLoop(SWMM_Project *sp, int i1, int i2, int k1)
 //
 //  Input:   i1 = index of current node reached while tracing a loop
 //           i2 = index of final node on the loop
@@ -450,7 +450,7 @@ int traceLoop(int i1, int i2, int k1)
     if ( i1 == i2 ) return TRUE;
 
     // --- examine each link connected to current node
-    for (m = StartPos[i1]; m < StartPos[i1] + Node[i1].degree; m++)
+    for (m = StartPos[i1]; m < StartPos[i1] + sp->Node[i1].degree; m++)
     {
         // --- ignore link if it comes from predecessor node or if
         //     it is not on the spanning tree
@@ -463,7 +463,7 @@ int traceLoop(int i1, int i2, int k1)
 
         // --- try to continue tracing the loop from this node;
         //     if successful, then add link to loop and return
-        if ( traceLoop(j, i2, k) )
+        if ( traceLoop(sp, j, i2, k) )
         {
             LoopLinksLast++;
             LoopLinks[LoopLinksLast] = k;
@@ -521,7 +521,7 @@ void checkDummyLinks(SWMM_Project *sp)
             j = Link[i].node1;
             if ( marked[j] > 0 )
             {
-                report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[j].ID);
+                report_writeErrorMsg(sp, ERR_DUMMY_LINK, sp->Node[j].ID);
             }
         }
     }

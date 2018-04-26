@@ -1035,20 +1035,20 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
       case r_DEPTH:
         if ( j >= 0 ) return Link[j].newDepth*UCF(sp, LENGTH);
         else if ( i >= 0 )
-            return Node[i].newDepth*UCF(sp, LENGTH);
+            return sp->Node[i].newDepth*UCF(sp, LENGTH);
         else return MISSING;
 
       case r_HEAD:
         if ( i < 0 ) return MISSING;
-        return (Node[i].newDepth + Node[i].invertElev) * UCF(sp, LENGTH);
+        return (sp->Node[i].newDepth + sp->Node[i].invertElev) * UCF(sp, LENGTH);
 
       case r_VOLUME:                                                           //(5.1.008)
         if ( i < 0 ) return MISSING;
-        return (Node[i].newVolume * UCF(sp, VOLUME));
+        return (sp->Node[i].newVolume * UCF(sp, VOLUME));
 
       case r_INFLOW:
         if ( i < 0 ) return MISSING;
-        else return Node[i].newLatFlow*UCF(sp, FLOW);
+        else return sp->Node[i].newLatFlow*UCF(sp, FLOW);
 
 ////  This section added to release 5.1.010.  ////                             //(5.1.010)
       case r_TIMEOPEN:

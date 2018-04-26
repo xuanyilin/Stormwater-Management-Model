@@ -299,12 +299,12 @@ void iface_saveOutletResults(SWMM_Project *sp, DateTime reportDate, FILE* file)
         if ( !isOutletNode(sp, i) ) continue;
 
         // --- write node ID, date, flow, and quality to file
-        fprintf(file, "\n%-16s", Node[i].ID);
+        fprintf(file, "\n%-16s", sp->Node[i].ID);
         fprintf(file, "%s", theDate);
-        fprintf(file, " %-10f", Node[i].inflow * UCF(sp, FLOW));
+        fprintf(file, " %-10f", sp->Node[i].inflow * UCF(sp, FLOW));
         for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
         {
-            fprintf(file, " %-10f", Node[i].newQual[p]);
+            fprintf(file, " %-10f", sp->Node[i].newQual[p]);
         }
     }
 }
@@ -355,7 +355,7 @@ void openFileForOutput(SWMM_Project *sp)
     for (i=0; i<sp->Nobjects[NODE]; i++)
     {
           if ( isOutletNode(sp, i) )
-            fprintf(sp->Foutflows.file, "\n%s", Node[i].ID);
+            fprintf(sp->Foutflows.file, "\n%s", sp->Node[i].ID);
     }
 
     // --- write column headings
@@ -637,9 +637,9 @@ int  isOutletNode(SWMM_Project *sp, int i)
     // --- for DW routing only outfalls are outlets
     if ( sp->RouteModel == DW )
     {
-        return (Node[i].type == OUTFALL);
+        return (sp->Node[i].type == OUTFALL);
     }
 
     // --- otherwise outlets are nodes with no outflow links (degree is 0)
-    else return (Node[i].degree == 0);
+    else return (sp->Node[i].degree == 0);
 }

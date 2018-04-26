@@ -1473,8 +1473,8 @@ void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
 //           f = time interval weighting factor
 //  Output:  none.
 //
-//  Note:    this function updates the total lateral flow (Node[].newLatFlow)
-//           and pollutant mass (Node[].newQual[]) inflow seen by nodes that
+//  Note:    this function updates the total lateral flow (sp->Node[].newLatFlow)
+//           and pollutant mass (sp->Node[].newQual[]) inflow seen by nodes that
 //           receive drain flow from the LID units in subcatchment j.
 {
     int        k,            // node index
@@ -1500,7 +1500,7 @@ void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
             {
                 //... add drain flow to node's wet weather inflow
                 q = (1.0 - f) * lidUnit->oldDrainFlow + f * lidUnit->newDrainFlow;
-                Node[k].newLatFlow += q;
+                sp->Node[k].newLatFlow += q;
                 massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
 
                 //... add pollutant load, based on parent subcatchment quality 
@@ -1512,7 +1512,7 @@ void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
 
                     //... add interpolated load to node's wet weather loading
                     w = (1.0 - f) * w1 + f * w2;
-                    Node[k].newQual[p] += w;
+                    sp->Node[k].newQual[p] += w;
                     massbal_addInflowQual(sp, WET_WEATHER_INFLOW, p, w);
                 }
             }

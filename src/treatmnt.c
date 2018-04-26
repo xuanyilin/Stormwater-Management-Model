@@ -138,7 +138,7 @@ int  treatmnt_readExpression(SWMM_Project *sp, char* tok[], int ntoks)
     else expr++;
 
     // --- create treatment objects at node j if they don't already exist
-    if ( Node[j].treatment == NULL )
+    if ( sp->Node[j].treatment == NULL )
     {
         if ( !createTreatment(sp, j) ) return error_setInpError(ERR_MEMORY, "");
     }
@@ -151,8 +151,8 @@ int  treatmnt_readExpression(SWMM_Project *sp, char* tok[], int ntoks)
         return error_setInpError(ERR_TREATMENT_EXPR, "");
 
     // --- save the treatment parameters in the node's treatment object
-    Node[j].treatment[p].treatType = k;
-    Node[j].treatment[p].equation = equation;
+    sp->Node[j].treatment[p].treatType = k;
+    sp->Node[j].treatment[p].equation = equation;
     return 0;
 }
 
@@ -166,13 +166,13 @@ void treatmnt_delete(SWMM_Project *sp, int j)
 //
 {
     int p;
-    if ( Node[j].treatment )
+    if ( sp->Node[j].treatment )
     {
         for (p=0; p<sp->Nobjects[POLLUT]; p++)
-            mathexpr_delete(Node[j].treatment[p].equation);
-        free(Node[j].treatment);
+            mathexpr_delete(sp->Node[j].treatment[p].equation);
+        free(sp->Node[j].treatment);
     }
-    Node[j].treatment = NULL;
+    sp->Node[j].treatment = NULL;
 }
 
 //=============================================================================
@@ -211,7 +211,7 @@ void  treatmnt_treat(SWMM_Project *sp, int j, double q, double v, double tStep)
     TTreatment* treatment;             // pointer to treatment object          //(5.1.008)
 
     // --- set locally shared variables for node j
-    if ( Node[j].treatment == NULL ) return;
+    if ( sp->Node[j].treatment == NULL ) return;
     ErrCode = 0;
     J  = j;                            // current node
     Dt = tStep;                        // current time step
@@ -225,7 +225,7 @@ void  treatmnt_treat(SWMM_Project *sp, int j, double q, double v, double tStep)
     for ( p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- removal is zero if there is no treatment equation
-        treatment = &Node[j].treatment[p];                                     //(5.1.008)
+        treatment = &sp->Node[j].treatment[p];                                     //(5.1.008)
         if ( treatment->equation == NULL ) R[p] = 0.0;                         //(5.1.008)
 
         // --- no removal for removal-type expression when there is no inflow 
@@ -238,44 +238,44 @@ void  treatmnt_treat(SWMM_Project *sp, int j, double q, double v, double tStep)
     // --- check for error condition
     if ( ErrCode == ERR_CYCLIC_TREATMENT )
     {
-         report_writeErrorMsg(sp, ERR_CYCLIC_TREATMENT, Node[J].ID);
+         report_writeErrorMsg(sp, ERR_CYCLIC_TREATMENT, sp->Node[J].ID);
     }
 
     // --- update nodal concentrations and mass balances
     else for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
     {
         if ( R[p] == 0.0 ) continue;
-        treatment = &Node[j].treatment[p];                                     //(5.1.008)
+        treatment = &sp->Node[j].treatment[p];                                     //(5.1.008)
 
         // --- removal-type treatment equations get applied to inflow stream
 
         if ( treatment->treatType == REMOVAL )                                 //(5.1.008)
         {
             // --- if no pollutant in inflow then cOut is current nodal concen.
-            if ( Cin[p] == 0.0 ) cOut = Node[j].newQual[p];
+            if ( Cin[p] == 0.0 ) cOut = sp->Node[j].newQual[p];
 
             // ---  otherwise apply removal to influent concen.
             else cOut = (1.0 - R[p]) * Cin[p];
 
             // --- cOut can't be greater than mixture concen. at node
             //     (i.e., in case node is a storage unit) 
-            cOut = MIN(cOut, Node[j].newQual[p]);
+            cOut = MIN(cOut, sp->Node[j].newQual[p]);
         }
 
         // --- concentration-type equations get applied to nodal concentration
         else
         {
-            cOut = (1.0 - R[p]) * Node[j].newQual[p];
+            cOut = (1.0 - R[p]) * sp->Node[j].newQual[p];
         }
 
         // --- mass lost must account for any initial mass in storage 
-        massLost = (Cin[p]*q*tStep + Node[j].oldQual[p]*Node[j].oldVolume - 
-                   cOut*(q*tStep + Node[j].oldVolume)) / tStep; 
+        massLost = (Cin[p]*q*tStep + sp->Node[j].oldQual[p]*sp->Node[j].oldVolume - 
+                   cOut*(q*tStep + sp->Node[j].oldVolume)) / tStep; 
         massLost = MAX(0.0, massLost); 
 
         // --- add mass loss to mass balance totals and revise nodal concentration
         massbal_addReactedMass(sp, p, massLost);
-        Node[j].newQual[p] = cOut;
+        sp->Node[j].newQual[p] = cOut;
     }
 }
 
@@ -289,15 +289,15 @@ int  createTreatment(SWMM_Project *sp, int j)
 //
 {
     int p;
-    Node[j].treatment = (TTreatment *) calloc(sp->Nobjects[POLLUT],
+    sp->Node[j].treatment = (TTreatment *) calloc(sp->Nobjects[POLLUT],
                                               sizeof(TTreatment));
-    if ( Node[j].treatment == NULL )
+    if ( sp->Node[j].treatment == NULL )
     {
         return FALSE;
     }
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
-        Node[j].treatment[p].equation = NULL;
+        sp->Node[j].treatment[p].equation = NULL;
     }
     return TRUE;
 }
@@ -352,9 +352,9 @@ double getVariableValue(SWMM_Project *sp, int varCode)
         switch ( varCode )
         {
           case pvHRT:                                 // HRT in hours
-            if ( Node[J].type == STORAGE )
+            if ( sp->Node[J].type == STORAGE )
             {
-                return Storage[Node[J].subIndex].hrt / 3600.0;
+                return Storage[sp->Node[J].subIndex].hrt / 3600.0;
             }
             else return 0.0;
 
@@ -365,12 +365,12 @@ double getVariableValue(SWMM_Project *sp, int varCode)
             return Q * UCF(sp, FLOW);                     // flow in user's units
 
           case pvDEPTH:
-            y = (Node[J].oldDepth + Node[J].newDepth) / 2.0;
+            y = (sp->Node[J].oldDepth + sp->Node[J].newDepth) / 2.0;
             return y * UCF(sp, LENGTH);                   // depth in ft or m
 
           case pvAREA:
-            a1 = node_getSurfArea(sp, J, Node[J].oldDepth);
-            a2 = node_getSurfArea(sp, J, Node[J].newDepth);
+            a1 = node_getSurfArea(sp, J, sp->Node[J].oldDepth);
+            a2 = node_getSurfArea(sp, J, sp->Node[J].newDepth);
             return (a1 + a2) / 2.0 * UCF(sp, LENGTH) * UCF(sp, LENGTH);
             
           default: return 0.0;
@@ -381,9 +381,9 @@ double getVariableValue(SWMM_Project *sp, int varCode)
     else if ( varCode < PVMAX + sp->Nobjects[POLLUT] )
     {
         p = varCode - PVMAX;
-        treatment = &Node[J].treatment[p];                                     //(5.1.008)
+        treatment = &sp->Node[J].treatment[p];                                     //(5.1.008)
         if ( treatment->treatType == REMOVAL ) return Cin[p];                  //(5.1.008)
-        return Node[J].newQual[p];
+        return sp->Node[J].newQual[p];
     }
 
     // --- variable is a pollutant removal
@@ -404,7 +404,7 @@ double  getRemoval(SWMM_Project *sp, int p)
 //  Purpose: computes removal of a specific pollutant
 //
 {
-    double c0 = Node[J].newQual[p];    // initial node concentration
+    double c0 = sp->Node[J].newQual[p];    // initial node concentration
     double r;                          // removal value
     TTreatment* treatment;                                                     //(5.1.008)
 
@@ -431,7 +431,7 @@ double  getRemoval(SWMM_Project *sp, int p)
     }
 
     // --- apply treatment eqn.
-    treatment = &Node[J].treatment[p];                                         //(5.1.008)
+    treatment = &sp->Node[J].treatment[p];                                         //(5.1.008)
     r = mathexpr_eval(sp, treatment->equation, getVariableValue);              //(5.1.008)
     r = MAX(0.0, r);
 

@@ -121,7 +121,7 @@ int output_open(SWMM_Project *sp)
     NumNodes = 0;
     NumLinks = 0;
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (sp->Subcatch[j].rptFlag) NumSubcatch++;
-    for (j=0; j<sp->Nobjects[NODE]; j++) if (Node[j].rptFlag) NumNodes++;
+    for (j=0; j<sp->Nobjects[NODE]; j++) if (sp->Node[j].rptFlag) NumNodes++;
     for (j=0; j<sp->Nobjects[LINK]; j++) if (Link[j].rptFlag) NumLinks++;
 
     BytesPerPeriod = sizeof(REAL8)
@@ -167,7 +167,7 @@ int output_open(SWMM_Project *sp)
     }
     for (j=0; j<sp->Nobjects[NODE];     j++)
     {
-        if ( Node[j].rptFlag ) output_saveID(Node[j].ID, sp->Fout.file);
+        if ( sp->Node[j].rptFlag ) output_saveID(sp->Node[j].ID, sp->Fout.file);
     }
     for (j=0; j<sp->Nobjects[LINK];     j++)
     {
@@ -207,10 +207,10 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
-        if ( !Node[j].rptFlag ) continue;
-        k = Node[j].type;
-        NodeResults[0] = (REAL4)(Node[j].invertElev * UCF(sp, LENGTH));
-        NodeResults[1] = (REAL4)(Node[j].fullDepth * UCF(sp, LENGTH));
+        if ( !sp->Node[j].rptFlag ) continue;
+        k = sp->Node[j].type;
+        NodeResults[0] = (REAL4)(sp->Node[j].invertElev * UCF(sp, LENGTH));
+        NodeResults[1] = (REAL4)(sp->Node[j].fullDepth * UCF(sp, LENGTH));
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
         fwrite(NodeResults, sizeof(REAL4), 2, sp->Fout.file);
     }
@@ -579,7 +579,7 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
     {
         // --- retrieve interpolated results for reporting time & write to file
         node_getResults(sp, j, f, NodeResults);
-        if ( Node[j].rptFlag )
+        if ( sp->Node[j].rptFlag )
             fwrite(NodeResults, sizeof(REAL4), NnodeResults, file);
         stats_updateMaxNodeDepth(j, NodeResults[NODE_DEPTH]);                 //(5.1.008)
 

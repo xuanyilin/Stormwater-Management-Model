@@ -540,15 +540,15 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     //     GW flow can occur (override node's invert if a value was provided
     //     in the GW object)
     if ( GW->nodeElev != MISSING ) Hstar = GW->nodeElev - GW->bottomElev;
-    else Hstar = Node[n].invertElev - GW->bottomElev;
+    else Hstar = sp->Node[n].invertElev - GW->bottomElev;
     
     // --- establish surface water height (relative to aquifer bottom)
     //     for drainage system node connected to the GW aquifer
     if ( GW->fixedDepth > 0.0 )
     {
-        Hsw = GW->fixedDepth + Node[n].invertElev - GW->bottomElev;
+        Hsw = GW->fixedDepth + sp->Node[n].invertElev - GW->bottomElev;
     }
-    else Hsw = Node[n].newDepth + Node[n].invertElev - GW->bottomElev;
+    else Hsw = sp->Node[n].newDepth + sp->Node[n].invertElev - GW->bottomElev;
 
     // --- store state variables (upper zone moisture content, lower zone
     //     depth) in work vector x
@@ -568,7 +568,7 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     //     inflow to the node
     MaxGWFlowNeg = (TotalDepth - x[LOWERDEPTH]) * (A.porosity - x[THETA])
                    / tStep;
-    nodeFlow = (Node[n].inflow + Node[n].newVolume/tStep) / Area;
+    nodeFlow = (sp->Node[n].inflow + sp->Node[n].newVolume/tStep) / Area;
     MaxGWFlowNeg = -MIN(MaxGWFlowNeg, nodeFlow);
     
     // --- integrate eqns. for d(Theta)/dt and d(LowerDepth)/dt

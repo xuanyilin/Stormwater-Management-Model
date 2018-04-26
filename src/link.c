@@ -400,11 +400,11 @@ void  link_validate(SWMM_Project *sp, int j)
       case ORIFICE:
       case WEIR:
       case OUTLET:
-          if ( Node[Link[j].node1].invertElev + Link[j].offset1 <
-               Node[Link[j].node2].invertElev )
+          if ( sp->Node[Link[j].node1].invertElev + Link[j].offset1 <
+               sp->Node[Link[j].node2].invertElev )
           {
-              Link[j].offset1 = Node[Link[j].node2].invertElev -               //(5.1.011)
-                                Node[Link[j].node1].invertElev;                //(5.1.011)
+              Link[j].offset1 = sp->Node[Link[j].node2].invertElev -               //(5.1.011)
+                                sp->Node[Link[j].node1].invertElev;                //(5.1.011)
               report_writeWarningMsg(sp, WARN10, Link[j].ID);
           }
     }    
@@ -419,17 +419,17 @@ void  link_validate(SWMM_Project *sp, int j)
 
     // --- extend upstream node's full depth to link's crown elevation
     n = Link[j].node1;
-    if ( Node[n].type != STORAGE )
+    if ( sp->Node[n].type != STORAGE )
     {
-        Node[n].fullDepth = MAX(Node[n].fullDepth,
+        sp->Node[n].fullDepth = MAX(sp->Node[n].fullDepth,
                             Link[j].offset1 + Link[j].xsect.yFull);
     }
 
     // --- do same for downstream node only for conduit links
     n = Link[j].node2;
-    if ( Node[n].type != STORAGE && Link[j].type == CONDUIT )
+    if ( sp->Node[n].type != STORAGE && Link[j].type == CONDUIT )
     {
-        Node[n].fullDepth = MAX(Node[n].fullDepth,
+        sp->Node[n].fullDepth = MAX(sp->Node[n].fullDepth,
                             Link[j].offset2 + Link[j].xsect.yFull);
     }
 }
@@ -445,11 +445,11 @@ void link_convertOffsets(SWMM_Project *sp, int j)
 {
     double elev;
 
-    elev = Node[Link[j].node1].invertElev;
+    elev = sp->Node[Link[j].node1].invertElev;
     Link[j].offset1 = link_getOffsetHeight(sp, j, Link[j].offset1, elev);
     if ( Link[j].type == CONDUIT )
     {
-        elev = Node[Link[j].node2].invertElev;
+        elev = sp->Node[Link[j].node2].invertElev;
         Link[j].offset2 = link_getOffsetHeight(sp, j, Link[j].offset2, elev);
     }
     else Link[j].offset2 = Link[j].offset1;
@@ -574,7 +574,7 @@ void link_setOldQualState(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void link_setTargetSetting(int j)
+void link_setTargetSetting(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  none
@@ -589,10 +589,10 @@ void link_setTargetSetting(int j)
         Link[j].targetSetting = Link[j].setting;
         if ( Pump[k].yOff > 0.0 &&
              Link[j].setting > 0.0 &&
-             Node[n1].newDepth < Pump[k].yOff ) Link[j].targetSetting = 0.0;
+             sp->Node[n1].newDepth < Pump[k].yOff ) Link[j].targetSetting = 0.0;
         if ( Pump[k].yOn > 0.0 &&
              Link[j].setting == 0.0 &&
-             Node[n1].newDepth > Pump[k].yOn )  Link[j].targetSetting = 1.0;
+             sp->Node[n1].newDepth > Pump[k].yOn )  Link[j].targetSetting = 1.0;
     }
 }
 
@@ -613,7 +613,7 @@ void link_setSetting(SWMM_Project *sp, int j, double tstep)
 
 //=============================================================================
 
-int link_setFlapGate(int j, int n1, int n2, double q)
+int link_setFlapGate(SWMM_Project *sp, int j, int n1, int n2, double q)
 //
 //  Input:   j = link index
 //           n1 = index of node on upstream end of link
@@ -637,8 +637,8 @@ int link_setFlapGate(int j, int n1, int n2, double q)
     if ( q < 0.0 ) n = n2;
     if ( q > 0.0 ) n = n1;
     if ( n >= 0 &&
-         Node[n].type == OUTFALL &&
-         Outfall[Node[n].subIndex].hasFlapGate ) return TRUE;
+         sp->Node[n].type == OUTFALL &&
+         Outfall[sp->Node[n].subIndex].hasFlapGate ) return TRUE;
     return FALSE;
 }
 
@@ -713,12 +713,12 @@ void link_setOutfallDepth(SWMM_Project *sp, int j)
     double  yNorm = 0.0;               // normal flow depth (ft)
 
     // --- find which end node of link is an outfall
-    if ( Node[Link[j].node2].type == OUTFALL )
+    if ( sp->Node[Link[j].node2].type == OUTFALL )
     {
         n = Link[j].node2;
         z = Link[j].offset2;
     }
-    else if ( Node[Link[j].node1].type == OUTFALL )
+    else if ( sp->Node[Link[j].node1].type == OUTFALL )
     {
         n = Link[j].node1;
         z = Link[j].offset1;
@@ -845,7 +845,7 @@ double link_getFroude(int j, double v, double y)
 
 //=============================================================================
 
-double link_getPower(int j)
+double link_getPower(SWMM_Project *sp, int j)
 //
 //  Input:   j = link index
 //  Output:  returns power consumed by link in kwatts
@@ -855,8 +855,8 @@ double link_getPower(int j)
 {
     int    n1 = Link[j].node1;
     int    n2 = Link[j].node2;
-    double dh = (Node[n1].invertElev + Node[n1].newDepth) -
-                (Node[n2].invertElev + Node[n2].newDepth);
+    double dh = (sp->Node[n1].invertElev + sp->Node[n1].newDepth) -
+                (sp->Node[n2].invertElev + sp->Node[n2].newDepth);
     double q =  fabs(Link[j].newFlow);
     return fabs(dh) * q / 8.814 * KWperHP;
 }
@@ -976,9 +976,9 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- a storage node cannot have a dummy outflow link
     if ( Link[j].xsect.type == DUMMY && sp->RouteModel == DW )                     //(5.1.007)
     {
-        if ( Node[Link[j].node1].type == STORAGE )
+        if ( sp->Node[Link[j].node1].type == STORAGE )
         {
-            report_writeErrorMsg(sp, ERR_DUMMY_LINK, Node[Link[j].node1].ID);
+            report_writeErrorMsg(sp, ERR_DUMMY_LINK, sp->Node[Link[j].node1].ID);
             return;
         }
     }
@@ -1232,8 +1232,8 @@ double conduit_getSlope(SWMM_Project *sp, int j)
     double length = conduit_getLength(sp, j);
 
     // --- check that elevation drop > minimum allowable drop
-    elev1 = Link[j].offset1 + Node[Link[j].node1].invertElev;
-    elev2 = Link[j].offset2 + Node[Link[j].node2].invertElev;
+    elev1 = Link[j].offset1 + sp->Node[Link[j].node1].invertElev;
+    elev2 = Link[j].offset2 + sp->Node[Link[j].node2].invertElev;
     delta = fabs(elev1 - elev2);
     if ( delta < MIN_DELTA_Z )
     {
@@ -1493,8 +1493,8 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
     if ( Pump[k].type == TYPE1_PUMP )
     {
         n1 = Link[j].node1;
-        if ( Node[n1].type != STORAGE )
-            Node[n1].fullVolume = MAX(Node[n1].fullVolume,
+        if ( sp->Node[n1].type != STORAGE )
+            sp->Node[n1].fullVolume = MAX(sp->Node[n1].fullVolume,
                                       Pump[k].xMax / UCF(sp, VOLUME));
     }
 
@@ -1540,13 +1540,13 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
     // --- pump flow = node inflow for IDEAL_PUMP
     if ( Pump[k].type == IDEAL_PUMP )
-        qIn = Node[n1].inflow + Node[n1].overflow;
+        qIn = sp->Node[n1].inflow + sp->Node[n1].overflow;
 
     // --- pumping rate depends on pump curve type
     else switch(Curve[m].curveType)
     {
       case PUMP1_CURVE:
-        vol = Node[n1].newVolume * UCF(sp, VOLUME);
+        vol = sp->Node[n1].newVolume * UCF(sp, VOLUME);
         qIn = table_intervalLookup(&Curve[m], vol) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
@@ -1555,7 +1555,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
         break;
 
       case PUMP2_CURVE:
-        depth = Node[n1].newDepth * UCF(sp, LENGTH);
+        depth = sp->Node[n1].newDepth * UCF(sp, LENGTH);
         qIn = table_intervalLookup(&Curve[m], depth) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
@@ -1564,8 +1564,8 @@ double pump_getInflow(SWMM_Project *sp, int j)
         break;
 
       case PUMP3_CURVE:
-        head = ( (Node[n2].newDepth + Node[n2].invertElev) -
-                 (Node[n1].newDepth + Node[n1].invertElev) );
+        head = ( (sp->Node[n2].newDepth + sp->Node[n2].invertElev) -
+                 (sp->Node[n1].newDepth + sp->Node[n1].invertElev) );
 
 		head = MAX(head, 0.0);
 
@@ -1583,7 +1583,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
         break;
 
       case PUMP4_CURVE:
-        depth = Node[n1].newDepth;
+        depth = sp->Node[n1].newDepth;
         qIn = table_lookup(&Curve[m], depth*UCF(sp, LENGTH)) / UCF(sp, FLOW);
 
         // --- compute dQ/dh (slope of pump curve)
@@ -1803,31 +1803,31 @@ double orifice_getInflow(SWMM_Project *sp, int j)
     // --- find heads at upstream & downstream nodes
     if ( sp->RouteModel == DW )
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n2].newDepth + Node[n2].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
     }
     else
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n1].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n1].invertElev;
     }
     dir = (h1 >= h2) ? +1.0 : -1.0;
 
     // --- exchange h1 and h2 for reverse flow
-    y1 = Node[n1].newDepth;
+    y1 = sp->Node[n1].newDepth;
     if ( dir < 0.0 )
     {
         head = h1;
         h1 = h2;
         h2 = head;
-        y1 = Node[n2].newDepth;
+        y1 = sp->Node[n2].newDepth;
     }
 
     // --- orifice is a bottom orifice (oriented in horizontal plane)
     if ( Orifice[k].type == BOTTOM_ORIFICE )
     {
         // --- compute crest elevation
-        hcrest = Node[n1].invertElev + Link[j].offset1;
+        hcrest = sp->Node[n1].invertElev + Link[j].offset1;
 
         // --- compute head on orifice
         if (h1 < hcrest) head = 0.0;
@@ -1843,7 +1843,7 @@ double orifice_getInflow(SWMM_Project *sp, int j)
     else
     {
         // --- compute elevations of orifice crest and crown
-        hcrest = Node[n1].invertElev + Link[j].offset1;
+        hcrest = sp->Node[n1].invertElev + Link[j].offset1;
         hcrown = hcrest + Link[j].xsect.yFull * Link[j].setting;
         hmidpt = (hcrest + hcrown) / 2.0;
 
@@ -1860,7 +1860,7 @@ double orifice_getInflow(SWMM_Project *sp, int j)
 
     // --- return if head is negligible or flap gate closed
     if ( head <= FUDGE || y1 <= FUDGE ||
-         link_setFlapGate(j, n1, n2, dir) )
+         link_setFlapGate(sp, j, n1, n2, dir) )
     {
         Link[j].newDepth = 0.0;
         Link[j].flowClass = DRY;
@@ -2197,13 +2197,13 @@ double weir_getInflow(SWMM_Project *sp, int j)
     k  = Link[j].subIndex;
     if ( sp->RouteModel == DW )
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n2].newDepth + Node[n2].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
     }
     else
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n1].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n1].invertElev;
     }
     dir = (h1 > h2) ? +1.0 : -1.0;
 
@@ -2216,7 +2216,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
     }
 
     // --- find head of weir's crest and crown
-    hcrest = Node[n1].invertElev + Link[j].offset1;
+    hcrest = sp->Node[n1].invertElev + Link[j].offset1;
     hcrown = hcrest + Link[j].xsect.yFull;
 
 ////  Added to release 5.1.010.  ////                                          //(5.1.010)
@@ -2234,7 +2234,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
     // --- return if head is negligible or flap gate closed
     Link[j].dqdh = 0.0;
     if ( head <= FUDGE || hcrest >= hcrown ||
-         link_setFlapGate(j, n1, n2, dir) )
+         link_setFlapGate(sp, j, n1, n2, dir) )
     {
         Link[j].newDepth = 0.0;
         Link[j].flowClass = DRY;
@@ -2606,30 +2606,30 @@ double outlet_getInflow(SWMM_Project *sp, int j)
     // --- find heads at upstream & downstream nodes
     if ( sp->RouteModel == DW )
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n2].newDepth + Node[n2].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
     }
     else
     {
-        h1 = Node[n1].newDepth + Node[n1].invertElev;
-        h2 = Node[n1].invertElev;
+        h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
+        h2 = sp->Node[n1].invertElev;
     }
     dir = (h1 >= h2) ? +1.0 : -1.0;
 
     // --- exchange h1 and h2 for reverse flow
-    y1 = Node[n1].newDepth;
+    y1 = sp->Node[n1].newDepth;
     if ( dir < 0.0 )
     {
         y1 = h1;
         h1 = h2;
         h2 = y1;
-        y1 = Node[n2].newDepth;
+        y1 = sp->Node[n2].newDepth;
     }
 
     // --- for a NODE_DEPTH rating curve the effective head across the
     //     outlet is the depth above the crest elev. while for a NODE_HEAD
     //     curve it is the difference between upstream & downstream heads
-    hcrest = Node[n1].invertElev + Link[j].offset1;
+    hcrest = sp->Node[n1].invertElev + Link[j].offset1;
     if ( Outlet[k].curveType == NODE_HEAD && sp->RouteModel == DW )
         head = h1 - MAX(h2, hcrest);
     else head = h1 - hcrest;
@@ -2637,7 +2637,7 @@ double outlet_getInflow(SWMM_Project *sp, int j)
     // --- no flow if either no effective head difference,
     //     no upstream water available, or closed flap gate
     if ( head <= FUDGE || y1 <= FUDGE ||
-         link_setFlapGate(j, n1, n2, dir) )
+         link_setFlapGate(sp, j, n1, n2, dir) )
     {
         Link[j].newDepth = 0.0;
         Link[j].flowClass = DRY;
