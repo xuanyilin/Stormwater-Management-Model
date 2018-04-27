@@ -526,7 +526,7 @@ int     controls_evaluate(SWMM_Project *sp, DateTime currentTime,
 //   Table & Time Series Methods
 //-----------------------------------------------------------------------------
 int     table_readCurve(SWMM_Project *sp, char* tok[], int ntoks);
-int     table_readTimeseries(char* tok[], int ntoks);
+int     table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks);
 
 int     table_addEntry(TTable* table, double x, double y);
 int     table_getFirstEntry(TTable* table, double* x, double* y);

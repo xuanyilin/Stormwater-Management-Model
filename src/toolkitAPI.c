@@ -360,7 +360,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_CURVE:
                 strcpy(id,sp->Curve[index].ID); break;
             case SM_TSERIES:
-                strcpy(id,Tseries[index].ID); break;
+                strcpy(id,sp->Tseries[index].ID); break;
             //case SM_CONTROL:
                 //strcpy(id,Rules[index].ID); break;
             case SM_TRANSECT:

@@ -215,11 +215,11 @@ void  gage_validate(SWMM_Project *sp, int j)
     {
         // --- check gage's recording interval against that of time series
         k = sp->Gage[j].tSeries;
-        if ( Tseries[k].refersTo >= 0 )
+        if ( sp->Tseries[k].refersTo >= 0 )
         {
             report_writeErrorMsg(sp, ERR_RAIN_GAGE_TSERIES, sp->Gage[j].ID);
         }
-        gageInterval = (int)(floor(Tseries[k].dxMin*SECperDAY + 0.5));
+        gageInterval = (int)(floor(sp->Tseries[k].dxMin*SECperDAY + 0.5));
         if ( gageInterval > 0 && sp->Gage[j].rainInterval > gageInterval )
         {
             report_writeErrorMsg(sp, ERR_RAIN_GAGE_INTERVAL, sp->Gage[j].ID);
@@ -502,7 +502,7 @@ int getFirstRainfall(SWMM_Project *sp, int j)
         if ( k >= 0 )
         {
             // --- retrieve first rainfall value from time series
-            if ( table_getFirstEntry(&Tseries[k], &sp->Gage[j].startDate,
+            if ( table_getFirstEntry(&sp->Tseries[k], &sp->Gage[j].startDate,
                                      &rFirst) )
             {
                 // --- convert rainfall to intensity
@@ -559,7 +559,7 @@ int getNextRainfall(SWMM_Project *sp, int j)
 		    k = sp->Gage[j].tSeries;
 		    if ( k >= 0 )
 		    {
-			if ( !table_getNextEntry(&Tseries[k],
+			if ( !table_getNextEntry(&sp->Tseries[k],
 				&sp->Gage[j].nextDate, &rNext) ) return 0;
 			rNext = convertRainfall(sp, j, rNext);
 		    }

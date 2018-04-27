@@ -180,7 +180,7 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         // --- record the time series as being the data source for temperature
         sp->Temp.dataSource = TSERIES_TEMP;
         sp->Temp.tSeries = i;
-        Tseries[i].refersTo = TSERIES_TEMP;
+        sp->Tseries[i].refersTo = TSERIES_TEMP;
         break;
 
       case 1: // Climate file
@@ -334,7 +334,7 @@ int climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks)
         i = project_findObject(TSERIES, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
         sp->Evap.tSeries = i;
-        Tseries[i].refersTo = TIMESERIES_EVAP;
+        sp->Tseries[i].refersTo = TIMESERIES_EVAP;
         break;
 
       case FILE_EVAP:
@@ -565,7 +565,7 @@ void climate_initState(SWMM_Project *sp)
     {
         // --- initialize NextEvapDate & NextEvapRate to first entry of
         //     time series whose date <= the simulation start date
-        table_getFirstEntry(&Tseries[sp->Evap.tSeries],
+        table_getFirstEntry(&sp->Tseries[sp->Evap.tSeries],
                             &NextEvapDate, &NextEvapRate);
         if ( NextEvapDate < sp->StartDate )
         {  
@@ -665,7 +665,7 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
         if ( k >= 0 )
         {
             NextEvapDate = theDate + 365.;
-            while ( table_getNextEntry(&Tseries[k], &d, &e) &&
+            while ( table_getNextEntry(&sp->Tseries[k], &d, &e) &&
                     d <= sp->EndDateTime )
             {
                 if ( d >= theDate )
@@ -808,7 +808,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         k = sp->Temp.tSeries;
         if ( k >= 0)
         {
-            sp->Temp.ta = table_tseriesLookup(&Tseries[k], theDate, TRUE);
+            sp->Temp.ta = table_tseriesLookup(&sp->Tseries[k], theDate, TRUE);
 
             // --- convert from deg. C to deg. F if need be
             if ( sp->UnitSystem == SI )

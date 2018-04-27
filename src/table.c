@@ -101,7 +101,7 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-int table_readTimeseries(char* tok[], int ntoks)
+int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -126,14 +126,14 @@ int table_readTimeseries(char* tok[], int ntoks)
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- if first line of data, assign ID pointer
-    if ( Tseries[j].ID == NULL )
-        Tseries[j].ID = project_findID(TSERIES, tok[0]);
+    if ( sp->Tseries[j].ID == NULL )
+        sp->Tseries[j].ID = project_findID(TSERIES, tok[0]);
 
     // --- check if time series data is in an external file
     if ( strcomp(tok[1], w_FILE ) )
     {
-        sstrncpy(Tseries[j].file.name, tok[2], MAXFNAME);
-        Tseries[j].file.mode = USE_FILE;
+        sstrncpy(sp->Tseries[j].file.name, tok[2], MAXFNAME);
+        sp->Tseries[j].file.mode = USE_FILE;
         return 0;
     }
 
@@ -148,7 +148,7 @@ int table_readTimeseries(char* tok[], int ntoks)
           case 1:            // look for a date entry
             if ( datetime_strToDate(tok[k], &d) )
             {
-                Tseries[j].lastDate = d;
+                sp->Tseries[j].lastDate = d;
                 k++;
             }
 
@@ -167,7 +167,7 @@ int table_readTimeseries(char* tok[], int ntoks)
                 return error_setInpError(ERR_NUMBER, tok[k]);
 
             // --- save date + time in x
-            x = Tseries[j].lastDate + t;
+            x = sp->Tseries[j].lastDate + t;
 
             // --- next token must be a numeric value
             k++;
@@ -181,7 +181,7 @@ int table_readTimeseries(char* tok[], int ntoks)
                 return error_setInpError(ERR_NUMBER, tok[k]);
 
             // --- add date/time & value to time series
-            table_addEntry(&Tseries[j], x, y);
+            table_addEntry(&sp->Tseries[j], x, y);
 
             // --- start over looking first for a date
             k++;

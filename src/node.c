@@ -1254,7 +1254,7 @@ int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
           m = project_findObject(TSERIES, tok[3]);            
           if ( m < 0 ) return error_setInpError(ERR_NAME, tok[3]);
           x[4] = m;
-          Tseries[m].refersTo = TIMESERIES_OUTFALL;
+          sp->Tseries[m].refersTo = TIMESERIES_OUTFALL;
         }
     }
     if ( ntoks == n )
@@ -1324,7 +1324,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
       case TIMESERIES_OUTFALL:
         k = sp->Outfall[i].stageSeries;
         currentDate = sp->StartDateTime + sp->NewRoutingTime / MSECperDAY;
-        stage = table_tseriesLookup(&Tseries[k], currentDate, TRUE) /
+        stage = table_tseriesLookup(&sp->Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);
         break;
       default: stage = sp->Node[j].invertElev;

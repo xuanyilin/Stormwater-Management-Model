@@ -263,7 +263,7 @@ int  landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks)
             return error_setInpError(ERR_NUMBER, tok[3]);
         n = project_findObject(TSERIES, tok[5]);           //time series
         if ( n < 0 ) return error_setInpError(ERR_NAME, tok[4]);
-        Tseries[n].refersTo = EXTERNAL_BUILDUP;
+        sp->Tseries[n].refersTo = EXTERNAL_BUILDUP;
         c[2] = n;
         tmax = 0.0;
         break;
@@ -721,7 +721,7 @@ double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup
     // --- get buildup rate (mass/unit/day) over the interval
     if ( ts >= 0 )
     {        
-        rate = sf * table_tseriesLookup(&Tseries[ts],
+        rate = sf * table_tseriesLookup(&sp->Tseries[ts],
                getDateTime(sp, sp->NewRunoffTime), FALSE);
     }
 

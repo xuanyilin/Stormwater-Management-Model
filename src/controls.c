@@ -181,7 +181,7 @@ void   deleteActionList(void);
 void   deleteRules(void);
 
 int    findExactMatch(char *s, char *keyword[]);
-int    setActionSetting(char* tok[], int nToks, int* curve, int* tseries,
+int    setActionSetting(SWMM_Project *sp, char* tok[], int nToks, int* curve, int* tseries,
        int* attrib, double* value);
 void   updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTime,
         double dt);
@@ -685,7 +685,7 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
         }
         else if ( attrib == r_SETTING )
         {
-            err = setActionSetting(tok, nToks, &curve, &tseries,
+            err = setActionSetting(sp, tok, nToks, &curve, &tseries,
                                    &attrib, values);
             if ( err > 0 ) return err;
         }
@@ -696,7 +696,7 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
     {
         if ( attrib == r_SETTING )
         {
-           err = setActionSetting(tok, nToks, &curve, &tseries,
+           err = setActionSetting(sp, tok, nToks, &curve, &tseries,
                                   &attrib, values);
            if ( err > 0 ) return err;
            if (  attrib == r_SETTING
@@ -745,8 +745,8 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
 
 //=============================================================================
 
-int  setActionSetting(char* tok[], int nToks, int* curve, int* tseries,
-                      int* attrib, double values[])
+int  setActionSetting(SWMM_Project *sp, char* tok[], int nToks, int* curve,
+        int* tseries, int* attrib, double values[])
 //
 //  Input:   tok = array of string tokens containing action statement
 //           nToks = number of string tokens
@@ -779,7 +779,7 @@ int  setActionSetting(char* tok[], int nToks, int* curve, int* tseries,
         m = project_findObject(TSERIES, tok[6]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[6]);
         *tseries = m;
-        Tseries[m].refersTo = CONTROL;
+        sp->Tseries[m].refersTo = CONTROL;
         break;
 
     // --- control determined by PID controller 
@@ -819,7 +819,7 @@ void  updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTim
     }
     else if ( a->tseries >= 0 )
     {
-        a->value = table_tseriesLookup(&Tseries[a->tseries], currentTime, TRUE);
+        a->value = table_tseriesLookup(&sp->Tseries[a->tseries], currentTime, TRUE);
     }
     else if ( a->attribute == r_PID )
     {

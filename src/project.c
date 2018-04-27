@@ -200,8 +200,8 @@ void project_validate(SWMM_Project *sp)
     }
     for ( i=0; i<sp->Nobjects[TSERIES]; i++ )
     {
-        err = table_validate(&Tseries[i]);
-        if ( err ) report_writeTseriesErrorMsg(sp, err, &Tseries[i]);
+        err = table_validate(&sp->Tseries[i]);
+        if ( err ) report_writeTseriesErrorMsg(sp, err, &sp->Tseries[i]);
     }
 
     // --- validate hydrology objects
@@ -292,7 +292,7 @@ int  project_init(SWMM_Project *sp)
     int j;
     climate_initState(sp);
     lid_initState(sp);
-    for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(&Tseries[j]);
+    for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(&sp->Tseries[j]);
     for (j=0; j<sp->Nobjects[GAGE]; j++)     gage_initState(sp, j);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++) subcatch_initState(sp, j);
     for (j=0; j<sp->Nobjects[NODE]; j++)     node_initState(sp, j);
@@ -745,7 +745,7 @@ void initPointers(SWMM_Project *sp)
     sp->Landuse  = NULL;
     sp->Pattern  = NULL;
     sp->Curve    = NULL;
-    Tseries  = NULL;
+    sp->Tseries  = NULL;
     Transect = NULL;
     Shape    = NULL;
     sp->Aquifer    = NULL;
@@ -977,7 +977,7 @@ void createObjects(SWMM_Project *sp)
     sp->Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
     sp->Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
     sp->Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
-    Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
+    sp->Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
     sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
     sp->UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
     sp->Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
@@ -1113,7 +1113,7 @@ void createObjects(SWMM_Project *sp)
 
     //  --- initialize curves, time series, and time patterns
     for (j = 0; j < sp->Nobjects[CURVE]; j++)   table_init(&sp->Curve[j]);
-    for (j = 0; j < sp->Nobjects[TSERIES]; j++) table_init(&Tseries[j]);
+    for (j = 0; j < sp->Nobjects[TSERIES]; j++) table_init(&sp->Tseries[j]);
     for (j = 0; j < sp->Nobjects[TIMEPATTERN]; j++) inflow_initDwfPattern(sp, j);
 }
 
@@ -1204,8 +1204,8 @@ void deleteObjects(SWMM_Project *sp)
     }
 
     // --- delete table entries for curves and time series
-    if ( Tseries ) for (j = 0; j < sp->Nobjects[TSERIES]; j++)
-        table_deleteEntries(&Tseries[j]);
+    if ( sp->Tseries ) for (j = 0; j < sp->Nobjects[TSERIES]; j++)
+        table_deleteEntries(&sp->Tseries[j]);
     if ( sp->Curve ) for (j = 0; j < sp->Nobjects[CURVE]; j++)
         table_deleteEntries(&sp->Curve[j]);
 
@@ -1235,7 +1235,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Landuse);
     FREE(sp->Pattern);
     FREE(sp->Curve);
-    FREE(Tseries);
+    FREE(sp->Tseries);
     FREE(sp->Aquifer);
     FREE(sp->UnitHyd);
     FREE(sp->Snowmelt);

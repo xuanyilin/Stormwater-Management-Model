@@ -107,7 +107,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
             if ( sp->Gage[i].tSeries >= 0 )
             {
                 fprintf(sp->Frpt.file, "\n  %-20s %-30s ",
-                    sp->Gage[i].ID, Tseries[sp->Gage[i].tSeries].ID);
+                    sp->Gage[i].ID, sp->Tseries[sp->Gage[i].tSeries].ID);
                 fprintf(sp->Frpt.file, "%-10s %3d min.",
                     RainTypeWords[sp->Gage[i].rainType],
                     (sp->Gage[i].rainInterval)/60);

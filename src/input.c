@@ -162,7 +162,7 @@ int input_readData(SWMM_Project *sp)
     // --- initialize starting date for all time series
     for ( i = 0; i < sp->Nobjects[TSERIES]; i++ )
     {
-        Tseries[i].lastDate = sp->StartDate + sp->StartTime;
+        sp->Tseries[i].lastDate = sp->StartDate + sp->StartTime;
     }
 
     // --- read each line from input file
@@ -577,7 +577,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return table_readCurve(sp, Tok, Ntokens);
 
       case s_TIMESERIES:
-        return table_readTimeseries(Tok, Ntokens);
+        return table_readTimeseries(sp, Tok, Ntokens);
 
       case s_CONTROL:
         return readControl(sp, Tok, Ntokens);
