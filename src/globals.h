@@ -165,8 +165,8 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TTable*    Curve;                    // Array of curve tables
 //EXTERN TTable*    Tseries;                  // Array of time series tables
 //EXTERN TTransect* Transect;                 // Array of transect data
-EXTERN TShape*    Shape;                    // Array of custom conduit shapes
-EXTERN TEvent*    Event;                    // Array of routing events         //(5.1.011)
+//EXTERN TShape*    Shape;                    // Array of custom conduit shapes
+//EXTERN TEvent*    Event;                    // Array of routing events         //(5.1.011)
 
 
 #endif //GLOBALS_H

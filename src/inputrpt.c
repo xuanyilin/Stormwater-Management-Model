@@ -260,25 +260,25 @@ void inputrpt_writeInput(SWMM_Project *sp)
         WRITE("*************");
         for (i = 0; i < sp->Nobjects[SHAPE]; i++)
         {
-            k = Shape[i].curve;
+            k = sp->Shape[i].curve;
             fprintf(sp->Frpt.file, "\n\n  Shape %s", sp->Curve[k].ID);
             fprintf(sp->Frpt.file, "\n  Area:  ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Shape[i].areaTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].areaTbl[m]);
             }
             fprintf(sp->Frpt.file, "\n  Hrad:  ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Shape[i].hradTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].hradTbl[m]);
             }
             fprintf(sp->Frpt.file, "\n  Width: ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Shape[i].widthTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].widthTbl[m]);
             }
         }
     }

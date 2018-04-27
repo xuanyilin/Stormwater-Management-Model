@@ -669,14 +669,14 @@ void xsect_setCustomXsectParams(SWMM_Project *sp, TXsect *xsect)
     double  yFull = xsect->yFull;
     int     i, iMax;
     double  wMax;
-    double* wTbl = Shape[index].widthTbl;
+    double* wTbl = sp->Shape[index].widthTbl;
 
-    xsect->wMax  = Shape[index].wMax * yFull;
-    xsect->aFull = Shape[index].aFull * yFull * yFull;
-    xsect->rFull = Shape[index].rFull * yFull;
+    xsect->wMax  = sp->Shape[index].wMax * yFull;
+    xsect->aFull = sp->Shape[index].aFull * yFull * yFull;
+    xsect->rFull = sp->Shape[index].rFull * yFull;
     xsect->sFull = xsect->aFull * pow(xsect->rFull, 2./3.);
-    xsect->sMax  = Shape[index].sMax * yFull * yFull * pow(yFull, 2./3.);
-    xsect->aBot  = Shape[index].aMax * yFull * yFull;
+    xsect->sMax  = sp->Shape[index].sMax * yFull * yFull * pow(yFull, 2./3.);
+    xsect->aBot  = sp->Shape[index].aMax * yFull * yFull;
 
     // Search shape's width table up to point where width decreases
     iMax = 0;
@@ -817,7 +817,7 @@ double xsect_getYofA(SWMM_Project *sp, TXsect *xsect, double a)
 
       case CUSTOM:
         return xsect->yFull * invLookup(alpha,
-            Shape[sp->Curve[xsect->transect].refersTo].areaTbl, N_SHAPE_TBL);
+            sp->Shape[sp->Curve[xsect->transect].refersTo].areaTbl, N_SHAPE_TBL);
 
       case ARCH:
         return xsect->yFull * invLookup(alpha, A_Arch, N_A_Arch);
@@ -901,7 +901,7 @@ double xsect_getAofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case CUSTOM:
         return xsect->aFull * lookup(yNorm,
-            Shape[sp->Curve[xsect->transect].refersTo].areaTbl, N_SHAPE_TBL);
+            sp->Shape[sp->Curve[xsect->transect].refersTo].areaTbl, N_SHAPE_TBL);
 
      case RECT_CLOSED:  return y * xsect->wMax;
 
@@ -982,7 +982,7 @@ double xsect_getWofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case CUSTOM:
         return xsect->wMax * lookup(yNorm,
-            Shape[sp->Curve[xsect->transect].refersTo].widthTbl, N_SHAPE_TBL);
+            sp->Shape[sp->Curve[xsect->transect].refersTo].widthTbl, N_SHAPE_TBL);
 
       case RECT_CLOSED: return xsect->wMax;
 
@@ -1052,7 +1052,7 @@ double xsect_getRofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case CUSTOM:
         return xsect->rFull * lookup(yNorm,
-            Shape[sp->Curve[xsect->transect].refersTo].hradTbl, N_SHAPE_TBL);
+            sp->Shape[sp->Curve[xsect->transect].refersTo].hradTbl, N_SHAPE_TBL);
 
       case RECT_TRIANG:  return rect_triang_getRofY(xsect, y);
 

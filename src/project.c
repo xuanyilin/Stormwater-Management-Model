@@ -222,8 +222,8 @@ void project_validate(SWMM_Project *sp)
         if ( sp->Curve[i].curveType == SHAPE_CURVE )
         {
             sp->Curve[i].refersTo = j;
-            Shape[j].curve = i;
-            if ( !shape_validate(&Shape[j], &sp->Curve[i]) )
+            sp->Shape[j].curve = i;
+            if ( !shape_validate(&sp->Shape[j], &sp->Curve[i]) )
                 report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, sp->Curve[i].ID);
             j++;
         }
@@ -747,11 +747,11 @@ void initPointers(SWMM_Project *sp)
     sp->Curve    = NULL;
     sp->Tseries  = NULL;
     sp->Transect = NULL;
-    Shape    = NULL;
+    sp->Shape    = NULL;
     sp->Aquifer    = NULL;
     sp->UnitHyd    = NULL;
     sp->Snowmelt   = NULL;
-    Event      = NULL;                                                         //(5.1.011)
+    sp->Event      = NULL;                                                         //(5.1.011)
     MemPoolAllocated = FALSE;
 }
 
@@ -981,13 +981,13 @@ void createObjects(SWMM_Project *sp)
     sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
     sp->UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
     sp->Snowmelt = (TSnowmelt *) calloc(sp->Nobjects[SNOWMELT], sizeof(TSnowmelt));
-    Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
+    sp->Shape    = (TShape *)    calloc(sp->Nobjects[SHAPE],    sizeof(TShape));
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
     // --- create array of detailed routing event periods
-    Event = (TEvent *) calloc(sp->NumEvents+1, sizeof(TEvent));
-    Event[sp->NumEvents].start = BIG;
-    Event[sp->NumEvents].end = BIG + 1.0;
+    sp->Event = (TEvent *) calloc(sp->NumEvents+1, sizeof(TEvent));
+    sp->Event[sp->NumEvents].start = BIG;
+    sp->Event[sp->NumEvents].end = BIG + 1.0;
 ////
 
     // --- create LID objects
@@ -1239,8 +1239,8 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Aquifer);
     FREE(sp->UnitHyd);
     FREE(sp->Snowmelt);
-    FREE(Shape);
-    FREE(Event);                                                               //(5.1.011)
+    FREE(sp->Shape);
+    FREE(sp->Event);                                                               //(5.1.011)
 }
 
 //=============================================================================

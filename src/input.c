@@ -58,7 +58,7 @@ static int  readTitle(SWMM_Project *sp, char* line);
 static int  readControl(SWMM_Project *sp, char* tok[], int ntoks);
 static int  readNode(SWMM_Project *sp, int type);
 static int  readLink(SWMM_Project *sp, int type);
-static int  readEvent(char* tok[], int ntoks);                                 //(5.1.011)
+static int  readEvent(SWMM_Project *sp, char* tok[], int ntoks);                                 //(5.1.011)
 
 //=============================================================================
 
@@ -595,7 +595,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return lid_readGroupParams(sp, Tok, Ntokens);
 
       case s_EVENT:
-        return readEvent(Tok, Ntokens);                                        //(5.1.011)
+        return readEvent(sp, Tok, Ntokens);                                        //(5.1.011)
 
       default: return 0;
     }
@@ -718,7 +718,7 @@ int readLink(SWMM_Project *sp, int type)
 
 ////  This function was added to release 5.1.011.  ////                        //(5.1.011)
 
-int  readEvent(char* tok[], int ntoks)
+int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
 {
     DateTime x[4];
 
@@ -732,9 +732,9 @@ int  readEvent(char* tok[], int ntoks)
     if ( !datetime_strToTime(tok[3], &x[3]) )
         return error_setInpError(ERR_DATETIME, tok[3]);
 
-    Event[Mevents].start = x[0] + x[1];
-    Event[Mevents].end = x[2] + x[3];
-    if ( Event[Mevents].start >= Event[Mevents].end )
+    sp->Event[Mevents].start = x[0] + x[1];
+    sp->Event[Mevents].end = x[2] + x[3];
+    if ( sp->Event[Mevents].start >= sp->Event[Mevents].end )
        return error_setInpError(ERR_DATETIME, " - start date exceeds end date");
     Mevents++;
     return 0;

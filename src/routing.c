@@ -159,14 +159,14 @@ double routing_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedSt
         nextTime = MIN(sp->NewRunoffTime, sp->ReportTime);
         date1 = getDateTime(sp, sp->NewRoutingTime);
         date2 = getDateTime(sp, nextTime);
-        if ( date2 > date1 && date2 < Event[NextEvent].start )
+        if ( date2 > date1 && date2 < sp->Event[NextEvent].start )
         {
             return (nextTime - sp->NewRoutingTime) / 1000.0;
         }
         else
         {
             date1 = getDateTime(sp, sp->NewRoutingTime + 1000.0 * fixedStep);
-            if ( date1 < Event[NextEvent].start ) return fixedStep;
+            if ( date1 < sp->Event[NextEvent].start ) return fixedStep;
         }
     }
 
@@ -247,12 +247,12 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- check if can skip non-event periods
     if ( sp->NumEvents > 0 )
     {
-        if ( currentDate > Event[NextEvent].end )
+        if ( currentDate > sp->Event[NextEvent].end )
         {
             BetweenEvents = TRUE;
             NextEvent++;
         }
-        else if ( currentDate >= Event[NextEvent].start && BetweenEvents == TRUE )
+        else if ( currentDate >= sp->Event[NextEvent].start && BetweenEvents == TRUE )
         {
 			BetweenEvents = FALSE;
         }
@@ -848,11 +848,11 @@ void sortEvents(SWMM_Project *sp)
     {
         for (j = i+1; j < sp->NumEvents; j++)
         {
-            if ( Event[i].start > Event[j].start )
+            if ( sp->Event[i].start > sp->Event[j].start )
             {
-                temp = Event[j];
-                Event[j] = Event[i];
-                Event[i] = temp;
+                temp = sp->Event[j];
+                sp->Event[j] = sp->Event[i];
+                sp->Event[i] = temp;
             }
         }
     }
@@ -860,7 +860,7 @@ void sortEvents(SWMM_Project *sp)
     // sp->Adjust for overlapping events
     for (i = 0; i < sp->NumEvents-1; i++)
     {
-        if ( Event[i].end > Event[i+1].start ) Event[i].end = Event[i+1].start;
+        if ( sp->Event[i].end > sp->Event[i+1].start ) sp->Event[i].end = sp->Event[i+1].start;
     }
 }
 
