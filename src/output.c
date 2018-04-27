@@ -252,7 +252,7 @@ int output_open(SWMM_Project *sp)
             if ( k == CONDUIT )
             {
                 m = sp->Link[j].subIndex;
-                LinkResults[3] = (REAL4)(Conduit[m].length * UCF(sp, LENGTH));
+                LinkResults[3] = (REAL4)(sp->Conduit[m].length * UCF(sp, LENGTH));
             }
             else LinkResults[3] = 0.0f;
         }

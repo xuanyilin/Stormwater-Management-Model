@@ -274,7 +274,7 @@ void   initRoutingStep(SWMM_Project *sp)
     }
 
     // --- a2 preserves conduit area from solution at last time step
-    for ( i = 0; i < sp->Nlinks[CONDUIT]; i++) Conduit[i].a2 = Conduit[i].a1;
+    for ( i = 0; i < sp->Nlinks[CONDUIT]; i++) sp->Conduit[i].a2 = sp->Conduit[i].a1;
 }
 
 //=============================================================================
@@ -353,16 +353,16 @@ void  findLimitedLinks(SWMM_Project *sp)
 
         // --- check that upstream end is full
         k = sp->Link[j].subIndex;
-        Conduit[k].capacityLimited = FALSE;
-        if ( Conduit[k].a1 >= sp->Link[j].xsect.aFull )
+        sp->Conduit[k].capacityLimited = FALSE;
+        if ( sp->Conduit[k].a1 >= sp->Link[j].xsect.aFull )
         {
             // --- check if HGL slope > conduit slope
             n1 = sp->Link[j].node1;
             n2 = sp->Link[j].node2;
             h1 = sp->Node[n1].newDepth + sp->Node[n1].invertElev;
             h2 = sp->Node[n2].newDepth + sp->Node[n2].invertElev;
-            if ( (h1 - h2) > fabs(Conduit[k].slope) * Conduit[k].length )
-                Conduit[k].capacityLimited = TRUE;
+            if ( (h1 - h2) > fabs(sp->Conduit[k].slope) * sp->Conduit[k].length )
+                sp->Conduit[k].capacityLimited = TRUE;
         }
     }
 }
@@ -540,8 +540,8 @@ void updateNodeFlows(SWMM_Project *sp, int i)
     if ( sp->Link[i].type == CONDUIT )
     {
         k = sp->Link[i].subIndex;
-        uniformLossRate = Conduit[k].evapLossRate + Conduit[k].seepLossRate; 
-        barrels = Conduit[k].barrels;
+        uniformLossRate = sp->Conduit[k].evapLossRate + sp->Conduit[k].seepLossRate; 
+        barrels = sp->Conduit[k].barrels;
     }
 
     // --- update total inflow & outflow at upstream/downstream nodes
@@ -810,15 +810,15 @@ double getLinkStep(SWMM_Project *sp, double tMin, int *minLink)
         {
             // --- skip conduits with negligible flow, area or Fr
             k = sp->Link[i].subIndex;
-            q = fabs(sp->Link[i].newFlow) / Conduit[k].barrels;
+            q = fabs(sp->Link[i].newFlow) / sp->Conduit[k].barrels;
             if ( q <= 0.05 * sp->Link[i].qFull
-            ||   Conduit[k].a1 <= FUDGE
+            ||   sp->Conduit[k].a1 <= FUDGE
             ||   sp->Link[i].froude <= 0.01 
                ) continue;
 
             // --- compute time step to satisfy Courant condition
-            t = sp->Link[i].newVolume / Conduit[k].barrels / q;
-            t = t * Conduit[k].modLength / link_getLength(sp, i);
+            t = sp->Link[i].newVolume / sp->Conduit[k].barrels / q;
+            t = t * sp->Conduit[k].modLength / link_getLength(sp, i);
             t = t * sp->Link[i].froude / (1.0 + sp->Link[i].froude) * sp->CourantFactor;
 
             // --- update critical link time step

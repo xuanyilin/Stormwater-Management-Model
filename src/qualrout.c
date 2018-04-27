@@ -273,10 +273,10 @@ void findLinkQual(SWMM_Project *sp, int i, double tStep)
 
     // --- get flow rates and evaporation loss
     k = sp->Link[i].subIndex;
-    barrels = Conduit[k].barrels;
-    qIn  = fabs(Conduit[k].q1) * barrels;
-    qSeep = Conduit[k].seepLossRate * barrels;
-    vEvap = Conduit[k].evapLossRate * barrels * tStep;
+    barrels = sp->Conduit[k].barrels;
+    qIn  = fabs(sp->Conduit[k].q1) * barrels;
+    qSeep = sp->Conduit[k].seepLossRate * barrels;
+    vEvap = sp->Conduit[k].evapLossRate * barrels * tStep;
 
     // --- get starting and ending volumes
     v1 = sp->Link[i].oldVolume;

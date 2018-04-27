@@ -210,9 +210,9 @@ void inputrpt_writeInput(SWMM_Project *sp)
             {
                 k = sp->Link[i].subIndex;
                 fprintf(sp->Frpt.file, "%10.1f%10.4f%10.4f",
-                    Conduit[k].length*UCF(sp, LENGTH),
-                    Conduit[k].slope*100.0*sp->Link[i].direction,
-                    Conduit[k].roughness);
+                    sp->Conduit[k].length*UCF(sp, LENGTH),
+                    sp->Conduit[k].slope*100.0*sp->Link[i].direction,
+                    sp->Conduit[k].roughness);
             }
         }
 
@@ -245,7 +245,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
                     sp->Link[i].xsect.aFull*UCF(sp, LENGTH)*UCF(sp, LENGTH),
                     sp->Link[i].xsect.rFull*UCF(sp, LENGTH),
                     sp->Link[i].xsect.wMax*UCF(sp, LENGTH),
-                    Conduit[k].barrels,
+                    sp->Conduit[k].barrels,
                     sp->Link[i].qFull*UCF(sp, FLOW));
             }
         }

@@ -245,7 +245,7 @@ void validateTreeLayout(SWMM_Project *sp)
         {
           // --- non-dummy conduits cannot have adverse slope
           case CONDUIT:
-              if ( Conduit[sp->Link[j].subIndex].slope < 0.0 &&
+              if ( sp->Conduit[sp->Link[j].subIndex].slope < 0.0 &&
                    sp->Link[j].xsect.type != DUMMY )
               {
                   report_writeErrorMsg(sp, ERR_SLOPE, sp->Link[j].ID);
@@ -488,17 +488,17 @@ void initLinks(SWMM_Project *sp, int routingModel)
         {
             // --- assign initial flow to both ends of conduit
             k = sp->Link[i].subIndex;
-            Conduit[k].q1 = sp->Link[i].newFlow / Conduit[k].barrels;
-            Conduit[k].q2 = Conduit[k].q1;
+            sp->Conduit[k].q1 = sp->Link[i].newFlow / sp->Conduit[k].barrels;
+            sp->Conduit[k].q2 = sp->Conduit[k].q1;
 
             // --- find areas based on initial flow depth
-            Conduit[k].a1 = xsect_getAofY(&sp->Link[i].xsect, sp->Link[i].newDepth);
-            Conduit[k].a2 = Conduit[k].a1;
+            sp->Conduit[k].a1 = xsect_getAofY(&sp->Link[i].xsect, sp->Link[i].newDepth);
+            sp->Conduit[k].a2 = sp->Conduit[k].a1;
 
             // --- compute initial volume from area
             {
-                sp->Link[i].newVolume = Conduit[k].a1 * link_getLength(sp, i) *
-                                    Conduit[k].barrels;
+                sp->Link[i].newVolume = sp->Conduit[k].a1 * link_getLength(sp, i) *
+                                    sp->Conduit[k].barrels;
             }
             sp->Link[i].oldVolume = sp->Link[i].newVolume;
         }
@@ -691,10 +691,10 @@ void setNewLinkState(SWMM_Project *sp, int j)
     {
         // --- find avg. depth from entry/exit conditions
         k = sp->Link[j].subIndex;
-        a = 0.5 * (Conduit[k].a1 + Conduit[k].a2);
-        sp->Link[j].newVolume = a * link_getLength(sp, j) * Conduit[k].barrels;
-        y1 = xsect_getYofA(&sp->Link[j].xsect, Conduit[k].a1);
-        y2 = xsect_getYofA(&sp->Link[j].xsect, Conduit[k].a2);
+        a = 0.5 * (sp->Conduit[k].a1 + sp->Conduit[k].a2);
+        sp->Link[j].newVolume = a * link_getLength(sp, j) * sp->Conduit[k].barrels;
+        y1 = xsect_getYofA(&sp->Link[j].xsect, sp->Conduit[k].a1);
+        y2 = xsect_getYofA(&sp->Link[j].xsect, sp->Conduit[k].a2);
         sp->Link[j].newDepth = 0.5 * (y1 + y2);
 
         // --- update depths at end nodes
@@ -702,15 +702,15 @@ void setNewLinkState(SWMM_Project *sp, int j)
         updateNodeDepth(sp, sp->Link[j].node2, y2 + sp->Link[j].offset2);
 
         // --- check if capacity limited
-        if ( Conduit[k].a1 >= sp->Link[j].xsect.aFull )
+        if ( sp->Conduit[k].a1 >= sp->Link[j].xsect.aFull )
         {
-             Conduit[k].capacityLimited = TRUE;
-             Conduit[k].fullState = ALL_FULL;                                  //(5.1.008)
+             sp->Conduit[k].capacityLimited = TRUE;
+             sp->Conduit[k].fullState = ALL_FULL;                                  //(5.1.008)
         }
         else
         {    
-            Conduit[k].capacityLimited = FALSE;
-            Conduit[k].fullState = 0;                                          //(5.1.008)
+            sp->Conduit[k].capacityLimited = FALSE;
+            sp->Conduit[k].fullState = 0;                                          //(5.1.008)
         }
     }
 }
@@ -767,8 +767,8 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
     if ( sp->Link[j].type == CONDUIT )
     {
         k = sp->Link[j].subIndex;
-        q = (*qin) / Conduit[k].barrels;
-        if ( sp->Link[j].xsect.type == DUMMY ) Conduit[k].a1 = 0.0;
+        q = (*qin) / sp->Conduit[k].barrels;
+        if ( sp->Link[j].xsect.type == DUMMY ) sp->Conduit[k].a1 = 0.0;
         else 
         {
             // --- subtract evap and infil losses from inflow
@@ -779,26 +779,26 @@ int steadyflow_execute(SWMM_Project *sp, int j, double* qin, double* qout, doubl
             if ( q > sp->Link[j].qFull )
             {
                 q = sp->Link[j].qFull;
-                Conduit[k].a1 = sp->Link[j].xsect.aFull;
-                (*qin) = q * Conduit[k].barrels;
+                sp->Conduit[k].a1 = sp->Link[j].xsect.aFull;
+                (*qin) = q * sp->Conduit[k].barrels;
             }
 
             // --- infer flow area from flow rate 
             else
             {
-                s = q / Conduit[k].beta;
-                Conduit[k].a1 = xsect_getAofS(sp, &sp->Link[j].xsect, s);
+                s = q / sp->Conduit[k].beta;
+                sp->Conduit[k].a1 = xsect_getAofS(sp, &sp->Link[j].xsect, s);
             }
         }
-        Conduit[k].a2 = Conduit[k].a1;
+        sp->Conduit[k].a2 = sp->Conduit[k].a1;
 
-        Conduit[k].q1Old = Conduit[k].q1;
-        Conduit[k].q2Old = Conduit[k].q2;
+        sp->Conduit[k].q1Old = sp->Conduit[k].q1;
+        sp->Conduit[k].q2Old = sp->Conduit[k].q2;
 
 
-        Conduit[k].q1 = q;
-        Conduit[k].q2 = q;
-        (*qout) = q * Conduit[k].barrels;
+        sp->Conduit[k].q1 = q;
+        sp->Conduit[k].q2 = q;
+        (*qout) = q * sp->Conduit[k].barrels;
     }
     else (*qout) = (*qin);
     return 1;

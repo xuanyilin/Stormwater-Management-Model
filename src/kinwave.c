@@ -88,21 +88,21 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     Qfull = sp->Link[j].qFull;
     Afull = sp->Link[j].xsect.aFull;
     k = sp->Link[j].subIndex;
-    Beta1 = Conduit[k].beta / Qfull;
+    Beta1 = sp->Conduit[k].beta / Qfull;
  
     // --- normalize previous flows
-    q1 = Conduit[k].q1 / Qfull;
-    q2 = Conduit[k].q2 / Qfull;
+    q1 = sp->Conduit[k].q1 / Qfull;
+    q2 = sp->Conduit[k].q2 / Qfull;
 
     // --- normalize inflow                                                    //(5.1.008)
-    qin = (*qinflow) / Conduit[k].barrels / Qfull;
+    qin = (*qinflow) / sp->Conduit[k].barrels / Qfull;
 
     // --- compute evaporation and infiltration loss rate
 	q3 = link_getLossRate(sp, j, qin*Qfull, tStep) / Qfull;                        //(5.1.008)
 
     // --- normalize previous areas
-    a1 = Conduit[k].a1 / Afull;
-    a2 = Conduit[k].a2 / Afull;
+    a1 = sp->Conduit[k].a1 / Afull;
+    a2 = sp->Conduit[k].a2 / Afull;
 
     // --- use full area when inlet flow >= full flow
     if ( qin >= 1.0 ) ain = 1.0;
@@ -150,14 +150,14 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     }
 
     // --- save new flows and areas
-    Conduit[k].q1 = qin * Qfull;
-    Conduit[k].a1 = ain * Afull;
-    Conduit[k].q2 = qout * Qfull;
-    Conduit[k].a2 = aout * Afull;
-    Conduit[k].fullState =
-        link_getFullState(Conduit[k].a1, Conduit[k].a2, Afull);                //(5.1.008)
-    (*qinflow)  = Conduit[k].q1 * Conduit[k].barrels;
-    (*qoutflow) = Conduit[k].q2 * Conduit[k].barrels;
+    sp->Conduit[k].q1 = qin * Qfull;
+    sp->Conduit[k].a1 = ain * Afull;
+    sp->Conduit[k].q2 = qout * Qfull;
+    sp->Conduit[k].a2 = aout * Afull;
+    sp->Conduit[k].fullState =
+        link_getFullState(sp->Conduit[k].a1, sp->Conduit[k].a2, Afull);                //(5.1.008)
+    (*qinflow)  = sp->Conduit[k].q1 * sp->Conduit[k].barrels;
+    (*qoutflow) = sp->Conduit[k].q2 * sp->Conduit[k].barrels;
     return result;
 }
 

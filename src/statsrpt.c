@@ -747,7 +747,7 @@ void writeLinkFlows(SWMM_Project *sp)
             if ( v > 50.0 ) fprintf(sp->Frpt.file, "    >50.00");
             else fprintf(sp->Frpt.file, "   %7.2f", v);
             fprintf(sp->Frpt.file, "  %6.2f", LinkStats[j].maxFlow / sp->Link[j].qFull /
-                                          (double)Conduit[k].barrels);
+                                          (double)sp->Conduit[k].barrels);
         }
         else fprintf(sp->Frpt.file, "                  ");
 
@@ -793,7 +793,7 @@ void writeFlowClass(SWMM_Project *sp)
         if ( sp->Link[j].xsect.type == DUMMY ) continue;
         k = sp->Link[j].subIndex;
         fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
-        fprintf(sp->Frpt.file, "  %6.2f ", Conduit[k].modLength / Conduit[k].length);
+        fprintf(sp->Frpt.file, "  %6.2f ", sp->Conduit[k].modLength / sp->Conduit[k].length);
         for ( i=0; i<MAX_FLOW_CLASSES; i++ )
         {
             fprintf(sp->Frpt.file, "  %4.2f",

@@ -175,7 +175,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
 
     // --- assign default number of barrels to conduit
-    if ( sp->Link[j].type == CONDUIT ) Conduit[sp->Link[j].subIndex].barrels = 1;
+    if ( sp->Link[j].type == CONDUIT ) sp->Conduit[sp->Link[j].subIndex].barrels = 1;
 
     // --- assume link is not a culvert
     sp->Link[j].xsect.culvertCode = 0;
@@ -227,7 +227,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
         {
             i = atoi(tok[6]);
             if ( i <= 0 ) return error_setInpError(ERR_NUMBER, tok[6]);
-            else Conduit[sp->Link[j].subIndex].barrels = (char)i;
+            else sp->Conduit[sp->Link[j].subIndex].barrels = (char)i;
         }
 
         // --- parse culvert code if present
@@ -318,9 +318,9 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
     switch (type)
     {
       case CONDUIT:
-        Conduit[k].length    = x[0] / UCF(sp, LENGTH);
-        Conduit[k].modLength = Conduit[k].length;
-        Conduit[k].roughness = x[1];
+        sp->Conduit[k].length    = x[0] / UCF(sp, LENGTH);
+        sp->Conduit[k].modLength = sp->Conduit[k].length;
+        sp->Conduit[k].roughness = x[1];
         sp->Link[j].offset1      = x[2] / UCF(sp, LENGTH);
         sp->Link[j].offset2      = x[3] / UCF(sp, LENGTH);
         sp->Link[j].q0           = x[4] / UCF(sp, FLOW);
@@ -551,8 +551,8 @@ void link_setOldHydState(SWMM_Project *sp, int j)
     if ( sp->Link[j].type == CONDUIT )
     {
         k = sp->Link[j].subIndex;
-        Conduit[k].q1Old = Conduit[k].q1;
-        Conduit[k].q2Old = Conduit[k].q2;
+        sp->Conduit[k].q1Old = sp->Conduit[k].q1;
+        sp->Conduit[k].q2Old = sp->Conduit[k].q2;
     }
 }
 
@@ -730,7 +730,7 @@ void link_setOutfallDepth(SWMM_Project *sp, int j)
     if ( sp->Link[j].type == CONDUIT )
     {
         k = sp->Link[j].subIndex;
-        q = fabs(sp->Link[j].newFlow / Conduit[k].barrels);
+        q = fabs(sp->Link[j].newFlow / sp->Conduit[k].barrels);
         yNorm = link_getYnorm(sp, j, q);
         yCrit = link_getYcrit(sp, j, q);
     }
@@ -769,9 +769,9 @@ double  link_getYnorm(SWMM_Project *sp, int j, double q)
     if ( sp->Link[j].xsect.type == DUMMY ) return 0.0;
     q = fabs(q);
     k = sp->Link[j].subIndex;
-    if ( q > Conduit[k].qMax ) q = Conduit[k].qMax;
+    if ( q > sp->Conduit[k].qMax ) q = sp->Conduit[k].qMax;
     if ( q <= 0.0 ) return 0.0;
-    s = q / Conduit[k].beta;
+    s = q / sp->Conduit[k].beta;
     a = xsect_getAofS(sp, &sp->Link[j].xsect, s);
     y = xsect_getYofA(&sp->Link[j].xsect, a);
     return y;
@@ -809,7 +809,7 @@ double link_getVelocity(SWMM_Project *sp, int j, double flow, double depth)
     if ( sp->Link[j].type == CONDUIT )
     {
         k = sp->Link[j].subIndex;
-        flow /= Conduit[k].barrels;
+        flow /= sp->Conduit[k].barrels;
         area = xsect_getAofY(&sp->Link[j].xsect, depth);
         if (area > FUDGE ) veloc = flow / area;
     }
@@ -992,7 +992,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     if ( sp->Link[j].xsect.type == IRREGULAR )
     {
         xsect_setIrregXsectParams(&sp->Link[j].xsect);
-        Conduit[k].roughness = Transect[sp->Link[j].xsect.transect].roughness;
+        sp->Conduit[k].roughness = Transect[sp->Link[j].xsect.transect].roughness;
     }
 
     // --- if force main xsection, adjust units on D-W roughness height
@@ -1004,11 +1004,11 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     }
 
     // --- check for valid length & roughness
-    if ( Conduit[k].length <= 0.0 )
+    if ( sp->Conduit[k].length <= 0.0 )
         report_writeErrorMsg(sp, ERR_LENGTH, sp->Link[j].ID);
-    if ( Conduit[k].roughness <= 0.0 )
+    if ( sp->Conduit[k].roughness <= 0.0 )
         report_writeErrorMsg(sp, ERR_ROUGHNESS, sp->Link[j].ID);
-    if ( Conduit[k].barrels <= 0 )
+    if ( sp->Conduit[k].barrels <= 0 )
         report_writeErrorMsg(sp, ERR_BARRELS, sp->Link[j].ID);
 
     // --- check for valid xsection
@@ -1042,7 +1042,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- compute conduit slope
     slope = conduit_getSlope(sp, j);
-    Conduit[k].slope = slope;
+    sp->Conduit[k].slope = slope;
 
     // --- reverse orientation of conduit if using dynamic wave routing
     //     and slope is negative
@@ -1055,7 +1055,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- get equivalent Manning roughness for Force Mains
     //     for use when pipe is partly full
-    roughness = Conduit[k].roughness;
+    roughness = sp->Conduit[k].roughness;
     if ( sp->RouteModel == DW && sp->Link[j].xsect.type == FORCE_MAIN )
     {
         roughness = forcemain_getEquivN(sp, j, k);
@@ -1079,7 +1079,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     if ( lengthFactor != 1.0 )
     {
-        Conduit[k].modLength = lengthFactor * conduit_getLength(sp, j);
+        sp->Conduit[k].modLength = lengthFactor * conduit_getLength(sp, j);
         slope /= lengthFactor;
         roughness = roughness / sqrt(lengthFactor);
     }
@@ -1094,30 +1094,30 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
         sp->Link[j].xsect.sBot =
             forcemain_getRoughFactor(sp, j, lengthFactor);
     }
-    Conduit[k].roughFactor = GRAVITY * SQR(roughness/PHI);
+    sp->Conduit[k].roughFactor = GRAVITY * SQR(roughness/PHI);
 
     // --- compute full flow through cross section
-    if ( sp->Link[j].xsect.type == DUMMY ) Conduit[k].beta = 0.0;
-    else Conduit[k].beta = PHI * sqrt(fabs(slope)) / roughness;
-    sp->Link[j].qFull = sp->Link[j].xsect.sFull * Conduit[k].beta;
-    Conduit[k].qMax = sp->Link[j].xsect.sMax * Conduit[k].beta;
+    if ( sp->Link[j].xsect.type == DUMMY ) sp->Conduit[k].beta = 0.0;
+    else sp->Conduit[k].beta = PHI * sqrt(fabs(slope)) / roughness;
+    sp->Link[j].qFull = sp->Link[j].xsect.sFull * sp->Conduit[k].beta;
+    sp->Conduit[k].qMax = sp->Link[j].xsect.sMax * sp->Conduit[k].beta;
 
     // --- see if flow is supercritical most of time
     //     by comparing normal & critical velocities.
     //     (factor of 0.3 is for circular pipe 95% full)
     // NOTE: this factor was used in the past for a modified version of
     //       Kinematic Wave routing but is now deprecated.
-    aa = Conduit[k].beta / sqrt(32.2) *
+    aa = sp->Conduit[k].beta / sqrt(32.2) *
          pow(sp->Link[j].xsect.yFull, 0.1666667) * 0.3;
-    if ( aa >= 1.0 ) Conduit[k].superCritical = TRUE;
-    else             Conduit[k].superCritical = FALSE;
+    if ( aa >= 1.0 ) sp->Conduit[k].superCritical = TRUE;
+    else             sp->Conduit[k].superCritical = FALSE;
 
     // --- set value of hasLosses flag
     if ( sp->Link[j].cLossInlet  == 0.0 &&
          sp->Link[j].cLossOutlet == 0.0 &&
          sp->Link[j].cLossAvg    == 0.0
-       ) Conduit[k].hasLosses = FALSE;
-    else Conduit[k].hasLosses = TRUE;
+       ) sp->Conduit[k].hasLosses = FALSE;
+    else sp->Conduit[k].hasLosses = TRUE;
 }
 
 //=============================================================================
@@ -1150,7 +1150,7 @@ void conduit_reverse(SWMM_Project *sp, int j, int k)
     sp->Link[j].cLossOutlet = cLoss;
 
     // --- reverse direction & slope
-    Conduit[k].slope = -Conduit[k].slope;
+    sp->Conduit[k].slope = -sp->Conduit[k].slope;
     sp->Link[j].direction *= (signed char)-1;
 
     // --- reverse initial flow value
@@ -1173,10 +1173,10 @@ double conduit_getLength(SWMM_Project *sp, int j)
 {
     int k = sp->Link[j].subIndex;
     int t;
-    if ( sp->Link[j].xsect.type != IRREGULAR ) return Conduit[k].length;
+    if ( sp->Link[j].xsect.type != IRREGULAR ) return sp->Conduit[k].length;
     t = sp->Link[j].xsect.transect;
-    if ( t < 0 || t >= sp->Nobjects[TRANSECT] ) return Conduit[k].length;
-    return Conduit[k].length / Transect[t].lengthFactor;
+    if ( t < 0 || t >= sp->Nobjects[TRANSECT] ) return sp->Conduit[k].length;
+    return sp->Conduit[k].length / Transect[t].lengthFactor;
 }
 
 //=============================================================================
@@ -1208,7 +1208,7 @@ double conduit_getLengthFactor(SWMM_Project *sp, int j, int k, double roughness)
         yFull = sp->Link[j].xsect.aFull / xsect_getWofY(&sp->Link[j].xsect, yFull);
     }
     vFull = PHI / roughness * sp->Link[j].xsect.sFull *
-            sqrt(fabs(Conduit[k].slope)) / sp->Link[j].xsect.aFull;
+            sqrt(fabs(sp->Conduit[k].slope)) / sp->Link[j].xsect.aFull;
 
     // --- determine ratio of Courant length to actual length
     if ( sp->LengtheningStep == 0.0 ) tStep = sp->RouteStep;
@@ -1276,7 +1276,7 @@ void  conduit_initState(SWMM_Project *sp, int j, int k)
 //  Purpose: sets initial conduit depth to normal depth of initial flow
 //
 {
-    sp->Link[j].newDepth = link_getYnorm(sp, j, sp->Link[j].q0 / Conduit[k].barrels);
+    sp->Link[j].newDepth = link_getYnorm(sp, j, sp->Link[j].q0 / sp->Conduit[k].barrels);
     sp->Link[j].oldDepth = sp->Link[j].newDepth;
 }
 
@@ -1365,8 +1365,8 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
             }
         }
     }
-    Conduit[sp->Link[j].subIndex].evapLossRate = evapLossRate;
-    Conduit[sp->Link[j].subIndex].seepLossRate = seepLossRate;
+    sp->Conduit[sp->Link[j].subIndex].evapLossRate = evapLossRate;
+    sp->Conduit[sp->Link[j].subIndex].seepLossRate = seepLossRate;
     return totalLossRate;
 }
 

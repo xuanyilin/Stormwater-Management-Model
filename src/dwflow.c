@@ -86,9 +86,9 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
 
     // --- get flow from last time step & previous iteration
     k =  sp->Link[j].subIndex;
-    barrels = Conduit[k].barrels;
+    barrels = sp->Conduit[k].barrels;
     qOld = sp->Link[j].oldFlow / barrels;
-    qLast = Conduit[k].q1;
+    qLast = sp->Conduit[k].q1;
 
     // --- get most current heads at upstream and downstream ends of conduit
     n1 = sp->Link[j].node1;
@@ -112,11 +112,11 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     y2 = MIN(y2, xsect->yFull);
 
     // -- get area from solution at previous time step
-    aOld = Conduit[k].a2;
+    aOld = sp->Conduit[k].a2;
     aOld = MAX(aOld, FUDGE);
 
     // --- use Courant-modified length instead of conduit's actual length
-    length = Conduit[k].modLength;
+    length = sp->Conduit[k].modLength;
 
     // --- find surface area contributions to upstream and downstream nodes
     //     based on previous iteration's flow estimate
@@ -148,13 +148,13 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
          isClosed ||
          aMid <= FUDGE )
     {
-        Conduit[k].a1 = 0.5 * (a1 + a2);
-        Conduit[k].q1 = 0.0;;
-        Conduit[k].q2 = 0.0;
+        sp->Conduit[k].a1 = 0.5 * (a1 + a2);
+        sp->Conduit[k].q1 = 0.0;;
+        sp->Conduit[k].q2 = 0.0;
         sp->Link[j].dqdh  = GRAVITY * dt * aMid / length * barrels;
         sp->Link[j].froude = 0.0;
         sp->Link[j].newDepth = MIN(yMid, sp->Link[j].xsect.yFull);
-        sp->Link[j].newVolume = Conduit[k].a1 * link_getLength(sp, j) * barrels;
+        sp->Link[j].newVolume = sp->Conduit[k].a1 * link_getLength(sp, j) * barrels;
         sp->Link[j].newFlow = 0.0;
         return;
     }
@@ -191,7 +191,7 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     // --- 1. friction slope term
     if ( xsect->type == FORCE_MAIN && isFull )
          dq1 = dt * forcemain_getFricSlope(sp, j, fabs(v), rMid);
-    else dq1 = dt * Conduit[k].roughFactor / pow(rWtd, 1.33333) * fabs(v);
+    else dq1 = dt * sp->Conduit[k].roughFactor / pow(rWtd, 1.33333) * fabs(v);
 
     // --- 2. energy slope term
     dq2 = dt * GRAVITY * aWtd * (h2 - h1) / length;
@@ -207,7 +207,7 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
 
     // --- 5. local losses term
     dq5 = 0.0;
-    if ( Conduit[k].hasLosses )
+    if ( sp->Conduit[k].hasLosses )
     {
         dq5 = findLocalLosses(sp, j, a1, a2, aMid, qLast) / 2.0 / length * dt;
     }
@@ -262,13 +262,13 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     if( q < -FUDGE && sp->Node[n2].newDepth <= FUDGE ) q = -FUDGE;
 
     // --- save new values of area, flow, depth, & volume
-    Conduit[k].a1 = aMid;
-    Conduit[k].q1 = q;
-    Conduit[k].q2 = q;
+    sp->Conduit[k].a1 = aMid;
+    sp->Conduit[k].q1 = q;
+    sp->Conduit[k].q2 = q;
     sp->Link[j].newDepth  = MIN(yMid, xsect->yFull);
     aMid = (a1 + a2) / 2.0;
     aMid = MIN(aMid, xsect->aFull);
-    Conduit[k].fullState = link_getFullState(a1, a2, xsect->aFull);            //(5.1.008)
+    sp->Conduit[k].fullState = link_getFullState(a1, a2, xsect->aFull);            //(5.1.008)
     sp->Link[j].newVolume = aMid * link_getLength(sp, j) * barrels;
     sp->Link[j].newFlow = q * barrels;
 }
@@ -637,7 +637,7 @@ double checkNormalFlow(SWMM_Project *sp, int j, double q, double y1, double y2,
     // --- check if normal flow < dynamic flow
     if ( check )
     {
-        qNorm = Conduit[k].beta * a1 * pow(r1, 2./3.);
+        qNorm = sp->Conduit[k].beta * a1 * pow(r1, 2./3.);
         if ( qNorm < q )
         {
             sp->Link[j].normalFlow = TRUE;

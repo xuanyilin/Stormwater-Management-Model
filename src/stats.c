@@ -691,14 +691,14 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
 
         // --- update time conduit is full
         k = sp->Link[j].subIndex;
-        if ( q >= sp->Link[j].qFull * (double)Conduit[k].barrels )                 //(5.1.012)
+        if ( q >= sp->Link[j].qFull * (double)sp->Conduit[k].barrels )                 //(5.1.012)
             LinkStats[j].timeFullFlow += tStep; 
-        if ( Conduit[k].capacityLimited )
+        if ( sp->Conduit[k].capacityLimited )
             LinkStats[j].timeCapacityLimited += tStep;
 
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
 ////
-        switch (Conduit[k].fullState)
+        switch (sp->Conduit[k].fullState)
         {
         case ALL_FULL:
             LinkStats[j].timeSurcharged += tStep;

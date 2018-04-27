@@ -154,7 +154,7 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TDivider*  Divider;                  // Array of divider nodes
 //EXTERN TStorage*  Storage;                  // Array of storage nodes
 //EXTERN TLink*     Link;                     // Array of links
-EXTERN TConduit*  Conduit;                  // Array of conduit links
+//EXTERN TConduit*  Conduit;                  // Array of conduit links
 EXTERN TPump*     Pump;                     // Array of pump links
 EXTERN TOrifice*  Orifice;                  // Array of orifice links
 EXTERN TWeir*     Weir;                     // Array of weir links

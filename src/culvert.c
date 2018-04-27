@@ -202,8 +202,8 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
     {
     case 5:
     case 37:
-    case 46: culvert.scf = -7.0 * Conduit[k].slope; break;
-    default: culvert.scf = 0.5 * Conduit[k].slope;
+    case 46: culvert.scf = -7.0 * sp->Conduit[k].slope; break;
+    default: culvert.scf = 0.5 * sp->Conduit[k].slope;
     }
 
     // --- find head relative to culvert's upstream invert

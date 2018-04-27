@@ -907,7 +907,7 @@ double storage_getOutflow(SWMM_Project *sp, int j, int i)
     // --- if partially full, return normal flow
     k = sp->Link[i].subIndex;
     a = xsect_getAofY(&sp->Link[i].xsect, y);
-    return Conduit[k].beta * xsect_getSofA(&sp->Link[i].xsect, a);
+    return sp->Conduit[k].beta * xsect_getSofA(&sp->Link[i].xsect, a);
 }
 
 //=============================================================================

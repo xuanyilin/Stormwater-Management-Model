@@ -760,11 +760,11 @@ void removeConduitLosses(SWMM_Project *sp)
         {
             // --- retrieve number of barrels
             k = sp->Link[i].subIndex;
-            barrels = Conduit[k].barrels;
+            barrels = sp->Conduit[k].barrels;
 
             // --- update total conduit losses
-            evapLoss += Conduit[k].evapLossRate * barrels;
-            seepLoss += Conduit[k].seepLossRate * barrels;
+            evapLoss += sp->Conduit[k].evapLossRate * barrels;
+            seepLoss += sp->Conduit[k].seepLossRate * barrels;
         }
     }
     massbal_addLinkLosses(evapLoss, seepLoss);

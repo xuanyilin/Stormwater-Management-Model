@@ -1209,7 +1209,7 @@ struct SWMM_Project {
    TDivider*     Divider;                  // Array of divider nodes
    TStorage*     Storage;                  // Array of storage nodes
    TLink*        Link;                     // Array of links
-//    EXTERN TConduit*  Conduit;                  // Array of conduit links
+   TConduit*     Conduit;                  // Array of conduit links
 //    EXTERN TPump*     Pump;                     // Array of pump links
 //    EXTERN TOrifice*  Orifice;                  // Array of orifice links
 //    EXTERN TWeir*     Weir;                     // Array of weir links

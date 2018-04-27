@@ -51,12 +51,12 @@ double forcemain_getEquivN(SWMM_Project *sp, int j, int k)
     switch ( sp->ForceMainEqn )
     {
       case H_W:
-        return 1.067 / xsect.rBot * pow(d/Conduit[k].slope, 0.04);
+        return 1.067 / xsect.rBot * pow(d/sp->Conduit[k].slope, 0.04);
       case D_W:
         f = forcemain_getFricFactor(xsect.rBot, d/4.0, 1.0e12);
         return sqrt(f/185.0) * pow(d, (1./6.));
     }
-    return Conduit[k].roughness;
+    return sp->Conduit[k].roughness;
 }
 
 //=============================================================================

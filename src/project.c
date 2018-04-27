@@ -736,7 +736,7 @@ void initPointers(SWMM_Project *sp)
     sp->Divider  = NULL;
     sp->Storage  = NULL;
     sp->Link     = NULL;
-    Conduit  = NULL;
+    sp->Conduit  = NULL;
     Pump     = NULL;
     Orifice  = NULL;
     Weir     = NULL;
@@ -968,7 +968,7 @@ void createObjects(SWMM_Project *sp)
     sp->Divider  = (TDivider *)  calloc(sp->Nnodes[DIVIDER],    sizeof(TDivider));
     sp->Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
     sp->Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
-    Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
+    sp->Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
     Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
     Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
     Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
@@ -1226,7 +1226,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Divider);
     FREE(sp->Storage);
     FREE(sp->Link);
-    FREE(Conduit);
+    FREE(sp->Conduit);
     FREE(Pump);
     FREE(Orifice);
     FREE(Weir);
