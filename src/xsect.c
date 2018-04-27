@@ -632,15 +632,15 @@ void xsect_setIrregXsectParams(SWMM_Project *sp, TXsect *xsect)
     int index = xsect->transect;
     int     i, iMax;
     double  wMax;
-    double* wTbl = Transect[index].widthTbl;
+    double* wTbl = sp->Transect[index].widthTbl;
 
-    xsect->yFull = Transect[index].yFull;
-    xsect->wMax  = Transect[index].wMax;
-    xsect->aFull = Transect[index].aFull;
-    xsect->rFull = Transect[index].rFull;
+    xsect->yFull = sp->Transect[index].yFull;
+    xsect->wMax  = sp->Transect[index].wMax;
+    xsect->aFull = sp->Transect[index].aFull;
+    xsect->rFull = sp->Transect[index].rFull;
     xsect->sFull = xsect->aFull * pow(xsect->rFull, 2./3.);
-    xsect->sMax = Transect[index].sMax;
-    xsect->aBot = Transect[index].aMax;
+    xsect->sMax = sp->Transect[index].sMax;
+    xsect->aBot = sp->Transect[index].aMax;
 
     // Search transect's width table up to point where width decreases
     iMax = 0;
@@ -813,7 +813,7 @@ double xsect_getYofA(SWMM_Project *sp, TXsect *xsect, double a)
 
       case IRREGULAR:
         return xsect->yFull * invLookup(alpha,
-            Transect[xsect->transect].areaTbl, N_TRANSECT_TBL);
+            sp->Transect[xsect->transect].areaTbl, N_TRANSECT_TBL);
 
       case CUSTOM:
         return xsect->yFull * invLookup(alpha,
@@ -897,7 +897,7 @@ double xsect_getAofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case IRREGULAR:
         return xsect->aFull * lookup(yNorm,
-            Transect[xsect->transect].areaTbl, N_TRANSECT_TBL);
+            sp->Transect[xsect->transect].areaTbl, N_TRANSECT_TBL);
 
       case CUSTOM:
         return xsect->aFull * lookup(yNorm,
@@ -978,7 +978,7 @@ double xsect_getWofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case IRREGULAR:
         return xsect->wMax * lookup(yNorm,
-            Transect[xsect->transect].widthTbl, N_TRANSECT_TBL);
+            sp->Transect[xsect->transect].widthTbl, N_TRANSECT_TBL);
 
       case CUSTOM:
         return xsect->wMax * lookup(yNorm,
@@ -1048,7 +1048,7 @@ double xsect_getRofY(SWMM_Project *sp, TXsect *xsect, double y)
 
       case IRREGULAR:
         return xsect->rFull * lookup(yNorm,
-            Transect[xsect->transect].hradTbl, N_TRANSECT_TBL);
+            sp->Transect[xsect->transect].hradTbl, N_TRANSECT_TBL);
 
       case CUSTOM:
         return xsect->rFull * lookup(yNorm,

@@ -993,7 +993,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     if ( sp->Link[j].xsect.type == IRREGULAR )
     {
         xsect_setIrregXsectParams(sp, &sp->Link[j].xsect);
-        sp->Conduit[k].roughness = Transect[sp->Link[j].xsect.transect].roughness;
+        sp->Conduit[k].roughness = sp->Transect[sp->Link[j].xsect.transect].roughness;
     }
 
     // --- if force main xsection, adjust units on D-W roughness height
@@ -1065,7 +1065,7 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
     // --- adjust roughness for meandering natural channels
     if ( sp->Link[j].xsect.type == IRREGULAR )
     {
-        lengthFactor = Transect[sp->Link[j].xsect.transect].lengthFactor;
+        lengthFactor = sp->Transect[sp->Link[j].xsect.transect].lengthFactor;
         roughness *= sqrt(lengthFactor);
     }
 
@@ -1177,7 +1177,7 @@ double conduit_getLength(SWMM_Project *sp, int j)
     if ( sp->Link[j].xsect.type != IRREGULAR ) return sp->Conduit[k].length;
     t = sp->Link[j].xsect.transect;
     if ( t < 0 || t >= sp->Nobjects[TRANSECT] ) return sp->Conduit[k].length;
-    return sp->Conduit[k].length / Transect[t].lengthFactor;
+    return sp->Conduit[k].length / sp->Transect[t].lengthFactor;
 }
 
 //=============================================================================

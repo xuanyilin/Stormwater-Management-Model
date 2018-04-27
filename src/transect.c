@@ -51,14 +51,14 @@ static int    setParams(SWMM_Project *sp, int transect, char* id, double x[]);
 static int    setManning(double n[]);
 static int    addStation(SWMM_Project *sp, double x, double y);
 static double getFlow(int k, double a, double wp, int findFlow);
-static void   getGeometry(int i, int j, double y);
+static void   getGeometry(SWMM_Project *sp, int i, int j, double y);
 static void   getSliceGeom(int k, double y, double yu, double yd, double *w,
               double *a, double *wp);
-static void   setMaxSectionFactor(int transect);
+static void   setMaxSectionFactor(SWMM_Project *sp, int transect);
 
 //=============================================================================
 
-int transect_create(int n)
+int transect_create(SWMM_Project *sp, int n)
 //
 //  Input:   n = number of transect objects to create
 //  Output:  returns an error code
@@ -67,8 +67,8 @@ int transect_create(int n)
 {
     Ntransects = n;
     if ( n == 0 ) return 0;
-    Transect = (TTransect *) calloc(Ntransects, sizeof(TTransect));
-    if ( Transect == NULL ) return ERR_MEMORY;
+    sp->Transect = (TTransect *) calloc(Ntransects, sizeof(TTransect));
+    if ( sp->Transect == NULL ) return ERR_MEMORY;
     Nchannel = 0.0;
     Nleft = 0.0;
     Nright = 0.0;
@@ -78,7 +78,7 @@ int transect_create(int n)
 
 //=============================================================================
 
-void transect_delete(void)
+void transect_delete(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -86,7 +86,7 @@ void transect_delete(void)
 //
 {
     if ( Ntransects == 0 ) return;
-    FREE(Transect);
+    FREE(sp->Transect);
     Ntransects = 0;
 }
 
@@ -197,29 +197,29 @@ void  transect_validate(SWMM_Project *sp, int j)
     if ( j < 0 || j >= Ntransects ) return;
     if ( Nstations < 2 ) 
     {
-        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_FEW, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_FEW, sp->Transect[j].ID);
         return;
     }
     if ( Nstations >= MAXSTATION )
     {
-        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_MANY, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_TOO_MANY, sp->Transect[j].ID);
         return;
     }
     if ( Nchannel <= 0.0 )
     {
-        report_writeErrorMsg(sp, ERR_TRANSECT_MANNING, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_MANNING, sp->Transect[j].ID);
         return;
     }
     if ( Xleftbank > Xrightbank )
     {
-        report_writeErrorMsg(sp, ERR_TRANSECT_OVERBANK, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_OVERBANK, sp->Transect[j].ID);
         return;
     }
 
     // --- adjust main channel's Mannings n to make its equivalent
     //     length equal to that of entire flood plain
     Nchannel = Nchannel * sqrt(Lfactor);
-    Transect[j].lengthFactor = Lfactor;
+    sp->Transect[j].lengthFactor = Lfactor;
 
     // --- find max. depth across transect
     ymax = Elev[1];
@@ -231,10 +231,10 @@ void  transect_validate(SWMM_Project *sp, int j)
     }
     if ( ymin >= ymax )
     {
-        report_writeErrorMsg(sp, ERR_TRANSECT_NO_DEPTH, Transect[j].ID);
+        report_writeErrorMsg(sp, ERR_TRANSECT_NO_DEPTH, sp->Transect[j].ID);
         return;
     }
-    Transect[j].yFull = ymax - ymin;
+    sp->Transect[j].yFull = ymax - ymin;
 
     // --- add vertical sides to transect to reach full ht. on both ends
     Station[0] = Station[1];
@@ -244,48 +244,48 @@ void  transect_validate(SWMM_Project *sp, int j)
     Elev[Nstations] = Elev[0];
 
     // --- determine size & depth increment for geometry tables
-    Transect[j].nTbl = N_TRANSECT_TBL;
-    dy = (ymax - ymin) / (double)(Transect[j].nTbl - 1);
+    sp->Transect[j].nTbl = N_TRANSECT_TBL;
+    dy = (ymax - ymin) / (double)(sp->Transect[j].nTbl - 1);
 
     // --- set 1st table entries to zero
-    Transect[j].areaTbl[0] = 0.0;
-    Transect[j].hradTbl[0] = 0.0;
-    Transect[j].widthTbl[0] = 0.0;
+    sp->Transect[j].areaTbl[0] = 0.0;
+    sp->Transect[j].hradTbl[0] = 0.0;
+    sp->Transect[j].widthTbl[0] = 0.0;
 
     // --- compute geometry for each depth increment
     y = ymin;
-    Transect[j].wMax = 0.0;
-    for (i = 1; i < Transect[j].nTbl; i++)
+    sp->Transect[j].wMax = 0.0;
+    for (i = 1; i < sp->Transect[j].nTbl; i++)
     {
         y += dy;
-        Transect[j].areaTbl[i] = 0.0;
-        Transect[j].hradTbl[i] = 0.0;
-        Transect[j].widthTbl[i] = 0.0;
-        getGeometry(i, j, y);
+        sp->Transect[j].areaTbl[i] = 0.0;
+        sp->Transect[j].hradTbl[i] = 0.0;
+        sp->Transect[j].widthTbl[i] = 0.0;
+        getGeometry(sp, i, j, y);
     }
 
     // --- determine max. section factor 
-    setMaxSectionFactor(j);
+    setMaxSectionFactor(sp, j);
 
     // --- normalize geometry table entries
     //     (full cross-section values are last table entries)
-    nLast = Transect[j].nTbl - 1;
-    Transect[j].aFull = Transect[j].areaTbl[nLast];
-    Transect[j].rFull = Transect[j].hradTbl[nLast];
-    Transect[j].wMax = Transect[j].widthTbl[nLast];
+    nLast = sp->Transect[j].nTbl - 1;
+    sp->Transect[j].aFull = sp->Transect[j].areaTbl[nLast];
+    sp->Transect[j].rFull = sp->Transect[j].hradTbl[nLast];
+    sp->Transect[j].wMax = sp->Transect[j].widthTbl[nLast];
 
     for (i = 1; i <= nLast; i++)
     {
-        Transect[j].areaTbl[i] /= Transect[j].aFull;
-        Transect[j].hradTbl[i] /= Transect[j].rFull;
-        Transect[j].widthTbl[i] /= Transect[j].wMax;
+        sp->Transect[j].areaTbl[i] /= sp->Transect[j].aFull;
+        sp->Transect[j].hradTbl[i] /= sp->Transect[j].rFull;
+        sp->Transect[j].widthTbl[i] /= sp->Transect[j].wMax;
     }
 
     // --- set width at 0 height equal to width at 4% of max. height
-    Transect[j].widthTbl[0] = Transect[j].widthTbl[1];
+    sp->Transect[j].widthTbl[0] = sp->Transect[j].widthTbl[1];
 
     // --- save unadjusted main channel roughness 
-    Transect[j].roughness = oldNchannel;
+    sp->Transect[j].roughness = oldNchannel;
 }
 
 //=============================================================================
@@ -322,7 +322,7 @@ int  setParams(SWMM_Project *sp, int j, char* id, double x[])
 //
 {
     if ( j < 0 || j >= Ntransects ) return ERR_NUMBER;
-    Transect[j].ID = id;                         // ID name
+    sp->Transect[j].ID = id;                         // ID name
     Xleftbank = x[3] / UCF(sp, LENGTH);              // left overbank location
     Xrightbank = x[4] / UCF(sp, LENGTH);             // right overbank location
     Lfactor = x[7];                              // channel/bank length
@@ -366,7 +366,7 @@ int  addStation(SWMM_Project *sp, double y, double x)
 
 //=============================================================================
 
-void  getGeometry(int i, int j, double y)
+void  getGeometry(SWMM_Project *sp, int i, int j, double y)
 //
 //  Input:   i = index of current entry in geometry tables
 //           j = transect index
@@ -417,8 +417,8 @@ void  getGeometry(int i, int j, double y)
         // --- update total transect values
         wpSum += wp;
         aSum += a;
-        Transect[j].areaTbl[i] += a;
-        Transect[j].widthTbl[i] += w;
+        sp->Transect[j].areaTbl[i] += a;
+        sp->Transect[j].widthTbl[i] += w;
 
         // --- must update flow if station elevation is above water level
         if ( Elev[k] >= y ) findFlow = TRUE;
@@ -437,9 +437,9 @@ void  getGeometry(int i, int j, double y)
 
     // --- find hyd. radius table entry solving Manning eq. with
     //     total flow, total area, and main channel n
-    aSum = Transect[j].areaTbl[i];
-    if ( aSum == 0.0 ) Transect[j].hradTbl[i] = Transect[j].hradTbl[i-1];
-    else Transect[j].hradTbl[i] = pow(qSum * Nchannel / 1.49 / aSum, 1.5);
+    aSum = sp->Transect[j].areaTbl[i];
+    if ( aSum == 0.0 ) sp->Transect[j].hradTbl[i] = sp->Transect[j].hradTbl[i-1];
+    else sp->Transect[j].hradTbl[i] = pow(qSum * Nchannel / 1.49 / aSum, 1.5);
 }
 
 //=============================================================================
@@ -545,7 +545,7 @@ double getFlow(int k, double a, double wp, int findFlow)
 
 //=============================================================================
 
-void setMaxSectionFactor(int j)
+void setMaxSectionFactor(SWMM_Project *sp, int j)
 //
 //  Input:   j = transect index
 //  Output:  none
@@ -556,15 +556,15 @@ void setMaxSectionFactor(int j)
     int    i;
     double sf;
 
-    Transect[j].aMax = 0.0;
-    Transect[j].sMax = 0.0;
-    for (i=1; i<Transect[j].nTbl; i++)
+    sp->Transect[j].aMax = 0.0;
+    sp->Transect[j].sMax = 0.0;
+    for (i=1; i<sp->Transect[j].nTbl; i++)
     {
-        sf = Transect[j].areaTbl[i] * pow(Transect[j].hradTbl[i], 2./3.);
-        if ( sf > Transect[j].sMax )
+        sf = sp->Transect[j].areaTbl[i] * pow(sp->Transect[j].hradTbl[i], 2./3.);
+        if ( sf > sp->Transect[j].sMax )
         {
-            Transect[j].sMax = sf;
-            Transect[j].aMax = Transect[j].areaTbl[i];
+            sp->Transect[j].sMax = sf;
+            sp->Transect[j].aMax = sp->Transect[j].areaTbl[i];
         }
     }
 }

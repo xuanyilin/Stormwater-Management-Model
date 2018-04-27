@@ -502,8 +502,8 @@ double  forcemain_getFricSlope(SWMM_Project *sp, int j, double v, double hrad);
 //-----------------------------------------------------------------------------
 //   Cross-Section Transect Methods
 //-----------------------------------------------------------------------------
-int     transect_create(int n);
-void    transect_delete(void);
+int     transect_create(SWMM_Project *sp, int n);
+void    transect_delete(SWMM_Project *sp);
 int     transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks);
 void    transect_validate(SWMM_Project *sp, int j);
 

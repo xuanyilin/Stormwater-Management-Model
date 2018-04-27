@@ -1219,7 +1219,7 @@ struct SWMM_Project {
    TPattern*     Pattern;                  // Array of time patterns
    TTable*       Curve;                    // Array of curve tables
    TTable*       Tseries;                  // Array of time series tables
-//    EXTERN TTransect* Transect;                 // Array of transect data
+   TTransect*    Transect;                 // Array of transect data
 //    EXTERN TShape*    Shape;                    // Array of custom conduit shapes
 //    EXTERN TEvent*    Event;                    // Array of routing events         //(5.1.011)
 

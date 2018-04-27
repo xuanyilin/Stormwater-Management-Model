@@ -237,7 +237,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
                     fprintf(sp->Frpt.file, "%-16s ", sp->Curve[sp->Link[i].xsect.transect].ID);
                 else if ( sp->Link[i].xsect.type == IRREGULAR )
                     fprintf(sp->Frpt.file, "%-16s ",
-                    Transect[sp->Link[i].xsect.transect].ID);
+                    sp->Transect[sp->Link[i].xsect.transect].ID);
                 else fprintf(sp->Frpt.file, "%-16s ",
                     XsectTypeWords[sp->Link[i].xsect.type]);
                 fprintf(sp->Frpt.file, "%8.2f %8.2f %8.2f %8.2f      %3d %8.2f",
@@ -293,24 +293,24 @@ void inputrpt_writeInput(SWMM_Project *sp)
         WRITE("****************");
         for (i = 0; i < sp->Nobjects[TRANSECT]; i++)
         {
-            fprintf(sp->Frpt.file, "\n\n  Transect %s", Transect[i].ID);
+            fprintf(sp->Frpt.file, "\n\n  Transect %s", sp->Transect[i].ID);
             fprintf(sp->Frpt.file, "\n  Area:  ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Transect[i].areaTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].areaTbl[m]);
             }
             fprintf(sp->Frpt.file, "\n  Hrad:  ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Transect[i].hradTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].hradTbl[m]);
             }
             fprintf(sp->Frpt.file, "\n  Width: ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
                  if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
-                 fprintf(sp->Frpt.file, "%10.4f ", Transect[i].widthTbl[m]);
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].widthTbl[m]);
             }
         }
     }

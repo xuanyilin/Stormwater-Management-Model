@@ -746,7 +746,7 @@ void initPointers(SWMM_Project *sp)
     sp->Pattern  = NULL;
     sp->Curve    = NULL;
     sp->Tseries  = NULL;
-    Transect = NULL;
+    sp->Transect = NULL;
     Shape    = NULL;
     sp->Aquifer    = NULL;
     sp->UnitHyd    = NULL;
@@ -998,7 +998,7 @@ void createObjects(SWMM_Project *sp)
     if ( sp->ErrorCode ) return;
 
     // --- create cross section transects
-    sp->ErrorCode = transect_create(sp->Nobjects[TRANSECT]);
+    sp->ErrorCode = transect_create(sp, sp->Nobjects[TRANSECT]);
     if ( sp->ErrorCode ) return;
 
     // --- allocate memory for infiltration data
@@ -1210,7 +1210,7 @@ void deleteObjects(SWMM_Project *sp)
         table_deleteEntries(&sp->Curve[j]);
 
     // --- delete cross section transects
-    transect_delete();
+    transect_delete(sp);
 
     // --- delete control rules
     controls_delete();
