@@ -507,7 +507,7 @@ void  findNonConduitSurfArea(SWMM_Project *sp, int i)
 /*
     else if ( sp->Link[i].type == WEIR )
     {
-        Xlink[i].surfArea1 = Weir[sp->Link[i].subIndex].surfArea / 2.;
+        Xlink[i].surfArea1 = sp->Weir[sp->Link[i].subIndex].surfArea / 2.;
     }
 */
 

@@ -739,7 +739,7 @@ void initPointers(SWMM_Project *sp)
     sp->Conduit  = NULL;
     sp->Pump     = NULL;
     sp->Orifice  = NULL;
-    Weir     = NULL;
+    sp->Weir     = NULL;
     Outlet   = NULL;
     Pollut   = NULL;
     Landuse  = NULL;
@@ -971,7 +971,7 @@ void createObjects(SWMM_Project *sp)
     sp->Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
     sp->Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
     sp->Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
-    Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
+    sp->Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
     Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
     Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
     Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
@@ -1229,7 +1229,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Conduit);
     FREE(sp->Pump);
     FREE(sp->Orifice);
-    FREE(Weir);
+    FREE(sp->Weir);
     FREE(Outlet);
     FREE(Pollut);
     FREE(Landuse);

@@ -118,7 +118,8 @@ static void   weir_getFlow(SWMM_Project *sp, int j, int k, double head, double d
               int hasFlapGate, double* q1, double* q2);
 static double weir_getOrificeFlow(SWMM_Project *sp, int j, double head, double y,
         double cOrif); //(5.1.007)
-static double weir_getdqdh(int k, double dir, double h, double q1, double q2);
+static double weir_getdqdh(SWMM_Project *sp, int k, double dir, double h,
+        double q1, double q2);
 
 static int    outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[],
         int ntoks);
@@ -347,17 +348,17 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
         break;
 
       case WEIR:
-        Weir[k].type         = (int)x[0];
+        sp->Weir[k].type         = (int)x[0];
         sp->Link[j].offset1      = x[1] / UCF(sp, LENGTH);
         sp->Link[j].offset2      = sp->Link[j].offset1;
-        Weir[k].cDisch1      = x[2];
+        sp->Weir[k].cDisch1      = x[2];
         sp->Link[j].hasFlapGate  = (x[3] > 0.0) ? 1 : 0;
-        Weir[k].endCon       = x[4];
-        Weir[k].cDisch2      = x[5];
-        Weir[k].canSurcharge = (int)x[6];                                      //(5.1.007)
-        Weir[k].roadWidth    = x[7] / UCF(sp, LENGTH);                             //(5.1.011)
-        Weir[k].roadSurface  = (int)x[8];                                      //(5.1.010)
-//      Weir[k].shape        = -(int)x[9];  //DELETED//                        //(5.1.011)
+        sp->Weir[k].endCon       = x[4];
+        sp->Weir[k].cDisch2      = x[5];
+        sp->Weir[k].canSurcharge = (int)x[6];                                      //(5.1.007)
+        sp->Weir[k].roadWidth    = x[7] / UCF(sp, LENGTH);                             //(5.1.011)
+        sp->Weir[k].roadSurface  = (int)x[8];                                      //(5.1.010)
+//      sp->Weir[k].shape        = -(int)x[9];  //DELETED//                        //(5.1.011)
         break;
 
       case OUTLET:
@@ -2081,20 +2082,20 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
     double q, q1, q2, head;                                                    //(5.1.008)
  
     // --- check for valid cross section
-    switch ( Weir[k].type)
+    switch ( sp->Weir[k].type)
     {
       case TRANSVERSE_WEIR:
       case SIDEFLOW_WEIR:
       case ROADWAY_WEIR:                                                       //(5.1.010)
         if ( sp->Link[j].xsect.type != RECT_OPEN ) err = ERR_REGULATOR_SHAPE;
-        Weir[k].slope = 0.0;
+        sp->Weir[k].slope = 0.0;
         break;
 
       case VNOTCH_WEIR:
         if ( sp->Link[j].xsect.type != TRIANGULAR ) err = ERR_REGULATOR_SHAPE;
         else
         {
-            Weir[k].slope = sp->Link[j].xsect.sBot;
+            sp->Weir[k].slope = sp->Link[j].xsect.sBot;
         }
         break;
 
@@ -2102,7 +2103,7 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
         if ( sp->Link[j].xsect.type != TRAPEZOIDAL ) err = ERR_REGULATOR_SHAPE;
         else
         {
-            Weir[k].slope = sp->Link[j].xsect.sBot;
+            sp->Weir[k].slope = sp->Link[j].xsect.sBot;
         }
         break;
     }
@@ -2116,9 +2117,9 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
     if ( sp->Link[j].offset1 < 0.0 ) sp->Link[j].offset1 = 0.0;
 
     // --- compute an equivalent length
-    Weir[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * sp->Link[j].xsect.yFull);
-    Weir[k].length = MAX(200.0, Weir[k].length);
-    Weir[k].surfArea = 0.0;
+    sp->Weir[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * sp->Link[j].xsect.yFull);
+    sp->Weir[k].length = MAX(200.0, sp->Weir[k].length);
+    sp->Weir[k].surfArea = 0.0;
 
 ////  Following code segment added to release 5.1.008.  ////                   //(5.1.008)
 
@@ -2130,7 +2131,7 @@ void  weir_validate(SWMM_Project *sp, int j, int k)
 
     // --- compute equivalent orifice coeff. (for CFS flow units)
     head = head / 2.0;  // head seen by equivalent orifice
-    Weir[k].cSurcharge = q / sqrt(head); 
+    sp->Weir[k].cSurcharge = q / sqrt(head); 
 }
 
 //=============================================================================
@@ -2149,11 +2150,11 @@ void weir_setSetting(SWMM_Project *sp, int j)
 
     // --- adjust weir setting
     sp->Link[j].setting = sp->Link[j].targetSetting;
-    if ( !Weir[k].canSurcharge ) return;
-    if ( Weir[k].type == ROADWAY_WEIR ) return;                                //(5.1.010)
+    if ( !sp->Weir[k].canSurcharge ) return;
+    if ( sp->Weir[k].type == ROADWAY_WEIR ) return;                                //(5.1.010)
 
     // --- find orifice coeff. for surcharged flow
-    if ( sp->Link[j].setting == 0.0 ) Weir[k].cSurcharge = 0.0;
+    if ( sp->Link[j].setting == 0.0 ) sp->Weir[k].cSurcharge = 0.0;
     else
     {
         // --- find flow through weir when water level equals weir height
@@ -2163,7 +2164,7 @@ void weir_setSetting(SWMM_Project *sp, int j)
 
         // --- compute equivalent orifice coeff. (for CFS flow units)
         h = h / 2.0;  // head seen by equivalent orifice
-        Weir[k].cSurcharge = q / sqrt(h);
+        sp->Weir[k].cSurcharge = q / sqrt(h);
     }
 }
 
@@ -2223,7 +2224,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
 
 ////  Added to release 5.1.010.  ////                                          //(5.1.010)
     // --- treat a roadway weir as a special case
-    if ( Weir[k].type == ROADWAY_WEIR )
+    if ( sp->Weir[k].type == ROADWAY_WEIR )
         return roadway_getInflow(sp, j, dir, hcrest, h1, h2);
 ////
 
@@ -2253,7 +2254,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
 
     // --- compute new equivalent surface area
     y = sp->Link[j].xsect.yFull - (hcrown - MIN(h1, hcrown));
-    Weir[k].surfArea = xsect_getWofY(&sp->Link[j].xsect, y) * Weir[k].length;
+    sp->Weir[k].surfArea = xsect_getWofY(&sp->Link[j].xsect, y) * sp->Weir[k].length;
 
 ////  New section added to release 5.1.007.  ////                              //(5.1.007)
 
@@ -2261,13 +2262,13 @@ double weir_getInflow(SWMM_Project *sp, int j)
     if ( h1 >= hcrown )
     {
         // --- use equivalent orifice if weir can surcharge
-        if ( Weir[k].canSurcharge )
+        if ( sp->Weir[k].canSurcharge )
         {
             y = (hcrest + hcrown) / 2.0;
             if ( h2 < y ) head = h1 - y;
             else          head = h1 - h2;
             y = hcrown - hcrest;
-            q1 = weir_getOrificeFlow(sp, j, head, y, Weir[k].cSurcharge);
+            q1 = weir_getOrificeFlow(sp, j, head, y, sp->Weir[k].cSurcharge);
             sp->Link[j].newDepth = y;
             return dir * q1;
         }
@@ -2285,7 +2286,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
     if ( h2 > hcrest )
     {
         ratio = (h2 - hcrest) / (h1 - hcrest);
-        q1 *= pow( (1.0 - pow(ratio, weirPower[Weir[k].type])), 0.385);
+        q1 *= pow( (1.0 - pow(ratio, weirPower[sp->Weir[k].type])), 0.385);
         if ( q2 > 0.0 )
             q2 *= pow( (1.0 - pow(ratio, weirPower[VNOTCH_WEIR])), 0.385);
     }
@@ -2331,12 +2332,12 @@ void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int 
 
 ////  Following code segment re-located.  ////                                 //(5.1.012)
     // --- reduce length when end contractions present
-    //length -= 0.1 * Weir[k].endCon * h;
+    //length -= 0.1 * sp->Weir[k].endCon * h;
     //length = MAX(length, 0.0);
 /////////////////////////////////////////////
 
     // --- use appropriate formula for weir flow
-    wType = Weir[k].type;
+    wType = sp->Weir[k].type;
     if ( wType == VNOTCH_WEIR &&
          sp->Link[j].setting < 1.0 ) wType = TRAPEZOIDAL_WEIR;
     switch (wType)
@@ -2344,30 +2345,30 @@ void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int 
       case TRANSVERSE_WEIR:
 
         // --- reduce length when end contractions present                     //(5.1.012)
-        length -= 0.1 * Weir[k].endCon * h;                                    //(5.1.012)
+        length -= 0.1 * sp->Weir[k].endCon * h;                                    //(5.1.012)
         length = MAX(length, 0.0);                                             //(5.1.012)
-        *q1 = Weir[k].cDisch1 * length * pow(h, 1.5);
+        *q1 = sp->Weir[k].cDisch1 * length * pow(h, 1.5);
         break;
 
       case SIDEFLOW_WEIR:
 
         // --- reduce length when end contractions present                     //(5.1.012)
-        length -= 0.1 * Weir[k].endCon * h;                                    //(5.1.012)
+        length -= 0.1 * sp->Weir[k].endCon * h;                                    //(5.1.012)
         length = MAX(length, 0.0);                                             //(5.1.012)
 
         // --- weir behaves as a transverse weir under reverse flow
         if ( dir < 0.0 )
-            *q1 = Weir[k].cDisch1 * length * pow(h, 1.5);
+            *q1 = sp->Weir[k].cDisch1 * length * pow(h, 1.5);
         else
 
 ////   Corrected formula  ////                                                 //(5.1.012)
 // (see Metcalf & Eddy, Inc., Wastewater Engineering, McGraw-Hill, 1972 p. 164).
-            *q1 = Weir[k].cDisch1 * pow(length, 0.83) * pow(h, 1.67);
+            *q1 = sp->Weir[k].cDisch1 * pow(length, 0.83) * pow(h, 1.67);
 
         break;
 
       case VNOTCH_WEIR:
-        *q1 = Weir[k].cDisch1 * Weir[k].slope * pow(h, 2.5);
+        *q1 = sp->Weir[k].cDisch1 * sp->Weir[k].slope * pow(h, 2.5);
         break;
 
       case TRAPEZOIDAL_WEIR:
@@ -2375,11 +2376,11 @@ void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int 
         length = xsect_getWofY(&sp->Link[j].xsect, y) * UCF(sp, LENGTH);
 
 ////  End contractions don't apply to trapezoidal weirs ////                   //(5.1.012)
-        //length -= 0.1 * Weir[k].endCon * h;                                  //(5.1.012)
+        //length -= 0.1 * sp->Weir[k].endCon * h;                                  //(5.1.012)
         //length = MAX(length, 0.0);                                           //(5.1.012)
 
-        *q1 = Weir[k].cDisch1 * length * pow(h, 1.5);
-        *q2 = Weir[k].cDisch2 * Weir[k].slope * pow(h, 2.5);
+        *q1 = sp->Weir[k].cDisch1 * length * pow(h, 1.5);
+        *q2 = sp->Weir[k].cDisch2 * sp->Weir[k].slope * pow(h, 2.5);
     }
 
     // --- convert CMS flows to CFS
@@ -2409,7 +2410,7 @@ void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int 
             weir_getFlow(sp, j, k, head, dir, FALSE, q1, q2);
         }
     }
-    sp->Link[j].dqdh = weir_getdqdh(k, dir, head, *q1, *q2);
+    sp->Link[j].dqdh = weir_getdqdh(sp, k, dir, head, *q1, *q2);
 }
 
 //=============================================================================
@@ -2474,7 +2475,8 @@ double weir_getOpenArea(SWMM_Project *sp, int j, double y)
 
 //=============================================================================
 
-double  weir_getdqdh(int k, double dir, double h, double q1, double q2)
+double  weir_getdqdh(SWMM_Project *sp, int k, double dir, double h, double q1,
+        double q2)
 {
     double q1h;
     double q2h;
@@ -2483,7 +2485,7 @@ double  weir_getdqdh(int k, double dir, double h, double q1, double q2)
     q1h = fabs(q1/h);
     q2h = fabs(q2/h);
 
-    switch (Weir[k].type)
+    switch (sp->Weir[k].type)
     {
       case TRANSVERSE_WEIR: return 1.5 * q1h;
 

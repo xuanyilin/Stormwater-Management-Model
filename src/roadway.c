@@ -98,11 +98,11 @@ double roadway_getInflow(SWMM_Project *sp,
     // --- get road width & surface type
     if ( sp->Link[j].type != WEIR ) return 0.0;
     k = sp->Link[j].subIndex;
-    roadWidth = Weir[k].roadWidth;
-    roadSurf = Weir[k].roadSurface;
+    roadWidth = sp->Weir[k].roadWidth;
+    roadSurf = sp->Weir[k].roadSurface;
 
     // --- user-supplied discharge coeff.
-    cD = Weir[k].cDisch1;
+    cD = sp->Weir[k].cDisch1;
     if ( sp->UnitSystem == SI ) cD = cD / 0.552;
 
     // --- check if there's enough info to use a variable cD value

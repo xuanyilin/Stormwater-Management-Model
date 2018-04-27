@@ -1212,7 +1212,7 @@ struct SWMM_Project {
    TConduit*     Conduit;                  // Array of conduit links
    TPump*        Pump;                     // Array of pump links
    TOrifice*     Orifice;                  // Array of orifice links
-//    EXTERN TWeir*     Weir;                     // Array of weir links
+   TWeir*        Weir;                     // Array of weir links
 //    EXTERN TOutlet*   Outlet;                   // Array of outlet device links
 //    EXTERN TPollut*   Pollut;                   // Array of pollutants
 //    EXTERN TLanduse*  Landuse;                  // Array of landuses
