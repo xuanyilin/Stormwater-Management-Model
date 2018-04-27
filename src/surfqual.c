@@ -110,7 +110,7 @@ void surfqual_getBuildup(SWMM_Project *sp, int j, double tStep)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             // --- see if snow-only buildup is in effect
-            if (Pollut[p].snowOnly 
+            if (sp->Pollut[p].snowOnly 
             && sp->Subcatch[j].newSnowDepth < 0.001/12.0) continue;
 
             // --- use land use's buildup function to update buildup amount
@@ -256,12 +256,12 @@ void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
         //     loads (with LID return flow included) to BMP removal
         if ( sp->Subcatch[j].lidArea > 0.0 )
         {    
-            massLoad = cOut * (vOut1 - vOut2 - VlidReturn) * Pollut[p].mcf;
+            massLoad = cOut * (vOut1 - vOut2 - VlidReturn) * sp->Pollut[p].mcf;
             massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p, massLoad);
         }
 
         // --- update subcatchment's cumulative runoff load in lbs (or kg)
-        massLoad = cOut * vOut2 * Pollut[p].mcf;
+        massLoad = cOut * vOut2 * sp->Pollut[p].mcf;
         sp->Subcatch[j].totalLoad[p] += massLoad;
 
         // --- update mass balance for surface runoff load routed to a
@@ -270,7 +270,7 @@ void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
         //     can go to different outlets than parent subcatchment)
         if ( (sp->Subcatch[j].outNode >= 0 || sp->Subcatch[j].outSubcatch == j) )
         {
-            massLoad = cOut * vSurfOut * Pollut[p].mcf;
+            massLoad = cOut * vSurfOut * sp->Pollut[p].mcf;
             massbal_updateLoadingTotals(RUNOFF_LOAD, p, massLoad);
         }
         
@@ -335,15 +335,15 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- update mass balance for wet deposition
-        wRain = Pollut[p].pptConcen * LperFT3 * vRain;
-        massbal_updateLoadingTotals(DEPOSITION_LOAD, p, wRain * Pollut[p].mcf);
+        wRain = sp->Pollut[p].pptConcen * LperFT3 * vRain;
+        massbal_updateLoadingTotals(DEPOSITION_LOAD, p, wRain * sp->Pollut[p].mcf);
 
         // --- surface is dry and has no runon -- add any remaining mass
         //     to overall mass balance's FINAL_LOAD category
         if ( Vinflow == 0.0 )
         {
             massbal_updateLoadingTotals(FINAL_LOAD, p,
-                sp->Subcatch[j].pondedQual[p] * Pollut[p].mcf);
+                sp->Subcatch[j].pondedQual[p] * sp->Pollut[p].mcf);
             sp->Subcatch[j].pondedQual[p] = 0.0;
         }
         else
@@ -357,7 +357,7 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
             // --- mass lost to infiltration
             wInfil = cPonded * Vinfil;
             wInfil = MIN(wInfil, wPonded);
-            massbal_updateLoadingTotals(INFIL_LOAD, p, wInfil * Pollut[p].mcf);
+            massbal_updateLoadingTotals(INFIL_LOAD, p, wInfil * sp->Pollut[p].mcf);
             wPonded -= wInfil;
 
             // --- mass lost to runoff
@@ -368,7 +368,7 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
             // --- reduce outflow load by average BMP removal
             bmpRemoval = landuse_getAvgBmpEffic(sp, j, p) * wOutflow;
             massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p,
-                bmpRemoval*Pollut[p].mcf);
+                bmpRemoval*sp->Pollut[p].mcf);
             wOutflow -= bmpRemoval;
 
             // --- update ponded mass (using newly computed ponded depth)
@@ -415,15 +415,15 @@ void  findWashoffLoads(SWMM_Project *sp, int j, double runoff)
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- check if pollutant p has a co-pollutant k
-        k = Pollut[p].coPollut;
+        k = sp->Pollut[p].coPollut;
         if ( k >= 0 )
         {
             // --- compute addition to washoff from co-pollutant
-            w = Pollut[p].coFraction * OutflowLoad[k];
+            w = sp->Pollut[p].coFraction * OutflowLoad[k];
 
             // --- add this washoff to buildup mass balance totals
             //     so that things will balance
-            massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * Pollut[p].mcf);
+            massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * sp->Pollut[p].mcf);
 
             // --- then also add it to the total washoff load
             OutflowLoad[p] += w;
@@ -461,8 +461,8 @@ void  findLidLoads(SWMM_Project *sp, int j, double tStep)
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         // --- wet deposition load on LID area
-        wLidRain = Pollut[p].pptConcen * vLidRain * LperFT3;
-        massbal_updateLoadingTotals(DEPOSITION_LOAD, p, wLidRain * Pollut[p].mcf);
+        wLidRain = sp->Pollut[p].pptConcen * vLidRain * LperFT3;
+        massbal_updateLoadingTotals(DEPOSITION_LOAD, p, wLidRain * sp->Pollut[p].mcf);
 
         // --- runon load to LID area from other subcatchments
         if ( useRunon ) wLidRunon = sp->Subcatch[j].newQual[p] * tStep;

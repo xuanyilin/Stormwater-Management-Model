@@ -59,12 +59,12 @@ void inputrpt_writeInput(SWMM_Project *sp)
     "\n  -----------------------------------------------------------------------");
         for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         {
-            fprintf(sp->Frpt.file, "\n  %-20s %5s%10.2f%10.2f%10.2f", Pollut[i].ID,
-                QualUnitsWords[Pollut[i].units], Pollut[i].pptConcen,
-                Pollut[i].gwConcen, Pollut[i].kDecay*SECperDAY);
-            if ( Pollut[i].coPollut >= 0 )
+            fprintf(sp->Frpt.file, "\n  %-20s %5s%10.2f%10.2f%10.2f", sp->Pollut[i].ID,
+                QualUnitsWords[sp->Pollut[i].units], sp->Pollut[i].pptConcen,
+                sp->Pollut[i].gwConcen, sp->Pollut[i].kDecay*SECperDAY);
+            if ( sp->Pollut[i].coPollut >= 0 )
                 fprintf(sp->Frpt.file, "    %-s  (%.2f)",
-                    Pollut[Pollut[i].coPollut].ID, Pollut[i].coFraction);
+                    sp->Pollut[sp->Pollut[i].coPollut].ID, sp->Pollut[i].coFraction);
         }
     }
 

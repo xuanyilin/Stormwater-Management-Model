@@ -173,12 +173,12 @@ int output_open(SWMM_Project *sp)
     {
         if ( sp->Link[j].rptFlag ) output_saveID(sp->Link[j].ID, sp->Fout.file);
     }
-    for (j=0; j<NumPolluts; j++) output_saveID(Pollut[j].ID, sp->Fout.file);
+    for (j=0; j<NumPolluts; j++) output_saveID(sp->Pollut[j].ID, sp->Fout.file);
 
     // --- save codes of pollutant concentration units
     for (j=0; j<NumPolluts; j++)
     {
-        k = Pollut[j].units;
+        k = sp->Pollut[j].units;
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 

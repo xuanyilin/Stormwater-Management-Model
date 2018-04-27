@@ -518,7 +518,7 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             w = sp->Outfall[i].wRouted[p] * LperFT3;
-            massbal_updateLoadingTotals(DEPOSITION_LOAD, p, w * Pollut[p].mcf);
+            massbal_updateLoadingTotals(DEPOSITION_LOAD, p, w * sp->Pollut[p].mcf);
             sp->Subcatch[k].newQual[p] += w / tStep;
             sp->Outfall[i].wRouted[p] = 0.0;
         }

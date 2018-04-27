@@ -1401,7 +1401,7 @@ void  lid_addDrainLoads(SWMM_Project *sp, int j, double c[], double tStep)
                 {
                     //... get drain's mass load
                     w = lidUnit->newDrainFlow * c[p] * tStep *
-                         LperFT3 * Pollut[p].mcf;
+                         LperFT3 * sp->Pollut[p].mcf;
 
                     //... update system mass balance totals
                     massbal_updateLoadingTotals(RUNOFF_LOAD, p, w);

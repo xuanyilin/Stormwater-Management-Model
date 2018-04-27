@@ -71,7 +71,7 @@ void    qualrout_init(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
-            if ( isWet ) c = Pollut[p].initConcen;
+            if ( isWet ) c = sp->Pollut[p].initConcen;
             sp->Node[i].oldQual[p] = c;
             sp->Node[i].newQual[p] = c;
         }
@@ -83,7 +83,7 @@ void    qualrout_init(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             c = 0.0;
-            if ( isWet ) c = Pollut[p].initConcen;
+            if ( isWet ) c = sp->Pollut[p].initConcen;
             sp->Link[i].oldQual[p] = c;
             sp->Link[i].newQual[p] = c;
         }
@@ -365,9 +365,9 @@ void  findSFLinkQual(SWMM_Project *sp, int i, double qSeep, double fEvap, double
 
         // --- apply first-order decay over travel time
         c2 = c1;
-        if ( Pollut[p].kDecay > 0.0 )
+        if ( sp->Pollut[p].kDecay > 0.0 )
         {
-            c2 = c1 * exp(-Pollut[p].kDecay * tStep);
+            c2 = c1 * exp(-sp->Pollut[p].kDecay * tStep);
             c2 = MAX(0.0, c2);
             lossRate = (c1 - c2) * sp->Link[i].newFlow;
             massbal_addReactedMass(sp, p, lossRate);
@@ -489,7 +489,7 @@ double getReactedQual(SWMM_Project *sp, int p, double c, double v1, double tStep
 //
 {
     double c2, lossRate;
-    double kDecay = Pollut[p].kDecay;
+    double kDecay = sp->Pollut[p].kDecay;
 
     if ( kDecay == 0.0 ) return c;
     c2 = c * (1.0 - kDecay * tStep);

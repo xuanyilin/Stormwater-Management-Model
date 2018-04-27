@@ -624,13 +624,13 @@ void report_LoadingErrors(SWMM_Project *sp, int p1, int p2, TLoadingTotals* tota
     fprintf(sp->Frpt.file, "\n  **************************");
     for (p = p1; p <= p2; p++)
     {
-        fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        fprintf(sp->Frpt.file, "%14s", sp->Pollut[p].ID);
     }
     fprintf(sp->Frpt.file, "\n  Runoff Quality Continuity ");
     for (p = p1; p <= p2; p++)
     {
         i = sp->UnitSystem;
-        if ( Pollut[p].units == COUNT ) i = 2;
+        if ( sp->Pollut[p].units == COUNT ) i = 2;
         strcpy(units, LoadUnitsWords[i]);
         fprintf(sp->Frpt.file, "%14s", units);
     }
@@ -838,13 +838,13 @@ void report_QualErrors(SWMM_Project *sp, int p1, int p2,
     fprintf(sp->Frpt.file, "\n  **************************");
     for (p = p1; p <= p2; p++)
     {
-        fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        fprintf(sp->Frpt.file, "%14s", sp->Pollut[p].ID);
     }
     fprintf(sp->Frpt.file, "\n  Quality Routing Continuity");
     for (p = p1; p <= p2; p++)
     {
         i = sp->UnitSystem;
-        if ( Pollut[p].units == COUNT ) i = 2;
+        if ( sp->Pollut[p].units == COUNT ) i = 2;
         strcpy(units, LoadUnitsWords[i]);
         fprintf(sp->Frpt.file, "%14s", units);
     }
@@ -1177,7 +1177,7 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
     if ( hasSnowmelt ) fprintf(sp->Frpt.file, "  Snow Depth");
     if ( hasGwater   ) fprintf(sp->Frpt.file, "  GW Elev.   GW Flow");
     if ( hasQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
+        fprintf(sp->Frpt.file, "%10s", sp->Pollut[i].ID);
 
     // --- print second line of column headings
     if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
@@ -1197,7 +1197,7 @@ void  report_SubcatchHeader(SWMM_Project *sp, char *id)
             fprintf(sp->Frpt.file, "    meters %9s", FlowUnitWords[sp->FlowUnits]);
     }
     if ( hasQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
+        fprintf(sp->Frpt.file, "%10s", QualUnitsWords[sp->Pollut[i].units]);
 
     // --- print lower border of header
     WRITE(LINE_51);
@@ -1276,7 +1276,7 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
     fprintf(sp->Frpt.file,
     "\n                           Inflow  Flooding     Depth      Head");
     if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
+        fprintf(sp->Frpt.file, "%10s", sp->Pollut[i].ID);
     if ( sp->UnitSystem == US) strcpy(lengthUnits, "feet");
     else strcpy(lengthUnits, "meters");
     fprintf(sp->Frpt.file,
@@ -1284,7 +1284,7 @@ void  report_NodeHeader(SWMM_Project *sp, char *id)
         FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits],
         lengthUnits, lengthUnits);
     if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, "%10s", QualUnitsWords[Pollut[i].units]);
+        fprintf(sp->Frpt.file, "%10s", QualUnitsWords[sp->Pollut[i].units]);
 
     WRITE(LINE_64);
     if ( !sp->IgnoreQuality )
@@ -1355,7 +1355,7 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
     fprintf(sp->Frpt.file,
     "\n                             Flow  Velocity     Depth  Capacity/");
     if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, "%10s", Pollut[i].ID);
+        fprintf(sp->Frpt.file, "%10s", sp->Pollut[i].ID);
 
     if ( sp->UnitSystem == US )
         fprintf(sp->Frpt.file,
@@ -1366,7 +1366,7 @@ void  report_LinkHeader(SWMM_Project *sp, char *id)
         "\n  Date        Time     %10s     m/sec    meters   Setting ",
         FlowUnitWords[sp->FlowUnits]);
     if ( !sp->IgnoreQuality ) for (i = 0; i < sp->Nobjects[POLLUT]; i++)
-        fprintf(sp->Frpt.file, " %9s", QualUnitsWords[Pollut[i].units]);
+        fprintf(sp->Frpt.file, " %9s", QualUnitsWords[sp->Pollut[i].units]);
 
     WRITE(LINE_64);
     if ( !sp->IgnoreQuality )

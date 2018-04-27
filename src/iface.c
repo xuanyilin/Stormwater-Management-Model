@@ -339,8 +339,8 @@ void openFileForOutput(SWMM_Project *sp)
     fprintf(sp->Foutflows.file, "\nFLOW %s", FlowUnitWords[sp->FlowUnits]);
     for (i=0; i<sp->Nobjects[POLLUT]; i++)
     {
-        fprintf(sp->Foutflows.file, "\n%s %s", Pollut[i].ID,
-            QualUnitsWords[Pollut[i].units]);
+        fprintf(sp->Foutflows.file, "\n%s %s", sp->Pollut[i].ID,
+            QualUnitsWords[sp->Pollut[i].units]);
     }
 
     // --- count number of outlet nodes
@@ -363,7 +363,7 @@ void openFileForOutput(SWMM_Project *sp)
         "\nNode             Year Mon Day Hr  Min Sec FLOW      ");
     for (i=0; i<sp->Nobjects[POLLUT]; i++)
     {
-        fprintf(sp->Foutflows.file, " %-10s", Pollut[i].ID);
+        fprintf(sp->Foutflows.file, " %-10s", sp->Pollut[i].ID);
     }
 
     // --- if reporting starts immediately, save initial outlet values
@@ -496,7 +496,7 @@ int  getIfaceFilePolluts(SWMM_Project *sp)
             {
                 j = project_findObject(POLLUT, s1);
                 if ( j < 0 ) continue;
-                if ( !strcomp(s2, QualUnitsWords[Pollut[j].units]) )
+                if ( !strcomp(s2, QualUnitsWords[sp->Pollut[j].units]) )
                     return ERR_ROUTING_FILE_NOMATCH;
                 IfacePolluts[j] = i;
             }

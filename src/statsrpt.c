@@ -251,12 +251,12 @@ void writeSubcatchLoads(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "\n  %s", subcatchLine);
         for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
         fprintf(sp->Frpt.file, "\n                      ");
-        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", sp->Pollut[p].ID);
         fprintf(sp->Frpt.file, "\n  Subcatchment        ");
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             i = sp->UnitSystem;
-            if ( Pollut[p].units == COUNT ) i = 2;
+            if ( sp->Pollut[p].units == COUNT ) i = 2;
             strcpy(units, LoadUnitsWords[i]);
             fprintf(sp->Frpt.file, "%14s", units);
             totals[p] = 0.0;
@@ -272,7 +272,7 @@ void writeSubcatchLoads(SWMM_Project *sp)
             {
                 x = sp->Subcatch[j].totalLoad[p];
                 totals[p] += x;
-                if ( Pollut[p].units == COUNT ) x = LOG10(x);
+                if ( sp->Pollut[p].units == COUNT ) x = LOG10(x);
 				fprintf(sp->Frpt.file, "%14.3f", x);
             }
         }
@@ -284,7 +284,7 @@ void writeSubcatchLoads(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             x = totals[p];
-            if ( Pollut[p].units == COUNT ) x = LOG10(x);
+            if ( sp->Pollut[p].units == COUNT ) x = LOG10(x);
 			fprintf(sp->Frpt.file, "%14.3f", x);
         }
         free(totals);
@@ -602,7 +602,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         for (p=0; p<sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file,"         Total");
         fprintf(sp->Frpt.file,
  "\n                         Freq      Flow      Flow      Volume");
-        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", sp->Pollut[p].ID);
         fprintf(sp->Frpt.file,
  "\n  Outfall Node           Pcnt       %3s       %3s    %8s",
             FlowUnitWords[sp->FlowUnits], FlowUnitWords[sp->FlowUnits],
@@ -610,7 +610,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             i = sp->UnitSystem;
-            if ( Pollut[p].units == COUNT ) i = 2;
+            if ( sp->Pollut[p].units == COUNT ) i = 2;
             strcpy(units, LoadUnitsWords[i]);
             fprintf(sp->Frpt.file, "%14s", units);
         }
@@ -646,9 +646,9 @@ void writeOutfallLoads(SWMM_Project *sp)
             // --- print load of each pollutant for outfall
             for (p=0; p<sp->Nobjects[POLLUT]; p++)
             {
-                x = OutfallStats[k].totalLoad[p] * LperFT3 * Pollut[p].mcf;
+                x = OutfallStats[k].totalLoad[p] * LperFT3 * sp->Pollut[p].mcf;
                 totals[p] += x;
-                if ( Pollut[p].units == COUNT ) x = LOG10(x);
+                if ( sp->Pollut[p].units == COUNT ) x = LOG10(x);
 		fprintf(sp->Frpt.file, "%14.3f", x);
             }
         }
@@ -669,7 +669,7 @@ void writeOutfallLoads(SWMM_Project *sp)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             x = totals[p];
-            if ( Pollut[p].units == COUNT ) x = LOG10(x);
+            if ( sp->Pollut[p].units == COUNT ) x = LOG10(x);
             fprintf(sp->Frpt.file, "%14.3f", x);
         }
         WRITE("");
@@ -921,12 +921,12 @@ void writeLinkLoads(SWMM_Project *sp)
     fprintf(sp->Frpt.file, "\n  %s", linkLine);
     for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%s", pollutLine);
     fprintf(sp->Frpt.file, "\n                      ");
-    for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", Pollut[p].ID);
+    for (p = 0; p < sp->Nobjects[POLLUT]; p++) fprintf(sp->Frpt.file, "%14s", sp->Pollut[p].ID);
     fprintf(sp->Frpt.file, "\n  Link                ");
     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
     {
         i = sp->UnitSystem;
-        if ( Pollut[p].units == COUNT ) i = 2;
+        if ( sp->Pollut[p].units == COUNT ) i = 2;
         strcpy(units, LoadUnitsWords[i]);
         fprintf(sp->Frpt.file, "%14s", units);
     }
@@ -939,8 +939,8 @@ void writeLinkLoads(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "\n  %-20s", sp->Link[j].ID);
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            x = sp->Link[j].totalLoad[p] * LperFT3 * Pollut[p].mcf;
-            if ( Pollut[p].units == COUNT ) x = LOG10(x);
+            x = sp->Link[j].totalLoad[p] * LperFT3 * sp->Pollut[p].mcf;
+            if ( sp->Pollut[p].units == COUNT ) x = LOG10(x);
             if ( x < 10000. ) fprintf(sp->Frpt.file, "%14.3f", x);
             else fprintf(sp->Frpt.file, "%14.3e", x);
         }

@@ -437,9 +437,9 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
         // --- add default DWF pollutant inflows
         for ( p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
-            if ( Pollut[p].dwfConcen > 0.0 )
+            if ( sp->Pollut[p].dwfConcen > 0.0 )
             {
-                w = q * Pollut[p].dwfConcen;
+                w = q * sp->Pollut[p].dwfConcen;
                 sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, w);
             }
@@ -457,9 +457,9 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
                 massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, w);
 
                 // --- subtract off any default inflow
-                if ( Pollut[p].dwfConcen > 0.0 )
+                if ( sp->Pollut[p].dwfConcen > 0.0 )
                 {
-                    w = q * Pollut[p].dwfConcen;
+                    w = q * sp->Pollut[p].dwfConcen;
                     sp->Node[j].newQual[p] -= w;
                     massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, -w);
                 }
@@ -554,7 +554,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
                 {
                     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                     {
-                        w = q * Pollut[p].gwConcen;
+                        w = q * sp->Pollut[p].gwConcen;
                         sp->Node[j].newQual[p] += w;
                         massbal_addInflowQual(sp, GROUNDWATER_INFLOW, p, w);
                     }
@@ -620,7 +620,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
         {
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
-                w = q * Pollut[p].rdiiConcen;
+                w = q * sp->Pollut[p].rdiiConcen;
                 sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, RDII_INFLOW, p, w);
             }

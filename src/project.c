@@ -740,8 +740,8 @@ void initPointers(SWMM_Project *sp)
     sp->Pump     = NULL;
     sp->Orifice  = NULL;
     sp->Weir     = NULL;
-    Outlet   = NULL;
-    Pollut   = NULL;
+    sp->Outlet   = NULL;
+    sp->Pollut   = NULL;
     Landuse  = NULL;
     Pattern  = NULL;
     Curve    = NULL;
@@ -972,8 +972,8 @@ void createObjects(SWMM_Project *sp)
     sp->Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
     sp->Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
     sp->Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
-    Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
-    Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
+    sp->Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
+    sp->Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
     Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
     Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
     Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
@@ -1230,8 +1230,8 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Pump);
     FREE(sp->Orifice);
     FREE(sp->Weir);
-    FREE(Outlet);
-    FREE(Pollut);
+    FREE(sp->Outlet);
+    FREE(sp->Pollut);
     FREE(Landuse);
     FREE(Pattern);
     FREE(Curve);

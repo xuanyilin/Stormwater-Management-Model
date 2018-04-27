@@ -352,7 +352,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_LINK:
                 strcpy(id,sp->Link[index].ID); break;
             case SM_POLLUT:
-                strcpy(id,Pollut[index].ID); break;
+                strcpy(id,sp->Pollut[index].ID); break;
             case SM_LANDUSE:
                 strcpy(id,Landuse[index].ID); break;
             case SM_TIMEPATTERN:
@@ -1160,9 +1160,9 @@ int DLLEXPORT swmm_getOutfallStats_project(SWMM_Project *sp, int index,
         if (sp->Nobjects[POLLUT] > 0)
         {
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                outfallStats->totalLoad[p] *= (LperFT3 * Pollut[p].mcf);
+                outfallStats->totalLoad[p] *= (LperFT3 * sp->Pollut[p].mcf);
 
-            if (Pollut[p].units == COUNT)
+            if (sp->Pollut[p].units == COUNT)
             {
                 outfallStats->totalLoad[p] = LOG10(outfallStats->totalLoad[p]);
             }
@@ -1300,7 +1300,7 @@ int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 subcatchStats->surfaceBuildup[p] /= (a * UCF(sp, LANDAREA));
 
-            if (Pollut[p].units == COUNT)
+            if (sp->Pollut[p].units == COUNT)
             {
                 subcatchStats->surfaceBuildup[p] =
                         LOG10(subcatchStats->surfaceBuildup[p]);

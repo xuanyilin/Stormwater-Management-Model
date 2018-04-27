@@ -347,7 +347,7 @@ double massbal_getBuildup(SWMM_Project *sp, int p)
         {
             load += sp->Subcatch[j].landFactor[i].buildup[p];
         }
-        load += sp->Subcatch[j].pondedQual[p] * Pollut[p].mcf;
+        load += sp->Subcatch[j].pondedQual[p] * sp->Pollut[p].mcf;
     }
     return load;
 }
@@ -831,7 +831,7 @@ double massbal_getLoadingError(SWMM_Project *sp)
         maxError = MAX(maxError, LoadingTotals[j].pctError);
 
         // --- report total counts as log10
-        if ( Pollut[j].units == COUNT )
+        if ( sp->Pollut[j].units == COUNT )
         {
             LoadingTotals[j].initLoad   = LOG10(LoadingTotals[j].initLoad);
             LoadingTotals[j].buildup    = LOG10(LoadingTotals[j].buildup);
@@ -996,7 +996,7 @@ double massbal_getQualError(SWMM_Project *sp)
 
         // --- convert totals to reporting units (lbs, kg, or Log(Count))
         cf = LperFT3;
-        if ( Pollut[p].units == COUNT )
+        if ( sp->Pollut[p].units == COUNT )
         {
             QualTotals[p].dwInflow     = LOG10(cf * QualTotals[p].dwInflow);
             QualTotals[p].wwInflow     = LOG10(cf * QualTotals[p].wwInflow);
@@ -1013,7 +1013,7 @@ double massbal_getQualError(SWMM_Project *sp)
         else
         {
             cf = cf * UCF(sp, MASS);
-            if ( Pollut[p].units == UG ) cf /= 1000.0;
+            if ( sp->Pollut[p].units == UG ) cf /= 1000.0;
             QualTotals[p].dwInflow     *= cf;
             QualTotals[p].wwInflow     *= cf; 
             QualTotals[p].gwInflow     *= cf; 

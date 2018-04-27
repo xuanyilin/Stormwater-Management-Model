@@ -242,7 +242,7 @@ double  landuse_getBuildup(SWMM_Project *sp, int landuse, int pollut,
 double  landuse_getWashoffLoad(SWMM_Project *sp, int landuse, int p, double area,                //(5.1.008)
         TLandFactor landFactor[], double runoff, double vOutflow);             //(5.1.008)
 double  landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p);
-double  landuse_getCoPollutLoad(int p, double washoff[]);
+double  landuse_getCoPollutLoad(SWMM_Project *sp, int p, double washoff[]);
 
 //-----------------------------------------------------------------------------
 //   Flow/Quality Routing Methods

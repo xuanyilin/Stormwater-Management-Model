@@ -364,11 +364,11 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
       case OUTLET:
         sp->Link[j].offset1      = x[0] / UCF(sp, LENGTH);
         sp->Link[j].offset2      = sp->Link[j].offset1;
-        Outlet[k].qCoeff     = x[1];
-        Outlet[k].qExpon     = x[2];
-        Outlet[k].qCurve     = (int)x[3];
+        sp->Outlet[k].qCoeff     = x[1];
+        sp->Outlet[k].qExpon     = x[2];
+        sp->Outlet[k].qCurve     = (int)x[3];
         sp->Link[j].hasFlapGate  = (x[4] > 0.0) ? 1 : 0;
-        Outlet[k].curveType  = (int)x[5];
+        sp->Outlet[k].curveType  = (int)x[5];
 
         xsect_setParams(&sp->Link[j].xsect, DUMMY, NULL, 0.0);
         break;
@@ -2634,7 +2634,7 @@ double outlet_getInflow(SWMM_Project *sp, int j)
     //     outlet is the depth above the crest elev. while for a NODE_HEAD
     //     curve it is the difference between upstream & downstream heads
     hcrest = sp->Node[n1].invertElev + sp->Link[j].offset1;
-    if ( Outlet[k].curveType == NODE_HEAD && sp->RouteModel == DW )
+    if ( sp->Outlet[k].curveType == NODE_HEAD && sp->RouteModel == DW )
         head = h1 - MAX(h2, hcrest);
     else head = h1 - hcrest;
 
@@ -2671,9 +2671,9 @@ double outlet_getFlow(SWMM_Project *sp, int k, double head)
     h = head * UCF(sp, LENGTH);
 
     // --- look-up flow in rating curve table if provided
-    m = Outlet[k].qCurve;
+    m = sp->Outlet[k].qCurve;
     if ( m >= 0 ) return table_lookup(&Curve[m], h) / UCF(sp, FLOW);
 
     // --- otherwise use function to find flow
-    else return Outlet[k].qCoeff * pow(h, Outlet[k].qExpon) / UCF(sp, FLOW);
+    else return sp->Outlet[k].qCoeff * pow(h, sp->Outlet[k].qExpon) / UCF(sp, FLOW);
 }

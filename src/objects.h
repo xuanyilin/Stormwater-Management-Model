@@ -1213,8 +1213,8 @@ struct SWMM_Project {
    TPump*        Pump;                     // Array of pump links
    TOrifice*     Orifice;                  // Array of orifice links
    TWeir*        Weir;                     // Array of weir links
-//    EXTERN TOutlet*   Outlet;                   // Array of outlet device links
-//    EXTERN TPollut*   Pollut;                   // Array of pollutants
+   TOutlet*      Outlet;                   // Array of outlet device links
+   TPollut*      Pollut;                   // Array of pollutants
 //    EXTERN TLanduse*  Landuse;                  // Array of landuses
 //    EXTERN TPattern*  Pattern;                  // Array of time patterns
 //    EXTERN TTable*    Curve;                    // Array of curve tables

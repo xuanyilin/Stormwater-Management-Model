@@ -170,20 +170,20 @@ int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     }
 
     // --- save values for pollutant object   
-    Pollut[j].ID = id;
-    Pollut[j].units = k;
-    if      ( Pollut[j].units == MG ) Pollut[j].mcf = UCF(sp, MASS);
-    else if ( Pollut[j].units == UG ) Pollut[j].mcf = UCF(sp, MASS) / 1000.0;
-    else                              Pollut[j].mcf = 1.0;
-    Pollut[j].pptConcen  = x[0];
-    Pollut[j].gwConcen   = x[1];
-    Pollut[j].rdiiConcen = x[2];
-    Pollut[j].kDecay     = x[3]/SECperDAY;
-    Pollut[j].snowOnly   = snowFlag;
-    Pollut[j].coPollut   = coPollut;
-    Pollut[j].coFraction = coFrac;
-    Pollut[j].dwfConcen  = cDWF;
-    Pollut[j].initConcen = cInit;
+    sp->Pollut[j].ID = id;
+    sp->Pollut[j].units = k;
+    if      ( sp->Pollut[j].units == MG ) sp->Pollut[j].mcf = UCF(sp, MASS);
+    else if ( sp->Pollut[j].units == UG ) sp->Pollut[j].mcf = UCF(sp, MASS) / 1000.0;
+    else                              sp->Pollut[j].mcf = 1.0;
+    sp->Pollut[j].pptConcen  = x[0];
+    sp->Pollut[j].gwConcen   = x[1];
+    sp->Pollut[j].rdiiConcen = x[2];
+    sp->Pollut[j].kDecay     = x[3]/SECperDAY;
+    sp->Pollut[j].snowOnly   = snowFlag;
+    sp->Pollut[j].coPollut   = coPollut;
+    sp->Pollut[j].coFraction = coFrac;
+    sp->Pollut[j].dwfConcen  = cDWF;
+    sp->Pollut[j].initConcen = cInit;
     return 0;
 }
 
@@ -579,8 +579,8 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     washoffQual = landuse_getWashoffQual(sp, i, p, buildup, runoff, landuseArea);
 
     // --- compute washoff load exported (lbs or kg) from landuse
-    //     (Pollut[].mcf converts from mg (or ug) mass units to lbs (or kg)
-    washoffLoad = washoffQual * vOutflow * landuseArea / area * Pollut[p].mcf;
+    //     (sp->Pollut[].mcf converts from mg (or ug) mass units to lbs (or kg)
+    washoffLoad = washoffQual * vOutflow * landuseArea / area * sp->Pollut[p].mcf;
 
     // --- if buildup modelled, reduce it by amount of washoff
     if ( Landuse[i].buildupFunc[p].funcType != NO_BUILDUP ||
@@ -608,7 +608,7 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     }
 
     // --- return washoff load converted back to mass (mg or ug)
-    return washoffLoad / Pollut[p].mcf;
+    return washoffLoad / sp->Pollut[p].mcf;
 }
 
 //=============================================================================
@@ -648,7 +648,7 @@ double landuse_getWashoffQual(SWMM_Project *sp, int i, int p, double buildup,
         // --- evaluate washoff eqn. with runoff in in/hr (or mm/hr)
         //     and buildup converted from lbs (or kg) to concen. mass units
         cWashoff = coeff * pow(runoff * UCF(sp, RAINFALL), expon) *
-                  buildup / Pollut[p].mcf;
+                  buildup / sp->Pollut[p].mcf;
         cWashoff /= runoff * area;
     }
 
@@ -668,7 +668,7 @@ double landuse_getWashoffQual(SWMM_Project *sp, int i, int p, double buildup,
 
 //=============================================================================
 
-double landuse_getCoPollutLoad(int p, double washoff[])
+double landuse_getCoPollutLoad(SWMM_Project *sp, int p, double washoff[])
 //
 //  Input:   p = pollutant index
 //           washoff = pollut. washoff rate (mass/sec)
@@ -680,15 +680,15 @@ double landuse_getCoPollutLoad(int p, double washoff[])
     double w;
 
     // --- check if pollutant p has a co-pollutant k
-    k = Pollut[p].coPollut;
+    k = sp->Pollut[p].coPollut;
     if ( k >= 0 )
     {
         // --- compute addition to washoff from co-pollutant
-        w = Pollut[p].coFraction * washoff[k];
+        w = sp->Pollut[p].coFraction * washoff[k];
 
         // --- add washoff to buildup mass balance totals
         //     so that things will balance
-        massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * Pollut[p].mcf);
+        massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * sp->Pollut[p].mcf);
         return w;
     }
     return 0.0;
