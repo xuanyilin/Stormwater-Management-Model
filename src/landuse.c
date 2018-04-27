@@ -39,8 +39,10 @@
 //-----------------------------------------------------------------------------
 // Function declarations
 //-----------------------------------------------------------------------------
-static double landuse_getBuildupDays(int landuse, int pollut, double buildup);
-static double landuse_getBuildupMass(int landuse, int pollut, double days);
+static double landuse_getBuildupDays(SWMM_Project *sp, int landuse, int pollut,
+        double buildup);
+static double landuse_getBuildupMass(SWMM_Project *sp, int landuse, int pollut,
+        double days);
 static double landuse_getRunoffLoad(int landuse, int pollut, double area,
               TLandFactor landFactor[], double runoff, double tStep);
 static double landuse_getWashoffQual(SWMM_Project *sp, int landuse, int pollut,
@@ -50,7 +52,7 @@ static double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p,
 
 //=============================================================================
 
-int  landuse_readParams(int j, char* tok[], int ntoks)
+int  landuse_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = land use index
 //           tok[] = array of string tokens
@@ -66,25 +68,25 @@ int  landuse_readParams(int j, char* tok[], int ntoks)
     if ( ntoks < 1 ) return error_setInpError(ERR_ITEMS, "");
     id = project_findID(LANDUSE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    Landuse[j].ID = id;
+    sp->Landuse[j].ID = id;
     if ( ntoks > 1 )
     {
         if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
-        if ( ! getDouble(tok[1], &Landuse[j].sweepInterval) )
+        if ( ! getDouble(tok[1], &sp->Landuse[j].sweepInterval) )
             return error_setInpError(ERR_NUMBER, tok[1]);
-        if ( ! getDouble(tok[2], &Landuse[j].sweepRemoval) )
+        if ( ! getDouble(tok[2], &sp->Landuse[j].sweepRemoval) )
             return error_setInpError(ERR_NUMBER, tok[2]);
-        if ( ! getDouble(tok[3], &Landuse[j].sweepDays0) )
+        if ( ! getDouble(tok[3], &sp->Landuse[j].sweepDays0) )
             return error_setInpError(ERR_NUMBER, tok[3]);
     }
     else
     {
-        Landuse[j].sweepInterval = 0.0;
-        Landuse[j].sweepRemoval = 0.0;
-        Landuse[j].sweepDays0 = 0.0;
+        sp->Landuse[j].sweepInterval = 0.0;
+        sp->Landuse[j].sweepRemoval = 0.0;
+        sp->Landuse[j].sweepDays0 = 0.0;
     }
-    if ( Landuse[j].sweepRemoval < 0.0
-        || Landuse[j].sweepRemoval > 1.0 )
+    if ( sp->Landuse[j].sweepRemoval < 0.0
+        || sp->Landuse[j].sweepRemoval > 1.0 )
         return error_setInpError(ERR_NUMBER, tok[2]);
     return 0;
 }
@@ -189,7 +191,7 @@ int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 
 //=============================================================================
 
-int  landuse_readBuildupParams(char* tok[], int ntoks)
+int  landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -210,7 +212,7 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
     if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
     k = findmatch(tok[2], BuildupTypeWords);
     if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[2]);
-    Landuse[j].buildupFunc[p].funcType = k;
+    sp->Landuse[j].buildupFunc[p].funcType = k;
     if ( k > NO_BUILDUP )
     {
         if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
@@ -223,11 +225,11 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
         }
         n = findmatch(tok[6], NormalizerWords);
         if (n < 0 ) return error_setInpError(ERR_KEYWORD, tok[6]);
-        Landuse[j].buildupFunc[p].normalizer = n;
+        sp->Landuse[j].buildupFunc[p].normalizer = n;
     }
 
     // Find time until max. buildup (or time series for external buildup)
-    switch (Landuse[j].buildupFunc[p].funcType)
+    switch (sp->Landuse[j].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         // --- check for too small or large an exponent
@@ -271,10 +273,10 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
     }
 
     // Assign parameters to buildup object
-    Landuse[j].buildupFunc[p].coeff[0]   = c[0];
-    Landuse[j].buildupFunc[p].coeff[1]   = c[1];
-    Landuse[j].buildupFunc[p].coeff[2]   = c[2];
-    Landuse[j].buildupFunc[p].maxDays = tmax;
+    sp->Landuse[j].buildupFunc[p].coeff[0]   = c[0];
+    sp->Landuse[j].buildupFunc[p].coeff[1]   = c[1];
+    sp->Landuse[j].buildupFunc[p].coeff[2]   = c[2];
+    sp->Landuse[j].buildupFunc[p].maxDays = tmax;
     return 0;
 }
 
@@ -344,11 +346,11 @@ int  landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( func == EMC_WASHOFF    ) x[0] *= LperFT3;
 
     // --- assign washoff parameters to washoff object
-    Landuse[j].washoffFunc[p].funcType = func;
-    Landuse[j].washoffFunc[p].coeff = x[0];
-    Landuse[j].washoffFunc[p].expon = x[1];
-    Landuse[j].washoffFunc[p].sweepEffic = x[2] / 100.0;
-    Landuse[j].washoffFunc[p].bmpEffic = x[3] / 100.0;
+    sp->Landuse[j].washoffFunc[p].funcType = func;
+    sp->Landuse[j].washoffFunc[p].coeff = x[0];
+    sp->Landuse[j].washoffFunc[p].expon = x[1];
+    sp->Landuse[j].washoffFunc[p].sweepEffic = x[2] / 100.0;
+    sp->Landuse[j].washoffFunc[p].bmpEffic = x[3] / 100.0;
     return 0;
 }
 
@@ -384,7 +386,7 @@ void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- initialize date when last swept
-        landFactor[i].lastSwept = sp->StartDateTime - Landuse[i].sweepDays0;
+        landFactor[i].lastSwept = sp->StartDateTime - sp->Landuse[i].sweepDays0;
 
         // --- determine area and curb length covered by land use
         f = landFactor[i].fraction;
@@ -428,36 +430,36 @@ double  landuse_getBuildup(SWMM_Project *sp, int i, int p, double area,
     double  perUnit;                   // normalizer value (area or curb length)
 
     // --- return current buildup if no buildup function or time increment
-    if ( Landuse[i].buildupFunc[p].funcType == NO_BUILDUP || tStep == 0.0 )
+    if ( sp->Landuse[i].buildupFunc[p].funcType == NO_BUILDUP || tStep == 0.0 )
     {
         return buildup;
     }
 
     // --- see what buildup is normalized to
-    n = Landuse[i].buildupFunc[p].normalizer;
+    n = sp->Landuse[i].buildupFunc[p].normalizer;
     perUnit = 1.0;
     if ( n == PER_AREA ) perUnit = area;
     if ( n == PER_CURB ) perUnit = curb;
     if ( perUnit == 0.0 ) return 0.0;
 
     // --- buildup determined by loading time series
-    if ( Landuse[i].buildupFunc[p].funcType == EXTERNAL_BUILDUP )
+    if ( sp->Landuse[i].buildupFunc[p].funcType == EXTERNAL_BUILDUP )
     {
         return landuse_getExternalBuildup(sp, i, p, buildup/perUnit, tStep) *
                perUnit;
     }
 
     // --- determine equivalent days of current buildup
-    days = landuse_getBuildupDays(i, p, buildup/perUnit);
+    days = landuse_getBuildupDays(sp, i, p, buildup/perUnit);
 
     // --- compute buildup after adding on time increment
     days += tStep / SECperDAY;
-    return landuse_getBuildupMass(i, p, days) * perUnit;
+    return landuse_getBuildupMass(sp, i, p, days) * perUnit;
 }
 
 //=============================================================================
 
-double landuse_getBuildupDays(int i, int p, double buildup)
+double landuse_getBuildupDays(SWMM_Project *sp, int i, int p, double buildup)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -466,13 +468,13 @@ double landuse_getBuildupDays(int i, int p, double buildup)
 //  Purpose: finds the number of days corresponding to a pollutant buildup.
 //
 {
-    double c0 = Landuse[i].buildupFunc[p].coeff[0];
-    double c1 = Landuse[i].buildupFunc[p].coeff[1];
-    double c2 = Landuse[i].buildupFunc[p].coeff[2];
+    double c0 = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double c1 = sp->Landuse[i].buildupFunc[p].coeff[1];
+    double c2 = sp->Landuse[i].buildupFunc[p].coeff[2];
 
     if ( buildup == 0.0 ) return 0.0;
-    if ( buildup >= c0 ) return Landuse[i].buildupFunc[p].maxDays;   
-    switch (Landuse[i].buildupFunc[p].funcType)
+    if ( buildup >= c0 ) return sp->Landuse[i].buildupFunc[p].maxDays;   
+    switch (sp->Landuse[i].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         if ( c1*c2 == 0.0 ) return 0.0;
@@ -493,7 +495,7 @@ double landuse_getBuildupDays(int i, int p, double buildup)
 
 //=============================================================================
 
-double landuse_getBuildupMass(int i, int p, double days)
+double landuse_getBuildupMass(SWMM_Project *sp, int i, int p, double days)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -503,13 +505,13 @@ double landuse_getBuildupMass(int i, int p, double days)
 //
 {
     double b;
-    double c0 = Landuse[i].buildupFunc[p].coeff[0];
-    double c1 = Landuse[i].buildupFunc[p].coeff[1];
-    double c2 = Landuse[i].buildupFunc[p].coeff[2];
+    double c0 = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double c1 = sp->Landuse[i].buildupFunc[p].coeff[1];
+    double c2 = sp->Landuse[i].buildupFunc[p].coeff[2];
 
     if ( days == 0.0 ) return 0.0;
-    if ( days >= Landuse[i].buildupFunc[p].maxDays ) return c0;
-    switch (Landuse[i].buildupFunc[p].funcType)
+    if ( days >= sp->Landuse[i].buildupFunc[p].maxDays ) return c0;
+    switch (sp->Landuse[i].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         b = c1 * pow(days, c2);
@@ -545,7 +547,7 @@ double landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p)
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         r += sp->Subcatch[j].landFactor[i].fraction *
-             Landuse[i].washoffFunc[p].bmpEffic;
+             sp->Landuse[i].washoffFunc[p].bmpEffic;
     }
     return r;
 }
@@ -583,7 +585,7 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     washoffLoad = washoffQual * vOutflow * landuseArea / area * sp->Pollut[p].mcf;
 
     // --- if buildup modelled, reduce it by amount of washoff
-    if ( Landuse[i].buildupFunc[p].funcType != NO_BUILDUP ||
+    if ( sp->Landuse[i].buildupFunc[p].funcType != NO_BUILDUP ||
          buildup > washoffLoad )
     {
         washoffLoad = MIN(washoffLoad, buildup);
@@ -600,7 +602,7 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     }
 	
     // --- apply any BMP removal to washoff
-    bmpRemoval = Landuse[i].washoffFunc[p].bmpEffic * washoffLoad;
+    bmpRemoval = sp->Landuse[i].washoffFunc[p].bmpEffic * washoffLoad;
     if ( bmpRemoval > 0.0 )
     {
         massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p, bmpRemoval);
@@ -631,15 +633,15 @@ double landuse_getWashoffQual(SWMM_Project *sp, int i, int p, double buildup,
 //
 {
     double cWashoff = 0.0;
-    double coeff = Landuse[i].washoffFunc[p].coeff;
-    double expon = Landuse[i].washoffFunc[p].expon;
-    int    func  = Landuse[i].washoffFunc[p].funcType;
+    double coeff = sp->Landuse[i].washoffFunc[p].coeff;
+    double expon = sp->Landuse[i].washoffFunc[p].expon;
+    int    func  = sp->Landuse[i].washoffFunc[p].funcType;
 
     // --- if no washoff function or no runoff, return 0
     if ( func == NO_WASHOFF || runoff == 0.0 ) return 0.0;
     
     // --- if buildup function exists but no current buildup, return 0
-    if ( Landuse[i].buildupFunc[p].funcType != NO_BUILDUP && buildup == 0.0 )
+    if ( sp->Landuse[i].buildupFunc[p].funcType != NO_BUILDUP && buildup == 0.0 )
         return 0.0;
 
     // --- Exponential Washoff function
@@ -708,9 +710,9 @@ double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup
 //           given time step.
 //
 {
-    double maxBuildup = Landuse[i].buildupFunc[p].coeff[0];
-    double sf = Landuse[i].buildupFunc[p].coeff[1];              // scaling factor
-    int    ts = (int)floor(Landuse[i].buildupFunc[p].coeff[2]);  // time series index
+    double maxBuildup = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double sf = sp->Landuse[i].buildupFunc[p].coeff[1];              // scaling factor
+    int    ts = (int)floor(sp->Landuse[i].buildupFunc[p].coeff[2]);  // time series index
     double rate = 0.0;
 
     // --- no buildup increment at start of simulation

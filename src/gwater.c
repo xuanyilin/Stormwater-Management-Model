@@ -354,7 +354,7 @@ void  gwater_validateAquifer(SWMM_Project *sp, int j)
         report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, sp->Aquifer[j].ID);
 
     p = sp->Aquifer[j].upperEvapPat;
-    if ( p >= 0 && Pattern[p].type != MONTHLY_PATTERN )
+    if ( p >= 0 && sp->Pattern[p].type != MONTHLY_PATTERN )
     {
         report_writeErrorMsg(sp, ERR_AQUIFER_PARAMS, sp->Aquifer[j].ID);
     }
@@ -746,7 +746,7 @@ void getEvapRates(SWMM_Project *sp, double theta, double upperDepth)
     if ( p >= 0 )
     {
         month = datetime_monthOfYear(getDateTime(sp, sp->NewRunoffTime));
-        f = Pattern[p].factor[month-1];
+        f = sp->Pattern[p].factor[month-1];
     }
     upperFrac *= f;
 

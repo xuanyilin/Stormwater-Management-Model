@@ -742,8 +742,8 @@ void initPointers(SWMM_Project *sp)
     sp->Weir     = NULL;
     sp->Outlet   = NULL;
     sp->Pollut   = NULL;
-    Landuse  = NULL;
-    Pattern  = NULL;
+    sp->Landuse  = NULL;
+    sp->Pattern  = NULL;
     Curve    = NULL;
     Tseries  = NULL;
     Transect = NULL;
@@ -974,8 +974,8 @@ void createObjects(SWMM_Project *sp)
     sp->Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
     sp->Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
     sp->Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
-    Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
-    Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
+    sp->Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
+    sp->Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
     Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
     Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
     sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
@@ -1033,9 +1033,9 @@ void createObjects(SWMM_Project *sp)
     // --- allocate memory for land use buildup/washoff functions
     for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
     {
-        Landuse[j].buildupFunc =
+        sp->Landuse[j].buildupFunc =
             (TBuildup *) calloc(sp->Nobjects[POLLUT], sizeof(TBuildup));
-        Landuse[j].washoffFunc =
+        sp->Landuse[j].washoffFunc =
             (TWashoff *) calloc(sp->Nobjects[POLLUT], sizeof(TWashoff));
     }
 
@@ -1056,9 +1056,9 @@ void createObjects(SWMM_Project *sp)
     {
         for (k = 0; k < sp->Nobjects[POLLUT]; k++)
         {
-            Landuse[j].buildupFunc[k].funcType = NO_BUILDUP;
-            Landuse[j].buildupFunc[k].normalizer = PER_AREA;
-            Landuse[j].washoffFunc[k].funcType = NO_WASHOFF;
+            sp->Landuse[j].buildupFunc[k].funcType = NO_BUILDUP;
+            sp->Landuse[j].buildupFunc[k].normalizer = PER_AREA;
+            sp->Landuse[j].washoffFunc[k].funcType = NO_WASHOFF;
         }
     }
 
@@ -1146,10 +1146,10 @@ void deleteObjects(SWMM_Project *sp)
     }
 
     // --- free memory for buildup/washoff functions
-    if ( Landuse ) for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
+    if ( sp->Landuse ) for (j = 0; j < sp->Nobjects[LANDUSE]; j++)
     {
-        FREE(Landuse[j].buildupFunc);
-        FREE(Landuse[j].washoffFunc)
+        FREE(sp->Landuse[j].buildupFunc);
+        FREE(sp->Landuse[j].washoffFunc)
     }
 
     // --- free memory for water quality state variables
@@ -1232,8 +1232,8 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Weir);
     FREE(sp->Outlet);
     FREE(sp->Pollut);
-    FREE(Landuse);
-    FREE(Pattern);
+    FREE(sp->Landuse);
+    FREE(sp->Pattern);
     FREE(Curve);
     FREE(Tseries);
     FREE(sp->Aquifer);

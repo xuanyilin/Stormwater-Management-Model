@@ -151,11 +151,11 @@ void surfqual_sweepBuildup(SWMM_Project *sp, int j, DateTime aDate)
         if ( sp->Subcatch[j].landFactor[i].fraction == 0.0 ) continue;
 
         // --- see if land use is subject to sweeping
-        if ( Landuse[i].sweepInterval == 0.0 ) continue;
+        if ( sp->Landuse[i].sweepInterval == 0.0 ) continue;
 
         // --- see if sweep interval has been reached
         if ( aDate - sp->Subcatch[j].landFactor[i].lastSwept >=
-            Landuse[i].sweepInterval )
+            sp->Landuse[i].sweepInterval )
         {
             // --- update time when last swept
             sp->Subcatch[j].landFactor[i].lastSwept = aDate;
@@ -166,8 +166,8 @@ void surfqual_sweepBuildup(SWMM_Project *sp, int j, DateTime aDate)
                 // --- reduce buildup by the fraction available
                 //     times the sweeping effic.
                 oldBuildup = sp->Subcatch[j].landFactor[i].buildup[p];
-                newBuildup = oldBuildup * (1.0 - Landuse[i].sweepRemoval *
-                             Landuse[i].washoffFunc[p].sweepEffic);
+                newBuildup = oldBuildup * (1.0 - sp->Landuse[i].sweepRemoval *
+                             sp->Landuse[i].washoffFunc[p].sweepEffic);
                 newBuildup = MIN(oldBuildup, newBuildup);
                 newBuildup = MAX(0.0, newBuildup);
                 sp->Subcatch[j].landFactor[i].buildup[p] = newBuildup;

@@ -229,9 +229,9 @@ void    rdii_getRdiiFlow(int index, int* node, double* q);
 //-----------------------------------------------------------------------------
 //   Landuse Methods
 //-----------------------------------------------------------------------------
-int     landuse_readParams(int landuse, char* tok[], int ntoks);
+int     landuse_readParams(SWMM_Project *sp, int landuse, char* tok[], int ntoks);
 int     landuse_readPollutParams(SWMM_Project *sp, int pollut, char* tok[], int ntoks);
-int     landuse_readBuildupParams(char* tok[], int ntoks);
+int     landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks);
 int     landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks);
 
 void    landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,

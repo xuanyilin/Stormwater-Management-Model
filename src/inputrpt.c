@@ -83,9 +83,9 @@ void inputrpt_writeInput(SWMM_Project *sp)
     "\n  ---------------------------------------------------");
         for (i=0; i<sp->Nobjects[LANDUSE]; i++)
         {
-            fprintf(sp->Frpt.file, "\n  %-20s %10.2f%10.2f%10.2f", Landuse[i].ID,
-                Landuse[i].sweepInterval, Landuse[i].sweepRemoval,
-                Landuse[i].sweepDays0);
+            fprintf(sp->Frpt.file, "\n  %-20s %10.2f%10.2f%10.2f", sp->Landuse[i].ID,
+                sp->Landuse[i].sweepInterval, sp->Landuse[i].sweepRemoval,
+                sp->Landuse[i].sweepDays0);
         }
     }
 

@@ -386,20 +386,20 @@ void   inflow_initDwfInflow(TDwfInflow* inflow)
 //
 {
     int i, p;
-    int tmpPattern[4];  // index of each type of DWF pattern
+    int tmpsp->Pattern[4];  // index of each type of DWF pattern
 
     // --- assume no patterns were supplied
-    for (i=0; i<4; i++) tmpPattern[i] = -1;
+    for (i=0; i<4; i++) tmpsp->Pattern[i] = -1;
 
     // --- assign supplied patterns to proper position (by type) in tmpPattern
     for (i=0; i<4; i++)
     {
         p = inflow->patterns[i];
-        if ( p >= 0 ) tmpPattern[Pattern[p].type] = p;
+        if ( p >= 0 ) tmpsp->Pattern[sp->Pattern[p].type] = p;
     }
 
     // --- re-fill inflow pattern array by pattern type
-    for (i=0; i<4; i++) inflow->patterns[i] = tmpPattern[i];
+    for (i=0; i<4; i++) inflow->patterns[i] = tmpsp->Pattern[i];
 }
 
 //=============================================================================
@@ -445,10 +445,10 @@ void inflow_initDwfPattern(int j)
 //
 {
     int i;
-    for (i=0; i<24; i++) Pattern[j].factor[i] = 1.0;
-    Pattern[j].count = 0;
-    Pattern[j].type  = -1;
-    Pattern[j].ID    = NULL;
+    for (i=0; i<24; i++) sp->Pattern[j].factor[i] = 1.0;
+    sp->Pattern[j].count = 0;
+    sp->Pattern[j].type  = -1;
+    sp->Pattern[j].ID    = NULL;
 }
 
 //=============================================================================
@@ -475,23 +475,23 @@ int inflow_readDwfPattern(char* tok[], int ntoks)
 
     // --- check if this is first line of pattern
     //     (ID pointer will not have been assigned yet)
-    if ( Pattern[j].ID == NULL )
+    if ( sp->Pattern[j].ID == NULL )
     {
         // --- assign ID pointer & pattern type
-        Pattern[j].ID = project_findID(TIMEPATTERN, tok[0]);
+        sp->Pattern[j].ID = project_findID(TIMEPATTERN, tok[0]);
         k = findmatch(tok[1], PatternTypeWords);
         if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
-        Pattern[j].type = k;
+        sp->Pattern[j].type = k;
         n = 2;
     }
 
     // --- start reading pattern factors from rest of line
-    while ( ntoks > n && Pattern[j].count < 24 )
+    while ( ntoks > n && sp->Pattern[j].count < 24 )
     {
-        i = Pattern[j].count;
-        if ( !getDouble(tok[n], &Pattern[j].factor[i]) )
+        i = sp->Pattern[j].count;
+        if ( !getDouble(tok[n], &sp->Pattern[j].factor[i]) )
             return error_setInpError(ERR_NUMBER, tok[n]);
-        Pattern[j].count++;
+        sp->Pattern[j].count++;
         n++;
     }
     return 0;
@@ -508,21 +508,21 @@ double inflow_getPatternFactor(int p, int month, int day, int hour)
 //  Output:  returns value of a time pattern multiplier
 //  Purpose: computes time pattern multiplier for a specific point in time.
 {
-    switch ( Pattern[p].type )
+    switch ( sp->Pattern[p].type )
     {
       case MONTHLY_PATTERN:
-        if ( month >= 0 && month < 12 ) return Pattern[p].factor[month];
+        if ( month >= 0 && month < 12 ) return sp->Pattern[p].factor[month];
         break;
       case DAILY_PATTERN:
-        if ( day >= 0 && day < 7 ) return Pattern[p].factor[day];
+        if ( day >= 0 && day < 7 ) return sp->Pattern[p].factor[day];
         break;
       case HOURLY_PATTERN:
-        if ( hour >= 0 && hour < 24 ) return Pattern[p].factor[hour];
+        if ( hour >= 0 && hour < 24 ) return sp->Pattern[p].factor[hour];
         break;
       case WEEKEND_PATTERN:
         if ( day == 0 || day == 6 )
         {
-            if ( hour >= 0 && hour < 24 ) return Pattern[p].factor[hour];
+            if ( hour >= 0 && hour < 24 ) return sp->Pattern[p].factor[hour];
         }
         break;
     }

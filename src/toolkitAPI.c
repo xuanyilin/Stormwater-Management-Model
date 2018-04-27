@@ -354,9 +354,9 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
             case SM_POLLUT:
                 strcpy(id,sp->Pollut[index].ID); break;
             case SM_LANDUSE:
-                strcpy(id,Landuse[index].ID); break;
+                strcpy(id,sp->Landuse[index].ID); break;
             case SM_TIMEPATTERN:
-                strcpy(id,Pattern[index].ID); break;
+                strcpy(id,sp->Pattern[index].ID); break;
             case SM_CURVE:
                 strcpy(id,Curve[index].ID); break;
             case SM_TSERIES:

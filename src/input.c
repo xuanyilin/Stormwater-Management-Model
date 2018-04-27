@@ -539,12 +539,12 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
 
       case s_LANDUSE:
         j = Mobjects[LANDUSE];
-        err = landuse_readParams(j, Tok, Ntokens);
+        err = landuse_readParams(sp, j, Tok, Ntokens);
         Mobjects[LANDUSE]++;
         return err;
 
       case s_BUILDUP:
-        return landuse_readBuildupParams(Tok, Ntokens);
+        return landuse_readBuildupParams(sp, Tok, Ntokens);
 
       case s_WASHOFF:
         return landuse_readWashoffParams(sp, Tok, Ntokens);

@@ -870,9 +870,9 @@ void setEvap(SWMM_Project *sp, DateTime theDate)
     // --- set soil recovery factor
     sp->Evap.recoveryFactor = 1.0;
     k = sp->Evap.recoveryPattern;
-    if ( k >= 0 && Pattern[k].type == MONTHLY_PATTERN )
+    if ( k >= 0 && sp->Pattern[k].type == MONTHLY_PATTERN )
     {
-        sp->Evap.recoveryFactor = Pattern[k].factor[mon-1];                        //(5.1.007)
+        sp->Evap.recoveryFactor = sp->Pattern[k].factor[mon-1];                        //(5.1.007)
     }
 }
 
