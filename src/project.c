@@ -737,7 +737,7 @@ void initPointers(SWMM_Project *sp)
     sp->Storage  = NULL;
     sp->Link     = NULL;
     sp->Conduit  = NULL;
-    Pump     = NULL;
+    sp->Pump     = NULL;
     Orifice  = NULL;
     Weir     = NULL;
     Outlet   = NULL;
@@ -969,7 +969,7 @@ void createObjects(SWMM_Project *sp)
     sp->Storage  = (TStorage *)  calloc(sp->Nnodes[STORAGE],    sizeof(TStorage));
     sp->Link     = (TLink *)     calloc(sp->Nobjects[LINK],     sizeof(TLink));
     sp->Conduit  = (TConduit *)  calloc(sp->Nlinks[CONDUIT],    sizeof(TConduit));
-    Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
+    sp->Pump     = (TPump *)     calloc(sp->Nlinks[PUMP],       sizeof(TPump));
     Orifice  = (TOrifice *)  calloc(sp->Nlinks[ORIFICE],    sizeof(TOrifice));
     Weir     = (TWeir *)     calloc(sp->Nlinks[WEIR],       sizeof(TWeir));
     Outlet   = (TOutlet *)   calloc(sp->Nlinks[OUTLET],     sizeof(TOutlet));
@@ -1104,7 +1104,7 @@ void createObjects(SWMM_Project *sp)
         sp->Link[j].cLossAvg     = 0.0;
         sp->Link[j].hasFlapGate  = FALSE;
     }
-    for (j = 0; j < sp->Nlinks[PUMP]; j++) Pump[j].pumpCurve  = -1;
+    for (j = 0; j < sp->Nlinks[PUMP]; j++) sp->Pump[j].pumpCurve  = -1;
 
     // --- initialize reporting flags
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++) sp->Subcatch[j].rptFlag = FALSE;
@@ -1227,7 +1227,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Storage);
     FREE(sp->Link);
     FREE(sp->Conduit);
-    FREE(Pump);
+    FREE(sp->Pump);
     FREE(Orifice);
     FREE(Weir);
     FREE(Outlet);

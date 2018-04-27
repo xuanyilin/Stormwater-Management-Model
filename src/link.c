@@ -328,13 +328,13 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
         break;
 
       case PUMP:
-        Pump[k].pumpCurve    = (int)x[0];
+        sp->Pump[k].pumpCurve    = (int)x[0];
         sp->Link[j].hasFlapGate  = FALSE;
-        Pump[k].initSetting  = x[1];
-        Pump[k].yOn          = x[2] / UCF(sp, LENGTH);
-        Pump[k].yOff         = x[3] / UCF(sp, LENGTH);
-        Pump[k].xMin         = 0.0;
-        Pump[k].xMax         = 0.0;
+        sp->Pump[k].initSetting  = x[1];
+        sp->Pump[k].yOn          = x[2] / UCF(sp, LENGTH);
+        sp->Pump[k].yOff         = x[3] / UCF(sp, LENGTH);
+        sp->Pump[k].xMin         = 0.0;
+        sp->Pump[k].xMax         = 0.0;
         break;
 
       case ORIFICE:
@@ -588,12 +588,12 @@ void link_setTargetSetting(SWMM_Project *sp, int j)
         k = sp->Link[j].subIndex;
         n1 = sp->Link[j].node1;
         sp->Link[j].targetSetting = sp->Link[j].setting;
-        if ( Pump[k].yOff > 0.0 &&
+        if ( sp->Pump[k].yOff > 0.0 &&
              sp->Link[j].setting > 0.0 &&
-             sp->Node[n1].newDepth < Pump[k].yOff ) sp->Link[j].targetSetting = 0.0;
-        if ( Pump[k].yOn > 0.0 &&
+             sp->Node[n1].newDepth < sp->Pump[k].yOff ) sp->Link[j].targetSetting = 0.0;
+        if ( sp->Pump[k].yOn > 0.0 &&
              sp->Link[j].setting == 0.0 &&
-             sp->Node[n1].newDepth > Pump[k].yOn )  sp->Link[j].targetSetting = 1.0;
+             sp->Node[n1].newDepth > sp->Pump[k].yOn )  sp->Link[j].targetSetting = 1.0;
     }
 }
 
@@ -1456,10 +1456,10 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
     sp->Link[j].xsect.yFull = 0.0;
 
     // --- check for valid curve type
-    m = Pump[k].pumpCurve;
+    m = sp->Pump[k].pumpCurve;
     if ( m < 0 )
     {
-        Pump[k].type = IDEAL_PUMP;
+        sp->Pump[k].type = IDEAL_PUMP;
     }
     else
     {
@@ -1470,16 +1470,16 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
         // --- store pump curve type with pump's parameters
         else
         {
-            Pump[k].type = Curve[m].curveType - PUMP1_CURVE;
+            sp->Pump[k].type = Curve[m].curveType - PUMP1_CURVE;
             if ( table_getFirstEntry(&Curve[m], &x, &y) )
             {
                 sp->Link[j].qFull = y;
-                Pump[k].xMin = x;
-                Pump[k].xMax = x;
+                sp->Pump[k].xMin = x;
+                sp->Pump[k].xMax = x;
                 while ( table_getNextEntry(&Curve[m], &x, &y) )
                 {
                     sp->Link[j].qFull = MAX(y, sp->Link[j].qFull);
-                    Pump[k].xMax = x;
+                    sp->Pump[k].xMax = x;
                 }
             }
             sp->Link[j].qFull /= UCF(sp, FLOW);
@@ -1487,16 +1487,16 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
     }
 
     // --- check that shutoff depth < startup depth
-    if ( Pump[k].yOn > 0.0 && Pump[k].yOn <= Pump[k].yOff )
+    if ( sp->Pump[k].yOn > 0.0 && sp->Pump[k].yOn <= sp->Pump[k].yOff )
         report_writeErrorMsg(sp, ERR_PUMP_LIMITS, sp->Link[j].ID);
 
     // --- assign wet well volume to inlet node of Type 1 pump
-    if ( Pump[k].type == TYPE1_PUMP )
+    if ( sp->Pump[k].type == TYPE1_PUMP )
     {
         n1 = sp->Link[j].node1;
         if ( sp->Node[n1].type != STORAGE )
             sp->Node[n1].fullVolume = MAX(sp->Node[n1].fullVolume,
-                                      Pump[k].xMax / UCF(sp, VOLUME));
+                                      sp->Pump[k].xMax / UCF(sp, VOLUME));
     }
 
 }
@@ -1511,8 +1511,8 @@ void  pump_initState(SWMM_Project *sp, int j, int k)
 //  Purpose: initializes pump conditions at start of a simulation
 //
 {
-    sp->Link[j].setting = Pump[k].initSetting;
-    sp->Link[j].targetSetting = Pump[k].initSetting;
+    sp->Link[j].setting = sp->Pump[k].initSetting;
+    sp->Link[j].targetSetting = sp->Pump[k].initSetting;
 }
 
 //=============================================================================
@@ -1530,7 +1530,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
     double  qIn, qIn1, dh = 0.001;
 
     k = sp->Link[j].subIndex;
-    m = Pump[k].pumpCurve;
+    m = sp->Pump[k].pumpCurve;
     n1 = sp->Link[j].node1;
     n2 = sp->Link[j].node2;
 
@@ -1540,7 +1540,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
     if ( sp->Link[j].setting == 0.0 ) return 0.0;
 
     // --- pump flow = node inflow for IDEAL_PUMP
-    if ( Pump[k].type == IDEAL_PUMP )
+    if ( sp->Pump[k].type == IDEAL_PUMP )
         qIn = sp->Node[n1].inflow + sp->Node[n1].overflow;
 
     // --- pumping rate depends on pump curve type
@@ -1551,7 +1551,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
         qIn = table_intervalLookup(&Curve[m], vol) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
-        if ( vol < Pump[k].xMin || vol > Pump[k].xMax )
+        if ( vol < sp->Pump[k].xMin || vol > sp->Pump[k].xMax )
             sp->Link[j].flowClass = YES;
         break;
 
@@ -1560,7 +1560,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
         qIn = table_intervalLookup(&Curve[m], depth) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
-        if ( depth < Pump[k].xMin || depth > Pump[k].xMax )
+        if ( depth < sp->Pump[k].xMin || depth > sp->Pump[k].xMax )
             sp->Link[j].flowClass = YES;
         break;
 
@@ -1579,7 +1579,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
         // --- check if off of pump curve
         head *= UCF(sp, LENGTH);
-        if ( head < Pump[k].xMin || head > Pump[k].xMax )
+        if ( head < sp->Pump[k].xMin || head > sp->Pump[k].xMax )
             sp->Link[j].flowClass = YES;
         break;
 
@@ -1593,8 +1593,8 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
         // --- check if off of pump curve
         depth *= UCF(sp, LENGTH);
-        if ( depth < Pump[k].xMin ) sp->Link[j].flowClass = DN_DRY;
-        if ( depth > Pump[k].xMax ) sp->Link[j].flowClass = UP_DRY;
+        if ( depth < sp->Pump[k].xMin ) sp->Link[j].flowClass = DN_DRY;
+        if ( depth > sp->Pump[k].xMax ) sp->Link[j].flowClass = UP_DRY;
         break;
 
       default: qIn = 0.0;

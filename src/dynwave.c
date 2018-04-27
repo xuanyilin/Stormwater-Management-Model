@@ -468,7 +468,7 @@ double getModPumpFlow(SWMM_Project *sp, int i, double q, double dt)
     if ( sp->Node[j].type == STORAGE ) return node_getMaxOutflow(sp, j, q, dt);
 
     // --- case where inlet is a non-storage node
-    switch ( Pump[k].type )
+    switch ( sp->Pump[k].type )
     {
       // --- for Type1 pump, a volume is computed for inlet node,
       //     so make sure it doesn't go negative
@@ -565,7 +565,7 @@ void updateNodeFlows(SWMM_Project *sp, int i)
     if ( sp->Link[i].type == PUMP )
     {
         k = sp->Link[i].subIndex;
-        if ( Pump[k].type != TYPE4_PUMP )                                      //(5.1.011)
+        if ( sp->Pump[k].type != TYPE4_PUMP )                                      //(5.1.011)
         {
             Xnode[n2].sumdqdh += sp->Link[i].dqdh;
         }

@@ -200,7 +200,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
             {
                 k = sp->Link[i].subIndex;
                 fprintf(sp->Frpt.file, "%-5s PUMP  ",
-                    PumpTypeWords[Pump[k].type]);
+                    PumpTypeWords[sp->Pump[k].type]);
             }
             else fprintf(sp->Frpt.file, "%-12s",
                 LinkTypeWords[sp->Link[i].type-CONDUIT]);

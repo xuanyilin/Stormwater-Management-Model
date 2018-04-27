@@ -291,7 +291,7 @@ void validateGeneralLayout(SWMM_Project *sp)
         //     be the only link exiting the upstream node 
         if ( (sp->Link[j].type == CONDUIT && sp->Link[j].xsect.type == DUMMY) ||
              (sp->Link[j].type == PUMP &&
-              Pump[sp->Link[j].subIndex].type == IDEAL_PUMP) )
+              sp->Pump[sp->Link[j].subIndex].type == IDEAL_PUMP) )
         {
             i = sp->Link[j].node1;
             if ( sp->Link[j].direction < 0 ) i = sp->Link[j].node2;

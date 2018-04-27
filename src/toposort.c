@@ -504,7 +504,7 @@ void checkDummyLinks(SWMM_Project *sp)
         if ( sp->Link[i].direction < 0 ) j = sp->Link[i].node1;
         if ( (sp->Link[i].type == CONDUIT && sp->Link[i].xsect.type == DUMMY) ||
              (sp->Link[i].type == PUMP &&
-              Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
+              sp->Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
         {
             if ( marked[j] == 0 ) marked[j] = 1;
         }
@@ -516,7 +516,7 @@ void checkDummyLinks(SWMM_Project *sp)
     {
         if ( (sp->Link[i].type == CONDUIT && sp->Link[i].xsect.type == DUMMY) ||
              (sp->Link[i].type == PUMP && 
-              Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
+              sp->Pump[sp->Link[i].subIndex].type == IDEAL_PUMP) )
         {
             j = sp->Link[i].node1;
             if ( marked[j] > 0 )
