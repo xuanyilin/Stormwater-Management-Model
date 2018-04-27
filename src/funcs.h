@@ -401,19 +401,19 @@ void    node_getResults(SWMM_Project *sp, int node, double wt, float x[]);
 //-----------------------------------------------------------------------------
 int     inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks);
 int     inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks);
-int     inflow_readDwfPattern(char* tok[], int ntoks);
+int     inflow_readDwfPattern(SWMM_Project *sp, char* tok[], int ntoks);
 int     inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type,
 						int tSeries, int basePat, double cf, 
 						double baseline, double sf);
 int     inflow_validate(SWMM_Project *sp, int param, int type, int tSeries,
 						int basePat, double *cf);					
 						
-void    inflow_initDwfInflow(TDwfInflow* inflow);
-void    inflow_initDwfPattern(int pattern);
+void    inflow_initDwfInflow(SWMM_Project *sp, TDwfInflow* inflow);
+void    inflow_initDwfPattern(SWMM_Project *sp, int pattern);
 
-double  inflow_getExtInflow(TExtInflow* inflow, DateTime aDate);
-double  inflow_getDwfInflow(TDwfInflow* inflow, int m, int d, int h);
-double  inflow_getPatternFactor(int p, int month, int day, int hour);
+double  inflow_getExtInflow(SWMM_Project *sp, TExtInflow* inflow, DateTime aDate);
+double  inflow_getDwfInflow(SWMM_Project *sp, TDwfInflow* inflow, int m, int d, int h);
+double  inflow_getPatternFactor(SWMM_Project *sp, int p, int month, int day, int hour);
 
 void    inflow_deleteExtInflows(SWMM_Project *sp, int node);
 void    inflow_deleteDwfInflows(SWMM_Project *sp, int node);
@@ -470,20 +470,20 @@ void    link_getResults(SWMM_Project *sp, int link, double wt, float x[]);
 //   Link Cross-Section Methods
 //-----------------------------------------------------------------------------
 int     xsect_isOpen(int type);
-int     xsect_setParams(TXsect *xsect, int type, double p[], double ucf);
-void    xsect_setIrregXsectParams(TXsect *xsect);
-void    xsect_setCustomXsectParams(TXsect *xsect);
-double  xsect_getAmax(TXsect* xsect);
+int     xsect_setParams(SWMM_Project *sp, TXsect *xsect, int type, double p[], double ucf);
+void    xsect_setIrregXsectParams(SWMM_Project *sp, TXsect *xsect);
+void    xsect_setCustomXsectParams(SWMM_Project *sp, TXsect *xsect);
+double  xsect_getAmax(SWMM_Project *sp, TXsect* xsect);
 
-double  xsect_getSofA(TXsect* xsect, double area);
-double  xsect_getYofA(TXsect* xsect, double area);
-double  xsect_getRofA(TXsect* xsect, double area);
+double  xsect_getSofA(SWMM_Project *sp, TXsect* xsect, double area);
+double  xsect_getYofA(SWMM_Project *sp, TXsect* xsect, double area);
+double  xsect_getRofA(SWMM_Project *sp, TXsect* xsect, double area);
 double  xsect_getAofS(SWMM_Project *sp, TXsect* xsect, double sFactor);
-double  xsect_getdSdA(TXsect* xsect, double area);
-double  xsect_getAofY(TXsect* xsect, double y);
-double  xsect_getRofY(TXsect* xsect, double y);
-double  xsect_getWofY(TXsect* xsect, double y);
-double  xsect_getYcrit(TXsect* xsect, double q);
+double  xsect_getdSdA(SWMM_Project *sp, TXsect* xsect, double area);
+double  xsect_getAofY(SWMM_Project *sp, TXsect* xsect, double y);
+double  xsect_getRofY(SWMM_Project *sp, TXsect* xsect, double y);
+double  xsect_getWofY(SWMM_Project *sp, TXsect* xsect, double y);
+double  xsect_getYcrit(SWMM_Project *sp, TXsect* xsect, double q);
 
 //-----------------------------------------------------------------------------
 //   Culvert/Roadway Methods                                                   //(5.1.010)
@@ -525,7 +525,7 @@ int     controls_evaluate(SWMM_Project *sp, DateTime currentTime,
 //-----------------------------------------------------------------------------
 //   Table & Time Series Methods
 //-----------------------------------------------------------------------------
-int     table_readCurve(char* tok[], int ntoks);
+int     table_readCurve(SWMM_Project *sp, char* tok[], int ntoks);
 int     table_readTimeseries(char* tok[], int ntoks);
 
 int     table_addEntry(TTable* table, double x, double y);

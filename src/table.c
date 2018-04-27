@@ -56,7 +56,7 @@ double table_interpolate(double x, double x1, double y1, double x2, double y2)
 
 //=============================================================================
 
-int table_readCurve(char* tok[], int ntoks)
+int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -76,13 +76,13 @@ int table_readCurve(char* tok[], int ntoks)
 
     // --- check if this is first line of curve's data
     //     (curve's ID will not have been assigned yet)
-    if ( Curve[j].ID == NULL )
+    if ( sp->Curve[j].ID == NULL )
     {
         // --- assign ID pointer & curve type
-        Curve[j].ID = project_findID(CURVE, tok[0]);
+        sp->Curve[j].ID = project_findID(CURVE, tok[0]);
         m = findmatch(tok[1], CurveTypeWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
-        Curve[j].curveType = m;
+        sp->Curve[j].curveType = m;
         k1 = 2;
     }
 
@@ -94,7 +94,7 @@ int table_readCurve(char* tok[], int ntoks)
             return error_setInpError(ERR_NUMBER, tok[k]);
         if ( ! getDouble(tok[k+1], &y) )
             return error_setInpError(ERR_NUMBER, tok[k+1]);
-        table_addEntry(&Curve[j], x, y);
+        table_addEntry(&sp->Curve[j], x, y);
     }
     return 0;
 }

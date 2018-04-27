@@ -815,7 +815,7 @@ void  updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTim
 {
     if ( a->curve >= 0 )
     {
-        a->value = table_lookup(&Curve[a->curve], ControlValue);
+        a->value = table_lookup(&sp->Curve[a->curve], ControlValue);
     }
     else if ( a->tseries >= 0 )
     {

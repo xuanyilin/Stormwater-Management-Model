@@ -97,7 +97,7 @@ void  exfil_initState(SWMM_Project *sp, int k)
         if ( i >= 0 )
         {
             // --- get bottom area
-            aCurve = &Curve[i];
+            aCurve = &sp->Curve[i];
             sp->Storage[k].exfil->btmArea = table_lookupEx(aCurve, 0.0);
 
             // --- find min/max bank depths and max. bank area

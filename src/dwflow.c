@@ -34,9 +34,9 @@ static void   findSurfArea(SWMM_Project *sp, int link, double q, double length,
 static double findLocalLosses(SWMM_Project *sp, int link, double a1, double a2,
         double aMid, double q);
 
-static double getWidth(TXsect* xsect, double y);
-static double getArea(TXsect* xsect, double y);
-static double getHydRad(TXsect* xsect, double y);
+static double getWidth(SWMM_Project *sp, TXsect* xsect, double y);
+static double getArea(SWMM_Project *sp, TXsect* xsect, double y);
+static double getHydRad(SWMM_Project *sp, TXsect* xsect, double y);
 
 static double checkNormalFlow(SWMM_Project *sp, int j, double q, double y1,
         double y2, double a1, double r1);
@@ -123,14 +123,14 @@ void  dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega, d
     findSurfArea(sp, j, qLast, length, &h1, &h2, &y1, &y2);
 
     // --- compute area at each end of conduit & hyd. radius at upstream end
-    a1 = getArea(xsect, y1);
-    a2 = getArea(xsect, y2);
-    r1 = getHydRad(xsect, y1);
+    a1 = getArea(sp, xsect, y1);
+    a2 = getArea(sp, xsect, y2);
+    r1 = getHydRad(sp, xsect, y1);
 
     // --- compute area & hyd. radius at midpoint
     yMid = 0.5 * (y1 + y2);
-    aMid = getArea(xsect, yMid);
-    rMid = getHydRad(xsect, yMid);
+    aMid = getArea(sp, xsect, yMid);
+    rMid = getHydRad(sp, xsect, yMid);
 
     // --- alternate approach not currently used, but might produce better
     //     Bernoulli energy balance for steady flows
@@ -442,9 +442,9 @@ void findSurfArea(SWMM_Project *sp, int j, double q, double length, double* h1,
       case SUBCRITICAL:
         flowDepthMid = 0.5 * (flowDepth1 + flowDepth2);
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
-        width1 =   getWidth(xsect, flowDepth1);
-        width2 =   getWidth(xsect, flowDepth2);
-        widthMid = getWidth(xsect, flowDepthMid);
+        width1 =   getWidth(sp, xsect, flowDepth1);
+        width2 =   getWidth(sp, xsect, flowDepth2);
+        widthMid = getWidth(sp, xsect, flowDepthMid);
         surfArea1 = (width1 + widthMid) * length / 4.;
         surfArea2 = (widthMid + width2) * length / 4. * fasnh;
         break;
@@ -456,8 +456,8 @@ void findSurfArea(SWMM_Project *sp, int j, double q, double length, double* h1,
         *h1 = sp->Node[n1].invertElev + sp->Link[j].offset1 + flowDepth1;
         flowDepthMid = 0.5 * (flowDepth1 + flowDepth2);
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
-        width2   = getWidth(xsect, flowDepth2);
-        widthMid = getWidth(xsect, flowDepthMid);
+        width2   = getWidth(sp, xsect, flowDepth2);
+        widthMid = getWidth(sp, xsect, flowDepthMid);
         surfArea2 = (widthMid + width2) * length * 0.5;
         break;
 
@@ -466,10 +466,10 @@ void findSurfArea(SWMM_Project *sp, int j, double q, double length, double* h1,
         if ( normalDepth < criticalDepth ) flowDepth2 = normalDepth;
         flowDepth2 = MAX(flowDepth2, FUDGE);
         *h2 = sp->Node[n2].invertElev + sp->Link[j].offset2 + flowDepth2;
-        width1 = getWidth(xsect, flowDepth1);
+        width1 = getWidth(sp, xsect, flowDepth1);
         flowDepthMid = 0.5 * (flowDepth1 + flowDepth2);
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
-        widthMid = getWidth(xsect, flowDepthMid);
+        widthMid = getWidth(sp, xsect, flowDepthMid);
         surfArea1 = (width1 + widthMid) * length * 0.5;
         break;
 
@@ -477,9 +477,9 @@ void findSurfArea(SWMM_Project *sp, int j, double q, double length, double* h1,
         flowDepth1 = FUDGE;
         flowDepthMid = 0.5 * (flowDepth1 + flowDepth2);
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
-        width1 = getWidth(xsect, flowDepth1);
-        width2 = getWidth(xsect, flowDepth2);
-        widthMid = getWidth(xsect, flowDepthMid);
+        width1 = getWidth(sp, xsect, flowDepth1);
+        width2 = getWidth(sp, xsect, flowDepth2);
+        widthMid = getWidth(sp, xsect, flowDepthMid);
 
         // --- assign avg. surface area of downstream half of conduit
         //     to the downstream node
@@ -497,9 +497,9 @@ void findSurfArea(SWMM_Project *sp, int j, double q, double length, double* h1,
         flowDepth2 = FUDGE;
         flowDepthMid = 0.5 * (flowDepth1 + flowDepth2);
         if ( flowDepthMid < FUDGE ) flowDepthMid = FUDGE;
-        width1 = getWidth(xsect, flowDepth1);
-        width2 = getWidth(xsect, flowDepth2);
-        widthMid = getWidth(xsect, flowDepthMid);
+        width1 = getWidth(sp, xsect, flowDepth1);
+        width2 = getWidth(sp, xsect, flowDepth2);
+        widthMid = getWidth(sp, xsect, flowDepthMid);
 
         // --- assign avg. surface area of upstream half of conduit
         //     to the upstream node
@@ -548,7 +548,7 @@ double findLocalLosses(SWMM_Project *sp, int j, double a1, double a2,
 
 //=============================================================================
 
-double getWidth(TXsect* xsect, double y)
+double getWidth(SWMM_Project *sp, TXsect* xsect, double y)
 //
 //  Input:   xsect = ptr. to conduit cross section
 //           y     = flow depth (ft)
@@ -559,12 +559,12 @@ double getWidth(TXsect* xsect, double y)
     double yNorm = y/xsect->yFull;
     if ( yNorm > 0.96 &&
          !xsect_isOpen(xsect->type) ) y = 0.96*xsect->yFull;
-    return xsect_getWofY(xsect, y);
+    return xsect_getWofY(sp, xsect, y);
 }
 
 //=============================================================================
 
-double getArea(TXsect* xsect, double y)
+double getArea(SWMM_Project *sp, TXsect* xsect, double y)
 //
 //  Input:   xsect = ptr. to conduit cross section
 //           y     = flow depth (ft)
@@ -574,13 +574,13 @@ double getArea(TXsect* xsect, double y)
 {
     double area;                        // flow area (ft2)
     y = MIN(y, xsect->yFull);
-    area = xsect_getAofY(xsect, y);
+    area = xsect_getAofY(sp, xsect, y);
     return area;
 }
 
 //=============================================================================
 
-double getHydRad(TXsect* xsect, double y)
+double getHydRad(SWMM_Project *sp, TXsect* xsect, double y)
 //
 //  Input:   xsect = ptr. to conduit cross section
 //           y     = flow depth (ft)
@@ -590,7 +590,7 @@ double getHydRad(TXsect* xsect, double y)
 {
     double hRadius;                     // hyd. radius (ft)
     y = MIN(y, xsect->yFull);
-    hRadius = xsect_getRofY(xsect, y);
+    hRadius = xsect_getRofY(sp, xsect, y);
     return hRadius;
 }
 

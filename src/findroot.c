@@ -88,14 +88,14 @@ int findroot_Newton(SWMM_Project *sp, double x1, double x2, double* rts, double 
 };
 
 
-double findroot_Ridder(double x1, double x2, double xacc,
-	double (*func)(double, void* p), void* p)
+double findroot_Ridder(SWMM_Project *sp, double x1, double x2, double xacc,
+	double (*func)(SWMM_Project *sp, double, void* p), void* p)
 {
     int j;
     double ans, fhi, flo, fm, fnew, s, xhi, xlo, xm, xnew;
 
-    flo = func(x1, p);
-    fhi = func(x2, p);
+    flo = func(sp, x1, p);
+    fhi = func(sp, x2, p);
     if ( flo == 0.0 ) return x1;
     if ( fhi == 0.0 ) return x2;
     ans = 0.5*(x1+x2);
@@ -105,13 +105,13 @@ double findroot_Ridder(double x1, double x2, double xacc,
         xhi = x2;
         for (j=1; j<=MAXIT; j++) {
             xm = 0.5*(xlo + xhi);
-            fm = func(xm, p);
+            fm = func(sp, xm, p);
             s = sqrt( fm*fm - flo*fhi );
             if (s == 0.0) return ans;
             xnew = xm + (xm-xlo)*( (flo >= fhi ? 1.0 : -1.0)*fm/s );
             if ( fabs(xnew - ans) <= xacc ) break;
             ans = xnew;
-            fnew = func(ans, p);
+            fnew = func(sp, ans, p);
             if ( SIGN(fm, fnew) != fm)
             {
                 xlo = xm;

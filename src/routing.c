@@ -354,7 +354,7 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
         {
             if ( inflow->type == FLOW_INFLOW )
             {
-                q = inflow_getExtInflow(inflow, currentDate);
+                q = inflow_getExtInflow(sp, inflow, currentDate);
                 break;
             }
             else inflow = inflow->next;
@@ -378,7 +378,7 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
             if ( inflow->type != FLOW_INFLOW )
             {
                 p = inflow->param;
-                w = inflow_getExtInflow(inflow, currentDate);
+                w = inflow_getExtInflow(sp, inflow, currentDate);
                 if ( inflow->type == CONCEN_INFLOW ) w *= q;
                 sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, EXTERNAL_INFLOW, p, w);
@@ -420,7 +420,7 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
         {
             if ( inflow->param < 0 )
             {
-                q = inflow_getDwfInflow(inflow, month, day, hour);
+                q = inflow_getDwfInflow(sp, inflow, month, day, hour);
                 break;
             }
             inflow = inflow->next;
@@ -452,7 +452,7 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
             if ( inflow->param >= 0 )
             {
                 p = inflow->param;
-                w = q * inflow_getDwfInflow(inflow, month, day, hour);
+                w = q * inflow_getDwfInflow(sp, inflow, month, day, hour);
                 sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, DRY_WEATHER_INFLOW, p, w);
 

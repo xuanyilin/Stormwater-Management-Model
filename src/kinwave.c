@@ -145,7 +145,7 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
         if ( result <= 0 ) result = 1;
 
         // --- compute normalized outlet flow from outlet area
-        qout = Beta1 * xsect_getSofA(pXsect, aout*Afull);
+        qout = Beta1 * xsect_getSofA(sp, pXsect, aout*Afull);
         if ( qin > 1.0 ) qin = 1.0;
     }
 
@@ -194,7 +194,7 @@ int solveContinuity(SWMM_Project *sp, double qin, double ain, double* aout)
     fHi = 1.0 + C1 + C2;
 
     // --- try setting lower bound to area where section factor is maximum
-    aLo = xsect_getAmax(pXsect) / Afull;
+    aLo = xsect_getAmax(sp, pXsect) / Afull;
     if ( aLo < aHi )
     {
         fLo = ( Beta1 * pXsect->sMax ) + (C1 * aLo) + C2;
@@ -263,8 +263,8 @@ void evalContinuity(SWMM_Project *sp, double a, double* f, double* df, void* p)
 //           w.r.t. normalized area for link with normalized outlet area 'a'.
 //
 {
-    *f  = (Beta1 * xsect_getSofA(pXsect, a*Afull)) + (C1 * a) + C2;
-    *df = (Beta1 * Afull * xsect_getdSdA(pXsect, a*Afull)) + C1;
+    *f  = (Beta1 * xsect_getSofA(sp, pXsect, a*Afull)) + (C1 * a) + C2;
+    *df = (Beta1 * Afull * xsect_getdSdA(sp, pXsect, a*Afull)) + C1;
 }
 
 //=============================================================================

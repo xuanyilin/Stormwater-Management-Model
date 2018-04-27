@@ -162,7 +162,7 @@ EXTERN SWMM_Project *_defaultProject;
 //EXTERN TPollut*   Pollut;                   // Array of pollutants
 //EXTERN TLanduse*  Landuse;                  // Array of landuses
 //EXTERN TPattern*  Pattern;                  // Array of time patterns
-EXTERN TTable*    Curve;                    // Array of curve tables
+//EXTERN TTable*    Curve;                    // Array of curve tables
 EXTERN TTable*    Tseries;                  // Array of time series tables
 EXTERN TTransect* Transect;                 // Array of transect data
 EXTERN TShape*    Shape;                    // Array of custom conduit shapes

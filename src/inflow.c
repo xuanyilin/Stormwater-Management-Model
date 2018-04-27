@@ -249,7 +249,7 @@ void inflow_deleteExtInflows(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-double inflow_getExtInflow(TExtInflow* inflow, DateTime aDate)
+double inflow_getExtInflow(SWMM_Project *sp, TExtInflow* inflow, DateTime aDate)
 //
 //  Input:   inflow = external inflow data structure
 //           aDate = current simulation date/time
@@ -272,7 +272,7 @@ double inflow_getExtInflow(TExtInflow* inflow, DateTime aDate)
         month = datetime_monthOfYear(aDate) - 1;
         day   = datetime_dayOfWeek(aDate) - 1;
         hour  = datetime_hourOfDay(aDate);
-        blv  *= inflow_getPatternFactor(p, month, day, hour);
+        blv  *= inflow_getPatternFactor(sp, p, month, day, hour);
     }
     if ( k >= 0 ) tsv = table_tseriesLookup(&Tseries[k], aDate, FALSE) * sf;
     return cf * (tsv + blv) + cf * extIfaceInflow;
@@ -374,7 +374,7 @@ void inflow_deleteDwfInflows(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-void   inflow_initDwfInflow(TDwfInflow* inflow)
+void   inflow_initDwfInflow(SWMM_Project *sp, TDwfInflow* inflow)
 //
 //  Input:   inflow = dry weather inflow data structure
 //  Output:  none
@@ -386,25 +386,26 @@ void   inflow_initDwfInflow(TDwfInflow* inflow)
 //
 {
     int i, p;
-    int tmpsp->Pattern[4];  // index of each type of DWF pattern
+    int tmpPattern[4];  // index of each type of DWF pattern
 
     // --- assume no patterns were supplied
-    for (i=0; i<4; i++) tmpsp->Pattern[i] = -1;
+    for (i=0; i<4; i++) tmpPattern[i] = -1;
 
     // --- assign supplied patterns to proper position (by type) in tmpPattern
     for (i=0; i<4; i++)
     {
         p = inflow->patterns[i];
-        if ( p >= 0 ) tmpsp->Pattern[sp->Pattern[p].type] = p;
+        if ( p >= 0 ) tmpPattern[sp->Pattern[p].type] = p;
     }
 
     // --- re-fill inflow pattern array by pattern type
-    for (i=0; i<4; i++) inflow->patterns[i] = tmpsp->Pattern[i];
+    for (i=0; i<4; i++) inflow->patterns[i] = tmpPattern[i];
 }
 
 //=============================================================================
 
-double inflow_getDwfInflow(TDwfInflow* inflow, int month, int day, int hour)
+double inflow_getDwfInflow(SWMM_Project *sp, TDwfInflow* inflow, int month,
+        int day, int hour)
 //
 //  Input:   inflow = dry weather inflow data structure
 //           month = current month of year of simulation
@@ -418,26 +419,26 @@ double inflow_getDwfInflow(TDwfInflow* inflow, int month, int day, int hour)
     double f = 1.0;                    // pattern factor
 
     p1 = inflow->patterns[MONTHLY_PATTERN];
-    if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     p1 = inflow->patterns[DAILY_PATTERN];
-    if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     p1 = inflow->patterns[HOURLY_PATTERN];
     p2 = inflow->patterns[WEEKEND_PATTERN];
     if ( p2 >= 0 )
     {
         if ( day == 0 || day == 6 )
-            f *= inflow_getPatternFactor(p2, month, day, hour);
+            f *= inflow_getPatternFactor(sp, p2, month, day, hour);
         else if ( p1 >= 0 )
-            f *= inflow_getPatternFactor(p1, month, day, hour);
+            f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     }
-    else if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    else if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     return f * inflow->avgValue;
 
 }
 
 //=============================================================================
 
-void inflow_initDwfPattern(int j)
+void inflow_initDwfPattern(SWMM_Project *sp, int j)
 //
 //  Input:   j = time pattern index
 //  Output:  none
@@ -453,7 +454,7 @@ void inflow_initDwfPattern(int j)
 
 //=============================================================================
 
-int inflow_readDwfPattern(char* tok[], int ntoks)
+int inflow_readDwfPattern(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -499,7 +500,7 @@ int inflow_readDwfPattern(char* tok[], int ntoks)
 
 //=============================================================================
 
-double inflow_getPatternFactor(int p, int month, int day, int hour)
+double inflow_getPatternFactor(SWMM_Project *sp, int p, int month, int day, int hour)
 //
 //  Input:   p = time pattern index
 //           month = current month of year of simulation

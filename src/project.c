@@ -195,8 +195,8 @@ void project_validate(SWMM_Project *sp)
     // --- validate Curves and TimeSeries
     for ( i=0; i<sp->Nobjects[CURVE]; i++ )
     {
-         err = table_validate(&Curve[i]);
-         if ( err ) report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, Curve[i].ID);
+         err = table_validate(&sp->Curve[i]);
+         if ( err ) report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, sp->Curve[i].ID);
     }
     for ( i=0; i<sp->Nobjects[TSERIES]; i++ )
     {
@@ -219,12 +219,12 @@ void project_validate(SWMM_Project *sp)
     j = 0;
     for ( i=0; i<sp->Nobjects[CURVE]; i++ )
     {
-        if ( Curve[i].curveType == SHAPE_CURVE )
+        if ( sp->Curve[i].curveType == SHAPE_CURVE )
         {
-            Curve[i].refersTo = j;
+            sp->Curve[i].refersTo = j;
             Shape[j].curve = i;
-            if ( !shape_validate(&Shape[j], &Curve[i]) )
-                report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, Curve[i].ID);
+            if ( !shape_validate(&Shape[j], &sp->Curve[i]) )
+                report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, sp->Curve[i].ID);
             j++;
         }
     }
@@ -744,7 +744,7 @@ void initPointers(SWMM_Project *sp)
     sp->Pollut   = NULL;
     sp->Landuse  = NULL;
     sp->Pattern  = NULL;
-    Curve    = NULL;
+    sp->Curve    = NULL;
     Tseries  = NULL;
     Transect = NULL;
     Shape    = NULL;
@@ -976,7 +976,7 @@ void createObjects(SWMM_Project *sp)
     sp->Pollut   = (TPollut *)   calloc(sp->Nobjects[POLLUT],   sizeof(TPollut));
     sp->Landuse  = (TLanduse *)  calloc(sp->Nobjects[LANDUSE],  sizeof(TLanduse));
     sp->Pattern  = (TPattern *)  calloc(sp->Nobjects[TIMEPATTERN],  sizeof(TPattern));
-    Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
+    sp->Curve    = (TTable *)    calloc(sp->Nobjects[CURVE],    sizeof(TTable));
     Tseries  = (TTable *)    calloc(sp->Nobjects[TSERIES],  sizeof(TTable));
     sp->Aquifer  = (TAquifer *)  calloc(sp->Nobjects[AQUIFER],  sizeof(TAquifer));
     sp->UnitHyd  = (TUnitHyd *)  calloc(sp->Nobjects[UNITHYD],  sizeof(TUnitHyd));
@@ -1112,9 +1112,9 @@ void createObjects(SWMM_Project *sp)
     for (j = 0; j < sp->Nobjects[LINK]; j++) sp->Link[j].rptFlag = FALSE;
 
     //  --- initialize curves, time series, and time patterns
-    for (j = 0; j < sp->Nobjects[CURVE]; j++)   table_init(&Curve[j]);
+    for (j = 0; j < sp->Nobjects[CURVE]; j++)   table_init(&sp->Curve[j]);
     for (j = 0; j < sp->Nobjects[TSERIES]; j++) table_init(&Tseries[j]);
-    for (j = 0; j < sp->Nobjects[TIMEPATTERN]; j++) inflow_initDwfPattern(j);
+    for (j = 0; j < sp->Nobjects[TIMEPATTERN]; j++) inflow_initDwfPattern(sp, j);
 }
 
 //=============================================================================
@@ -1206,8 +1206,8 @@ void deleteObjects(SWMM_Project *sp)
     // --- delete table entries for curves and time series
     if ( Tseries ) for (j = 0; j < sp->Nobjects[TSERIES]; j++)
         table_deleteEntries(&Tseries[j]);
-    if ( Curve ) for (j = 0; j < sp->Nobjects[CURVE]; j++)
-        table_deleteEntries(&Curve[j]);
+    if ( sp->Curve ) for (j = 0; j < sp->Nobjects[CURVE]; j++)
+        table_deleteEntries(&sp->Curve[j]);
 
     // --- delete cross section transects
     transect_delete();
@@ -1234,7 +1234,7 @@ void deleteObjects(SWMM_Project *sp)
     FREE(sp->Pollut);
     FREE(sp->Landuse);
     FREE(sp->Pattern);
-    FREE(Curve);
+    FREE(sp->Curve);
     FREE(Tseries);
     FREE(sp->Aquifer);
     FREE(sp->UnitHyd);

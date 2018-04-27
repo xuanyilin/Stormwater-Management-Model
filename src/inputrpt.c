@@ -234,7 +234,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
                 k = sp->Link[i].subIndex;
                 fprintf(sp->Frpt.file, "\n  %-16s ", sp->Link[i].ID);
                 if ( sp->Link[i].xsect.type == CUSTOM )
-                    fprintf(sp->Frpt.file, "%-16s ", Curve[sp->Link[i].xsect.transect].ID);
+                    fprintf(sp->Frpt.file, "%-16s ", sp->Curve[sp->Link[i].xsect.transect].ID);
                 else if ( sp->Link[i].xsect.type == IRREGULAR )
                     fprintf(sp->Frpt.file, "%-16s ",
                     Transect[sp->Link[i].xsect.transect].ID);
@@ -261,7 +261,7 @@ void inputrpt_writeInput(SWMM_Project *sp)
         for (i = 0; i < sp->Nobjects[SHAPE]; i++)
         {
             k = Shape[i].curve;
-            fprintf(sp->Frpt.file, "\n\n  Shape %s", Curve[k].ID);
+            fprintf(sp->Frpt.file, "\n\n  Shape %s", sp->Curve[k].ID);
             fprintf(sp->Frpt.file, "\n  Area:  ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {

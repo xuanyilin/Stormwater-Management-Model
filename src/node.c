@@ -216,7 +216,7 @@ void  node_validate(SWMM_Project *sp, int j)
     inflow = sp->Node[j].dwfInflow;
     while (inflow)
     {
-        inflow_initDwfInflow(inflow);
+        inflow_initDwfInflow(sp, inflow);
         inflow = inflow->next;
     }
 }
@@ -761,7 +761,7 @@ double storage_getDepth(SWMM_Project *sp, int j, double v)
 
     // --- use tabular area v. depth curve
     if ( i >= 0 )
-        return table_getInverseArea(&Curve[i], v*UCF(sp, VOLUME)) / UCF(sp, LENGTH);
+        return table_getInverseArea(&sp->Curve[i], v*UCF(sp, VOLUME)) / UCF(sp, LENGTH);
 
     // --- use functional area v. depth relation
     else
@@ -841,7 +841,7 @@ double storage_getVolume(SWMM_Project *sp, int j, double d)
 
     // --- use table integration if area v. depth table exists
     if ( i >= 0 )
-        return table_getArea(&Curve[i], d*UCF(sp, LENGTH)) / UCF(sp, VOLUME);
+        return table_getArea(&sp->Curve[i], d*UCF(sp, LENGTH)) / UCF(sp, VOLUME);
 
     // --- otherwise use functional area v. depth relation
     else
@@ -868,7 +868,7 @@ double storage_getSurfArea(SWMM_Project *sp, int j, double d)
     int k = sp->Node[j].subIndex;
     int i = sp->Storage[k].aCurve;
     if ( i >= 0 )
-        area = table_lookupEx(&Curve[i], d*UCF(sp, LENGTH));
+        area = table_lookupEx(&sp->Curve[i], d*UCF(sp, LENGTH));
     else
     {
         if ( sp->Storage[k].aCoeff <= 0.0 ) area = sp->Storage[k].aConst;
@@ -906,8 +906,8 @@ double storage_getOutflow(SWMM_Project *sp, int j, int i)
 
     // --- if partially full, return normal flow
     k = sp->Link[i].subIndex;
-    a = xsect_getAofY(&sp->Link[i].xsect, y);
-    return sp->Conduit[k].beta * xsect_getSofA(&sp->Link[i].xsect, a);
+    a = xsect_getAofY(sp, &sp->Link[i].xsect, y);
+    return sp->Conduit[k].beta * xsect_getSofA(sp, &sp->Link[i].xsect, a);
 }
 
 //=============================================================================
@@ -1174,7 +1174,7 @@ double divider_getOutflow(SWMM_Project *sp, int j, int k)
       case TABULAR_DIVIDER:
         m = sp->Divider[i].flowCurve;
         if ( m >= 0 )
-            qOut = table_lookup(&Curve[m], qIn * UCF(sp, FLOW)) / UCF(sp, FLOW);
+            qOut = table_lookup(&sp->Curve[m], qIn * UCF(sp, FLOW)) / UCF(sp, FLOW);
         else qOut = 0.0;
         break;
 
@@ -1315,10 +1315,10 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
 
       case TIDAL_OUTFALL:
         k = sp->Outfall[i].tideCurve;
-        table_getFirstEntry(&Curve[k], &x, &y);
+        table_getFirstEntry(&sp->Curve[k], &x, &y);
         currentDate = sp->NewRoutingTime / MSECperDAY;
         x += ( currentDate - floor(currentDate) ) * 24.0;
-        stage = table_lookup(&Curve[k], x) / UCF(sp, LENGTH);
+        stage = table_lookup(&sp->Curve[k], x) / UCF(sp, LENGTH);
         break;
 
       case TIMESERIES_OUTFALL:

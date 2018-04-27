@@ -218,7 +218,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
             x[3] = 0.0;
         }
 ////
-        if ( !xsect_setParams(&sp->Link[j].xsect, k, x, UCF(sp, LENGTH)) )
+        if ( !xsect_setParams(sp, &sp->Link[j].xsect, k, x, UCF(sp, LENGTH)) )
         {
             return error_setInpError(ERR_NUMBER, "");
         }
@@ -370,7 +370,7 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
         sp->Link[j].hasFlapGate  = (x[4] > 0.0) ? 1 : 0;
         sp->Outlet[k].curveType  = (int)x[5];
 
-        xsect_setParams(&sp->Link[j].xsect, DUMMY, NULL, 0.0);
+        xsect_setParams(sp, &sp->Link[j].xsect, DUMMY, NULL, 0.0);
         break;
 
     }
@@ -670,7 +670,7 @@ void link_getResults(SWMM_Project *sp, int j, double f, float x[])
     if (sp->Link[j].type == CONDUIT)
     {
         if (sp->Link[j].xsect.type != DUMMY)
-            c = xsect_getAofY(&sp->Link[j].xsect, y) / sp->Link[j].xsect.aFull;
+            c = xsect_getAofY(sp, &sp->Link[j].xsect, y) / sp->Link[j].xsect.aFull;
     }
     else c = sp->Link[j].setting;
 
@@ -750,7 +750,7 @@ double link_getYcrit(SWMM_Project *sp, int j, double q)
 //  Purpose: computes critical depth for given flow rate.
 //
 {
-    return xsect_getYcrit(&sp->Link[j].xsect, q);
+    return xsect_getYcrit(sp, &sp->Link[j].xsect, q);
 }
 
 //=============================================================================
@@ -774,7 +774,7 @@ double  link_getYnorm(SWMM_Project *sp, int j, double q)
     if ( q <= 0.0 ) return 0.0;
     s = q / sp->Conduit[k].beta;
     a = xsect_getAofS(sp, &sp->Link[j].xsect, s);
-    y = xsect_getYofA(&sp->Link[j].xsect, a);
+    y = xsect_getYofA(sp, &sp->Link[j].xsect, a);
     return y;
 }
 
@@ -811,7 +811,7 @@ double link_getVelocity(SWMM_Project *sp, int j, double flow, double depth)
     {
         k = sp->Link[j].subIndex;
         flow /= sp->Conduit[k].barrels;
-        area = xsect_getAofY(&sp->Link[j].xsect, depth);
+        area = xsect_getAofY(sp, &sp->Link[j].xsect, depth);
         if (area > FUDGE ) veloc = flow / area;
     }
     return veloc;
@@ -839,7 +839,7 @@ double link_getFroude(SWMM_Project *sp, int j, double v, double y)
          xsect->yFull - y <= FUDGE ) return 0.0;
 
     // --- compute hydraulic depth
-    y = xsect_getAofY(xsect, y) / xsect_getWofY(xsect, y);
+    y = xsect_getAofY(sp, xsect, y) / xsect_getWofY(sp, xsect, y);
 
     // --- compute Froude No.
     return fabs(v) / sqrt(GRAVITY * y);
@@ -987,12 +987,12 @@ void  conduit_validate(SWMM_Project *sp, int j, int k)
 
     // --- if custom xsection, then set its parameters
     if ( sp->Link[j].xsect.type == CUSTOM )
-        xsect_setCustomXsectParams(&sp->Link[j].xsect);
+        xsect_setCustomXsectParams(sp, &sp->Link[j].xsect);
 
     // --- if irreg. xsection, assign transect roughness to conduit
     if ( sp->Link[j].xsect.type == IRREGULAR )
     {
-        xsect_setIrregXsectParams(&sp->Link[j].xsect);
+        xsect_setIrregXsectParams(sp, &sp->Link[j].xsect);
         sp->Conduit[k].roughness = Transect[sp->Link[j].xsect.transect].roughness;
     }
 
@@ -1206,7 +1206,7 @@ double conduit_getLengthFactor(SWMM_Project *sp, int j, int k, double roughness)
     yFull = sp->Link[j].xsect.yFull;
     if ( xsect_isOpen(sp->Link[j].xsect.type) )
     {
-        yFull = sp->Link[j].xsect.aFull / xsect_getWofY(&sp->Link[j].xsect, yFull);
+        yFull = sp->Link[j].xsect.aFull / xsect_getWofY(sp, &sp->Link[j].xsect, yFull);
     }
     vFull = PHI / roughness * sp->Link[j].xsect.sFull *
             sqrt(fabs(sp->Conduit[k].slope)) / sp->Link[j].xsect.aFull;
@@ -1324,7 +1324,7 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
         // --- find evaporation rate for open conduits
         if ( xsect_isOpen(xsect->type) && sp->Evap.rate > 0.0 )
         {
-            topWidth = xsect_getWofY(xsect, depth);
+            topWidth = xsect_getWofY(sp, xsect, depth);
             evapLossRate = topWidth * length * sp->Evap.rate;
         }
 
@@ -1345,7 +1345,7 @@ double conduit_getLossRate(SWMM_Project *sp, int j, double q, double tStep)     
 /////////////////////////////////////////////////////////////////
 
             // compute seepage loss rate across length of conduit
-            seepLossRate = sp->Link[j].seepRate * xsect_getWofY(xsect, depth) *    //(5.1.012)
+            seepLossRate = sp->Link[j].seepRate * xsect_getWofY(sp, xsect, depth) *    //(5.1.012)
                            length;
             seepLossRate *= sp->Adjust.hydconFactor;                               //(5.1.008)
         }
@@ -1464,20 +1464,20 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
     }
     else
     {
-        if ( Curve[m].curveType < PUMP1_CURVE ||
-             Curve[m].curveType > PUMP4_CURVE )
+        if ( sp->Curve[m].curveType < PUMP1_CURVE ||
+             sp->Curve[m].curveType > PUMP4_CURVE )
             report_writeErrorMsg(sp, ERR_NO_CURVE, sp->Link[j].ID);
 
         // --- store pump curve type with pump's parameters
         else
         {
-            sp->Pump[k].type = Curve[m].curveType - PUMP1_CURVE;
-            if ( table_getFirstEntry(&Curve[m], &x, &y) )
+            sp->Pump[k].type = sp->Curve[m].curveType - PUMP1_CURVE;
+            if ( table_getFirstEntry(&sp->Curve[m], &x, &y) )
             {
                 sp->Link[j].qFull = y;
                 sp->Pump[k].xMin = x;
                 sp->Pump[k].xMax = x;
-                while ( table_getNextEntry(&Curve[m], &x, &y) )
+                while ( table_getNextEntry(&sp->Curve[m], &x, &y) )
                 {
                     sp->Link[j].qFull = MAX(y, sp->Link[j].qFull);
                     sp->Pump[k].xMax = x;
@@ -1545,11 +1545,11 @@ double pump_getInflow(SWMM_Project *sp, int j)
         qIn = sp->Node[n1].inflow + sp->Node[n1].overflow;
 
     // --- pumping rate depends on pump curve type
-    else switch(Curve[m].curveType)
+    else switch(sp->Curve[m].curveType)
     {
       case PUMP1_CURVE:
         vol = sp->Node[n1].newVolume * UCF(sp, VOLUME);
-        qIn = table_intervalLookup(&Curve[m], vol) / UCF(sp, FLOW);
+        qIn = table_intervalLookup(&sp->Curve[m], vol) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
         if ( vol < sp->Pump[k].xMin || vol > sp->Pump[k].xMax )
@@ -1558,7 +1558,7 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
       case PUMP2_CURVE:
         depth = sp->Node[n1].newDepth * UCF(sp, LENGTH);
-        qIn = table_intervalLookup(&Curve[m], depth) / UCF(sp, FLOW);
+        qIn = table_intervalLookup(&sp->Curve[m], depth) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
         if ( depth < sp->Pump[k].xMin || depth > sp->Pump[k].xMax )
@@ -1571,11 +1571,11 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
 		head = MAX(head, 0.0);
 
-        qIn = table_lookup(&Curve[m], head*UCF(sp, LENGTH)) / UCF(sp, FLOW);
+        qIn = table_lookup(&sp->Curve[m], head*UCF(sp, LENGTH)) / UCF(sp, FLOW);
 
         // --- compute dQ/dh (slope of pump curve) and
         //     reverse sign since flow decreases with increasing head
-    	sp->Link[j].dqdh = -table_getSlope(&Curve[m], head*UCF(sp, LENGTH)) *
+    	sp->Link[j].dqdh = -table_getSlope(&sp->Curve[m], head*UCF(sp, LENGTH)) *
                        UCF(sp, LENGTH) / UCF(sp, FLOW);
 
         // --- check if off of pump curve
@@ -1586,10 +1586,10 @@ double pump_getInflow(SWMM_Project *sp, int j)
 
       case PUMP4_CURVE:
         depth = sp->Node[n1].newDepth;
-        qIn = table_lookup(&Curve[m], depth*UCF(sp, LENGTH)) / UCF(sp, FLOW);
+        qIn = table_lookup(&sp->Curve[m], depth*UCF(sp, LENGTH)) / UCF(sp, FLOW);
 
         // --- compute dQ/dh (slope of pump curve)
-        qIn1 = table_lookup(&Curve[m], (depth+dh)*UCF(sp, LENGTH)) / UCF(sp, FLOW);
+        qIn1 = table_lookup(&sp->Curve[m], (depth+dh)*UCF(sp, LENGTH)) / UCF(sp, FLOW);
         sp->Link[j].dqdh = (qIn1 - qIn) / dh;
 
         // --- check if off of pump curve
@@ -1727,7 +1727,7 @@ void  orifice_setSetting(SWMM_Project *sp, int j, double tstep)
 
     // --- find effective orifice discharge coeff.
     h = sp->Link[j].setting * sp->Link[j].xsect.yFull;
-    f = xsect_getAofY(&sp->Link[j].xsect, h) * sqrt(2.0 * GRAVITY);
+    f = xsect_getAofY(sp, &sp->Link[j].xsect, h) * sqrt(2.0 * GRAVITY);
     sp->Orifice[k].cOrif = sp->Orifice[k].cDisch * f;
 
     // --- find equiv. discharge coeff. for when weir flow occurs
@@ -1885,13 +1885,13 @@ double orifice_getInflow(SWMM_Project *sp, int j)
     {
         sp->Link[j].newDepth = y1 * f;
         sp->Orifice[k].surfArea =
-            xsect_getWofY(&sp->Link[j].xsect, sp->Link[j].newDepth) *
+            xsect_getWofY(sp, &sp->Link[j].xsect, sp->Link[j].newDepth) *
             sp->Orifice[k].length;
     }
     else
     {
         sp->Link[j].newDepth = y1;
-        sp->Orifice[k].surfArea = xsect_getAofY(&sp->Link[j].xsect, y1);
+        sp->Orifice[k].surfArea = xsect_getAofY(sp, &sp->Link[j].xsect, y1);
     }
 
     // --- find flow through the orifice
@@ -1949,8 +1949,8 @@ double orifice_getFlow(SWMM_Project *sp, int j, int k,  double head, double f,
     if ( hasFlapGate )
     {
         // --- compute velocity for current orifice flow
-        area = xsect_getAofY(&sp->Link[j].xsect,
-                             sp->Link[j].setting * sp->Link[j].xsect.yFull);
+        area = xsect_getAofY(sp, &sp->Link[j].xsect,
+                sp->Link[j].setting * sp->Link[j].xsect.yFull);
         veloc = q / area;
 
         // --- compute head loss from gate
@@ -2254,7 +2254,7 @@ double weir_getInflow(SWMM_Project *sp, int j)
 
     // --- compute new equivalent surface area
     y = sp->Link[j].xsect.yFull - (hcrown - MIN(h1, hcrown));
-    sp->Weir[k].surfArea = xsect_getWofY(&sp->Link[j].xsect, y) * sp->Weir[k].length;
+    sp->Weir[k].surfArea = xsect_getWofY(sp, &sp->Link[j].xsect, y) * sp->Weir[k].length;
 
 ////  New section added to release 5.1.007.  ////                              //(5.1.007)
 
@@ -2373,7 +2373,7 @@ void weir_getFlow(SWMM_Project *sp, int j, int k,  double head, double dir, int 
 
       case TRAPEZOIDAL_WEIR:
         y = (1.0 - sp->Link[j].setting) * sp->Link[j].xsect.yFull;
-        length = xsect_getWofY(&sp->Link[j].xsect, y) * UCF(sp, LENGTH);
+        length = xsect_getWofY(sp, &sp->Link[j].xsect, y) * UCF(sp, LENGTH);
 
 ////  End contractions don't apply to trapezoidal weirs ////                   //(5.1.012)
         //length -= 0.1 * sp->Weir[k].endCon * h;                                  //(5.1.012)
@@ -2469,8 +2469,8 @@ double weir_getOpenArea(SWMM_Project *sp, int j, double y)
 
     // --- return difference between area of offset + water depth
     //     and area of just the offset
-    return xsect_getAofY(&sp->Link[j].xsect, zy) -
-           xsect_getAofY(&sp->Link[j].xsect, z);
+    return xsect_getAofY(sp, &sp->Link[j].xsect, zy) -
+           xsect_getAofY(sp, &sp->Link[j].xsect, z);
 }
 
 //=============================================================================
@@ -2672,7 +2672,7 @@ double outlet_getFlow(SWMM_Project *sp, int k, double head)
 
     // --- look-up flow in rating curve table if provided
     m = sp->Outlet[k].qCurve;
-    if ( m >= 0 ) return table_lookup(&Curve[m], h) / UCF(sp, FLOW);
+    if ( m >= 0 ) return table_lookup(&sp->Curve[m], h) / UCF(sp, FLOW);
 
     // --- otherwise use function to find flow
     else return sp->Outlet[k].qCoeff * pow(h, sp->Outlet[k].qExpon) / UCF(sp, FLOW);

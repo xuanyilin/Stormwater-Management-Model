@@ -559,7 +559,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return inflow_readDwfInflow(sp, Tok, Ntokens);
 
       case s_PATTERN:
-        return inflow_readDwfPattern(Tok, Ntokens);
+        return inflow_readDwfPattern(sp, Tok, Ntokens);
 
       case s_RDII:
         return rdii_readRdiiInflow(sp, Tok, Ntokens);
@@ -574,7 +574,7 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return treatmnt_readExpression(sp, Tok, Ntokens);
 
       case s_CURVE:
-        return table_readCurve(Tok, Ntokens);
+        return table_readCurve(sp, Tok, Ntokens);
 
       case s_TIMESERIES:
         return table_readTimeseries(Tok, Ntokens);

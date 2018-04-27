@@ -492,7 +492,7 @@ void initLinks(SWMM_Project *sp, int routingModel)
             sp->Conduit[k].q2 = sp->Conduit[k].q1;
 
             // --- find areas based on initial flow depth
-            sp->Conduit[k].a1 = xsect_getAofY(&sp->Link[i].xsect, sp->Link[i].newDepth);
+            sp->Conduit[k].a1 = xsect_getAofY(sp, &sp->Link[i].xsect, sp->Link[i].newDepth);
             sp->Conduit[k].a2 = sp->Conduit[k].a1;
 
             // --- compute initial volume from area
@@ -693,8 +693,8 @@ void setNewLinkState(SWMM_Project *sp, int j)
         k = sp->Link[j].subIndex;
         a = 0.5 * (sp->Conduit[k].a1 + sp->Conduit[k].a2);
         sp->Link[j].newVolume = a * link_getLength(sp, j) * sp->Conduit[k].barrels;
-        y1 = xsect_getYofA(&sp->Link[j].xsect, sp->Conduit[k].a1);
-        y2 = xsect_getYofA(&sp->Link[j].xsect, sp->Conduit[k].a2);
+        y1 = xsect_getYofA(sp, &sp->Link[j].xsect, sp->Conduit[k].a1);
+        y2 = xsect_getYofA(sp, &sp->Link[j].xsect, sp->Conduit[k].a2);
         sp->Link[j].newDepth = 0.5 * (y1 + y2);
 
         // --- update depths at end nodes

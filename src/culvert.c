@@ -154,12 +154,13 @@ typedef struct
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static double getUnsubmergedFlow(int code, double h, TCulvert* culvert);
+static double getUnsubmergedFlow(SWMM_Project *sp, int code, double h,
+        TCulvert* culvert);
 static double getSubmergedFlow(int code, double h, TCulvert* culvert);
-static double getTransitionFlow(int code, double h, double h1, double h2,
+static double getTransitionFlow(SWMM_Project *sp, int code, double h, double h1, double h2,
 	          TCulvert* culvert);
-static double getForm1Flow(double h, TCulvert* culvert);
-static double form1Eqn(double yc, void* p);
+static double getForm1Flow(SWMM_Project *sp, double h, TCulvert* culvert);
+static double form1Eqn(SWMM_Project *sp, double yc, void* p);
 
 static void report_CulvertControl(SWMM_Project *pr, int j, double q0, double q,
         int condition, double yRatio);                                                  //for debugging only
@@ -223,13 +224,13 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
         y1 = 0.95 * culvert.yFull;
         if ( y <= y1 )
         {
-            q = getUnsubmergedFlow(code, y, &culvert);
+            q = getUnsubmergedFlow(sp, code, y, &culvert);
             condition = 1;
         }
         // --- flow is in transition zone
         else
         {
-            q = getTransitionFlow(code, y, y1, y2, &culvert);
+            q = getTransitionFlow(sp, code, y, y1, y2, &culvert);
             condition = 0;
         }
     }
@@ -250,7 +251,7 @@ double culvert_getInflow(SWMM_Project *sp, int j, double q0, double h)
 
 //=============================================================================
 
-double getUnsubmergedFlow(int code, double h, TCulvert* culvert)
+double getUnsubmergedFlow(SWMM_Project *sp, int code, double h, TCulvert* culvert)
 //
 //  Input:   code  = culvert type code number
 //           h     = inlet water depth above culvert invert
@@ -272,7 +273,7 @@ double getUnsubmergedFlow(int code, double h, TCulvert* culvert)
     // --- evaluate correct equation form
     if ( Params[code][FORM] == 1.0)
     {
-        q = getForm1Flow(h, culvert);
+        q = getForm1Flow(sp, h, culvert);
     }
     else q = culvert->ad * pow(arg, 1.0/culvert->mm);
     culvert->dQdH = q / h / culvert->mm;
@@ -309,7 +310,7 @@ double getSubmergedFlow(int code, double h, TCulvert* culvert)
 
 //=============================================================================
 
-double getTransitionFlow(int code, double h, double h1, double h2, TCulvert* culvert)
+double getTransitionFlow(SWMM_Project *sp, int code, double h, double h1, double h2, TCulvert* culvert)
 //
 //  Input:   code    = culvert type code number
 //           h       = inlet water depth above culvert invert (ft)
@@ -323,7 +324,7 @@ double getTransitionFlow(int code, double h, double h1, double h2, TCulvert* cul
 //           submerged and unsubmerged conditions.
 //
 {
-    double q1 = getUnsubmergedFlow(code, h1, culvert);
+    double q1 = getUnsubmergedFlow(sp, code, h1, culvert);
     double q2 = getSubmergedFlow(code, h2, culvert);
     double q = q1 + (q2 - q1) * (h - h1) / (h2 - h1);
     culvert->dQdH = (q2 - q1) / (h2 - h1);
@@ -332,7 +333,7 @@ double getTransitionFlow(int code, double h, double h1, double h2, TCulvert* cul
 
 //=============================================================================
 
-double getForm1Flow(double h, TCulvert* culvert)
+double getForm1Flow(SWMM_Project *sp, double h, TCulvert* culvert)
 //
 //  Input:   h       = inlet water depth above culvert invert
 //           culvert = pointer to a culvert data structure
@@ -348,7 +349,7 @@ double getForm1Flow(double h, TCulvert* culvert)
 
     // --- use Ridder's method to solve Equation Form 1 for critical depth
     //     between a range of 0.01h and h
-    findroot_Ridder(0.01*h, h, 0.001, form1Eqn, culvert);
+    findroot_Ridder(sp, 0.01*h, h, 0.001, form1Eqn, culvert);
 
     // --- return the flow value used in evaluating Equation Form 1
     return culvert->qc;
@@ -356,7 +357,7 @@ double getForm1Flow(double h, TCulvert* culvert)
 
 //=============================================================================
 
-double form1Eqn(double yc, void* p)
+double form1Eqn(SWMM_Project *sp, double yc, void* p)
 //
 //  Input:   yc = critical depth
 //           p  = pointer to a TCulvert object
@@ -378,8 +379,8 @@ double form1Eqn(double yc, void* p)
     double ac, wc, yh;
 	TCulvert* culvert = (TCulvert *)p;
 
-	ac = xsect_getAofY(culvert->xsect, yc);
-    wc = xsect_getWofY(culvert->xsect, yc);
+	ac = xsect_getAofY(sp, culvert->xsect, yc);
+    wc = xsect_getWofY(sp, culvert->xsect, yc);
     yh = ac/wc;
 
     culvert->qc = ac * sqrt(GRAVITY * yh);
