@@ -754,7 +754,7 @@ void writeLinkFlows(SWMM_Project *sp)
         // --- print max/full depth
         fullDepth = sp->Link[j].xsect.yFull;
         if ( sp->Link[j].type == ORIFICE &&
-             Orifice[k].type == BOTTOM_ORIFICE ) fullDepth = 0.0;
+             sp->Orifice[k].type == BOTTOM_ORIFICE ) fullDepth = 0.0;
         if ( fullDepth > 0.0 )
         {
             fprintf(sp->Frpt.file, "  %6.2f", LinkStats[j].maxDepth / fullDepth);

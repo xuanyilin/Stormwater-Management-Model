@@ -338,12 +338,12 @@ void  link_setParams(SWMM_Project *sp, int j, int type, int n1, int n2, int k,
         break;
 
       case ORIFICE:
-        Orifice[k].type      = (int)x[0];
+        sp->Orifice[k].type      = (int)x[0];
         sp->Link[j].offset1      = x[1] / UCF(sp, LENGTH);
         sp->Link[j].offset2      = sp->Link[j].offset1;
-        Orifice[k].cDisch    = x[2];
+        sp->Orifice[k].cDisch    = x[2];
         sp->Link[j].hasFlapGate  = (x[3] > 0.0) ? 1 : 0;
-        Orifice[k].orate     = x[4] * 3600.0;
+        sp->Orifice[k].orate     = x[4] * 3600.0;
         break;
 
       case WEIR:
@@ -416,7 +416,7 @@ void  link_validate(SWMM_Project *sp, int j)
     // --- skip pumps and bottom orifices
     if ( sp->Link[j].type == PUMP ||
          (sp->Link[j].type == ORIFICE &&
-          Orifice[sp->Link[j].subIndex].type == BOTTOM_ORIFICE) ) return;
+          sp->Orifice[sp->Link[j].subIndex].type == BOTTOM_ORIFICE) ) return;
 
     // --- extend upstream node's full depth to link's crown elevation
     n = sp->Link[j].node1;
@@ -1691,9 +1691,9 @@ void  orifice_validate(SWMM_Project *sp, int j, int k)
     orifice_setSetting(sp, j, 0.0);
 
     // --- compute an equivalent length
-    Orifice[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * sp->Link[j].xsect.yFull);
-    Orifice[k].length = MAX(200.0, Orifice[k].length);
-    Orifice[k].surfArea = 0.0;
+    sp->Orifice[k].length = 2.0 * sp->RouteStep * sqrt(GRAVITY * sp->Link[j].xsect.yFull);
+    sp->Orifice[k].length = MAX(200.0, sp->Orifice[k].length);
+    sp->Orifice[k].surfArea = 0.0;
 }
 
 //=============================================================================
@@ -1711,14 +1711,14 @@ void  orifice_setSetting(SWMM_Project *sp, int j, double tstep)
     double h, f;
 
     // --- case where adjustment rate is instantaneous
-    if ( Orifice[k].orate == 0.0 || tstep == 0.0)
+    if ( sp->Orifice[k].orate == 0.0 || tstep == 0.0)
         sp->Link[j].setting = sp->Link[j].targetSetting;
 
     // --- case where orifice setting depends on time step
     else
     {
         delta = sp->Link[j].targetSetting - sp->Link[j].setting;
-        step = tstep / Orifice[k].orate;
+        step = tstep / sp->Orifice[k].orate;
         if ( step + 0.001 >= fabs(delta) )
             sp->Link[j].setting = sp->Link[j].targetSetting;
         else sp->Link[j].setting += SGN(delta) * step;
@@ -1727,10 +1727,10 @@ void  orifice_setSetting(SWMM_Project *sp, int j, double tstep)
     // --- find effective orifice discharge coeff.
     h = sp->Link[j].setting * sp->Link[j].xsect.yFull;
     f = xsect_getAofY(&sp->Link[j].xsect, h) * sqrt(2.0 * GRAVITY);
-    Orifice[k].cOrif = Orifice[k].cDisch * f;
+    sp->Orifice[k].cOrif = sp->Orifice[k].cDisch * f;
 
     // --- find equiv. discharge coeff. for when weir flow occurs
-    Orifice[k].cWeir = orifice_getWeirCoeff(sp, j, k, h) * f;
+    sp->Orifice[k].cWeir = orifice_getWeirCoeff(sp, j, k, h) * f;
 }
 
 //=============================================================================
@@ -1748,7 +1748,7 @@ double orifice_getWeirCoeff(SWMM_Project *sp, int j, int k, double h)
     double w, aOverL;
 
     // --- this is for bottom orifices
-    if ( Orifice[k].type == BOTTOM_ORIFICE )
+    if ( sp->Orifice[k].type == BOTTOM_ORIFICE )
     {
         // --- find critical height above opening where orifice flow
         //     turns into weir flow. It equals (Co/Cw)*(Area/Length)
@@ -1761,22 +1761,22 @@ double orifice_getWeirCoeff(SWMM_Project *sp, int j, int k, double h)
             w = sp->Link[j].xsect.wMax;
             aOverL = (h*w) / (2.0*(h+w));
         }
-        h = Orifice[k].cDisch / 0.414 * aOverL;
-        Orifice[k].hCrit = h;
+        h = sp->Orifice[k].cDisch / 0.414 * aOverL;
+        sp->Orifice[k].hCrit = h;
     }
 
     // --- this is for side orifices
     else
     {
         // --- critical height is simply height of opening
-        Orifice[k].hCrit = h;
+        sp->Orifice[k].hCrit = h;
 
         // --- head on orifice is distance to center line
         h = h / 2.0;
     }
 
     // --- return a coefficient for the critical depth
-    return Orifice[k].cDisch * sqrt(h);
+    return sp->Orifice[k].cDisch * sqrt(h);
 }
 
 //=============================================================================
@@ -1825,7 +1825,7 @@ double orifice_getInflow(SWMM_Project *sp, int j)
     }
 
     // --- orifice is a bottom orifice (oriented in horizontal plane)
-    if ( Orifice[k].type == BOTTOM_ORIFICE )
+    if ( sp->Orifice[k].type == BOTTOM_ORIFICE )
     {
         // --- compute crest elevation
         hcrest = sp->Node[n1].invertElev + sp->Link[j].offset1;
@@ -1836,7 +1836,7 @@ double orifice_getInflow(SWMM_Project *sp, int j)
         else head = h1 - hcrest;
 
         // --- find fraction of critical height for which weir flow occurs
-        f = head / Orifice[k].hCrit;
+        f = head / sp->Orifice[k].hCrit;
         f = MIN(f, 1.0);
     }
 
@@ -1865,7 +1865,7 @@ double orifice_getInflow(SWMM_Project *sp, int j)
     {
         sp->Link[j].newDepth = 0.0;
         sp->Link[j].flowClass = DRY;
-        Orifice[k].surfArea = FUDGE * Orifice[k].length;
+        sp->Orifice[k].surfArea = FUDGE * sp->Orifice[k].length;
         sp->Link[j].dqdh = 0.0;
         return 0.0;
     }
@@ -1880,17 +1880,17 @@ double orifice_getInflow(SWMM_Project *sp, int j)
 
     // --- compute flow depth and surface area
     y1 = sp->Link[j].xsect.yFull * sp->Link[j].setting;
-    if ( Orifice[k].type == SIDE_ORIFICE )
+    if ( sp->Orifice[k].type == SIDE_ORIFICE )
     {
         sp->Link[j].newDepth = y1 * f;
-        Orifice[k].surfArea =
+        sp->Orifice[k].surfArea =
             xsect_getWofY(&sp->Link[j].xsect, sp->Link[j].newDepth) *
-            Orifice[k].length;
+            sp->Orifice[k].length;
     }
     else
     {
         sp->Link[j].newDepth = y1;
-        Orifice[k].surfArea = xsect_getAofY(&sp->Link[j].xsect, y1);
+        sp->Orifice[k].surfArea = xsect_getAofY(&sp->Link[j].xsect, y1);
     }
 
     // --- find flow through the orifice
@@ -1933,14 +1933,14 @@ double orifice_getFlow(SWMM_Project *sp, int j, int k,  double head, double f,
     //     orifice behaves as a weir
     else if ( f < 1.0 )
     {
-        q = Orifice[k].cWeir * pow(f, 1.5);
-        sp->Link[j].dqdh = 1.5 * q / (f * Orifice[k].hCrit);
+        q = sp->Orifice[k].cWeir * pow(f, 1.5);
+        sp->Link[j].dqdh = 1.5 * q / (f * sp->Orifice[k].hCrit);
     }
 
     // --- case where normal orifice flow applies
     else
     {
-        q = Orifice[k].cOrif * sqrt(head);
+        q = sp->Orifice[k].cOrif * sqrt(head);
         sp->Link[j].dqdh = q / (2.0 * head);
     }
 
@@ -1960,7 +1960,7 @@ double orifice_getFlow(SWMM_Project *sp, int j, int k,  double head, double f,
         //     or critical depth fraction (for weir flow)
         if ( f < 1.0 )
         {
-            f = f - hLoss/Orifice[k].hCrit;
+            f = f - hLoss/sp->Orifice[k].hCrit;
             if ( f < 0.0 ) f = 0.0;
         }
         else

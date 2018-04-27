@@ -500,7 +500,7 @@ void  findNonConduitSurfArea(SWMM_Project *sp, int i)
 {
     if ( sp->Link[i].type == ORIFICE )
     {
-        sp->Link[i].surfArea1 = Orifice[sp->Link[i].subIndex].surfArea / 2.;
+        sp->Link[i].surfArea1 = sp->Orifice[sp->Link[i].subIndex].surfArea / 2.;
     }
 
     // --- no surface area for weirs to maintain SWMM 4 compatibility
