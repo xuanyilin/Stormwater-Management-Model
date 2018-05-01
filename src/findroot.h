@@ -9,7 +9,6 @@
 #ifndef FINDROOT_H
 #define FINDROOT_H
 
-#include "swmm5.h"
 
 int findroot_Newton(SWMM_Project *sp, double x1, double x2, double* rts, double xacc,
         void (*func) (SWMM_Project *sp, double x, double* f, double* df,

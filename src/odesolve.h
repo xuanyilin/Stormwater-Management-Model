@@ -8,7 +8,6 @@
 #ifndef ODESOLVE_H
 #define ODESOLVE_H
 
-#include "swmm5.h"
 
 // functions that open, close, and use the ODE solver
 int  odesolve_open(int n);

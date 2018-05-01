@@ -11,6 +11,7 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#include "headers.h"
 #include "findroot.h"
 
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))

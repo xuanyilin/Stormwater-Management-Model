@@ -17,7 +17,6 @@
 #ifndef INFIL_H
 #define INFIL_H
 
-#include "swmm5.h"
 
 //---------------------
 // Enumerated Constants

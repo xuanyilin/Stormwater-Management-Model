@@ -52,6 +52,9 @@
 #define OBJECTS_H
 
 
+// Forward declare an alias for SWMM_Project to resolve cyclic dependency
+typedef struct SWMM_Project SWMM_Project;
+
 #include "mathexpr.h"
 #include "infil.h"
 #include "exfil.h"                                                             //(5.1.007)
@@ -105,7 +108,7 @@ typedef struct
 {
    char*         ID;              // raingage name
    int		     externalRain;    // rainfall-rate injected RAIN API
-   int           dataSource;      // data from time series or file 
+   int           dataSource;      // data from time series or file
    int           tSeries;         // rainfall data time series index
    char          fname[MAXFNAME+1]; // name of rainfall data file
    char          staID[MAXMSG+1]; // station number
@@ -129,7 +132,7 @@ typedef struct
    double        reportRainfall;  // rainfall value used for reported results
    int           coGage;          // index of gage with same rain timeseries
    int           isUsed;          // TRUE if gage used by any subcatchment
-   int           isCurrent;       // TRUE if gage's rainfall is current 
+   int           isCurrent;       // TRUE if gage's rainfall is current
 }  TGage;
 
 
@@ -138,7 +141,7 @@ typedef struct
 //-------------------
 typedef struct
 {
-   int           dataSource;      // data from time series or file 
+   int           dataSource;      // data from time series or file
    int           tSeries;         // temperature data time series index
    DateTime      fileStartDate;   // starting date of data read from file
    double        elev;            // elev. of study area (ft)
@@ -189,11 +192,11 @@ typedef struct
     int          tSeries;         // time series index
     double       monthlyEvap[12]; // monthly evaporation values
     double       panCoeff[12];    // monthly pan coeff. values
-    int          recoveryPattern; // soil recovery factor pattern 
+    int          recoveryPattern; // soil recovery factor pattern
     int          dryOnly;         // true if evaporation only in dry periods
     //----------------------------
     double       rate;            // current evaporation rate (ft/sec)
-    double       recoveryFactor;  // current soil recovery factor 
+    double       recoveryFactor;  // current soil recovery factor
 }   TEvap;
 
 ////  Added for release 5.1.007  ////                                          //(5.1.007)
@@ -398,7 +401,7 @@ typedef struct
    double        lidArea;         // area devoted to LIDs (ft2)
    double        rainfall;        // current rainfall (ft/sec)
    double        evapLoss;        // current evap losses (ft/sec)
-   double        infilLoss;       // current infil losses (ft/sec) 
+   double        infilLoss;       // current infil losses (ft/sec)
    double        runon;           // runon from other subcatchments (cfs)
    double        oldRunoff;       // previous runoff (cfs)
    double        newRunoff;       // current runoff (cfs)
@@ -1090,7 +1093,6 @@ typedef struct
    char          Enabled;         // TRUE if appears in report table
    int           Precision;       // number of decimal places when reported
 }  TRptField;
-
 
 
 struct SWMM_Project {

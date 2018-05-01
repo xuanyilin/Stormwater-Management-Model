@@ -19,7 +19,7 @@
 #define GLOBALS_H
 
 
-EXTERN SWMM_Project *_defaultProject;
+EXTERN void *_defaultProject;
 
 
 #endif //GLOBALS_H

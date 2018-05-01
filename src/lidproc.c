@@ -59,8 +59,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "lid.h"
 #include "headers.h"
+#include "lid.h"
 
 //-----------------------------------------------------------------------------
 //  Constants

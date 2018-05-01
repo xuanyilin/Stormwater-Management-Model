@@ -11,7 +11,6 @@
 #ifndef MATHEXPR_H
 #define MATHEXPR_H
 
-#include "swmm5.h"
 
 //  Node in a tokenized math expression list
 struct ExprNode

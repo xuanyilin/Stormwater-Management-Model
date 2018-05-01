@@ -48,6 +48,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "headers.h"
 #include "mathexpr.h"
 
 #define MAX_STACK_SIZE  1024

@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "headers.h"
+#include "toolkitAPI.h"
 #include "swmm5.h"                     // declaration of exportable functions
 #include "hash.h"
 

@@ -11,7 +11,9 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include "headers.h"
 #include "odesolve.h"
+
 
 #define MAXSTP 10000
 #define TINY   1.0e-30

@@ -55,8 +55,6 @@
 	#define DLLEXPORT
 #endif
 
-#include "swmm5.h"
-#include "toolkitAPI.h"
 
 void     project_open(SWMM_Project *sp, char *f1, char *f2, char *f3);
 void     project_close(SWMM_Project *sp);
