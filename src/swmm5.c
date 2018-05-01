@@ -464,7 +464,7 @@ int DLLEXPORT swmm_start(int saveResults) {
     return swmm_start_project(_defaultProject, saveResults);
 }
 
-int DLLEXPORT swmm_start_project(SWMM_ProjectHandle *ph, int saveResults)
+int DLLEXPORT swmm_start_project(SWMM_ProjectHandle ph, int saveResults)
 //
 //  Input:   saveResults = TRUE if simulation results saved to binary file 
 //  Output:  returns an error code
@@ -559,7 +559,7 @@ int DLLEXPORT swmm_step(double* elapsedTime) {
     return swmm_step_project(_defaultProject, elapsedTime);
 }
 
-int DLLEXPORT swmm_step_project(SWMM_ProjectHandle *ph, double* elapsedTime)                                   //(5.1.011)
+int DLLEXPORT swmm_step_project(SWMM_ProjectHandle ph, double* elapsedTime)                                   //(5.1.011)
 //
 //  Input:   elapsedTime = current elapsed time in decimal days
 //  Output:  updated value of elapsedTime,
@@ -690,7 +690,7 @@ int DLLEXPORT swmm_end(void) {
     return swmm_end_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_end_project(SWMM_ProjectHandle *ph)
+int DLLEXPORT swmm_end_project(SWMM_ProjectHandle ph)
 //
 //  Input:   none
 //  Output:  none
@@ -735,7 +735,7 @@ int DLLEXPORT swmm_report(void) {
     return swmm_report_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_report_project(SWMM_ProjectHandle *ph)
+int DLLEXPORT swmm_report_project(SWMM_ProjectHandle ph)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -760,7 +760,7 @@ int DLLEXPORT swmm_close(void) {
     return swmm_close_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_close_project(SWMM_ProjectHandle *ph)
+int DLLEXPORT swmm_close_project(SWMM_ProjectHandle ph)
 //
 //  Input:   none
 //  Output:  returns an error code
@@ -792,7 +792,7 @@ int  DLLEXPORT swmm_getMassBalErr(float* runoffErr, float* flowErr,
             qualErr);
 }
 
-int  DLLEXPORT swmm_getMassBalErr_project(SWMM_ProjectHandle *ph, float* runoffErr,
+int  DLLEXPORT swmm_getMassBalErr_project(SWMM_ProjectHandle ph, float* runoffErr,
         float* flowErr, float* qualErr)
 //
 //  Input:   none
@@ -864,7 +864,7 @@ int DLLEXPORT swmm_getWarnings(void)
     return swmm_getWarnings_project(_defaultProject);
 }
 
-int DLLEXPORT swmm_getWarnings_project(SWMM_ProjectHandle *ph)
+int DLLEXPORT swmm_getWarnings_project(SWMM_ProjectHandle ph)
 //
 //  Input:  none
 //  Output: returns number of warning messages issued.
@@ -883,7 +883,7 @@ int  DLLEXPORT swmm_getError(char* errMsg, int msgLen)
     return swmm_getError_project(_defaultProject, errMsg, msgLen);
 }
 
-int  DLLEXPORT swmm_getError_project(SWMM_ProjectHandle *ph, char* errMsg, int msgLen)
+int  DLLEXPORT swmm_getError_project(SWMM_ProjectHandle ph, char* errMsg, int msgLen)
 //
 //  Input:   errMsg = character array to hold error message text
 //           msgLen = maximum size of errMsg
@@ -915,7 +915,7 @@ void DLLEXPORT   swmm_clearError(void)
     swmm_clearError_project(_defaultProject);
 }
 
-void DLLEXPORT   swmm_clearError_project(SWMM_ProjectHandle *ph)
+void DLLEXPORT   swmm_clearError_project(SWMM_ProjectHandle ph)
 //
 //  Purpose: sets error code to zero
 //
@@ -930,7 +930,7 @@ int  DLLEXPORT   swmm_checkError(char** msg_buffer)
     return swmm_checkError_project(_defaultProject, msg_buffer);
 }
 
-int  DLLEXPORT   swmm_checkError_project(SWMM_ProjectHandle *ph, char** msg_buffer)
+int  DLLEXPORT   swmm_checkError_project(SWMM_ProjectHandle ph, char** msg_buffer)
 //
 //  Purpose: retrieves the descriptive error code number and text
 //      associated with an error condition

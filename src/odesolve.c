@@ -16,7 +16,7 @@
 
 
 #define MAXSTP 10000
-#define TINY   1.0e-30
+#define REALLY_TINY   1.0e-30
 #define SAFETY 0.9
 #define PGROW  -0.2
 #define PSHRNK -0.25
@@ -106,7 +106,7 @@ int odesolve_integrate(SWMM_Project *sp, double ystart[], int n, double x1,
     {
         derivs(sp,x,y,dydx);
         for (i=0; i<n; i++)
-            yscal[i] = fabs(y[i]) + fabs(dydx[i]*h) + TINY;
+            yscal[i] = fabs(y[i]) + fabs(dydx[i]*h) + REALLY_TINY;
         if ((x+h-x2)*(x+h-x1) > 0.0) h = x2 - x;
         errcode = rkqs(sp, &x,n,h,eps,&hdid,&hnext,derivs);
         if (errcode) break;

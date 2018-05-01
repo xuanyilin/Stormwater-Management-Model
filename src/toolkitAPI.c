@@ -56,7 +56,7 @@ int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
             month, day, hours, minutes, seconds);
 }
 
-int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_Project *sp, int timetype,
+int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_ProjectHandle ph, int timetype,
         int *year, int *month, int *day, int *hours, int *minutes, int *seconds)
 //
 // Input:   timetype = time type to return
@@ -65,6 +65,9 @@ int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_Project *sp, int timetype,
 // Purpose: Get the simulation start, end and report date times
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if (swmm_IsOpenFlag() == FALSE)
     {
@@ -94,7 +97,7 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
 {
     return swmm_setSimulationDateTime_project(_defaultProject, timetype, dtimestr);
 }
-int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
+int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_ProjectHandle ph, int timetype,
         char *dtimestr)
 //
 // Input:   timetype = time type to return
@@ -106,6 +109,8 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_Project *sp, int timetype,
 
     char theDate[10];
     char theTime[9];
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
@@ -160,7 +165,7 @@ int DLLEXPORT  swmm_getSimulationUnit(int type, int *value)
     return swmm_getSimulationUnit_project(_defaultProject, type, value);
 }
 
-int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_Project *sp, int type, int *value)
+int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_ProjectHandle ph, int type, int *value)
 //
 // Input:   type = simulation unit type
 // Output:  enum representation of units
@@ -168,6 +173,9 @@ int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_Project *sp, int type, int *v
 // Purpose: get simulation unit types
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -196,7 +204,7 @@ int DLLEXPORT  swmm_getSimulationAnalysisSetting(int type, int *value)
     return swmm_getSimulationAnalysisSetting_project(_defaultProject, type, value);
 }
 
-int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
+int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_ProjectHandle ph,
         int type, int *value)
 //
 // Input:   type = analysis type
@@ -205,6 +213,9 @@ int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_Project *sp,
 // Purpose: get simulation analysis setting
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -242,7 +253,7 @@ int DLLEXPORT  swmm_getSimulationParam(int type, double *value)
     return swmm_getSimulationParam_project(_defaultProject, type, value);
 }
 
-int DLLEXPORT  swmm_getSimulationParam_project(SWMM_Project *sp, int type, double *value)
+int DLLEXPORT  swmm_getSimulationParam_project(SWMM_ProjectHandle ph, int type, double *value)
 //
 // Input:   type = analysis type
 // Output:  Simulation Parameter
@@ -250,6 +261,8 @@ int DLLEXPORT  swmm_getSimulationParam_project(SWMM_Project *sp, int type, doubl
 // Purpose: Get simulation analysis parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
@@ -301,13 +314,15 @@ int DLLEXPORT  swmm_countObjects(int type, int *count) {
     return swmm_countObjects_project(_defaultProject, type, count);
 }
 
-int DLLEXPORT  swmm_countObjects_project(SWMM_Project *sp, int type, int *count)
+int DLLEXPORT  swmm_countObjects_project(SWMM_ProjectHandle ph, int type, int *count)
 //
 // Input:   type = object type (Based on SM_ObjectType enum)
 // Output:  count = pointer to integer
 // Returns: API Error
 // Purpose: uses Object Count table to find number of elements of an object
 {
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     if(type >= MAX_OBJ_TYPES)return ERR_API_OUTBOUNDS;
     *count = sp->Nobjects[type];
     return (0);
@@ -318,7 +333,7 @@ int DLLEXPORT swmm_getObjectId(int type, int index, char *id)
     return swmm_getObjectId_project(_defaultProject, type, index, id);
 }
 
-int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, char *id)
+int DLLEXPORT swmm_getObjectId_project(SWMM_ProjectHandle ph, int type, int index, char *id)
 //
 // Input:   type = object type (Based on SM_ObjectType enum)
 //          index = Index of desired ID
@@ -327,6 +342,9 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_Project *sp, int type, int index, ch
 // Purpose: Gets ID for any object
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     //Provide Empty Character Array
     strcpy(id,"");
 
@@ -387,7 +405,7 @@ int DLLEXPORT swmm_getNodeType(int index, int *Ntype)
     return swmm_getNodeType_project(_defaultProject, index, Ntype);
 }
 
-int DLLEXPORT swmm_getNodeType_project(SWMM_Project *sp, int index, int *Ntype)
+int DLLEXPORT swmm_getNodeType_project(SWMM_ProjectHandle ph, int index, int *Ntype)
 //
 // Input:   index = Index of desired ID
 //          Ntype = Node type (Based on enum SM_NodeType)
@@ -395,6 +413,9 @@ int DLLEXPORT swmm_getNodeType_project(SWMM_Project *sp, int index, int *Ntype)
 // Purpose: Gets Node Type
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -415,7 +436,7 @@ int DLLEXPORT swmm_getLinkType(int index, int *Ltype)
     return swmm_getLinkType_project(_defaultProject, index, Ltype);
 }
 
-int DLLEXPORT swmm_getLinkType_project(SWMM_Project *sp, int index, int *Ltype)
+int DLLEXPORT swmm_getLinkType_project(SWMM_ProjectHandle ph, int index, int *Ltype)
 //
 // Input:   index = Index of desired ID
 //          Ltype = Link type (Based on enum SM_LinkType)
@@ -423,6 +444,9 @@ int DLLEXPORT swmm_getLinkType_project(SWMM_Project *sp, int index, int *Ltype)
 // Purpose: Gets Link Type
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -443,7 +467,7 @@ int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2)
     return swmm_getLinkConnections_project(_defaultProject, index, Node1, Node2);
 }
 
-int DLLEXPORT swmm_getLinkConnections_project(SWMM_Project *sp, int index, int *Node1, int *Node2)
+int DLLEXPORT swmm_getLinkConnections_project(SWMM_ProjectHandle ph, int index, int *Node1, int *Node2)
 //
 // Input:   index = Index of desired ID
 // Output:  Node1 and Node2 indeces
@@ -451,6 +475,9 @@ int DLLEXPORT swmm_getLinkConnections_project(SWMM_Project *sp, int index, int *
 // Purpose: Gets link Connection ID Indeces
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -474,7 +501,7 @@ int DLLEXPORT swmm_getLinkDirection(int index, signed char *value)
     return swmm_getLinkDirection_project(_defaultProject, index, value);
 }
 
-int DLLEXPORT swmm_getLinkDirection_project(SWMM_Project *sp, int index, signed char *value)
+int DLLEXPORT swmm_getLinkDirection_project(SWMM_ProjectHandle ph, int index, signed char *value)
 //
 // Input:   index = Index of desired ID
 // Output:  Link Direction (Only changes is slope < 0)
@@ -482,6 +509,9 @@ int DLLEXPORT swmm_getLinkDirection_project(SWMM_Project *sp, int index, signed 
 // Purpose: Gets Link Direction
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -504,7 +534,7 @@ int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value)
     return swmm_getNodeParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_getNodeParam_project(SWMM_Project *sp, int index, int Param, double *value)
+int DLLEXPORT swmm_getNodeParam_project(SWMM_ProjectHandle ph, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_NodeProperty)
@@ -513,6 +543,9 @@ int DLLEXPORT swmm_getNodeParam_project(SWMM_Project *sp, int index, int Param, 
 // Purpose: Gets Node Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -548,7 +581,7 @@ int DLLEXPORT swmm_setNodeParam(int index, int Param, double value)
     return swmm_setNodeParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_setNodeParam_project(SWMM_Project *sp, int index, int Param, double value)
+int DLLEXPORT swmm_setNodeParam_project(SWMM_ProjectHandle ph, int index, int Param, double value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_NodeProperty)
@@ -557,6 +590,9 @@ int DLLEXPORT swmm_setNodeParam_project(SWMM_Project *sp, int index, int Param, 
 // Purpose: Sets Node Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -599,7 +635,7 @@ int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value)
     return swmm_getLinkParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_getLinkParam_project(SWMM_Project *sp, int index, int Param, double *value)
+int DLLEXPORT swmm_getLinkParam_project(SWMM_ProjectHandle ph, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_LinkProperty)
@@ -608,6 +644,9 @@ int DLLEXPORT swmm_getLinkParam_project(SWMM_Project *sp, int index, int Param, 
 // Purpose: Gets Link Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -647,7 +686,7 @@ int DLLEXPORT swmm_setLinkParam(int index, int Param, double value)
     return swmm_setLinkParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_setLinkParam_project(SWMM_Project *sp, int index, int Param, double value)
+int DLLEXPORT swmm_setLinkParam_project(SWMM_ProjectHandle ph, int index, int Param, double value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_LinkProperty)
@@ -656,6 +695,9 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_Project *sp, int index, int Param, 
 // Purpose: Sets Link Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -709,7 +751,7 @@ int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value)
     return swmm_getSubcatchParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_getSubcatchParam_project(SWMM_Project *sp, int index, int Param, double *value)
+int DLLEXPORT swmm_getSubcatchParam_project(SWMM_ProjectHandle ph, int index, int Param, double *value)
 //
 // Input:   index = Index of desired ID
 //          param = Parameter desired (Based on enum SM_SubcProperty)
@@ -718,6 +760,9 @@ int DLLEXPORT swmm_getSubcatchParam_project(SWMM_Project *sp, int index, int Par
 // Purpose: Gets Subcatchment Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -752,7 +797,7 @@ int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value) {
     return swmm_setSubcatchParam_project(_defaultProject, index, Param, value);
 }
 
-int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_setSubcatchParam_project(SWMM_ProjectHandle ph, int index,
         int Param, double value)
 //
 // Input:   index = Index of desired ID
@@ -762,6 +807,9 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_Project *sp, int index,
 // Purpose: Sets Subcatchment Parameter
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -805,7 +853,7 @@ int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *ObjIndex)
     return swmm_getSubcatchOutConnection_project(_defaultProject, index, type, ObjIndex);
 }
 
-int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_Project *sp, int index, int *type, int *ObjIndex )
+int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_ProjectHandle ph, int index, int *type, int *ObjIndex )
 //
 // Input:   index = Index of desired ID
 //         (Subcatchments can load to Node or another Subcatchment)
@@ -815,6 +863,9 @@ int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_Project *sp, int index,
 // Purpose: Gets Subcatchment Connection ID Indeces for either Node or Subcatchment
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -855,7 +906,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr)
     return swmm_getCurrentDateTimeStr_project(_defaultProject, dtimestr);
 }
 
-int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_Project *sp, char *dtimestr)
+int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_ProjectHandle ph, char *dtimestr)
 //
 // Output:  DateTime String
 // Return:  API Error
@@ -866,6 +917,8 @@ int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_Project *sp, char *dtimest
     char     theTime[9];
     char     _DTimeStr[22];
     DateTime currentTime;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Simulation is Running
     if(swmm_IsStartedFlag() == FALSE) return(ERR_API_SIM_NRUNNING);
@@ -890,7 +943,7 @@ int DLLEXPORT swmm_getNodeResult(int index, int type, double *result)
     return swmm_getNodeResult_project(_defaultProject, index, type, result);
 }
 
-int DLLEXPORT swmm_getNodeResult_project(SWMM_Project *sp, int index, int type, double *result)
+int DLLEXPORT swmm_getNodeResult_project(SWMM_ProjectHandle ph, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_NodeResult)
@@ -899,6 +952,9 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_Project *sp, int index, int type, 
 // Purpose: Gets Node Simulated Value at Current Time
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Simulation is Running
     if(swmm_IsStartedFlag() == FALSE)
     {
@@ -941,7 +997,7 @@ int DLLEXPORT swmm_getLinkResult(int index, int type, double *result)
     return swmm_getLinkResult_project(_defaultProject, index, type, result);
 }
 
-int DLLEXPORT swmm_getLinkResult_project(SWMM_Project *sp, int index, int type, double *result)
+int DLLEXPORT swmm_getLinkResult_project(SWMM_ProjectHandle ph, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_LinkResult)
@@ -950,6 +1006,9 @@ int DLLEXPORT swmm_getLinkResult_project(SWMM_Project *sp, int index, int type, 
 // Purpose: Gets Link Simulated Value at Current Time
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Simulation is Running
     if(swmm_IsStartedFlag() == FALSE)
     {
@@ -991,7 +1050,7 @@ int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result)
     return swmm_getSubcatchResult_project(_defaultProject, index, type, result);
 }
 
-int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int type, double *result)
+int DLLEXPORT swmm_getSubcatchResult_project(SWMM_ProjectHandle ph, int index, int type, double *result)
 //
 // Input:   index = Index of desired ID
 //          type = Result Type (SM_SubcResult)
@@ -1000,6 +1059,9 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int ty
 // Purpose: Gets Subcatchment Simulated Value at Current Time
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Simulation is Running
     if(swmm_IsStartedFlag() == FALSE)
     {
@@ -1035,14 +1097,18 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_Project *sp, int index, int ty
 int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats){
     return swmm_getNodeStats_project(_defaultProject, index, nodeStats);
 }
-int DLLEXPORT swmm_getNodeStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getNodeStats_project(SWMM_ProjectHandle ph, int index,
         SM_NodeStats *nodeStats)
 //
 // Output:  Node Stats Structure (SM_NodeStats)
 // Return:  API Error
 // Purpose: Gets Node Stats and Converts Units
 {
-    int errorcode = stats_getNodeStat(sp, index, nodeStats);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getNodeStat(sp, index, nodeStats);
 
     if (errorcode == 0)
     {
@@ -1077,7 +1143,7 @@ int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value)
     return swmm_getNodeTotalInflow_project(_defaultProject, index, value);
 }
 
-int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_Project *sp, int index, double *value)
+int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_ProjectHandle ph, int index, double *value)
 //
 // Input:   Node Index
 // Output:  Node Total inflow Volume.
@@ -1085,7 +1151,11 @@ int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_Project *sp, int index, doubl
 // Purpose: Get Node Total Inflow Volume.
 {
 
-    int errorcode = massbal_getNodeTotalInflow(index, value);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = massbal_getNodeTotalInflow(index, value);
 
     if (errorcode == 0)
     {
@@ -1098,14 +1168,18 @@ int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_Project *sp, int index, doubl
 int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats){
     return swmm_getStorageStats_project(_defaultProject, index, storageStats);
 }
-int DLLEXPORT swmm_getStorageStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getStorageStats_project(SWMM_ProjectHandle ph, int index,
         SM_StorageStats *storageStats)
 //
 // Output:  Storage Node Stats Structure (SM_StorageStats)
 // Return:  API Error
 // Purpose: Gets Storage Node Stats and Converts Units
 {
-    int errorcode = stats_getStorageStat(sp, index, storageStats);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getStorageStat(sp, index, storageStats);
 
     if (errorcode == 0)
     {
@@ -1132,7 +1206,7 @@ int DLLEXPORT swmm_getOutfallStats(int index, SM_OutfallStats *outfallStats)
         outfallStats);
 }
 
-int DLLEXPORT swmm_getOutfallStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getOutfallStats_project(SWMM_ProjectHandle ph, int index,
         SM_OutfallStats *outfallStats)
 //
 // Output:  Outfall Stats Structure (SM_OutfallStats)
@@ -1142,7 +1216,11 @@ int DLLEXPORT swmm_getOutfallStats_project(SWMM_Project *sp, int index,
 //          to free the pollutants array.
 {
     int p;
-    int errorcode = stats_getOutfallStat(sp, index, outfallStats);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getOutfallStat(sp, index, outfallStats);
 
     if (errorcode == 0)
     {
@@ -1188,14 +1266,18 @@ int DLLEXPORT swmm_getLinkStats(int index, SM_LinkStats *linkStats)
     return swmm_getLinkStats_project(_defaultProject, index, linkStats);
 }
 
-int DLLEXPORT swmm_getLinkStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getLinkStats_project(SWMM_ProjectHandle ph, int index,
         SM_LinkStats *linkStats)
 //
 // Output:  Link Stats Structure (SM_LinkStats)
 // Return:  API Error
 // Purpose: Gets Link Stats and Converts Units
 {
-    int errorcode = stats_getLinkStat(sp, index, linkStats);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getLinkStat(sp, index, linkStats);
 
     if (errorcode == 0)
     {
@@ -1231,14 +1313,18 @@ int DLLEXPORT swmm_getPumpStats(int index, SM_PumpStats *pumpStats)
     return swmm_getPumpStats_project(_defaultProject, index, pumpStats);
 }
 
-int DLLEXPORT swmm_getPumpStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getPumpStats_project(SWMM_ProjectHandle ph, int index,
         SM_PumpStats *pumpStats)
 //
 // Output:  Pump Link Stats Structure (SM_PumpStats)
 // Return:  API Error
 // Purpose: Gets Pump Link Stats and Converts Units
 {
-    int errorcode = stats_getPumpStat(sp, index, pumpStats);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getPumpStat(sp, index, pumpStats);
 
     if (errorcode == 0)
     {
@@ -1267,7 +1353,7 @@ int DLLEXPORT swmm_getSubcatchStats(int index, SM_SubcatchStats *subcatchStats)
     return swmm_getSubcatchStats_project(_defaultProject, index, subcatchStats);
 }
 
-int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getSubcatchStats_project(SWMM_ProjectHandle ph, int index,
         SM_SubcatchStats *subcatchStats)
 //
 // Output:  Subcatchment Stats Structure (SM_SubcatchStats)
@@ -1276,8 +1362,11 @@ int DLLEXPORT swmm_getSubcatchStats_project(SWMM_Project *sp, int index,
 // Note: Caller is responsible for calling swmm_freeSubcatchStats
 //       to free the pollutants array.
 {
-    int p;
-    int errorcode = stats_getSubcatchStat(sp, index, subcatchStats);
+    int p, errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = stats_getSubcatchStat(sp, index, subcatchStats);
 
     if (errorcode == 0)
     {
@@ -1328,14 +1417,18 @@ int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot)
     return swmm_getSystemRoutingStats_project(_defaultProject, routingTot);
 }
 
-int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_Project *sp,
+int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_ProjectHandle ph,
         SM_RoutingTotals *routingTot)
 //
 // Output:  System Routing Totals Structure (SM_RoutingTotals)
 // Return:  API Error
 // Purpose: Gets System Flow Routing Totals and Converts Units
 {
-    int errorcode = massbal_getRoutingFlowTotal(routingTot);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = massbal_getRoutingFlowTotal(routingTot);
 
     if (errorcode == 0)
     {
@@ -1369,13 +1462,17 @@ int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot)
     return swmm_getSystemRunoffStats_project(_defaultProject, runoffTot);
 }
 
-int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_Project *sp, SM_RunoffTotals *runoffTot)
+int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_ProjectHandle ph, SM_RunoffTotals *runoffTot)
 //
 // Output:  System Runoff Totals Structure (SM_RunoffTotals)
 // Return:  API Error
 // Purpose: Gets System Runoff Totals and Converts Units
 {
-    int errorcode =  massbal_getRunoffTotal(runoffTot);
+    int errorcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
+    errorcode = massbal_getRunoffTotal(runoffTot);
 
     if (errorcode == 0)
     {
@@ -1412,7 +1509,7 @@ int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall,
             total);
 }
 
-int DLLEXPORT swmm_getGagePrecip_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_getGagePrecip_project(SWMM_ProjectHandle ph, int index,
         double *rainfall, double *snowfall, double *total)
 //
 // Input:   index = Index of desired ID
@@ -1421,6 +1518,9 @@ int DLLEXPORT swmm_getGagePrecip_project(SWMM_Project *sp, int index,
 // Purpose: Gets the precipitaion value in the gage. 
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -1443,7 +1543,7 @@ int DLLEXPORT swmm_setGagePrecip(int index, double value)
     return swmm_setGagePrecip_project(_defaultProject, index, value);
 }
 
-int DLLEXPORT swmm_setGagePrecip_project(SWMM_Project *sp, int index, double value)
+int DLLEXPORT swmm_setGagePrecip_project(SWMM_ProjectHandle ph, int index, double value)
 //
 // Input:   index = Index of desired ID
 //          value = rainfall intensity to be set
@@ -1451,6 +1551,9 @@ int DLLEXPORT swmm_setGagePrecip_project(SWMM_Project *sp, int index, double val
 // Purpose: Sets the precipitation in from the external database
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if(swmm_IsOpenFlag() == FALSE)
     {
@@ -1481,7 +1584,7 @@ int DLLEXPORT swmm_setLinkSetting(int index, double targetSetting) {
     return swmm_setLinkSetting_project(_defaultProject, index, targetSetting);
 }
 
-int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
+int DLLEXPORT swmm_setLinkSetting_project(SWMM_ProjectHandle ph, int index,
         double targetSetting)
 //
 // Input:   index = Index of desired ID
@@ -1492,6 +1595,8 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_Project *sp, int index,
     DateTime currentTime;
     int errcode = 0;
     char _rule_[11] = "ToolkitAPI";
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
     if (swmm_IsOpenFlag() == FALSE)
@@ -1530,7 +1635,7 @@ int DLLEXPORT swmm_setNodeInflow(int index, double flowrate)
     return swmm_setNodeInflow_project(_defaultProject, index, flowrate);
 }
 
-int DLLEXPORT swmm_setNodeInflow_project(SWMM_Project *sp, int index, double flowrate)
+int DLLEXPORT swmm_setNodeInflow_project(SWMM_ProjectHandle ph, int index, double flowrate)
 //
 // Input:   index = Index of desired ID
 //          value = New Inflow Rate
@@ -1538,6 +1643,8 @@ int DLLEXPORT swmm_setNodeInflow_project(SWMM_Project *sp, int index, double flo
 // Purpose: Sets new node inflow rate and holds until set again
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
     if (swmm_IsOpenFlag() == FALSE)
@@ -1596,7 +1703,7 @@ int DLLEXPORT swmm_setOutfallStage(int index, double stage)
     return swmm_setOutfallStage_project(_defaultProject, index, stage);
 }
 
-int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double stage)
+int DLLEXPORT swmm_setOutfallStage_project(SWMM_ProjectHandle ph, int index, double stage)
 //
 // Input:   index = Index of desired outfall
 //          stage = New outfall stage (head)
@@ -1604,6 +1711,9 @@ int DLLEXPORT swmm_setOutfallStage_project(SWMM_Project *sp, int index, double s
 // Purpose: Sets new outfall stage and holds until set again.
 {
     int errcode = 0;
+
+    SWMM_Project *sp = (SWMM_Project*)ph;
+
     // Check if Open
     if (swmm_IsOpenFlag() == FALSE)
     {
