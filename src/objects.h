@@ -58,6 +58,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "mathexpr.h"
 #include "infil.h"
 #include "exfil.h"                                                             //(5.1.007)
+#include "climate.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1225,6 +1226,7 @@ struct SWMM_Project {
    TShape*       Shape;                    // Array of custom conduit shapes
    TEvent*       Event;                    // Array of routing events         //(5.1.011)
 
+   TClimateShared ClimateShared;
 };
 
 

@@ -35,21 +35,24 @@
 #include <string.h>
 #include <math.h>
 #include "headers.h"
+#include "climate.h"
 
-//-----------------------------------------------------------------------------
-//  Constants
-//-----------------------------------------------------------------------------
+////-----------------------------------------------------------------------------
+////  Constants
+////-----------------------------------------------------------------------------
 enum ClimateFileFormats {UNKNOWN_FORMAT,
                          USER_PREPARED,     // SWMM 5's own user format
                          GHCND,             // NCDC GHCN Daily format          //(5.1.007)
                          TD3200,            // NCDC TD3200 format
                          DLY0204};          // Canadian DLY02 or DLY04 format
+
 static const int    MAXCLIMATEVARS  = 4;
 static const int    MAXDAYSPERMONTH = 32;
 
 // These variables are used when processing climate files.
 enum   ClimateVarType {TMIN, TMAX, EVAP, WIND};
 enum   WindSpeedType  {WDMV, AWND};                                            //(5.1.007)
+
 static char* ClimateVarWords[] = {"TMIN", "TMAX", "EVAP", "WDMV", "AWND",      //(5.1.007)
                                   NULL};
 
@@ -57,34 +60,35 @@ static char* ClimateVarWords[] = {"TMIN", "TMAX", "EVAP", "WDMV", "AWND",      /
 //-----------------------------------------------------------------------------
 //  Data Structures
 //-----------------------------------------------------------------------------
-typedef struct
-{
-    double    tAve;          // moving avg. for daily temperature (deg F)
-    double    tRng;          // moving avg. for daily temp. range (deg F)
-    double    ta[7];         // data window for tAve
-    double    tr[7];         // data window for tRng
-    int       count;         // length of moving average window
-    int       maxCount;      // maximum length of moving average window
-    int       front;         // index of front of moving average window
-} TMovAve;
+//typedef struct
+//{
+//    double    tAve;          // moving avg. for daily temperature (deg F)
+//    double    tRng;          // moving avg. for daily temp. range (deg F)
+//    double    ta[7];         // data window for tAve
+//    double    tr[7];         // data window for tRng
+//    int       count;         // length of moving average window
+//    int       maxCount;      // maximum length of moving average window
+//    int       front;         // index of front of moving average window
+//} TMovAve;
 ////
+
 
 //-----------------------------------------------------------------------------
 //  Shared variables
 //-----------------------------------------------------------------------------
-// sp->Temperature variables
-static double    Tmin;                 // min. daily temperature (deg F)
-static double    Tmax;                 // max. daily temperature (deg F)
-static double    Trng;                 // 1/2 range of daily temperatures
-static double    Trng1;                // prev. max - current min. temp.
-static double    Tave;                 // average daily temperature (deg F)
-static double    Hrsr;                 // time of min. temp. (hrs)
-static double    Hrss;                 // time of max. temp (hrs)
-static double    Hrday;                // avg. of min/max temp times
-static double    Dhrdy;                // hrs. between min. & max. temp. times
-static double    Dydif;                // hrs. between max. & min. temp. times
-static DateTime  LastDay;              // date of last day with temp. data
-static TMovAve   Tma;                  // moving average of daily temperatures //(5.1.010)
+// Temperature variables
+// static double    Tmin;                 // min. daily temperature (deg F)
+//static double    Tmax;                 // max. daily temperature (deg F)
+//static double    Trng;                 // 1/2 range of daily temperatures
+//static double    Trng1;                // prev. max - current min. temp.
+//static double    Tave;                 // average daily temperature (deg F)
+//static double    Hrsr;                 // time of min. temp. (hrs)
+//static double    Hrss;                 // time of max. temp (hrs)
+//static double    Hrday;                // avg. of min/max temp times
+//static double    Dhrdy;                // hrs. between min. & max. temp. times
+//static double    Dydif;                // hrs. between max. & min. temp. times
+//static DateTime  LastDay;              // date of last day with temp. data
+//static TMovAve   Tma;                  // moving average of daily temperatures //(5.1.010)
 
 // Evaporation variables
 static DateTime  NextEvapDate;         // next date when evap. rate changes
@@ -131,7 +135,7 @@ static void setEvap(SWMM_Project *sp, DateTime theDate);
 static void setTemp(SWMM_Project *sp, DateTime theDate);
 static void setWind(SWMM_Project *sp, DateTime theDate);
 static void updateTempTimes(SWMM_Project *sp, int day);
-static void updateTempMoveAve(double tmin, double tmax);                       //(5.1.010)
+static void updateTempMoveAve(SWMM_Project *sp, double tmin, double tmax);                       //(5.1.010)
 static double getTempEvap(SWMM_Project *sp, int day, double ta, double tr);                      //(5.1.010)
 
 static void updateFileValues(SWMM_Project *sp, DateTime theDate);
@@ -554,7 +558,9 @@ void climate_initState(SWMM_Project *sp)
 //  Purpose: initializes climate state variables.
 //
 {
-    LastDay = NO_DATE;
+    TClimateShared *clmt = &sp->ClimateShared;
+
+    clmt->LastDay = NO_DATE;
     sp->Temp.tmax = MISSING;
     sp->Snow.removed = 0.0;
     NextEvapDate = sp->StartDate;
@@ -581,11 +587,11 @@ void climate_initState(SWMM_Project *sp)
     // --- initialize variables for temperature evaporation
     if ( sp->Evap.type == TEMPERATURE_EVAP )
     {
-        Tma.maxCount = sizeof(Tma.ta) / sizeof(double);
-        Tma.count = 0;
-        Tma.front = 0;
-        Tma.tAve = 0.0;
-        Tma.tRng = 0.0;
+        clmt->Tma.maxCount = sizeof(clmt->Tma.ta) / sizeof(double);
+        clmt->Tma.count = 0;
+        clmt->Tma.front = 0;
+        clmt->Tma.tAve = 0.0;
+        clmt->Tma.tRng = 0.0;
     }
 ////
 }
@@ -752,28 +758,30 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
     double   hour;                     // hour of day
     double   tmp;                      // temporary temperature
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- see if a new day has started
     mon = datetime_monthOfYear(theDate);                                       //(5.1.007)
     theDay = floor(theDate);
-    if ( theDay > LastDay )
+    if ( theDay > clmt->LastDay )
     {
         // --- update min. & max. temps & their time of day
         day = datetime_dayOfYear(theDate);
         if ( sp->Temp.dataSource == FILE_TEMP )
         {
-            Tmin = FileValue[TMIN] + sp->Adjust.temp[mon-1];                       //(5.1.007)
-            Tmax = FileValue[TMAX] + sp->Adjust.temp[mon-1];                       //(5.1.007)
-            if ( Tmin > Tmax )
+            clmt->Tmin = FileValue[TMIN] + sp->Adjust.temp[mon-1];                       //(5.1.007)
+            clmt->Tmax = FileValue[TMAX] + sp->Adjust.temp[mon-1];                       //(5.1.007)
+            if ( clmt->Tmin > clmt->Tmax )
             {
-                tmp = Tmin;
-                Tmin = Tmax;
-                Tmax = tmp;
+                tmp = clmt->Tmin;
+                clmt->Tmin = clmt->Tmax;
+                clmt->Tmax = tmp;
             }
             updateTempTimes(sp, day);
             if ( sp->Evap.type == TEMPERATURE_EVAP )
             {
-                updateTempMoveAve(Tmin, Tmax);                                 //(5.1.010)
-                FileValue[EVAP] = getTempEvap(sp, day, Tma.tAve, Tma.tRng);        //(5.1.010)
+                updateTempMoveAve(sp, clmt->Tmin, clmt->Tmax);                                 //(5.1.010)
+                FileValue[EVAP] = getTempEvap(sp, day, clmt->Tma.tAve, clmt->Tma.tRng);        //(5.1.010)
             }
         }
 
@@ -785,7 +793,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         }
 
         // --- update date of last day analyzed
-        LastDay = theDate;
+        clmt->LastDay = theDate;
     }
 
     // --- for min/max daily temps. from climate file,
@@ -793,12 +801,12 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
     if ( sp->Temp.dataSource == FILE_TEMP )
     {
         hour = (theDate - theDay) * 24.0;
-        if ( hour < Hrsr )
-            sp->Temp.ta = Tmin + Trng1/2.0 * sin(PI/Dydif * (Hrsr - hour));
-        else if ( hour >= Hrsr && hour <= Hrss )
-            sp->Temp.ta = Tave + Trng * sin(PI/Dhrdy * (Hrday - hour));
+        if ( hour < clmt->Hrsr )
+            sp->Temp.ta = clmt->Tmin + clmt->Trng1/2.0 * sin(PI/clmt->Dydif * (clmt->Hrsr - hour));
+        else if ( hour >= clmt->Hrsr && hour <= clmt->Hrss )
+            sp->Temp.ta = clmt->Tave + clmt->Trng * sin(PI/clmt->Dhrdy * (clmt->Hrday - hour));
         else
-            sp->Temp.ta = Tmax - Trng * sin(PI/Dydif * (hour - Hrss));
+            sp->Temp.ta = clmt->Tmax - clmt->Trng * sin(PI/clmt->Dydif * (hour - clmt->Hrss));
     }
 
     // --- for user-supplied temperature time series,
@@ -916,22 +924,28 @@ void updateTempTimes(SWMM_Project *sp, int day)
     double hrang;                      // hour angle of sunrise/sunset
     double arg;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     decl  = 0.40928*cos(0.017202*(172.0-day));
     arg = -tan(decl)*sp->Temp.tanAnglat;
     if      ( arg <= -1.0 ) arg = PI;
     else if ( arg >= 1.0 )  arg = 0.0;
     else                    arg = acos(arg);
     hrang = 3.8197 * arg;
-    Hrsr  = 12.0 - hrang + sp->Temp.dtlong;
-    Hrss  = 12.0 + hrang + sp->Temp.dtlong - 3.0;
-    Dhrdy = Hrsr - Hrss;
-    Dydif = 24.0 + Hrsr - Hrss;
-    Hrday = (Hrsr + Hrss) / 2.0;
-    Tave  = (Tmin + Tmax) / 2.0;
-    Trng  = (Tmax - Tmin) / 2.0;
-    if ( sp->Temp.tmax == MISSING ) Trng1 = Tmax - Tmin;
-    else                        Trng1 = sp->Temp.tmax - Tmin;
-    sp->Temp.tmax = Tmax;
+    clmt->Hrsr  = 12.0 - hrang + sp->Temp.dtlong;
+    clmt->Hrss  = 12.0 + hrang + sp->Temp.dtlong - 3.0;
+    clmt->Dhrdy = clmt->Hrsr - clmt->Hrss;
+    clmt->Dydif = 24.0 + clmt->Hrsr - clmt->Hrss;
+    clmt->Hrday = (clmt->Hrsr + clmt->Hrss) / 2.0;
+    clmt->Tave  = (clmt->Tmin + clmt->Tmax) / 2.0;
+    clmt->Trng  = (clmt->Tmax - clmt->Tmin) / 2.0;
+
+    if ( sp->Temp.tmax == MISSING )
+        clmt->Trng1 = clmt->Tmax - clmt->Tmin;
+    else
+        clmt->Trng1 = sp->Temp.tmax - clmt->Tmin;
+
+    sp->Temp.tmax = clmt->Tmax;
 }
 
 //=============================================================================
@@ -1501,7 +1515,7 @@ void parseGhcndFileLine(SWMM_Project *sp)
 
 ////  New function added to release 5.1.010.  ////                             //(5.1.010)
 
-void updateTempMoveAve(double tmin, double tmax)
+void updateTempMoveAve(SWMM_Project *sp, double tmin, double tmax)
 //
 //  Input:   tmin = minimum daily temperature (deg F)
 //           tmax = maximum daily temperature (deg F)
@@ -1512,42 +1526,45 @@ void updateTempMoveAve(double tmin, double tmax)
 {
     double ta,               // new day's average temperature (deg F)
            tr;               // new day's temperature range (deg F)
-    int    count = Tma.count;
+
+    TClimateShared *clmt = &sp->ClimateShared;
+
+    int    count = clmt->Tma.count;
 
     // --- find ta and tr from new day's min and max temperature
     ta = (tmin + tmax) / 2.0;
     tr = fabs(tmax - tmin);
 
     // --- if the array used to store previous days' temperatures is full
-    if ( count == Tma.maxCount )
+    if ( count == clmt->Tma.maxCount )
     {
         // --- update the moving averages with the new day's value
-        Tma.tAve = (Tma.tAve * count + ta - Tma.ta[Tma.front]) / count;
-        Tma.tRng = (Tma.tRng * count + tr - Tma.tr[Tma.front]) / count;
+        clmt->Tma.tAve = (clmt->Tma.tAve * count + ta - clmt->Tma.ta[clmt->Tma.front]) / count;
+        clmt->Tma.tRng = (clmt->Tma.tRng * count + tr - clmt->Tma.tr[clmt->Tma.front]) / count;
 
         // --- replace the values at the front of the moving average window
-        Tma.ta[Tma.front] = ta;
-        Tma.tr[Tma.front] = tr;
+        clmt->Tma.ta[clmt->Tma.front] = ta;
+        clmt->Tma.tr[clmt->Tma.front] = tr;
 
         // --- move the front one position forward
-        Tma.front++;
-        if ( Tma.front == count ) Tma.front = 0;
+        clmt->Tma.front++;
+        if ( clmt->Tma.front == count ) clmt->Tma.front = 0;
     }
 
     // --- array of previous day's values not full (at start of simulation)
     else
     {
         // --- find new moving averages by adding new values to previous ones
-        Tma.tAve = (Tma.tAve * count + ta) / (count + 1);
-        Tma.tRng = (Tma.tRng * count + tr) / (count + 1);
+        clmt->Tma.tAve = (clmt->Tma.tAve * count + ta) / (count + 1);
+        clmt->Tma.tRng = (clmt->Tma.tRng * count + tr) / (count + 1);
 
         // --- save new day's values
-        Tma.ta[Tma.front] = ta;
-        Tma.tr[Tma.front] = tr;
+        clmt->Tma.ta[clmt->Tma.front] = ta;
+        clmt->Tma.tr[clmt->Tma.front] = tr;
 
         // --- increment count and front of moving average window
-        Tma.count++;
-        Tma.front++;
-        if ( Tma.count == Tma.maxCount ) Tma.front = 0;
+        clmt->Tma.count++;
+        clmt->Tma.front++;
+        if ( clmt->Tma.count == clmt->Tma.maxCount ) clmt->Tma.front = 0;
     }
 }

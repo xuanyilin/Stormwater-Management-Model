@@ -849,7 +849,7 @@ void setDefaults(SWMM_Project *sp)
    sp->RptFlags.links         = FALSE;
    sp->RptFlags.nodeStats     = FALSE;
 
-   // sp->Temperature data
+   // Temperature data
    sp->Temp.dataSource  = NO_TEMP;
    sp->Temp.tSeries     = -1;
    sp->Temp.ta          = 70.0;
