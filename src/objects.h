@@ -63,6 +63,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "datetime.h"
 #include "dynwave.h"
 
+
 //-----------------
 // FILE INFORMATION
 //-----------------
@@ -249,7 +250,7 @@ typedef struct
     double      waterTableElev;   // initial water table elevation (ft)
     double      upperMoisture;    // initial moisture content of unsat. zone
     int         upperEvapPat;     // monthly upper evap. adjustment factors
-}   TAquifer;
+} TAquifer;
 
 
 ////  Added to release 5.1.008.  ////                                          //(5.1.008)
@@ -296,6 +297,7 @@ typedef struct
     TGWaterStats  stats;          // gw statistics                             //(5.1.008)
 } TGroundwater;
 
+#include "gwater.h"
 
 //----------------
 // SNOWMELT OBJECT
@@ -1233,6 +1235,7 @@ struct SWMM_Project {
    TControlsShared ControlsShared;
    TDatetime Datetime;
    TDynwaveShared DynwaveShared;
+   TGwaterShared GwaterShared;
 };
 
 

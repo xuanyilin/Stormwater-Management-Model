@@ -32,6 +32,7 @@
 #include <math.h>
 #include "headers.h"
 #include "odesolve.h"
+#include "gwater.h"
 
 //-----------------------------------------------------------------------------
 //  Constants
@@ -61,35 +62,6 @@ static char* GWVarWords[] = {"HGW", "HSW", "HCB", "HGS", "KS", "K",            /
                              "THETA", "PHI", "FI", "FU", "A", NULL};           //(5.1.008)
 
 //-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-//  NOTE: all flux rates are in ft/sec, all depths are in ft.
-static double    Area;            // subcatchment area (ft2)                   //(5.1.008)
-static double    Infil;           // infiltration rate from surface
-static double    MaxEvap;         // max. evaporation rate
-static double    AvailEvap;       // available evaporation rate
-static double    UpperEvap;       // evaporation rate from upper GW zone
-static double    LowerEvap;       // evaporation rate from lower GW zone
-static double    UpperPerc;       // percolation rate from upper to lower zone
-static double    LowerLoss;       // loss rate from lower GW zone
-static double    GWFlow;          // flow rate from lower zone to conveyance node
-static double    MaxUpperPerc;    // upper limit on UpperPerc
-static double    MaxGWFlowPos;    // upper limit on GWFlow when its positve
-static double    MaxGWFlowNeg;    // upper limit on GWFlow when its negative
-static double    FracPerv;        // fraction of surface that is pervious
-static double    TotalDepth;      // total depth of GW aquifer
-static double    Theta;           // moisture content of upper zone
-static double    HydCon;          // unsaturated hydraulic conductivity (ft/s) //(5.1.010)
-static double    Hgw;             // ht. of saturated zone
-static double    Hstar;           // ht. from aquifer bottom to node invert
-static double    Hsw;             // ht. from aquifer bottom to water surface
-static double    Tstep;           // current time step (sec)
-static TAquifer  A;               // aquifer being analyzed
-static TGroundwater* GW;          // groundwater object being analyzed
-static MathExpr* LatFlowExpr;     // user-supplied lateral GW flow expression  //(5.1.007)
-static MathExpr* DeepFlowExpr;    // user-supplied deep GW flow expression     //(5.1.007)
-
-//-----------------------------------------------------------------------------
 //  External Functions (declared in funcs.h)
 //-----------------------------------------------------------------------------
 //  gwater_readAquiferParams     (called by input_readLine)
@@ -110,9 +82,9 @@ static MathExpr* DeepFlowExpr;    // user-supplied deep GW flow expression     /
 static void   getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt);
 static void   getFluxes(SWMM_Project *sp, double upperVolume, double lowerDepth);
 static void   getEvapRates(SWMM_Project *sp, double theta, double upperDepth);
-static double getUpperPerc(double theta, double upperDepth);
+static double getUpperPerc(SWMM_Project *sp, double theta, double upperDepth);
 static double getGWFlow(SWMM_Project *sp, double lowerDepth);
-static void   updateMassBal(double area,  double tStep);
+static void   updateMassBal(SWMM_Project *sp, double area,  double tStep);
 
 // Used to process custom GW outflow equations
 static int    getVariableIndex(SWMM_Project *sp, char* s);
@@ -453,6 +425,7 @@ void gwater_setState(SWMM_Project *sp, int j, double x[])
 {
     TGroundwater* gw = sp->Subcatch[j].groundwater;
     if ( gw == NULL ) return;
+
     gw->theta = x[0];
     gw->lowerDepth = x[1] - gw->bottomElev;
     gw->oldFlow = x[2];
@@ -499,120 +472,128 @@ void gwater_getGroundwater(SWMM_Project *sp, int j, double evap, double infil,
     double vUpper;                     // upper vol. available for percolation
     double nodeFlow;                   // max. possible GW flow from node
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     // --- save subcatchment's groundwater and aquifer objects to 
     //     shared variables
-    GW = sp->Subcatch[j].groundwater;
-    if ( GW == NULL ) return;
-    LatFlowExpr = sp->Subcatch[j].gwLatFlowExpr;                                   //(5.1.007)
-    DeepFlowExpr = sp->Subcatch[j].gwDeepFlowExpr;                                 //(5.1.007)
-    A = sp->Aquifer[GW->aquifer];
+    gwtr->GW = sp->Subcatch[j].groundwater;
+    if ( gwtr->GW == NULL ) return;
+    gwtr->LatFlowExpr = sp->Subcatch[j].gwLatFlowExpr;                                   //(5.1.007)
+    gwtr->DeepFlowExpr = sp->Subcatch[j].gwDeepFlowExpr;                                 //(5.1.007)
+    gwtr->A = sp->Aquifer[gwtr->GW->aquifer];
 
     // --- get fraction of total area that is pervious
-    FracPerv = subcatch_getFracPerv(sp, j);
-    if ( FracPerv <= 0.0 ) return;
-    Area = sp->Subcatch[j].area;
+    gwtr->FracPerv = subcatch_getFracPerv(sp, j);
+    if ( gwtr->FracPerv <= 0.0 ) return;
+    gwtr->Area = sp->Subcatch[j].area;
 
     // --- convert infiltration volume (ft3) to equivalent rate
     //     over entire GW (subcatchment) area
-    infil = infil / Area / tStep;
-    Infil = infil;
-    Tstep = tStep;
+    infil = infil / gwtr->Area / tStep;
+    gwtr->Infil = infil;
+    gwtr->Tstep = tStep;
 
     // --- convert pervious surface evaporation already exerted (ft3)
     //     to equivalent rate over entire GW (subcatchment) area
-    evap = evap / Area / tStep;
+    evap = evap / gwtr->Area / tStep;
 
     // --- convert max. surface evap rate (ft/sec) to a rate
     //     that applies to GW evap (GW evap can only occur
     //     through the pervious land surface area)
-    MaxEvap = sp->Evap.rate * FracPerv;
+    gwtr->MaxEvap = sp->Evap.rate * gwtr->FracPerv;
 
     // --- available subsurface evaporation is difference between max.
     //     rate and pervious surface evap already exerted
-    AvailEvap = MAX((MaxEvap - evap), 0.0);
+    gwtr->AvailEvap = MAX((gwtr->MaxEvap - evap), 0.0);
 
     // --- save total depth & outlet node properties to shared variables
-    TotalDepth = GW->surfElev - GW->bottomElev;
-    if ( TotalDepth <= 0.0 ) return;
-    n = GW->node;
+    gwtr->TotalDepth = gwtr->GW->surfElev - gwtr->GW->bottomElev;
+    if ( gwtr->TotalDepth <= 0.0 ) return;
+    n = gwtr->GW->node;
 
     // --- establish min. water table height above aquifer bottom at which
     //     GW flow can occur (override node's invert if a value was provided
     //     in the GW object)
-    if ( GW->nodeElev != MISSING ) Hstar = GW->nodeElev - GW->bottomElev;
-    else Hstar = sp->Node[n].invertElev - GW->bottomElev;
+    if ( gwtr->GW->nodeElev != MISSING )
+        gwtr->Hstar = gwtr->GW->nodeElev - gwtr->GW->bottomElev;
+    else
+        gwtr->Hstar = sp->Node[n].invertElev - gwtr->GW->bottomElev;
     
     // --- establish surface water height (relative to aquifer bottom)
     //     for drainage system node connected to the GW aquifer
-    if ( GW->fixedDepth > 0.0 )
+    if ( gwtr->GW->fixedDepth > 0.0 )
     {
-        Hsw = GW->fixedDepth + sp->Node[n].invertElev - GW->bottomElev;
+        gwtr->Hsw = gwtr->GW->fixedDepth + sp->Node[n].invertElev -
+                gwtr->GW->bottomElev;
     }
-    else Hsw = sp->Node[n].newDepth + sp->Node[n].invertElev - GW->bottomElev;
+    else
+        gwtr->Hsw = sp->Node[n].newDepth + sp->Node[n].invertElev -
+        gwtr->GW->bottomElev;
 
     // --- store state variables (upper zone moisture content, lower zone
     //     depth) in work vector x
-    x[THETA] = GW->theta;
-    x[LOWERDEPTH] = GW->lowerDepth;
+    x[THETA] = gwtr->GW->theta;
+    x[LOWERDEPTH] = gwtr->GW->lowerDepth;
 
     // --- set limit on percolation rate from upper to lower GW zone
-    vUpper = (TotalDepth - x[LOWERDEPTH]) * (x[THETA] - A.fieldCapacity);
+    vUpper = (gwtr->TotalDepth - x[LOWERDEPTH]) * (x[THETA] - gwtr->A.fieldCapacity);
     vUpper = MAX(0.0, vUpper); 
-    MaxUpperPerc = vUpper / tStep;
+    gwtr->MaxUpperPerc = vUpper / tStep;
 
     // --- set limit on GW flow out of aquifer based on volume of lower zone
-    MaxGWFlowPos = x[LOWERDEPTH]*A.porosity / tStep;
+    gwtr->MaxGWFlowPos = x[LOWERDEPTH]*gwtr->A.porosity / tStep;
 
     // --- set limit on GW flow into aquifer from drainage system node
     //     based on min. of capacity of upper zone and drainage system
     //     inflow to the node
-    MaxGWFlowNeg = (TotalDepth - x[LOWERDEPTH]) * (A.porosity - x[THETA])
-                   / tStep;
-    nodeFlow = (sp->Node[n].inflow + sp->Node[n].newVolume/tStep) / Area;
-    MaxGWFlowNeg = -MIN(MaxGWFlowNeg, nodeFlow);
+    gwtr->MaxGWFlowNeg = (gwtr->TotalDepth - x[LOWERDEPTH]) *
+            (gwtr->A.porosity - x[THETA]) / tStep;
+    nodeFlow = (sp->Node[n].inflow + sp->Node[n].newVolume/tStep) / gwtr->Area;
+    gwtr->MaxGWFlowNeg = -MIN(gwtr->MaxGWFlowNeg, nodeFlow);
     
     // --- integrate eqns. for d(Theta)/dt and d(LowerDepth)/dt
     //     NOTE: ODE solver must have been initialized previously
     odesolve_integrate(sp, x, 2, 0, tStep, GWTOL, tStep, getDxDt);
     
     // --- keep state variables within allowable bounds
-    x[THETA] = MAX(x[THETA], A.wiltingPoint);
-    if ( x[THETA] >= A.porosity )
+    x[THETA] = MAX(x[THETA], gwtr->A.wiltingPoint);
+    if ( x[THETA] >= gwtr->A.porosity )
     {
-        x[THETA] = A.porosity - XTOL;
-        x[LOWERDEPTH] = TotalDepth - XTOL;
+        x[THETA] = gwtr->A.porosity - XTOL;
+        x[LOWERDEPTH] = gwtr->TotalDepth - XTOL;
     }
     x[LOWERDEPTH] = MAX(x[LOWERDEPTH],  0.0);
-    if ( x[LOWERDEPTH] >= TotalDepth )
+    if ( x[LOWERDEPTH] >= gwtr->TotalDepth )
     {
-        x[LOWERDEPTH] = TotalDepth - XTOL;
+        x[LOWERDEPTH] = gwtr->TotalDepth - XTOL;
     }
 
     // --- save new values of state values
-    GW->theta = x[THETA];
-    GW->lowerDepth  = x[LOWERDEPTH];
-    getFluxes(sp, GW->theta, GW->lowerDepth);
-    GW->oldFlow = GW->newFlow;
-    GW->newFlow = GWFlow;
-    GW->evapLoss = UpperEvap + LowerEvap;
+    gwtr->GW->theta = x[THETA];
+    gwtr->GW->lowerDepth  = x[LOWERDEPTH];
+    getFluxes(sp, gwtr->GW->theta, gwtr->GW->lowerDepth);
+    gwtr->GW->oldFlow = gwtr->GW->newFlow;
+    gwtr->GW->newFlow = gwtr->GWFlow;
+    gwtr->GW->evapLoss = gwtr->UpperEvap + gwtr->LowerEvap;
 
     //--- find max. infiltration volume (as depth over
     //    the pervious portion of the subcatchment)
     //    that upper zone can support in next time step
-    GW->maxInfilVol = (TotalDepth - x[LOWERDEPTH]) *
-                      (A.porosity - x[THETA]) / FracPerv;
+    gwtr->GW->maxInfilVol = (gwtr->TotalDepth - x[LOWERDEPTH]) *
+                      (gwtr->A.porosity - x[THETA]) / gwtr->FracPerv;
 
     // --- update GW mass balance
-    updateMassBal(Area, tStep);
+    updateMassBal(sp, gwtr->Area, tStep);
 
     // --- update GW statistics                                                //(5.1.008)
-    stats_updateGwaterStats(sp, j, infil, GW->evapLoss, GWFlow, LowerLoss,         //(5.1.008)
-        GW->theta, GW->lowerDepth + GW->bottomElev, tStep);                    //(5.1.008)
+    stats_updateGwaterStats(sp, j, infil, gwtr->GW->evapLoss, gwtr->GWFlow,
+            gwtr->LowerLoss, gwtr->GW->theta, gwtr->GW->lowerDepth +
+            gwtr->GW->bottomElev, tStep);                    //(5.1.008)
 }
 
 //=============================================================================
 
-void updateMassBal(double area, double tStep)
+void updateMassBal(SWMM_Project *sp, double area, double tStep)
 //
 //  Input:   area  = subcatchment area (ft2)
 //           tStep = time step (sec)
@@ -627,11 +608,13 @@ void updateMassBal(double area, double tStep)
     double vGwater;                    // volume of exchanged groundwater
     double ft2sec = area * tStep;
 
-    vInfil     = Infil * ft2sec;
-    vUpperEvap = UpperEvap * ft2sec;
-    vLowerEvap = LowerEvap * ft2sec;
-    vLowerPerc = LowerLoss * ft2sec;
-    vGwater    = 0.5 * (GW->oldFlow + GW->newFlow) * ft2sec;
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
+    vInfil     = gwtr->Infil * ft2sec;
+    vUpperEvap = gwtr->UpperEvap * ft2sec;
+    vLowerEvap = gwtr->LowerEvap * ft2sec;
+    vLowerPerc = gwtr->LowerLoss * ft2sec;
+    vGwater    = 0.5 * (gwtr->GW->oldFlow + gwtr->GW->newFlow) * ft2sec;
     massbal_updateGwaterTotals(vInfil, vUpperEvap, vLowerEvap, vLowerPerc,
                                vGwater);
 }
@@ -650,38 +633,43 @@ void  getFluxes(SWMM_Project *sp, double theta, double lowerDepth)
 {
     double upperDepth;
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     // --- find upper zone depth
     lowerDepth = MAX(lowerDepth, 0.0);
-    lowerDepth = MIN(lowerDepth, TotalDepth);
-    upperDepth = TotalDepth - lowerDepth;
+    lowerDepth = MIN(lowerDepth, gwtr->TotalDepth);
+    upperDepth = gwtr->TotalDepth - lowerDepth;
 
     // --- save lower depth and theta to global variables
-    Hgw = lowerDepth;
-    Theta = theta;
+    gwtr->Hgw = lowerDepth;
+    gwtr->Theta = theta;
 
     // --- find evaporation rate from both zones
     getEvapRates(sp, theta, upperDepth);
 
     // --- find percolation rate from upper to lower zone
-    UpperPerc = getUpperPerc(theta, upperDepth);
-    UpperPerc = MIN(UpperPerc, MaxUpperPerc);
+    gwtr->UpperPerc = getUpperPerc(sp, theta, upperDepth);
+    gwtr->UpperPerc = MIN(gwtr->UpperPerc, gwtr->MaxUpperPerc);
 
     // --- find loss rate to deep GW
-    if ( DeepFlowExpr != NULL )
-        LowerLoss = mathexpr_eval(sp, DeepFlowExpr, getVariableValue) /
+    if ( gwtr->DeepFlowExpr != NULL )
+        gwtr->LowerLoss = mathexpr_eval(sp, gwtr->DeepFlowExpr, getVariableValue) /
                     UCF(sp, RAINFALL);
     else
-        LowerLoss = A.lowerLossCoeff * lowerDepth / TotalDepth;
-    LowerLoss = MIN(LowerLoss, lowerDepth/Tstep);
+        gwtr->LowerLoss = gwtr->A.lowerLossCoeff * lowerDepth / gwtr->TotalDepth;
+    gwtr->LowerLoss = MIN(gwtr->LowerLoss, lowerDepth/gwtr->Tstep);
 
     // --- find GW flow rate from lower zone to drainage system node
-    GWFlow = getGWFlow(sp, lowerDepth);
-    if ( LatFlowExpr != NULL )
+    gwtr->GWFlow = getGWFlow(sp, lowerDepth);
+    if ( gwtr->LatFlowExpr != NULL )
     {
-        GWFlow += mathexpr_eval(sp, LatFlowExpr, getVariableValue) / UCF(sp, GWFLOW);
+        gwtr->GWFlow += mathexpr_eval(sp, gwtr->LatFlowExpr, getVariableValue) /
+                UCF(sp, GWFLOW);
     }
-    if ( GWFlow >= 0.0 ) GWFlow = MIN(GWFlow, MaxGWFlowPos);
-    else GWFlow = MAX(GWFlow, MaxGWFlowNeg);
+    if ( gwtr->GWFlow >= 0.0 )
+        gwtr->GWFlow = MIN(gwtr->GWFlow, gwtr->MaxGWFlowPos);
+    else
+        gwtr->GWFlow = MAX(gwtr->GWFlow, gwtr->MaxGWFlowNeg);
 }
 
 //=============================================================================
@@ -699,13 +687,15 @@ void  getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt)
     double qLower;    // inflow - outflow for lower zone (ft/sec)
     double denom;
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     getFluxes(sp, x[THETA], x[LOWERDEPTH]);
-    qUpper = Infil - UpperEvap - UpperPerc;
-    qLower = UpperPerc - LowerLoss - LowerEvap - GWFlow;
+    qUpper = gwtr->Infil - gwtr->UpperEvap - gwtr->UpperPerc;
+    qLower = gwtr->UpperPerc - gwtr->LowerLoss - gwtr->LowerEvap - gwtr->GWFlow;
 
     // --- d(upper zone moisture)/dt = (net upper zone flow) /
     //                                 (upper zone depth)
-    denom = TotalDepth - x[LOWERDEPTH];
+    denom = gwtr->TotalDepth - x[LOWERDEPTH];
     if (denom > 0.0)
         dxdt[THETA] = qUpper / denom;
     else
@@ -713,7 +703,7 @@ void  getDxDt(SWMM_Project *sp, double t, double* x, double* dxdt)
 
     // --- d(lower zone depth)/dt = (net lower zone flow) /
     //                              (upper zone moisture deficit)
-    denom = A.porosity - x[THETA];
+    denom = gwtr->A.porosity - x[THETA];
     if (denom > 0.0)
         dxdt[LOWERDEPTH] = qLower / denom;
     else
@@ -734,15 +724,17 @@ void getEvapRates(SWMM_Project *sp, double theta, double upperDepth)
     double f;
     double lowerFrac, upperFrac;
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     // --- no GW evaporation when infiltration is occurring
-    UpperEvap = 0.0;
-    LowerEvap = 0.0;
-    if ( Infil > 0.0 ) return;
+    gwtr->UpperEvap = 0.0;
+    gwtr->LowerEvap = 0.0;
+    if ( gwtr->Infil > 0.0 ) return;
 
     // --- get monthly-adjusted upper zone evap fraction
-    upperFrac = A.upperEvapFrac;
+    upperFrac = gwtr->A.upperEvapFrac;
     f = 1.0;
-    p = A.upperEvapPat;
+    p = gwtr->A.upperEvapPat;
     if ( p >= 0 )
     {
         month = datetime_monthOfYear(getDateTime(sp, sp->NewRunoffTime));
@@ -752,33 +744,33 @@ void getEvapRates(SWMM_Project *sp, double theta, double upperDepth)
 
     // --- upper zone evaporation requires that soil moisture
     //     be above the wilting point
-    if ( theta > A.wiltingPoint )
+    if ( theta > gwtr->A.wiltingPoint )
     {
         // --- actual evap is upper zone fraction applied to max. potential
         //     rate, limited by the available rate after any surface evap 
-        UpperEvap = upperFrac * MaxEvap;
-        UpperEvap = MIN(UpperEvap, AvailEvap);
+        gwtr->UpperEvap = upperFrac * gwtr->MaxEvap;
+        gwtr->UpperEvap = MIN(gwtr->UpperEvap, gwtr->AvailEvap);
     }
 
     // --- check if lower zone evaporation is possible
-    if ( A.lowerEvapDepth > 0.0 )
+    if ( gwtr->A.lowerEvapDepth > 0.0 )
     {
         // --- find the fraction of the lower evaporation depth that
         //     extends into the saturated lower zone
-        lowerFrac = (A.lowerEvapDepth - upperDepth) / A.lowerEvapDepth;
+        lowerFrac = (gwtr->A.lowerEvapDepth - upperDepth) / gwtr->A.lowerEvapDepth;
         lowerFrac = MAX(0.0, lowerFrac);
         lowerFrac = MIN(lowerFrac, 1.0);
 
         // --- make the lower zone evap rate proportional to this fraction
         //     and the evap not used in the upper zone
-        LowerEvap = lowerFrac * (1.0 - upperFrac) * MaxEvap;
-        LowerEvap = MIN(LowerEvap, (AvailEvap - UpperEvap));
+        gwtr->LowerEvap = lowerFrac * (1.0 - upperFrac) * gwtr->MaxEvap;
+        gwtr->LowerEvap = MIN(gwtr->LowerEvap, (gwtr->AvailEvap - gwtr->UpperEvap));
     }
 }
 
 //=============================================================================
 
-double getUpperPerc(double theta, double upperDepth)
+double getUpperPerc(SWMM_Project *sp, double theta, double upperDepth)
 //
 //  Input:   theta      = moisture content of upper zone
 //           upperDepth = depth of upper zone (ft)
@@ -790,19 +782,21 @@ double getUpperPerc(double theta, double upperDepth)
     double dhdz;                        // avg. change in head with depth
     double hydcon;                      // unsaturated hydraulic conductivity
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     // --- no perc. from upper zone if no depth or moisture content too low    
-    if ( upperDepth <= 0.0 || theta <= A.fieldCapacity ) return 0.0;
+    if ( upperDepth <= 0.0 || theta <= gwtr->A.fieldCapacity ) return 0.0;
 
     // --- compute hyd. conductivity as function of moisture content
-    delta = theta - A.porosity;
-    hydcon = A.conductivity * exp(delta * A.conductSlope);
+    delta = theta - gwtr->A.porosity;
+    hydcon = gwtr->A.conductivity * exp(delta * gwtr->A.conductSlope);
 
     // --- compute integral of dh/dz term
-    delta = theta - A.fieldCapacity;
-    dhdz = 1.0 + A.tensionSlope * 2.0 * delta / upperDepth;
+    delta = theta - gwtr->A.fieldCapacity;
+    dhdz = 1.0 + gwtr->A.tensionSlope * 2.0 * delta / upperDepth;
 
     // --- compute upper zone percolation rate
-    HydCon = hydcon;                                                           //(5.1.010)
+    gwtr->HydCon = hydcon;                                                           //(5.1.010)
     return hydcon * dhdz;
 }
 
@@ -817,27 +811,31 @@ double getGWFlow(SWMM_Project *sp, double lowerDepth)
 {
     double q, t1, t2, t3;
 
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     // --- water table must be above Hstar for flow to occur
-    if ( lowerDepth <= Hstar ) return 0.0;
+    if ( lowerDepth <= gwtr->Hstar ) return 0.0;
 
     // --- compute groundwater component of flow
-    if ( GW->b1 == 0.0 ) t1 = GW->a1;
-    else t1 = GW->a1 * pow( (lowerDepth - Hstar)*UCF(sp, LENGTH), GW->b1);
+    if ( gwtr->GW->b1 == 0.0 )
+        t1 = gwtr->GW->a1;
+    else
+        t1 = gwtr->GW->a1 * pow( (lowerDepth - gwtr->Hstar)*UCF(sp, LENGTH), gwtr->GW->b1);
 
     // --- compute surface water component of flow
-    if ( GW->b2 == 0.0 ) t2 = GW->a2;
-    else if (Hsw > Hstar)
+    if ( gwtr->GW->b2 == 0.0 ) t2 = gwtr->GW->a2;
+    else if (gwtr->Hsw > gwtr->Hstar)
     {
-        t2 = GW->a2 * pow( (Hsw - Hstar)*UCF(sp, LENGTH), GW->b2);
+        t2 = gwtr->GW->a2 * pow( (gwtr->Hsw - gwtr->Hstar)*UCF(sp, LENGTH), gwtr->GW->b2);
     }
     else t2 = 0.0;
 
     // --- compute groundwater/surface water interaction term
-    t3 = GW->a3 * lowerDepth * Hsw * UCF(sp, LENGTH) * UCF(sp, LENGTH);
+    t3 = gwtr->GW->a3 * lowerDepth * gwtr->Hsw * UCF(sp, LENGTH) * UCF(sp, LENGTH);
 
     // --- compute total groundwater flow
     q = (t1 - t2 + t3) / UCF(sp, GWFLOW); 
-    if ( q < 0.0 && GW->a3 != 0.0 ) q = 0.0;
+    if ( q < 0.0 && gwtr->GW->a3 != 0.0 ) q = 0.0;
     return q;
 }
 
@@ -866,19 +864,21 @@ double getVariableValue(SWMM_Project *sp, int varIndex)
 //  Purpose: finds current value of a GW variable.
 //
 {
+    TGwaterShared *gwtr = &sp->GwaterShared;
+
     switch (varIndex)
     {
-    case gwvHGW:  return Hgw * UCF(sp, LENGTH);
-    case gwvHSW:  return Hsw * UCF(sp, LENGTH);
-    case gwvHCB:  return Hstar * UCF(sp, LENGTH);
-    case gwvHGS:  return TotalDepth * UCF(sp, LENGTH);
-    case gwvKS:   return A.conductivity * UCF(sp, RAINFALL);
-    case gwvK:    return HydCon * UCF(sp, RAINFALL);                               //(5.1.010)
-    case gwvTHETA:return Theta;                                                //(5.1.008)
-    case gwvPHI:  return A.porosity;                                           //(5.1.008)
-    case gwvFI:   return Infil * UCF(sp, RAINFALL);                                //(5.1.008)
-    case gwvFU:   return UpperPerc * UCF(sp, RAINFALL);                            //(5.1.008)
-    case gwvA:    return Area * UCF(sp, LANDAREA);                                 //(5.1.008)
+    case gwvHGW:  return gwtr->Hgw * UCF(sp, LENGTH);
+    case gwvHSW:  return gwtr->Hsw * UCF(sp, LENGTH);
+    case gwvHCB:  return gwtr->Hstar * UCF(sp, LENGTH);
+    case gwvHGS:  return gwtr->TotalDepth * UCF(sp, LENGTH);
+    case gwvKS:   return gwtr->A.conductivity * UCF(sp, RAINFALL);
+    case gwvK:    return gwtr->HydCon * UCF(sp, RAINFALL);                               //(5.1.010)
+    case gwvTHETA:return gwtr->Theta;                                                //(5.1.008)
+    case gwvPHI:  return gwtr->A.porosity;                                           //(5.1.008)
+    case gwvFI:   return gwtr->Infil * UCF(sp, RAINFALL);                                //(5.1.008)
+    case gwvFU:   return gwtr->UpperPerc * UCF(sp, RAINFALL);                            //(5.1.008)
+    case gwvA:    return gwtr->Area * UCF(sp, LANDAREA);                                 //(5.1.008)
     default:      return 0.0;
     }
 }
