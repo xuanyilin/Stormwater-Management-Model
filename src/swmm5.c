@@ -115,7 +115,7 @@
 #include "macros.h"                    // macros used throughout SWMM
 #include "enums.h"                     // enumerated variables
 #include "error.h"                     // error message codes
-#include "datetime.h"                  // date/time functions
+//#include "datetime.h"                  // date/time functions
 #include "objects.h"                   // definitions of SWMM's data objects
 #include "funcs.h"                     // declaration of all global functions
 #include "text.h"                      // listing of all text strings 
@@ -422,7 +422,7 @@ int DLLEXPORT swmm_open_project(SWMM_ProjectHandle ph, char* f1, char* f2, char*
 	#endif
     {
         // --- initialize error & warning codes
-        datetime_setDateFormat(M_D_Y);
+        datetime_setDateFormat(sp, M_D_Y);
         sp->ErrorCode = 0;
         strcpy(sp->ErrorMsg, "");
         sp->Warnings = 0;

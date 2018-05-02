@@ -508,7 +508,7 @@ void    transect_validate(SWMM_Project *sp, int j);
 //-----------------------------------------------------------------------------
 //   Custom Shape Cross-Section Methods
 //-----------------------------------------------------------------------------
-int     shape_validate(TShape *shape, TTable *curve);
+int     shape_validate(SWMM_Project *sp, TShape *shape, TTable *curve);
 
 //-----------------------------------------------------------------------------
 //   Control Rule Methods
@@ -527,12 +527,12 @@ int     table_readCurve(SWMM_Project *sp, char* tok[], int ntoks);
 int     table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks);
 
 int     table_addEntry(TTable* table, double x, double y);
-int     table_getFirstEntry(TTable* table, double* x, double* y);
-int     table_getNextEntry(TTable* table, double* x, double* y);
+int     table_getFirstEntry(SWMM_Project *sp, TTable* table, double* x, double* y);
+int     table_getNextEntry(SWMM_Project *sp, TTable* table, double* x, double* y);
 void    table_deleteEntries(TTable* table);
 
 void    table_init(TTable* table);
-int     table_validate(TTable* table);
+int     table_validate(SWMM_Project *sp, TTable* table);
 //      table_interpolate now defined in table.c                               //(5.1.008)
 
 double  table_lookup(TTable* table, double x);
@@ -545,8 +545,8 @@ double  table_getMaxY(TTable *table, double x);
 double  table_getArea(TTable* table, double x);
 double  table_getInverseArea(TTable* table, double a);
 
-void    table_tseriesInit(TTable *table);
-double  table_tseriesLookup(TTable* table, double t, char extend);
+void    table_tseriesInit(SWMM_Project *sp, TTable *table);
+double  table_tseriesLookup(SWMM_Project *sp, TTable* table, double t, char extend);
 
 //-----------------------------------------------------------------------------
 //   Utility Methods

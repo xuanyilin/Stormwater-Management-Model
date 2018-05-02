@@ -195,12 +195,12 @@ void project_validate(SWMM_Project *sp)
     // --- validate Curves and TimeSeries
     for ( i=0; i<sp->Nobjects[CURVE]; i++ )
     {
-         err = table_validate(&sp->Curve[i]);
+         err = table_validate(sp, &sp->Curve[i]);
          if ( err ) report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, sp->Curve[i].ID);
     }
     for ( i=0; i<sp->Nobjects[TSERIES]; i++ )
     {
-        err = table_validate(&sp->Tseries[i]);
+        err = table_validate(sp, &sp->Tseries[i]);
         if ( err ) report_writeTseriesErrorMsg(sp, err, &sp->Tseries[i]);
     }
 
@@ -223,7 +223,7 @@ void project_validate(SWMM_Project *sp)
         {
             sp->Curve[i].refersTo = j;
             sp->Shape[j].curve = i;
-            if ( !shape_validate(&sp->Shape[j], &sp->Curve[i]) )
+            if ( !shape_validate(sp, &sp->Shape[j], &sp->Curve[i]) )
                 report_writeErrorMsg(sp, ERR_CURVE_SEQUENCE, sp->Curve[i].ID);
             j++;
         }
@@ -292,7 +292,7 @@ int  project_init(SWMM_Project *sp)
     int j;
     climate_initState(sp);
     lid_initState(sp);
-    for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(&sp->Tseries[j]);
+    for (j=0; j<sp->Nobjects[TSERIES]; j++)  table_tseriesInit(sp, &sp->Tseries[j]);
     for (j=0; j<sp->Nobjects[GAGE]; j++)     gage_initState(sp, j);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++) subcatch_initState(sp, j);
     for (j=0; j<sp->Nobjects[NODE]; j++)     node_initState(sp, j);
@@ -457,7 +457,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation start date
       case START_DATE:
-        if ( !datetime_strToDate(s2, &sp->StartDate) )
+        if ( !datetime_strToDate(sp, s2, &sp->StartDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -473,7 +473,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- simulation ending date
       case END_DATE:
-        if ( !datetime_strToDate(s2, &sp->EndDate) ) 
+        if ( !datetime_strToDate(sp, s2, &sp->EndDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -489,7 +489,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
 
       // --- reporting start date
       case REPORT_START_DATE:
-        if ( !datetime_strToDate(s2, &sp->ReportStartDate) )
+        if ( !datetime_strToDate(sp, s2, &sp->ReportStartDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }
@@ -510,7 +510,7 @@ int project_readOption(SWMM_Project *sp, char* s1, char* s2)
       case SWEEP_END:
         strcpy(strDate, s2);
         strcat(strDate, "/1947");
-        if ( !datetime_strToDate(strDate, &aDate) )
+        if ( !datetime_strToDate(sp, strDate, &aDate) )
         {
             return error_setInpError(ERR_DATETIME, s2);
         }

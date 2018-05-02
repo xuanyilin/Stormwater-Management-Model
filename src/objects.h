@@ -60,6 +60,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "exfil.h"                                                             //(5.1.007)
 #include "climate.h"
 #include "controls.h"
+#include "datetime.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1229,6 +1230,7 @@ struct SWMM_Project {
 
    TClimateShared ClimateShared;
    TControlsShared ControlsShared;
+   TDatetime Datetime;
 };
 
 

@@ -1472,12 +1472,12 @@ void  pump_validate(SWMM_Project *sp, int j, int k)
         else
         {
             sp->Pump[k].type = sp->Curve[m].curveType - PUMP1_CURVE;
-            if ( table_getFirstEntry(&sp->Curve[m], &x, &y) )
+            if ( table_getFirstEntry(sp, &sp->Curve[m], &x, &y) )
             {
                 sp->Link[j].qFull = y;
                 sp->Pump[k].xMin = x;
                 sp->Pump[k].xMax = x;
-                while ( table_getNextEntry(&sp->Curve[m], &x, &y) )
+                while ( table_getNextEntry(sp, &sp->Curve[m], &x, &y) )
                 {
                     sp->Link[j].qFull = MAX(y, sp->Link[j].qFull);
                     sp->Pump[k].xMax = x;

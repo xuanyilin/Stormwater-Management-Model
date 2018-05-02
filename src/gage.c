@@ -38,7 +38,7 @@ const double OneSecond = 1.1574074e-5;
 //  Local functions
 //-----------------------------------------------------------------------------
 static int    readGageSeriesFormat(char* tok[], int ntoks, double x[]);
-static int    readGageFileFormat(char* tok[], int ntoks, double x[]);
+static int    readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[]);
 static int    getFirstRainfall(SWMM_Project *sp, int gage);
 static int    getNextRainfall(SWMM_Project *sp, int gage);
 static double convertRainfall(SWMM_Project *sp, int gage, double rain);
@@ -92,7 +92,7 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
         if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
         sstrncpy(fname, tok[5], MAXFNAME);
         sstrncpy(staID, tok[6], MAXMSG);
-        err = readGageFileFormat(tok, ntoks, x);
+        err = readGageFileFormat(sp, tok, ntoks, x);
     }
     else return error_setInpError(ERR_KEYWORD, tok[4]);
 
@@ -156,7 +156,7 @@ int readGageSeriesFormat(char* tok[], int ntoks, double x[])
 
 //=============================================================================
 
-int readGageFileFormat(char* tok[], int ntoks, double x[])
+int readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
 {
     int   m, u;
     DateTime aDate;
@@ -188,7 +188,7 @@ int readGageFileFormat(char* tok[], int ntoks, double x[])
     // --- get start date (if present)
     if ( ntoks > 8 && *tok[8] != '*')
     {
-        if ( !datetime_strToDate(tok[8], &aDate) )
+        if ( !datetime_strToDate(sp, tok[8], &aDate) )
             return error_setInpError(ERR_DATETIME, tok[8]);
         x[4] = (float) aDate;
     }
@@ -502,7 +502,7 @@ int getFirstRainfall(SWMM_Project *sp, int j)
         if ( k >= 0 )
         {
             // --- retrieve first rainfall value from time series
-            if ( table_getFirstEntry(&sp->Tseries[k], &sp->Gage[j].startDate,
+            if ( table_getFirstEntry(sp, &sp->Tseries[k], &sp->Gage[j].startDate,
                                      &rFirst) )
             {
                 // --- convert rainfall to intensity
@@ -559,7 +559,7 @@ int getNextRainfall(SWMM_Project *sp, int j)
 		    k = sp->Gage[j].tSeries;
 		    if ( k >= 0 )
 		    {
-			if ( !table_getNextEntry(&sp->Tseries[k],
+			if ( !table_getNextEntry(sp, &sp->Tseries[k],
 				&sp->Gage[j].nextDate, &rNext) ) return 0;
 			rNext = convertRainfall(sp, j, rNext);
 		    }

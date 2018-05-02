@@ -274,7 +274,7 @@ double inflow_getExtInflow(SWMM_Project *sp, TExtInflow* inflow, DateTime aDate)
         hour  = datetime_hourOfDay(aDate);
         blv  *= inflow_getPatternFactor(sp, p, month, day, hour);
     }
-    if ( k >= 0 ) tsv = table_tseriesLookup(&sp->Tseries[k], aDate, FALSE) * sf;
+    if ( k >= 0 ) tsv = table_tseriesLookup(sp, &sp->Tseries[k], aDate, FALSE) * sf;
     return cf * (tsv + blv) + cf * extIfaceInflow;
 }
 

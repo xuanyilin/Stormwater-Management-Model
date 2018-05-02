@@ -927,7 +927,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_ProjectHandle ph, char *dt
     currentTime = getDateTime(sp, sp->NewRoutingTime);
 
     // Convert To Char
-    datetime_dateToStr(currentTime, theDate);
+    datetime_dateToStr(sp, currentTime, theDate);
     datetime_timeToStr(currentTime, theTime);
 
     strcpy(_DTimeStr, theDate);

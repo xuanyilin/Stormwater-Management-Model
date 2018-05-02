@@ -319,11 +319,11 @@ void report_writeOptions(SWMM_Project *sp)
     if ( sp->Nobjects[LINK] > 0 )
     fprintf(sp->Frpt.file, "\n  Flow Routing Method ...... %s",
         RouteModelWords[sp->RouteModel]);
-    datetime_dateToStr(sp->StartDate, str);
+    datetime_dateToStr(sp, sp->StartDate, str);
     fprintf(sp->Frpt.file, "\n  Starting Date ............ %s", str);
     datetime_timeToStr(sp->StartTime, str);
     fprintf(sp->Frpt.file, " %s", str);
-    datetime_dateToStr(sp->EndDate, str);
+    datetime_dateToStr(sp, sp->EndDate, str);
     fprintf(sp->Frpt.file, "\n  Ending Date .............. %s", str);
     datetime_timeToStr(sp->EndTime, str);
     fprintf(sp->Frpt.file, " %s", str);
@@ -387,8 +387,8 @@ void report_writeRainStats(SWMM_Project *sp, int i, TRainStats* r)
     }
     else
     {
-        if ( r->startDate != NO_DATE ) datetime_dateToStr(r->startDate, date1);
-        if ( r->endDate   != NO_DATE ) datetime_dateToStr(r->endDate, date2);
+        if ( r->startDate != NO_DATE ) datetime_dateToStr(sp, r->startDate, date1);
+        if ( r->endDate   != NO_DATE ) datetime_dateToStr(sp, r->endDate, date2);
         fprintf(sp->Frpt.file, "  %-10s %-11s  %-11s  %5d min    %6ld     %6ld     %6ld\n",
             sp->Gage[i].staID, date1, date2, sp->Gage[i].rainInterval/60,
             r->periodsRain, r->periodsMissing, r->periodsMalfunc);
@@ -467,7 +467,7 @@ void report_writeControlAction(SWMM_Project *sp, DateTime aDate, char* linkID,
     char     theDate[12];
     char     theTime[9];
 
-    datetime_dateToStr(aDate, theDate);
+    datetime_dateToStr(sp, aDate, theDate);
     datetime_timeToStr(aDate, theTime);
 
     fprintf(sp->Frpt.file,
@@ -1116,7 +1116,7 @@ void report_Subcatchments(SWMM_Project *sp)
             for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
-                datetime_dateToStr(days, theDate);
+                datetime_dateToStr(sp, days, theDate);
                 datetime_timeToStr(days, theTime);
                 output_readSubcatchResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s %10.3f%10.3f%10.4f",
@@ -1240,7 +1240,7 @@ void report_Nodes(SWMM_Project *sp)
             for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
-                datetime_dateToStr(days, theDate);
+                datetime_dateToStr(sp, days, theDate);
                 datetime_timeToStr(days, theTime);
                 output_readNodeResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
@@ -1320,7 +1320,7 @@ void report_Links(SWMM_Project *sp)
             for ( period = 1; period <= sp->Nperiods; period++ )
             {
                 output_readDateTime(sp, period, &days);
-                datetime_dateToStr(days, theDate);
+                datetime_dateToStr(sp, days, theDate);
                 datetime_timeToStr(days, theTime);
                 output_readLinkResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
@@ -1472,7 +1472,7 @@ void report_writeTseriesErrorMsg(SWMM_Project *sp, int code, TTable *tseries)
     if (code == ERR_CURVE_SEQUENCE)
     {
         x = tseries->x2;
-        datetime_dateToStr(x, theDate);
+        datetime_dateToStr(sp, x, theDate);
         datetime_timeToStr(x, theTime);
         report_writeErrorMsg(sp, ERR_TIMESERIES_SEQUENCE, tseries->ID);
         fprintf(sp->Frpt.file, " at %s %s.", theDate, theTime);

@@ -401,7 +401,7 @@ void report_CulvertControl(SWMM_Project *sp, int j, double q0, double q, int con
     char     theTime[9];
 
 	DateTime aDate = getDateTime(sp, sp->NewRoutingTime);
-    datetime_dateToStr(aDate, theDate);
+    datetime_dateToStr(sp, aDate, theDate);
     datetime_timeToStr(aDate, theTime);
 
     fprintf(sp->Frpt.file,

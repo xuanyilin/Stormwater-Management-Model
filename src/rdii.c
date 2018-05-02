@@ -1039,7 +1039,7 @@ void initGageData(SWMM_Project *sp)
     {
         if ( sp->Gage[g].tSeries >= 0 )
         {
-            table_tseriesInit(&sp->Tseries[sp->Gage[g].tSeries]);
+            table_tseriesInit(sp, &sp->Tseries[sp->Gage[g].tSeries]);
         }
         gage_initState(sp, g);
     }

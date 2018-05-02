@@ -33,8 +33,9 @@
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-int    table_getNextFileEntry(TTable* table, double* x, double* y);
-int    table_parseFileLine(char* line, TTable* table, double* x, double* y);
+int    table_getNextFileEntry(SWMM_Project *sp, TTable* table, double* x, double* y);
+int    table_parseFileLine(SWMM_Project *sp, char* line, TTable* table,
+        double* x, double* y);
 double table_interpolate(double x, double x1, double y1, double x2, double y2);//(5.1.008)
 
 
@@ -146,7 +147,7 @@ int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
         switch(state)
         {
           case 1:            // look for a date entry
-            if ( datetime_strToDate(tok[k], &d) )
+            if ( datetime_strToDate(sp, tok[k], &d) )
             {
                 sp->Tseries[j].lastDate = d;
                 k++;
@@ -271,7 +272,7 @@ void   table_init(TTable *table)
 
 //=============================================================================
 
-int   table_validate(TTable *table)
+int   table_validate(SWMM_Project *sp, TTable *table)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  returns error code
@@ -290,13 +291,13 @@ int   table_validate(TTable *table)
     }
 
     // --- retrieve the first data entry in the table
-    result = table_getFirstEntry(table, &x1, &y1);
+    result = table_getFirstEntry(sp, table, &x1, &y1);
 
     // --- return error condition if external file has no valid data
     if ( !result && table->file.mode == USE_FILE ) return ERR_TABLE_FILE_READ;
 
     // --- retrieve successive table entries and check for non-increasing x-values
-    while ( table_getNextEntry(table, &x2, &y2) )
+    while ( table_getNextEntry(sp, table, &x2, &y2) )
     {
         dx = x2 - x1;
         if ( dx <= 0.0 )
@@ -317,7 +318,7 @@ int   table_validate(TTable *table)
 
 //=============================================================================
 
-int table_getFirstEntry(TTable *table, double *x, double *y)
+int table_getFirstEntry(SWMM_Project *sp, TTable *table, double *x, double *y)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  x = x-value of first table entry
@@ -336,7 +337,7 @@ int table_getFirstEntry(TTable *table, double *x, double *y)
     {
         if ( table->file.file == NULL ) return FALSE;
         rewind(table->file.file);
-        return table_getNextFileEntry(table, x, y);
+        return table_getNextFileEntry(sp, table, x, y);
     }
 
     entry = table->firstEntry;
@@ -352,7 +353,7 @@ int table_getFirstEntry(TTable *table, double *x, double *y)
 
 //=============================================================================
 
-int table_getNextEntry(TTable *table, double *x, double *y)
+int table_getNextEntry(SWMM_Project *sp, TTable *table, double *x, double *y)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  x = x-value of next table entry
@@ -366,7 +367,7 @@ int table_getNextEntry(TTable *table, double *x, double *y)
     TTableEntry *entry;
 
     if ( table->file.mode == USE_FILE )
-        return table_getNextFileEntry(table, x, y);
+        return table_getNextFileEntry(sp, table, x, y);
     
     entry = table->thisEntry->next;
     if ( entry )
@@ -731,22 +732,22 @@ double  table_getInverseArea(TTable* table, double a)
 
 //=============================================================================
 
-void   table_tseriesInit(TTable *table)
+void   table_tseriesInit(SWMM_Project *sp, TTable *table)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  none
 //  Purpose: initializes the time bracket within a time series table.
 //
 {
-    table_getFirstEntry(table, &(table->x1), &(table->y1));
+    table_getFirstEntry(sp, table, &(table->x1), &(table->y1));
     table->x2 = table->x1;
     table->y2 = table->y1;
-    table_getNextEntry(table, &(table->x2), &(table->y2));
+    table_getNextEntry(sp, table, &(table->x2), &(table->y2));
 }
 
 //=============================================================================
 
-double table_tseriesLookup(TTable *table, double x, char extend)
+double table_tseriesLookup(SWMM_Project *sp, TTable *table, double x, char extend)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = a date/time value
@@ -770,7 +771,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
     //     move to start of time series
     if ( table->x1 == table->x2 || x < table->x1 )
     {
-        table_getFirstEntry(table, &(table->x1), &(table->y1));
+        table_getFirstEntry(sp, table, &(table->x1), &(table->y1));
         if ( x < table->x1 )
         {
             if ( extend == TRUE ) return table->y1;
@@ -784,7 +785,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
     table->y1 = table->y2;
 
     // --- get end of next time bracket
-    while ( table_getNextEntry(table, &(table->x2), &(table->y2)) )
+    while ( table_getNextEntry(sp, table, &(table->x2), &(table->y2)) )
     {
         // --- x lies within the bracket
         if ( x <= table->x2 )
@@ -802,7 +803,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
 
 //=============================================================================
 
-int  table_getNextFileEntry(TTable* table, double* x, double* y)
+int  table_getNextFileEntry(SWMM_Project *sp, TTable* table, double* x, double* y)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = pointer to a date (as decimal days)
@@ -818,7 +819,7 @@ int  table_getNextFileEntry(TTable* table, double* x, double* y)
     if ( table->file.file == NULL ) return FALSE;
     while ( !feof(table->file.file) && fgets(line, MAXLINE, table->file.file) != NULL )
     {
-        code = table_parseFileLine(line, table, x, y);
+        code = table_parseFileLine(sp, line, table, x, y);
         if ( code < 0 ) continue;      //skip blank & comment lines
         return code;
     }
@@ -827,7 +828,7 @@ int  table_getNextFileEntry(TTable* table, double* x, double* y)
 
 //=============================================================================
 
-int  table_parseFileLine(char* line, TTable* table, double* x, double* y)
+int  table_parseFileLine(SWMM_Project *sp, char* line, TTable* table, double* x, double* y)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = pointer to a date (as decimal days)
@@ -869,7 +870,7 @@ int  table_parseFileLine(char* line, TTable* table, double* x, double* y)
     else if ( n == 3 )
     {
         // --- convert date string to numeric value
-        if ( !datetime_strToDate(s1, &d) ) return FALSE;
+        if ( !datetime_strToDate(sp, s1, &d) ) return FALSE;
 
         // --- update last recorded calendar date
         table->lastDate = d;

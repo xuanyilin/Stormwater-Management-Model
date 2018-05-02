@@ -1315,7 +1315,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
 
       case TIDAL_OUTFALL:
         k = sp->Outfall[i].tideCurve;
-        table_getFirstEntry(&sp->Curve[k], &x, &y);
+        table_getFirstEntry(sp, &sp->Curve[k], &x, &y);
         currentDate = sp->NewRoutingTime / MSECperDAY;
         x += ( currentDate - floor(currentDate) ) * 24.0;
         stage = table_lookup(&sp->Curve[k], x) / UCF(sp, LENGTH);
@@ -1324,7 +1324,7 @@ void outfall_setOutletDepth(SWMM_Project *sp, int j, double yNorm, double yCrit,
       case TIMESERIES_OUTFALL:
         k = sp->Outfall[i].stageSeries;
         currentDate = sp->StartDateTime + sp->NewRoutingTime / MSECperDAY;
-        stage = table_tseriesLookup(&sp->Tseries[k], currentDate, TRUE) /
+        stage = table_tseriesLookup(sp, &sp->Tseries[k], currentDate, TRUE) /
                 UCF(sp, LENGTH);
         break;
       default: stage = sp->Node[j].invertElev;

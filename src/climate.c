@@ -202,7 +202,7 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
         {
             if ( *tok[2] != '*')
             {
-                if ( !datetime_strToDate(tok[2], &aDate) )
+                if ( !datetime_strToDate(sp, tok[2], &aDate) )
                     return error_setInpError(ERR_DATETIME, tok[2]);
                 sp->Temp.fileStartDate = aDate;
             }
@@ -573,7 +573,7 @@ void climate_initState(SWMM_Project *sp)
     {
         // --- initialize NextEvapDate & NextEvapRate to first entry of
         //     time series whose date <= the simulation start date
-        table_getFirstEntry(&sp->Tseries[sp->Evap.tSeries],
+        table_getFirstEntry(sp, &sp->Tseries[sp->Evap.tSeries],
                             &clmt->NextEvapDate, &clmt->NextEvapRate);
         if ( clmt->NextEvapDate < sp->StartDate )
         {  
@@ -677,7 +677,7 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
         if ( k >= 0 )
         {
             clmt->NextEvapDate = theDate + 365.;
-            while ( table_getNextEntry(&sp->Tseries[k], &d, &e) &&
+            while ( table_getNextEntry(sp, &sp->Tseries[k], &d, &e) &&
                     d <= sp->EndDateTime )
             {
                 if ( d >= theDate )
@@ -824,7 +824,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         k = sp->Temp.tSeries;
         if ( k >= 0)
         {
-            sp->Temp.ta = table_tseriesLookup(&sp->Tseries[k], theDate, TRUE);
+            sp->Temp.ta = table_tseriesLookup(sp, &sp->Tseries[k], theDate, TRUE);
 
             // --- convert from deg. C to deg. F if need be
             if ( sp->UnitSystem == SI )

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "headers.h"
 #include "datetime.h"
 
 // Macro to convert charcter x to upper case
@@ -39,11 +40,6 @@ static const int DaysPerMonth[2][12] =      // days per month
       31, 31, 30, 31, 30, 31}};
 static const int DateDelta = 693594;        // days since 01/01/00
 static const double SecsPerDay = 86400.;    // seconds per day
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static int DateFormat;
 
 
 //=============================================================================
@@ -241,7 +237,7 @@ void datetime_decodeTime(DateTime time, int* h, int* m, int* s)
 
 //=============================================================================
 
-void datetime_dateToStr(DateTime date, char* s)
+void datetime_dateToStr(SWMM_Project *sp, DateTime date, char* s)
 
 //  Input:   date = encoded date/time value
 //  Output:  s = formatted date string
@@ -250,8 +246,11 @@ void datetime_dateToStr(DateTime date, char* s)
 {
     int  y, m, d;
     char dateStr[DATE_STR_SIZE];
+
+    TDatetime *dttm = &sp->Datetime;
+
     datetime_decodeDate(date, &y, &m, &d);
-    switch (DateFormat)
+    switch (dttm->DateFormat)
     {
       case Y_M_D:
         sprintf(dateStr, "%4d-%3s-%02d", y, MonthTxt[m-1], d);
@@ -286,7 +285,7 @@ void datetime_timeToStr(DateTime time, char* s)
 
 //=============================================================================
 
-int datetime_strToDate(char* s, DateTime* d)
+int datetime_strToDate(SWMM_Project *sp, char* s, DateTime* d)
 
 //  Input:   s = date as string
 //  Output:  d = encoded date;
@@ -297,10 +296,13 @@ int datetime_strToDate(char* s, DateTime* d)
     int  yr = 0, mon = 0, day = 0, n;
     char month[4];
     char sep1, sep2;
+
+    TDatetime *dttm = &sp->Datetime;
+
     *d = -DateDelta;
     if (strchr(s, '-') || strchr(s, '/'))
     {
-        switch (DateFormat)
+        switch (dttm->DateFormat)
         {
           case Y_M_D:
             n = sscanf(s, "%d%c%d%c%d", &yr, &sep1, &mon, &sep2, &day);
@@ -371,14 +373,17 @@ int datetime_strToTime(char* s, DateTime* t)
 
 //=============================================================================
 
-void datetime_setDateFormat(int fmt)
+void datetime_setDateFormat(SWMM_Project *sp, int fmt)
 
 //  Input:   fmt = date format code
 //  Output:  none
 //  Purpose: sets date format
 
 {
-    if ( fmt >= Y_M_D && fmt <= M_D_Y) DateFormat = fmt;
+    TDatetime *dttm = &sp->Datetime;
+
+    if ( fmt >= Y_M_D && fmt <= M_D_Y)
+        dttm->DateFormat = fmt;
 }
 
 //=============================================================================
@@ -514,7 +519,8 @@ int  datetime_daysPerMonth(int year, int month)
 
 ////  New function added to release 5.1.011.  ////                             //(5.1.011)
 
-void datetime_getTimeStamp(int fmt, DateTime aDate, int stampSize, char* timeStamp)
+void datetime_getTimeStamp(SWMM_Project *sp, int fmt, DateTime aDate,
+        int stampSize, char* timeStamp)
 
 //  Input:   fmt = desired date format code
 //           aDate = a date/time value in decimal days
@@ -524,12 +530,15 @@ void datetime_getTimeStamp(int fmt, DateTime aDate, int stampSize, char* timeSta
 {
     char dateStr[DATE_STR_SIZE];
     char timeStr[TIME_STR_SIZE];
-    int  oldDateFormat = DateFormat;
     
+    TDatetime *dttm = &sp->Datetime;
+
+    int  oldDateFormat = dttm->DateFormat;
+
     if ( stampSize < DATE_STR_SIZE + TIME_STR_SIZE + 2 ) return;
-    datetime_setDateFormat(fmt);     
-    datetime_dateToStr(aDate, dateStr);
-    DateFormat = oldDateFormat;
+    datetime_setDateFormat(sp, fmt);
+    datetime_dateToStr(sp, aDate, dateStr);
+    dttm->DateFormat = oldDateFormat;
     datetime_timeToStr(aDate, timeStr);
     sprintf(timeStamp, "%s %s", dateStr, timeStr);
 }

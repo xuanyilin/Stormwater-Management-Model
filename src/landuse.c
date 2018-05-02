@@ -721,7 +721,7 @@ double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup
     // --- get buildup rate (mass/unit/day) over the interval
     if ( ts >= 0 )
     {        
-        rate = sf * table_tseriesLookup(&sp->Tseries[ts],
+        rate = sf * table_tseriesLookup(sp, &sp->Tseries[ts],
                getDateTime(sp, sp->NewRunoffTime), FALSE);
     }
 

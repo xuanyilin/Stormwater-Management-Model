@@ -723,11 +723,11 @@ int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
     DateTime x[4];
 
     if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
-    if ( !datetime_strToDate(tok[0], &x[0]) )
+    if ( !datetime_strToDate(sp, tok[0], &x[0]) )
         return error_setInpError(ERR_DATETIME, tok[0]);
     if ( !datetime_strToTime(tok[1], &x[1]) )
         return error_setInpError(ERR_DATETIME, tok[1]);
-    if ( !datetime_strToDate(tok[2], &x[2]) )
+    if ( !datetime_strToDate(sp, tok[2], &x[2]) )
         return error_setInpError(ERR_DATETIME, tok[2]);
     if ( !datetime_strToTime(tok[3], &x[3]) )
         return error_setInpError(ERR_DATETIME, tok[3]);

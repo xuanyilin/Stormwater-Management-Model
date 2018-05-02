@@ -27,19 +27,19 @@ static double Ptotal;
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int computeShapeTables(TShape *shape, TTable *curve);
+static int computeShapeTables(SWMM_Project *sp, TShape *shape, TTable *curve);
 static void getSmax(TShape *shape);
 static int normalizeShapeTables(TShape *shape);
-static int getNextInterval(TTable *curve, double y, double yLast, double wLast,
-                           double *y1, double *y2, double *w1, double *w2,
-                           double *wMax);
+static int getNextInterval(SWMM_Project *sp, TTable *curve, double y,
+        double yLast, double wLast, double *y1, double *y2, double *w1,
+        double *w2, double *wMax);
 static double getWidth(double y, double y1, double y2, double w1, double w2);
 static double getArea(double y, double w, double y1, double w1);
 static double getPerim(double y, double w, double y1, double w1);
 
 //=============================================================================
 
-int shape_validate(TShape *shape, TTable *curve)
+int shape_validate(SWMM_Project *sp, TShape *shape, TTable *curve)
 //
 //  Input:   shape = pointer to a custom x-section TShape object
 //           curve = pointer to shape's table of width v. height
@@ -48,7 +48,7 @@ int shape_validate(TShape *shape, TTable *curve)
 //           tables from its user-supplied width v. height curve.
 //
 {
-    if (!computeShapeTables(shape, curve)) {
+    if (!computeShapeTables(sp, shape, curve)) {
         return FALSE;
     }
 
@@ -61,7 +61,7 @@ int shape_validate(TShape *shape, TTable *curve)
 
 //=============================================================================
 
-int computeShapeTables(TShape *shape, TTable *curve)
+int computeShapeTables(SWMM_Project *sp, TShape *shape, TTable *curve)
 //
 //  Input:   shape = pointer to a TShape object
 //           curve = pointer to shape's table of width v. depth
@@ -78,7 +78,7 @@ int computeShapeTables(TShape *shape, TTable *curve)
     double yLast, wLast, wMax;
 
     // --- get first entry of user's shape curve
-    if (!table_getFirstEntry(curve, &y1, &w1)) {
+    if (!table_getFirstEntry(sp, curve, &y1, &w1)) {
         return FALSE;
     }
 
@@ -97,7 +97,7 @@ int computeShapeTables(TShape *shape, TTable *curve)
     }
     // --- otherwise get next entry in the user's shape curve
     else {
-        if (!table_getNextEntry(curve, &y2, &w2)) {
+        if (!table_getNextEntry(sp, curve, &y2, &w2)) {
             return FALSE;
         }
 
@@ -144,7 +144,7 @@ int computeShapeTables(TShape *shape, TTable *curve)
         // --- if height exceeds current shape curve interval,
         //     move to next interval of shape curve
         if (y > y2) {
-            if (!getNextInterval(curve, y, yLast, wLast, &y1, &y2, &w1, &w2,
+            if (!getNextInterval(sp, curve, y, yLast, wLast, &y1, &y2, &w1, &w2,
                                  &wMax)) {
                 return FALSE;
             }
@@ -243,9 +243,8 @@ int normalizeShapeTables(TShape *shape)
 
 //=============================================================================
 
-int getNextInterval(TTable *curve, double y, double yLast, double wLast,
-                    double *y1, double *y2, double *w1, double *w2,
-                    double *wMax)
+int getNextInterval(SWMM_Project *sp, TTable *curve, double y, double yLast,
+        double wLast, double *y1, double *y2, double *w1, double *w2, double *wMax)
 //
 //  Input:   curve = pointer to a user-supplied shape curve table
 //           y = current height in a geometry table
@@ -279,7 +278,7 @@ int getNextInterval(TTable *curve, double y, double yLast, double wLast,
         // --- move to the next curve table interval
         *y1 = *y2;
         *w1 = *w2;
-        if (!table_getNextEntry(curve, y2, w2)) {
+        if (!table_getNextEntry(sp, curve, y2, w2)) {
             *y2 = 1.0;
             return TRUE;
         }

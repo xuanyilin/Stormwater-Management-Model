@@ -98,7 +98,7 @@ static char* SettingTypeWords[] = {"CURVE", "TIMESERIES", "PID", NULL};
 //-----------------------------------------------------------------------------
 int    addPremise(SWMM_Project *sp, int r, int type, char* Tok[], int nToks);
 int    getPremiseVariable(char* tok[], int* k, struct TVariable* v);
-int    getPremiseValue(char* token, int attrib, double* value);
+int    getPremiseValue(SWMM_Project *sp, char* token, int attrib, double* value);
 int    addAction(SWMM_Project *sp, int r, char* Tok[], int nToks);
 
 int    evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep);
@@ -340,13 +340,13 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
         err = getPremiseVariable(tok, &n, &v2);
         if ( err > 0 ) return ERR_RULE;                                        //(5.1.009)
         if ( v1.attribute != v2.attribute)                                     //(5.1.009)
-            report_writeWarningMsg(sp, WARN11, cntrl->Rules[r].ID);                   //(5.1.009)
+            report_writeWarningMsg(sp, WARN11, cntrl->Rules[r].ID);            //(5.1.009)
     }
 
     // --- otherwise get value to which LHS variable is compared to
     else
     {
-        err = getPremiseValue(tok[n], v1.attribute, &value);
+        err = getPremiseValue(sp, tok[n], v1.attribute, &value);
         n++;
     }
     if ( err > 0 ) return err;
@@ -483,7 +483,7 @@ int getPremiseVariable(char* tok[], int* k, struct TVariable* v)
 
 //=============================================================================
 
-int getPremiseValue(char* token, int attrib, double* value)
+int getPremiseValue(SWMM_Project *sp, char* token, int attrib, double* value)
 //
 //  Input:   token = a string token
 //           attrib = index of a node/link attribute
@@ -511,7 +511,7 @@ int getPremiseValue(char* token, int attrib, double* value)
         break;
 
       case r_DATE:
-        if ( !datetime_strToDate(token, value) )
+        if ( !datetime_strToDate(sp, token, value) )
             return error_setInpError(ERR_DATETIME, token);
         break;
 
@@ -533,7 +533,7 @@ int getPremiseValue(char* token, int attrib, double* value)
       case r_DAYOFYEAR:
         strncpy(strDate, token, 6);
         strcat(strDate, "/1947");
-        if ( datetime_strToDate(strDate, value) )
+        if ( datetime_strToDate(sp, strDate, value) )
         {
             *value = datetime_dayOfYear(*value);
         }
@@ -768,7 +768,7 @@ void  updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTim
     }
     else if ( a->tseries >= 0 )
     {
-        a->value = table_tseriesLookup(&sp->Tseries[a->tseries], currentTime, TRUE);
+        a->value = table_tseriesLookup(sp, &sp->Tseries[a->tseries], currentTime, TRUE);
     }
     else if ( a->attribute == r_PID )
     {

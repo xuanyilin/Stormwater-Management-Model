@@ -425,7 +425,8 @@ void lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit, double ucfRainfall
         //... write the current results to a string which is saved between
         //    reporting periods
         elapsedHrs = sp->NewRunoffTime / 1000.0 / 3600.0;
-        datetime_getTimeStamp(M_D_Y, getDateTime(sp, sp->NewRunoffTime), 24, timeStamp);
+        datetime_getTimeStamp(sp, M_D_Y, getDateTime(sp, sp->NewRunoffTime),
+                24, timeStamp);
         sprintf(theLidUnit->rptFile->results,
              "\n%20s\t %8.3f\t %8.3f\t %8.4f\t %8.3f\t %8.3f\t %8.3f\t %8.3f\t"
              "%8.3f\t %8.3f\t %8.3f\t %8.3f\t %8.3f\t %8.3f",
