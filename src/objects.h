@@ -61,6 +61,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "climate.h"
 #include "controls.h"
 #include "datetime.h"
+#include "dynwave.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1231,6 +1232,7 @@ struct SWMM_Project {
    TClimateShared ClimateShared;
    TControlsShared ControlsShared;
    TDatetime Datetime;
+   TDynwaveShared DynwaveShared;
 };
 
 

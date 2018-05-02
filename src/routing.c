@@ -132,7 +132,7 @@ void routing_close(SWMM_Project *sp, int routingModel)
     iface_closeRoutingFiles(sp);
 
     // --- free allocated memory
-    flowrout_close(routingModel);
+    flowrout_close(sp, routingModel);
     treatmnt_close();
     FREE(SortedLinks);
 }

@@ -246,7 +246,7 @@ double  landuse_getCoPollutLoad(SWMM_Project *sp, int p, double washoff[]);
 //   Flow/Quality Routing Methods
 //-----------------------------------------------------------------------------
 void    flowrout_init(SWMM_Project *sp, int routingModel);
-void    flowrout_close(int routingModel);
+void    flowrout_close(SWMM_Project *sp, int routingModel);
 double  flowrout_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedStep);
 int     flowrout_execute(SWMM_Project *sp, int links[], int routingModel,
         double tStep);
@@ -257,7 +257,7 @@ int     kinwave_execute(SWMM_Project *sp, int link, double* qin, double* qout,
 
 void    dynwave_validate(SWMM_Project *sp);                                                //(5.1.008)
 void    dynwave_init(SWMM_Project *sp);
-void    dynwave_close(void);
+void    dynwave_close(SWMM_Project *sp);
 double  dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep);
 int     dynwave_execute(SWMM_Project *sp, double tStep);
 void    dwflow_findConduitFlow(SWMM_Project *sp, int j, int steps, double omega,

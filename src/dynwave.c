@@ -47,6 +47,7 @@
 #if defined(_OPENMP)
   #include <omp.h>                                                             //(5.1.008)
 #endif
+#include "dynwave.h"
 
 //-----------------------------------------------------------------------------
 //     Constants 
@@ -59,27 +60,6 @@ const double DEFAULT_SURFAREA  = 12.566; // Min. nodal surface area (~4 ft diam.
 const double DEFAULT_HEADTOL   = 0.005;  // Default head tolerance (ft)
 const int    DEFAULT_MAXTRIALS = 8;      // Max. trials per time step
 
-
-//-----------------------------------------------------------------------------
-//  Data Structures
-//-----------------------------------------------------------------------------
-typedef struct 
-{
-    char    converged;                 // TRUE if iterations for a node done
-    double  newSurfArea;               // current surface area (ft2)
-    double  oldSurfArea;               // previous surface area (ft2)
-    double  sumdqdh;                   // sum of dqdh from adjoining links
-    double  dYdT;                      // change in depth w.r.t. time (ft/sec)
-} TXnode;
-
-//-----------------------------------------------------------------------------
-//  Shared Variables
-//-----------------------------------------------------------------------------
-static double  VariableStep;           // size of variable time step (sec)
-static TXnode* Xnode;                  // extended nodal information
-
-static double  Omega;                  // actual under-relaxation parameter
-static int     Steps;                  // number of Picard iterations
 
 //-----------------------------------------------------------------------------
 //  Function declarations
@@ -119,11 +99,13 @@ void dynwave_init(SWMM_Project *sp)
     int i, j;
     double z;
 
-    VariableStep = 0.0;
-    Xnode = (TXnode *) calloc(sp->Nobjects[NODE], sizeof(TXnode));
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
+    dynwv->VariableStep = 0.0;
+    dynwv->Xnode = (TXnode *) calloc(sp->Nobjects[NODE], sizeof(TXnode));
 
 ////  Added to release 5.1.011.  ////                                          //(5.1.011)
-    if ( Xnode == NULL )
+    if ( dynwv->Xnode == NULL )
     {
         report_writeErrorMsg(sp, ERR_MEMORY,
             " Not enough memory for dynamic wave routing.");
@@ -134,8 +116,8 @@ void dynwave_init(SWMM_Project *sp)
     // --- initialize node surface areas & crown elev.
     for (i = 0; i < sp->Nobjects[NODE]; i++ )
     {
-        Xnode[i].newSurfArea = 0.0;
-        Xnode[i].oldSurfArea = 0.0;
+        dynwv->Xnode[i].newSurfArea = 0.0;
+        dynwv->Xnode[i].oldSurfArea = 0.0;
         sp->Node[i].crownElev = sp->Node[i].invertElev;
     }
 
@@ -155,14 +137,16 @@ void dynwave_init(SWMM_Project *sp)
 
 //=============================================================================
 
-void  dynwave_close()
+void  dynwave_close(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: frees memory allocated for dynamic wave routing method.
 //
 {
-    FREE(Xnode);
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
+    FREE(dynwv->Xnode);
 }
 
 //=============================================================================
@@ -194,6 +178,8 @@ double dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep)
 //  Purpose: computes variable routing time step if applicable.
 //
 {
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- use user-supplied fixed step if variable step option turned off
     //     or if its smaller than the min. allowable variable time step
     if ( sp->CourantFactor == 0.0 ) return fixedStep;
@@ -201,17 +187,17 @@ double dynwave_getRoutingStep(SWMM_Project *sp, double fixedStep)
 
     // --- at start of simulation (when current variable step is zero)
     //     use the minimum allowable time step
-    if ( VariableStep == 0.0 )
+    if ( dynwv->VariableStep == 0.0 )
     {
-        VariableStep = sp->MinRouteStep;                                           //(5.1.008)
+        dynwv->VariableStep = sp->MinRouteStep;                                           //(5.1.008)
     }
 
     // --- otherwise compute variable step based on current flow solution
-    else VariableStep = getVariableStep(sp, fixedStep);
+    else dynwv->VariableStep = getVariableStep(sp, fixedStep);
 
     // --- adjust step to be a multiple of a millisecond
-    VariableStep = floor(1000.0 * VariableStep) / 1000.0;
-    return VariableStep;
+    dynwv->VariableStep = floor(1000.0 * dynwv->VariableStep) / 1000.0;
+    return dynwv->VariableStep;
 }
 
 //=============================================================================
@@ -226,22 +212,24 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
 {
     int converged;
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- initialize
     if ( sp->ErrorCode ) return 0;
-    Steps = 0;
+    dynwv->Steps = 0;
     converged = FALSE;
-    Omega = OMEGA;
+    dynwv->Omega = OMEGA;
     initRoutingStep(sp);
 
     // --- keep iterating until convergence 
-    while ( Steps < sp->MaxTrials )
+    while ( dynwv->Steps < sp->MaxTrials )
     {
         // --- execute a routing step & check for nodal convergence
         initNodeStates(sp);
         findLinkFlows(sp, tStep);
         converged = findNodeDepths(sp, tStep);
-        Steps++;
-        if ( Steps > 1 )
+        dynwv->Steps++;
+        if ( dynwv->Steps > 1 )
         {
             if ( converged ) break;
 
@@ -253,7 +241,7 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
 
     //  --- identify any capacity-limited conduits
     findLimitedLinks(sp);
-    return Steps;
+    return dynwv->Steps;
 }
 
 //=============================================================================
@@ -261,10 +249,13 @@ int dynwave_execute(SWMM_Project *sp, double tStep)
 void   initRoutingStep(SWMM_Project *sp)
 {
     int i;
+
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
-        Xnode[i].converged = FALSE;
-        Xnode[i].dYdT = 0.0;
+        dynwv->Xnode[i].converged = FALSE;
+        dynwv->Xnode[i].dYdT = 0.0;
     }
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
@@ -288,20 +279,22 @@ void initNodeStates(SWMM_Project *sp)
 {
     int i;
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     for (i = 0; i < sp->Nobjects[NODE]; i++)
     {
         // --- initialize nodal surface area
         if ( sp->AllowPonding )
         {
-            Xnode[i].newSurfArea = node_getPondedArea(sp, i, sp->Node[i].newDepth);
+            dynwv->Xnode[i].newSurfArea = node_getPondedArea(sp, i, sp->Node[i].newDepth);
         }
         else
         {
-            Xnode[i].newSurfArea = node_getSurfArea(sp, i, sp->Node[i].newDepth);
+            dynwv->Xnode[i].newSurfArea = node_getSurfArea(sp, i, sp->Node[i].newDepth);
         }
-        if ( Xnode[i].newSurfArea < sp->MinSurfArea )
+        if ( dynwv->Xnode[i].newSurfArea < sp->MinSurfArea )
         {
-            Xnode[i].newSurfArea = sp->MinSurfArea;
+            dynwv->Xnode[i].newSurfArea = sp->MinSurfArea;
         }
 
 ////  Following code section modified for release 5.1.007  ////                //(5.1.007)
@@ -316,7 +309,7 @@ void initNodeStates(SWMM_Project *sp)
         {    
             sp->Node[i].outflow -= sp->Node[i].newLatFlow;
         }
-        Xnode[i].sumdqdh = 0.0;
+        dynwv->Xnode[i].sumdqdh = 0.0;
     }
 }
 
@@ -325,10 +318,13 @@ void initNodeStates(SWMM_Project *sp)
 void   findBypassedLinks(SWMM_Project *sp)
 {
     int i;
+
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     for (i = 0; i < sp->Nobjects[LINK]; i++)
     {
-        if ( Xnode[sp->Link[i].node1].converged &&
-             Xnode[sp->Link[i].node2].converged )
+        if ( dynwv->Xnode[sp->Link[i].node1].converged &&
+                dynwv->Xnode[sp->Link[i].node2].converged )
              sp->Link[i].bypassed = TRUE;
         else sp->Link[i].bypassed = FALSE;
     }
@@ -373,6 +369,8 @@ void findLinkFlows(SWMM_Project *sp, double dt)
 {
     int i;
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- find new flow in each non-dummy conduit
 #pragma omp parallel num_threads(sp->NumThreads)                                   //(5.1.008)
 {
@@ -380,7 +378,7 @@ void findLinkFlows(SWMM_Project *sp, double dt)
     for ( i = 0; i < sp->Nobjects[LINK]; i++)
     {
         if ( isTrueConduit(sp, i) && !sp->Link[i].bypassed )
-            dwflow_findConduitFlow(sp, i, Steps, Omega, dt);
+            dwflow_findConduitFlow(sp, i, dynwv->Steps, dynwv->Omega, dt);
     }
 }
 
@@ -421,6 +419,8 @@ void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
     double qLast;                      // previous link flow (cfs)
     double qNew;                       // new link flow (cfs)
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- get link flow from last iteration
     qLast = sp->Link[i].newFlow;
     sp->Link[i].dqdh = 0.0;
@@ -435,9 +435,9 @@ void findNonConduitFlow(SWMM_Project *sp, int i, double dt)
 
     // --- apply under-relaxation with flow from previous iteration;
     // --- do not allow flow to change direction without first being 0
-    if ( Steps > 0 && sp->Link[i].type != PUMP ) 
+    if ( dynwv->Steps > 0 && sp->Link[i].type != PUMP )
     {
-        qNew = (1.0 - Omega) * qLast + Omega * qNew;
+        qNew = (1.0 - dynwv->Omega) * qLast + dynwv->Omega * qNew;
         if ( qNew * qLast < 0.0 ) qNew = 0.001 * SGN(qNew);
     }
     sp->Link[i].newFlow = qNew;
@@ -461,6 +461,8 @@ double getModPumpFlow(SWMM_Project *sp, int i, double q, double dt)
     double netFlowVolume;              // inflow - outflow volume (ft3)
     double y;                          // node depth (ft)
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     if ( q == 0.0 ) return q;
 
     // --- case where inlet node is a storage node: 
@@ -482,7 +484,7 @@ double getModPumpFlow(SWMM_Project *sp, int i, double q, double dt)
       case TYPE3_PUMP:
          newNetInflow = sp->Node[j].inflow - sp->Node[j].outflow - q;
          netFlowVolume = 0.5 * (sp->Node[j].oldNetInflow + newNetInflow ) * dt;
-         y = sp->Node[j].oldDepth + netFlowVolume / Xnode[j].newSurfArea;
+         y = sp->Node[j].oldDepth + netFlowVolume / dynwv->Xnode[j].newSurfArea;
          if ( y <= 0.0 ) return sp->Node[j].inflow;
     }
     return q;
@@ -536,6 +538,8 @@ void updateNodeFlows(SWMM_Project *sp, int i)
     double q = sp->Link[i].newFlow;
     double uniformLossRate = 0.0;
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- compute any uniform seepage loss from a conduit
     if ( sp->Link[i].type == CONDUIT )
     {
@@ -557,20 +561,20 @@ void updateNodeFlows(SWMM_Project *sp, int i)
     }
 
     // --- add surf. area contributions to upstream/downstream nodes
-    Xnode[sp->Link[i].node1].newSurfArea += sp->Link[i].surfArea1 * barrels;
-    Xnode[sp->Link[i].node2].newSurfArea += sp->Link[i].surfArea2 * barrels;
+    dynwv->Xnode[sp->Link[i].node1].newSurfArea += sp->Link[i].surfArea1 * barrels;
+    dynwv->Xnode[sp->Link[i].node2].newSurfArea += sp->Link[i].surfArea2 * barrels;
 
     // --- update summed value of dqdh at each end node
-    Xnode[sp->Link[i].node1].sumdqdh += sp->Link[i].dqdh;
+    dynwv->Xnode[sp->Link[i].node1].sumdqdh += sp->Link[i].dqdh;
     if ( sp->Link[i].type == PUMP )
     {
         k = sp->Link[i].subIndex;
         if ( sp->Pump[k].type != TYPE4_PUMP )                                      //(5.1.011)
         {
-            Xnode[n2].sumdqdh += sp->Link[i].dqdh;
+            dynwv->Xnode[n2].sumdqdh += sp->Link[i].dqdh;
         }
     }
-    else Xnode[n2].sumdqdh += sp->Link[i].dqdh;
+    else dynwv->Xnode[n2].sumdqdh += sp->Link[i].dqdh;
 }
 
 //=============================================================================
@@ -580,6 +584,8 @@ int findNodeDepths(SWMM_Project *sp, double dt)
     int i;
     int converged;      // convergence flag
     double yOld;        // previous node depth (ft)
+
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
 
     // --- compute outfall depths based on flow in connecting link
     for ( i = 0; i < sp->Nobjects[LINK]; i++ ) link_setOutfallDepth(sp, i);
@@ -595,11 +601,11 @@ int findNodeDepths(SWMM_Project *sp, double dt)
         if ( sp->Node[i].type == OUTFALL ) continue;
         yOld = sp->Node[i].newDepth;
         setNodeDepth(sp, i, dt);
-        Xnode[i].converged = TRUE;
+        dynwv->Xnode[i].converged = TRUE;
         if ( fabs(yOld - sp->Node[i].newDepth) > sp->HeadTol )
         {
             converged = FALSE;
-            Xnode[i].converged = FALSE;
+            dynwv->Xnode[i].converged = FALSE;
         }
     }
 }                                                                              //(5.1.008)
@@ -631,6 +637,8 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     double  corr;                      // correction factor
     double  f;                         // relative surcharge depth
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- see if node can pond water above it
     canPond = (sp->AllowPonding && sp->Node[i].pondedArea > 0.0);
     isPonded = (canPond && sp->Node[i].newDepth > sp->Node[i].fullDepth);
@@ -640,7 +648,7 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     yOld = sp->Node[i].oldDepth;
     yLast = sp->Node[i].newDepth;
     sp->Node[i].overflow = 0.0;
-    surfArea = Xnode[i].newSurfArea;
+    surfArea = dynwv->Xnode[i].newSurfArea;
 
     // --- determine average net flow volume into node over the time step
     dQ = sp->Node[i].inflow - sp->Node[i].outflow;
@@ -653,12 +661,12 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
         yNew = yOld + dy;
 
         // --- save non-ponded surface area for use in surcharge algorithm     //(5.1.002)
-        if ( !isPonded ) Xnode[i].oldSurfArea = surfArea;                      //(5.1.002)
+        if ( !isPonded ) dynwv->Xnode[i].oldSurfArea = surfArea;                      //(5.1.002)
 
         // --- apply under-relaxation to new depth estimate
-        if ( Steps > 0 )
+        if ( dynwv->Steps > 0 )
         {
-            yNew = (1.0 - Omega) * yLast + Omega * yNew;
+            yNew = (1.0 - dynwv->Omega) * yLast + dynwv->Omega * yNew;
         }
 
         // --- don't allow a ponded node to drop much below full depth
@@ -677,12 +685,12 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
 
         // --- allow surface area from last non-surcharged condition
         //     to influence dqdh if depth close to crown depth
-        denom = Xnode[i].sumdqdh;
+        denom = dynwv->Xnode[i].sumdqdh;
         if ( yLast < 1.25 * yCrown )
         {
             f = (yLast - yCrown) / yCrown;
-            denom += (Xnode[i].oldSurfArea/dt -
-                      Xnode[i].sumdqdh) * exp(-15.0 * f);
+            denom += (dynwv->Xnode[i].oldSurfArea/dt -
+                      dynwv->Xnode[i].sumdqdh) * exp(-15.0 * f);
         }
 
         // --- compute new estimate of node depth
@@ -711,7 +719,7 @@ void setNodeDepth(SWMM_Project *sp, int i, double dt)
     else sp->Node[i].newVolume = node_getVolume(sp, i, yNew);
 
     // --- compute change in depth w.r.t. time
-    Xnode[i].dYdT = fabs(yNew - yOld) / dt;
+    dynwv->Xnode[i].dYdT = fabs(yNew - yOld) / dt;
 
     // --- save new depth for node
     sp->Node[i].newDepth = yNew;
@@ -849,6 +857,8 @@ double getNodeStep(SWMM_Project *sp, double tMin, int *minNode)
     double t1;                          // time needed to reach depth limit (sec)
     double tNode = tMin;                // critical node time step (sec)
 
+    TDynwaveShared *dynwv = &sp->DynwaveShared;
+
     // --- find smallest time so that estimated change in nodal depth
     //     does not exceed safety factor * maxdepth
     for ( i = 0; i < sp->Nobjects[NODE]; i++ )
@@ -862,7 +872,7 @@ double getNodeStep(SWMM_Project *sp, double tMin, int *minNode)
         // --- define max. allowable depth change using crown elevation
         maxDepth = (sp->Node[i].crownElev - sp->Node[i].invertElev) * 0.25;
         if ( maxDepth < FUDGE ) continue;
-        dYdT = Xnode[i].dYdT;
+        dYdT = dynwv->Xnode[i].dYdT;
         if (dYdT < FUDGE ) continue;
 
         // --- compute time to reach max. depth & compare with critical time

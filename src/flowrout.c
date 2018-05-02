@@ -100,14 +100,14 @@ void flowrout_init(SWMM_Project *sp, int routingModel)
 
 //=============================================================================
 
-void  flowrout_close(int routingModel)
+void  flowrout_close(SWMM_Project *sp, int routingModel)
 //
 //  Input:   routingModel = routing method code
 //  Output:  none
 //  Purpose: closes down routing method used.
 //
 {
-    if ( routingModel == DW ) dynwave_close();
+    if ( routingModel == DW ) dynwave_close(sp);
 }
 
 //=============================================================================
