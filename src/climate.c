@@ -91,23 +91,23 @@ static char* ClimateVarWords[] = {"TMIN", "TMAX", "EVAP", "WDMV", "AWND",      /
 //static TMovAve   Tma;                  // moving average of daily temperatures //(5.1.010)
 
 // Evaporation variables
-static DateTime  NextEvapDate;         // next date when evap. rate changes
-static double    NextEvapRate;         // next evaporation rate (user units)
+//static DateTime  NextEvapDate;         // next date when evap. rate changes
+//static double    NextEvapRate;         // next evaporation rate (user units)
 
 // Climate file variables
-static int      FileFormat;            // file format (see ClimateFileFormats)
-static int      FileYear;              // current year of file data
-static int      FileMonth;             // current month of year of file data
-static int      FileDay;               // current day of month of file data
-static int      FileLastDay;           // last day of current month of file data
-static int      FileElapsedDays;       // number of days read from file
-static double   FileValue[4];          // current day's values of climate data
-static double   FileData[4][32];       // month's worth of daily climate data
-static char     FileLine[MAXLINE+1];   // line from climate data file
-
-static int      FileFieldPos[4];       // start of data fields for file record //(5.1.007)
-static int      FileDateFieldPos;      // start of date field for file record  //(5.1.007)
-static int      FileWindType;          // wind speed type;                     //(5.1.007)
+//static int      FileFormat;            // file format (see ClimateFileFormats)
+//static int      FileYear;              // current year of file data
+//static int      FileMonth;             // current month of year of file data
+//static int      FileDay;               // current day of month of file data
+//static int      FileLastDay;           // last day of current month of file data
+//static int      FileElapsedDays;       // number of days read from file
+//static double   FileValue[4];          // current day's values of climate data
+//static double   FileData[4][32];       // month's worth of daily climate data
+//static char     FileLine[MAXLINE+1];   // line from climate data file
+//
+//static int      FileFieldPos[4];       // start of data fields for file record //(5.1.007)
+//static int      FileDateFieldPos;      // start of date field for file record  //(5.1.007)
+//static int      FileWindType;          // wind speed type;                     //(5.1.007)
 
 //-----------------------------------------------------------------------------
 //  External functions (defined in funcs.h)
@@ -144,7 +144,7 @@ static void parseTD3200FileLine(SWMM_Project *sp);
 static void parseDLY0204FileLine(SWMM_Project *sp);
 static void setTD3200FileValues(SWMM_Project *sp, int param);
 
-static int  isGhcndFormat(char* line);                                         //(5.1.007)
+static int  isGhcndFormat(SWMM_Project *sp, char* line);                                         //(5.1.007)
 static void readGhcndFileLine(SWMM_Project *sp, int *year, int *month);                          //(5.1.007)
 static void parseGhcndFileLine(SWMM_Project *sp);                                          //(5.1.007)
 
@@ -491,6 +491,8 @@ void climate_openFile(SWMM_Project *sp)
 {
     int i, m, y;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- open the file
     if ( (sp->Fclimate.file = fopen(sp->Fclimate.name, "rt")) == NULL )
     {
@@ -500,14 +502,14 @@ void climate_openFile(SWMM_Project *sp)
 
     // --- initialize values of file's climate variables
     //     (sp->Temp.ta was previously initialized in project.c)
-    FileValue[TMIN] = sp->Temp.ta;
-    FileValue[TMAX] = sp->Temp.ta;
-    FileValue[EVAP] = 0.0;
-    FileValue[WIND] = 0.0;
+    clmt->FileValue[TMIN] = sp->Temp.ta;
+    clmt->FileValue[TMAX] = sp->Temp.ta;
+    clmt->FileValue[EVAP] = 0.0;
+    clmt->FileValue[WIND] = 0.0;
 
     // --- find climate file's format
-    FileFormat = getFileFormat(sp);
-    if ( FileFormat == UNKNOWN_FORMAT )
+    clmt->FileFormat = getFileFormat(sp);
+    if ( clmt->FileFormat == UNKNOWN_FORMAT )
     {
         report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
         return;
@@ -516,16 +518,16 @@ void climate_openFile(SWMM_Project *sp)
     // --- position file to begin reading climate file at either user-specified
     //     month/year or at start of simulation period.
     rewind(sp->Fclimate.file);
-    strcpy(FileLine, "");
+    strcpy(clmt->FileLine, "");
     if ( sp->Temp.fileStartDate == NO_DATE )
-        datetime_decodeDate(sp->StartDate, &FileYear, &FileMonth, &FileDay);
+        datetime_decodeDate(sp->StartDate, &clmt->FileYear, &clmt->FileMonth, &clmt->FileDay);
     else
-        datetime_decodeDate(sp->Temp.fileStartDate, &FileYear, &FileMonth, &FileDay);
+        datetime_decodeDate(sp->Temp.fileStartDate, &clmt->FileYear, &clmt->FileMonth, &clmt->FileDay);
     while ( !feof(sp->Fclimate.file) )
     {
-        strcpy(FileLine, "");
+        strcpy(clmt->FileLine, "");
         readFileLine(sp, &y, &m);
-        if ( y == FileYear && m == FileMonth ) break;
+        if ( y == clmt->FileYear && m == clmt->FileMonth ) break;
     }
     if ( feof(sp->Fclimate.file) )
     {
@@ -536,13 +538,13 @@ void climate_openFile(SWMM_Project *sp)
     // --- initialize file dates and current climate variable values
     if ( !sp->ErrorCode )
     {
-        FileElapsedDays = 0;
-        FileLastDay = datetime_daysPerMonth(FileYear, FileMonth);
+        clmt->FileElapsedDays = 0;
+        clmt->FileLastDay = datetime_daysPerMonth(clmt->FileYear, clmt->FileMonth);
         readFileValues(sp);
         for (i=TMIN; i<=WIND; i++)
         {
-            if ( FileData[i][FileDay] == MISSING ) continue;
-            FileValue[i] = FileData[i][FileDay];
+            if ( clmt->FileData[i][clmt->FileDay] == MISSING ) continue;
+            clmt->FileValue[i] = clmt->FileData[i][clmt->FileDay];
         }
     }
 }
@@ -563,8 +565,8 @@ void climate_initState(SWMM_Project *sp)
     clmt->LastDay = NO_DATE;
     sp->Temp.tmax = MISSING;
     sp->Snow.removed = 0.0;
-    NextEvapDate = sp->StartDate;
-    NextEvapRate = 0.0;
+    clmt->NextEvapDate = sp->StartDate;
+    clmt->NextEvapRate = 0.0;
 
     // --- initialize variables for time series evaporation
     if ( sp->Evap.type == TIMESERIES_EVAP && sp->Evap.tSeries >= 0  )
@@ -572,15 +574,15 @@ void climate_initState(SWMM_Project *sp)
         // --- initialize NextEvapDate & NextEvapRate to first entry of
         //     time series whose date <= the simulation start date
         table_getFirstEntry(&sp->Tseries[sp->Evap.tSeries],
-                            &NextEvapDate, &NextEvapRate);
-        if ( NextEvapDate < sp->StartDate )
+                            &clmt->NextEvapDate, &clmt->NextEvapRate);
+        if ( clmt->NextEvapDate < sp->StartDate )
         {  
             setNextEvapDate(sp, sp->StartDate);
         }
-        sp->Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
+        sp->Evap.rate = clmt->NextEvapRate / UCF(sp, EVAPRATE);
 
         // --- find the next time evaporation rates change after this
-        setNextEvapDate(sp, NextEvapDate);
+        setNextEvapDate(sp, clmt->NextEvapDate);
     }
 
 ////  Following section added to release 5.1.010.  ////                        //(5.1.010)
@@ -618,14 +620,16 @@ void climate_setState(SWMM_Project *sp, DateTime theDate)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-DateTime climate_getNextEvapDate()
+DateTime climate_getNextEvapDate(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  returns the current value of NextEvapDate
 //  Purpose: gets the next date when evaporation rate changes.
 //
 {
-    return NextEvapDate;
+    TClimateShared *clmt = &sp->ClimateShared;
+
+    return clmt->NextEvapDate;
 }
 
 //=============================================================================
@@ -642,14 +646,16 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
     int    yr, mon, day, k;
     double d, e;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- do nothing if current date hasn't reached the current next date
-    if ( NextEvapDate > theDate ) return;
+    if ( clmt->NextEvapDate > theDate ) return;
 
     switch ( sp->Evap.type )
     {
       // --- for constant evaporation, use a next date far in the future
       case CONSTANT_EVAP:
-         NextEvapDate = theDate + 365.;
+         clmt->NextEvapDate = theDate + 365.;
          break;
 
       // --- for monthly evaporation, use the start of the next month
@@ -661,7 +667,7 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
             yr++;
         }
         else mon++;
-        NextEvapDate = datetime_encodeDate(yr, mon, 1);
+        clmt->NextEvapDate = datetime_encodeDate(yr, mon, 1);
         break;
 
       // --- for time series evaporation, find the next entry in the
@@ -670,14 +676,14 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
         k = sp->Evap.tSeries;
         if ( k >= 0 )
         {
-            NextEvapDate = theDate + 365.;
+            clmt->NextEvapDate = theDate + 365.;
             while ( table_getNextEntry(&sp->Tseries[k], &d, &e) &&
                     d <= sp->EndDateTime )
             {
                 if ( d >= theDate )
                 {
-                    NextEvapDate = d;
-                    NextEvapRate = e;
+                    clmt->NextEvapDate = d;
+                    clmt->NextEvapRate = e;
                     break;
                 }
             }
@@ -686,10 +692,10 @@ void setNextEvapDate(SWMM_Project *sp, DateTime theDate)
 
       // --- for climate file daily evaporation, use the next day
       case FILE_EVAP:
-        NextEvapDate = floor(theDate) + 1.0;
+        clmt->NextEvapDate = floor(theDate) + 1.0;
         break;
 
-      default: NextEvapDate = theDate + 365.;
+      default: clmt->NextEvapDate = theDate + 365.;
     }
 }
 
@@ -709,34 +715,36 @@ void updateFileValues(SWMM_Project *sp, DateTime theDate)
     int i;
     int deltaDays;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- see if a new day has begun
     deltaDays = (int)(floor(theDate) - floor(sp->StartDateTime));
-    if ( deltaDays > FileElapsedDays )
+    if ( deltaDays > clmt->FileElapsedDays )
     {
         // --- advance day counters
-        FileElapsedDays++;
-        FileDay++;
+        clmt->FileElapsedDays++;
+        clmt->FileDay++;
 
         // --- see if new month of data needs to be read from file
-        if ( FileDay > FileLastDay )
+        if ( clmt->FileDay > clmt->FileLastDay )
         {
-            FileMonth++;
-            if ( FileMonth > 12 )
+            clmt->FileMonth++;
+            if ( clmt->FileMonth > 12 )
             {
-                FileMonth = 1;
-                FileYear++;
+                clmt->FileMonth = 1;
+                clmt->FileYear++;
             }
             readFileValues(sp);
-            FileDay = 1;
-            FileLastDay = datetime_daysPerMonth(FileYear, FileMonth);
+            clmt->FileDay = 1;
+            clmt->FileLastDay = datetime_daysPerMonth(clmt->FileYear, clmt->FileMonth);
         }
 
         // --- set climate variables for new day
         for (i=TMIN; i<=WIND; i++)
         {
             // --- no change in current value if its missing
-            if ( FileData[i][FileDay] == MISSING ) continue;
-            FileValue[i] = FileData[i][FileDay];
+            if ( clmt->FileData[i][clmt->FileDay] == MISSING ) continue;
+            clmt->FileValue[i] = clmt->FileData[i][clmt->FileDay];
         }
     }
 }
@@ -769,8 +777,8 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
         day = datetime_dayOfYear(theDate);
         if ( sp->Temp.dataSource == FILE_TEMP )
         {
-            clmt->Tmin = FileValue[TMIN] + sp->Adjust.temp[mon-1];                       //(5.1.007)
-            clmt->Tmax = FileValue[TMAX] + sp->Adjust.temp[mon-1];                       //(5.1.007)
+            clmt->Tmin = clmt->FileValue[TMIN] + sp->Adjust.temp[mon-1];                       //(5.1.007)
+            clmt->Tmax = clmt->FileValue[TMAX] + sp->Adjust.temp[mon-1];                       //(5.1.007)
             if ( clmt->Tmin > clmt->Tmax )
             {
                 tmp = clmt->Tmin;
@@ -781,7 +789,7 @@ void setTemp(SWMM_Project *sp, DateTime theDate)
             if ( sp->Evap.type == TEMPERATURE_EVAP )
             {
                 updateTempMoveAve(sp, clmt->Tmin, clmt->Tmax);                                 //(5.1.010)
-                FileValue[EVAP] = getTempEvap(sp, day, clmt->Tma.tAve, clmt->Tma.tRng);        //(5.1.010)
+                clmt->FileValue[EVAP] = getTempEvap(sp, day, clmt->Tma.tAve, clmt->Tma.tRng);        //(5.1.010)
             }
         }
 
@@ -845,6 +853,8 @@ void setEvap(SWMM_Project *sp, DateTime theDate)
     int k;
     int mon = datetime_monthOfYear(theDate);                                   //(5.1.007)
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     switch ( sp->Evap.type )
     {
       case CONSTANT_EVAP:
@@ -856,17 +866,17 @@ void setEvap(SWMM_Project *sp, DateTime theDate)
         break;
 
       case TIMESERIES_EVAP:
-        if ( theDate >= NextEvapDate )
-            sp->Evap.rate = NextEvapRate / UCF(sp, EVAPRATE);
+        if ( theDate >= clmt->NextEvapDate )
+            sp->Evap.rate = clmt->NextEvapRate / UCF(sp, EVAPRATE);
         break;
 
       case FILE_EVAP:
-        sp->Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
+        sp->Evap.rate = clmt->FileValue[EVAP] / UCF(sp, EVAPRATE);
         sp->Evap.rate *= sp->Evap.panCoeff[mon-1];
         break;
 
       case TEMPERATURE_EVAP:
-        sp->Evap.rate = FileValue[EVAP] / UCF(sp, EVAPRATE);
+        sp->Evap.rate = clmt->FileValue[EVAP] / UCF(sp, EVAPRATE);
         break;
 
       default: sp->Evap.rate = 0.0;
@@ -895,6 +905,8 @@ void setWind(SWMM_Project *sp, DateTime theDate)
 {
     int yr, mon, day;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     switch ( sp->Wind.type )
     {
       case MONTHLY_WIND:
@@ -903,7 +915,7 @@ void setWind(SWMM_Project *sp, DateTime theDate)
         break;
 
       case FILE_WIND:
-        sp->Wind.ws = FileValue[WIND];
+        sp->Wind.ws = clmt->FileValue[WIND];
         break;
 
       default: sp->Wind.ws = 0.0;
@@ -1019,7 +1031,7 @@ int  getFileFormat(SWMM_Project *sp)
     if ( n == 5 ) return USER_PREPARED;
 
     // --- check for GHCND format                                              //(5.1.007)
-    if ( isGhcndFormat(line) ) return GHCND;                                   //(5.1.007)
+    if ( isGhcndFormat(sp, line) ) return GHCND;                                   //(5.1.007)
 
     return UNKNOWN_FORMAT;
 }
@@ -1034,15 +1046,17 @@ void readFileLine(SWMM_Project *sp, int *y, int *m)
 //  Purpose: reads year & month from next line of climate file.
 //
 {
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- read next line from climate data file
-    while ( strlen(FileLine) == 0 )
+    while ( strlen(clmt->FileLine) == 0 )
     {
-        if ( fgets(FileLine, MAXLINE, sp->Fclimate.file) == NULL ) return;
-     	if ( FileLine[0] == '\n' ) FileLine[0] = '\0';
+        if ( fgets(clmt->FileLine, MAXLINE, sp->Fclimate.file) == NULL ) return;
+     	if ( clmt->FileLine[0] == '\n' ) clmt->FileLine[0] = '\0';
     }
 
     // --- parse year & month from line
-    switch (FileFormat)
+    switch (clmt->FileFormat)
     {
     case  USER_PREPARED: readUserFileLine(sp, y, m);   break;
     case  TD3200:        readTD3200FileLine(sp, y, m);  break;
@@ -1063,7 +1077,10 @@ void readUserFileLine(SWMM_Project *sp, int* y, int* m)
 {
     int n;
     char staID[80];
-    n = sscanf(FileLine, "%s %d %d", staID, y, m);
+
+    TClimateShared *clmt = &sp->ClimateShared;
+
+    n = sscanf(clmt->FileLine, "%s %d %d", staID, y, m);
     if ( n < 3 )
     {
         report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
@@ -1085,8 +1102,10 @@ void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
     char month[3] = "";
     int  len;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- check for minimum number of characters
-    len = strlen(FileLine);
+    len = strlen(clmt->FileLine);
     if ( len < 30 )
     {
         report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
@@ -1094,7 +1113,7 @@ void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
     }
 
     // --- check for proper type of record
-    sstrncpy(recdType, FileLine, 3);
+    sstrncpy(recdType, clmt->FileLine, 3);
     if ( strcmp(recdType, "DLY") != 0 )
     {
         report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
@@ -1102,8 +1121,8 @@ void readTD3200FileLine(SWMM_Project *sp, int* y, int* m)
     }
 
     // --- get record's date
-    sstrncpy(year,  &FileLine[17], 4);
-    sstrncpy(month, &FileLine[21], 2);
+    sstrncpy(year,  &clmt->FileLine[17], 4);
+    sstrncpy(month, &clmt->FileLine[21], 2);
     *y = atoi(year);
     *m = atoi(month);
 }
@@ -1122,8 +1141,10 @@ void readDLY0204FileLine(SWMM_Project *sp, int* y, int* m)
     char month[3] = "";
     int  len;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- check for minimum number of characters
-    len = strlen(FileLine);
+    len = strlen(clmt->FileLine);
     if ( len < 16 )
     {
         report_writeErrorMsg(sp, ERR_CLIMATE_FILE_READ, sp->Fclimate.name);
@@ -1131,8 +1152,8 @@ void readDLY0204FileLine(SWMM_Project *sp, int* y, int* m)
     }
 
     // --- get record's date
-    sstrncpy(year,  &FileLine[7], 4);
-    sstrncpy(month, &FileLine[11], 2);
+    sstrncpy(year,  &clmt->FileLine[7], 4);
+    sstrncpy(month, &clmt->FileLine[11], 2);
     *y = atoi(year);
     *m = atoi(month);
 }
@@ -1149,10 +1170,12 @@ void readFileValues(SWMM_Project *sp)
     int  i, j;
     int  y, m;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- initialize FileData array to missing values
     for ( i=0; i<MAXCLIMATEVARS; i++)
     {
-        for (j=0; j<MAXDAYSPERMONTH; j++) FileData[i][j] = MISSING;
+        for (j=0; j<MAXDAYSPERMONTH; j++) clmt->FileData[i][j] = MISSING;
     }
 
     while ( !sp->ErrorCode )
@@ -1160,17 +1183,17 @@ void readFileValues(SWMM_Project *sp)
         // --- return when date on line is after current file date
         if ( feof(sp->Fclimate.file) ) return;
         readFileLine(sp, &y, &m);
-        if ( y > FileYear || m > FileMonth ) return;
+        if ( y > clmt->FileYear || m > clmt->FileMonth ) return;
 
         // --- parse climate values from file line
-        switch (FileFormat)
+        switch (clmt->FileFormat)
         {
         case  USER_PREPARED: parseUserFileLine(sp);   break;
         case  TD3200:        parseTD3200FileLine(sp);  break;
         case  DLY0204:       parseDLY0204FileLine(sp); break;
         case  GHCND:         parseGhcndFileLine(sp);   break;                    //(5.1.007)
         }
-        strcpy(FileLine, "");
+        strcpy(clmt->FileLine, "");
     }
 }
 
@@ -1193,8 +1216,10 @@ void parseUserFileLine(SWMM_Project *sp)
     char  s3[80];
     double x;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- read day, Tmax, Tmin, Evap, & Wind from file line
-    n = sscanf(FileLine, "%s %d %d %d %s %s %s %s",
+    n = sscanf(clmt->FileLine, "%s %d %d %d %s %s %s %s",
         staID, &y, &m, &d, s0, s1, s2, s3);
     if ( n < 4 ) return;
     if ( d < 1 || d > 31 ) return;
@@ -1204,7 +1229,7 @@ void parseUserFileLine(SWMM_Project *sp)
     {
         x = atof(s0);
         if ( sp->UnitSystem == SI ) x = 9./5.*x + 32.0;
-        FileData[TMAX][d] =  x;
+        clmt->FileData[TMAX][d] =  x;
     }
 
     // --- process TMIN
@@ -1212,14 +1237,14 @@ void parseUserFileLine(SWMM_Project *sp)
     {
         x = atof(s1);
         if ( sp->UnitSystem == SI ) x = 9./5.*x + 32.0;
-        FileData[TMIN][d] =  x;
+        clmt->FileData[TMIN][d] =  x;
     }
 
     // --- process EVAP
-    if ( strlen(s2) > 0 && *s2 != '*' ) FileData[EVAP][d] = atof(s2);
+    if ( strlen(s2) > 0 && *s2 != '*' ) clmt->FileData[EVAP][d] = atof(s2);
 
     // --- process WIND
-    if ( strlen(s3) > 0 && *s3 != '*' ) FileData[WIND][d] = atof(s3);
+    if ( strlen(s3) > 0 && *s3 != '*' ) clmt->FileData[WIND][d] = atof(s3);
 }
 
 //=============================================================================
@@ -1234,8 +1259,10 @@ void parseTD3200FileLine(SWMM_Project *sp)
     int  i;
     char param[5] = "";
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- parse parameter name
-    sstrncpy(param, &FileLine[11], 4);
+    sstrncpy(param, &clmt->FileLine[11], 4);
 
     // --- see if parameter is temperature, evaporation or wind speed
     for (i=0; i<MAXCLIMATEVARS; i++)
@@ -1263,10 +1290,12 @@ void setTD3200FileValues(SWMM_Project *sp, int i)
     int  j, k, d;
     int  lineLength;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- parse number of days with data from cols. 27-29 of file line
-    sstrncpy(valCount, &FileLine[27], 3);
+    sstrncpy(valCount, &clmt->FileLine[27], 3);
     nValues = atoi(valCount);
-    lineLength = strlen(FileLine);
+    lineLength = strlen(clmt->FileLine);
 
     // --- check for enough characters on line
     if ( lineLength >= 12*nValues + 30 )
@@ -1276,10 +1305,10 @@ void setTD3200FileValues(SWMM_Project *sp, int i)
         {
             // --- parse day, value & flag from file line
             k = 30 + j*12;
-            sstrncpy(day,   &FileLine[k], 2);
-            sstrncpy(sign,  &FileLine[k+4], 1);
-            sstrncpy(value, &FileLine[k+5], 5);
-            sstrncpy(flag2, &FileLine[k+11], 1);
+            sstrncpy(day,   &clmt->FileLine[k], 2);
+            sstrncpy(sign,  &clmt->FileLine[k+4], 1);
+            sstrncpy(value, &clmt->FileLine[k+5], 5);
+            sstrncpy(flag2, &clmt->FileLine[k+11], 1);
 
             // --- if value is valid then store it in FileData array
             d = atoi(day);
@@ -1305,7 +1334,7 @@ void setTD3200FileValues(SWMM_Project *sp, int i)
                 if ( i == WIND ) x /= 24.0;
 
                 // --- store value
-                FileData[i][d] = x;
+                clmt->FileData[i][d] = x;
             }
         }
     }
@@ -1328,8 +1357,10 @@ void parseDLY0204FileLine(SWMM_Project *sp)
     char code[2]  = "";
     double x;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- parse parameter name
-    sstrncpy(param, &FileLine[13], 3);
+    sstrncpy(param, &clmt->FileLine[13], 3);
 
     // --- see if parameter is min or max temperature
     p = atoi(param);
@@ -1339,16 +1370,16 @@ void parseDLY0204FileLine(SWMM_Project *sp)
     else return;
 
     // --- check for 233 characters on line
-    if ( strlen(FileLine) < 233 ) return;
+    if ( strlen(clmt->FileLine) < 233 ) return;
 
     // --- for each of 31 days
     k = 16;
     for (j=1; j<=31; j++)
     {
         // --- parse value & flag from file line
-        sstrncpy(sign,  &FileLine[k], 1);
-        sstrncpy(value, &FileLine[k+1], 5);
-        sstrncpy(code,  &FileLine[k+6], 1);
+        sstrncpy(sign,  &clmt->FileLine[k], 1);
+        sstrncpy(value, &clmt->FileLine[k+1], 5);
+        sstrncpy(code,  &clmt->FileLine[k+6], 1);
         k += 7;
 
         // --- if value is valid then store it in FileData array
@@ -1371,7 +1402,7 @@ void parseDLY0204FileLine(SWMM_Project *sp)
                 break;
 			default: return;
             }
-            FileData[p][j] = x;
+            clmt->FileData[p][j] = x;
         }
     }
 }
@@ -1380,7 +1411,7 @@ void parseDLY0204FileLine(SWMM_Project *sp)
 
 ////  This function was added to release 5.1.007.  ////                        //(5.1.007)
 
-int isGhcndFormat(char* line)
+int isGhcndFormat(SWMM_Project *sp, char* line)
 //
 //  Input:   line = first line of text from a climate file
 //  Output:  returns TRUE if climate file is in NCDC GHCN Daily format.
@@ -1391,34 +1422,36 @@ int isGhcndFormat(char* line)
     int i;
     char* ptr;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- find starting position of the DATE field
     ptr = strstr(line, "DATE");
     if ( ptr == NULL ) return FALSE;
-    FileDateFieldPos = ptr - line;
+    clmt->FileDateFieldPos = ptr - line;
 
     // --- initialize starting position of each data field
-    for ( i = TMIN; i <= WIND; i++) FileFieldPos[i] = -1;
+    for ( i = TMIN; i <= WIND; i++) clmt->FileFieldPos[i] = -1;
 
     // --- find starting position of each climate variable's data field
     ptr = strstr(line, "TMIN");
-    if ( ptr ) FileFieldPos[TMIN] = ptr - line;
+    if ( ptr ) clmt->FileFieldPos[TMIN] = ptr - line;
     ptr = strstr(line, "TMAX");
-    if ( ptr ) FileFieldPos[TMAX] = ptr - line;
+    if ( ptr ) clmt->FileFieldPos[TMAX] = ptr - line;
     ptr = strstr(line, "EVAP");
-    if ( ptr ) FileFieldPos[EVAP] = ptr - line;
+    if ( ptr ) clmt->FileFieldPos[EVAP] = ptr - line;
 
     // --- WIND can either be daily movement or average speed
-    FileWindType = WDMV;
+    clmt->FileWindType = WDMV;
     ptr = strstr(line, "WDMV");
     if ( ptr == NULL )
     {
-        FileWindType = AWND;
+        clmt->FileWindType = AWND;
         ptr = strstr(line, "AWND");
     }
-    if ( ptr ) FileFieldPos[WIND] = ptr - line;
+    if ( ptr ) clmt->FileFieldPos[WIND] = ptr - line;
 
     // --- check if at least one climate variable was found
-    for (i = TMIN; i <= WIND; i++) if (FileFieldPos[i] >= 0 ) return TRUE;
+    for (i = TMIN; i <= WIND; i++) if (clmt->FileFieldPos[i] >= 0 ) return TRUE;
     return FALSE;
 }
 
@@ -1434,7 +1467,12 @@ void readGhcndFileLine(SWMM_Project *sp, int* y, int* m)
 //  Purpose: reads year & month from line of a NCDC GHCN Daily climate file.
 //
 {
-    int n = sscanf(&FileLine[FileDateFieldPos], "%4d%2d", y, m);
+    int n;
+
+    TClimateShared *clmt = &sp->ClimateShared;
+
+    n = sscanf(&clmt->FileLine[clmt->FileDateFieldPos], "%4d%2d", y, m);
+
     if ( n != 2 )
     {
         *y = -99999;
@@ -1458,54 +1496,56 @@ void parseGhcndFileLine(SWMM_Project *sp)
     int y, m, d, n, v;
     double x;
 
+    TClimateShared *clmt = &sp->ClimateShared;
+
     // --- parse day of month from date field
-    n = sscanf(&FileLine[FileDateFieldPos], "%4d%2d%2d", &y, &m, &d);
+    n = sscanf(&clmt->FileLine[clmt->FileDateFieldPos], "%4d%2d%2d", &y, &m, &d);
     if ( n < 3 ) return;
     if ( d < 1 || d > 31 ) return;
 
     // --- parse temperatures (in tenths of deg. C) to deg F
-    if ( FileFieldPos[TMAX] >= 0 )
+    if ( clmt->FileFieldPos[TMAX] >= 0 )
     {
-        if ( sscanf(&FileLine[FileFieldPos[TMAX]], "%8d", &v) > 0 )
+        if ( sscanf(&clmt->FileLine[clmt->FileFieldPos[TMAX]], "%8d", &v) > 0 )
         {
             if ( abs(v) < 9999 )
-                FileData[TMAX][d] = (double)v*0.1*9.0/5.0 + 32.0;
+                clmt->FileData[TMAX][d] = (double)v*0.1*9.0/5.0 + 32.0;
         }
     }
-    if ( FileFieldPos[TMIN] >= 0 )
+    if ( clmt->FileFieldPos[TMIN] >= 0 )
     {
-        if ( sscanf(&FileLine[FileFieldPos[TMIN]], "%8d", &v) > 0 )
+        if ( sscanf(&clmt->FileLine[clmt->FileFieldPos[TMIN]], "%8d", &v) > 0 )
         {
             if ( abs(v) < 9999 )
-                FileData[TMIN][d] = (double)v*0.1*9.0/5.0 + 32.0;
+                clmt->FileData[TMIN][d] = (double)v*0.1*9.0/5.0 + 32.0;
         }
     }
 
     // -- parse evaporation (in tenths of mm) to user units
-    if ( FileFieldPos[EVAP] >= 0 )
+    if ( clmt->FileFieldPos[EVAP] >= 0 )
     {
-        if ( sscanf(&FileLine[FileFieldPos[EVAP]], "%8d", &v) > 0 )
+        if ( sscanf(&clmt->FileLine[clmt->FileFieldPos[EVAP]], "%8d", &v) > 0 )
         {
             if ( abs(v) < 9999 )
             {
                 x = (double)v * 0.1;
                 if ( sp->UnitSystem == US ) x /= MMperINCH;
-                FileData[EVAP][d] = x;
+                clmt->FileData[EVAP][d] = x;
             }
         }
     }
 
     // --- parse wind speed (in km/day for WDMV or tenths of m/s for AWND)
     //     to miles/hr
-    if ( FileFieldPos[WIND] >= 0 )
+    if ( clmt->FileFieldPos[WIND] >= 0 )
     {
-        if ( sscanf(&FileLine[FileFieldPos[WIND]], "%8d", &v) > 0 )
+        if ( sscanf(&clmt->FileLine[clmt->FileFieldPos[WIND]], "%8d", &v) > 0 )
         {
             if ( abs(v) < 9999 )
             {
-                if ( FileWindType == WDMV ) x = (double)v * 0.62137 / 24.;
+                if ( clmt->FileWindType == WDMV ) x = (double)v * 0.62137 / 24.;
                 else x = (double)v * 0.1 / 1000. * 0.62137 * 3600.;
-                FileData[WIND][d] = x;
+                clmt->FileData[WIND][d] = x;
             }
         }
     }

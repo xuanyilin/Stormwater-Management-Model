@@ -61,25 +61,25 @@ typedef struct
     double    Dydif;                // hrs. between max. & min. temp. times
     DateTime  LastDay;              // date of last day with temp. data
     TMovAve   Tma;                  // moving average of daily temperatures //(5.1.010)
-//
+
 //// Evaporation variables
-//    DateTime  NextEvapDate;         // next date when evap. rate changes
-//    double    NextEvapRate;         // next evaporation rate (user units)
+    DateTime  NextEvapDate;         // next date when evap. rate changes
+    double    NextEvapRate;         // next evaporation rate (user units)
 //
 //// Climate file variables
-//    int      FileFormat;            // file format (see ClimateFileFormats)
-//    int      FileYear;              // current year of file data
-//    int      FileMonth;             // current month of year of file data
-//    int      FileDay;               // current day of month of file data
-//    int      FileLastDay;           // last day of current month of file data
-//    int      FileElapsedDays;       // number of days read from file
-//    double   FileValue[4];          // current day's values of climate data
-//    double   FileData[4][32];       // month's worth of daily climate data
-//    char     FileLine[MAXLINE+1];   // line from climate data file
+    int      FileFormat;            // file format (see ClimateFileFormats)
+    int      FileYear;              // current year of file data
+    int      FileMonth;             // current month of year of file data
+    int      FileDay;               // current day of month of file data
+    int      FileLastDay;           // last day of current month of file data
+    int      FileElapsedDays;       // number of days read from file
+    double   FileValue[4];          // current day's values of climate data
+    double   FileData[4][32];       // month's worth of daily climate data
+    char     FileLine[MAXLINE+1];   // line from climate data file
 //
-//    int      FileFieldPos[4];       // start of data fields for file record //(5.1.007)
-//    int      FileDateFieldPos;      // start of date field for file record  //(5.1.007)
-//    int      FileWindType;          // wind speed type;                     //(5.1.007)
+    int      FileFieldPos[4];       // start of data fields for file record //(5.1.007)
+    int      FileDateFieldPos;      // start of date field for file record  //(5.1.007)
+    int      FileWindType;          // wind speed type;                     //(5.1.007)
 } TClimateShared;
 
 //-----------------------------------------------------------------------------

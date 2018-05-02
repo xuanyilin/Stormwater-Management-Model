@@ -138,7 +138,7 @@ void     climate_validate(SWMM_Project *sp);
 void     climate_openFile(SWMM_Project *sp);
 void     climate_initState(SWMM_Project *sp);
 void     climate_setState(SWMM_Project *sp, DateTime aDate);
-DateTime climate_getNextEvapDate(void);                                        //(5.1.008)
+DateTime climate_getNextEvapDate(SWMM_Project *sp);                                        //(5.1.008)
 
 //-----------------------------------------------------------------------------
 //   Rainfall Processing Methods

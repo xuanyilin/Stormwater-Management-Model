@@ -305,7 +305,7 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
 
     // --- find shortest time until next evaporation or rainfall value
     //     (this represents the maximum possible time step)
-    timeStep = datetime_timeDiff(climate_getNextEvapDate(), currentDate);      //(5.1.008)
+    timeStep = datetime_timeDiff(climate_getNextEvapDate(sp), currentDate);      //(5.1.008)
     if ( timeStep > 0.0 && timeStep < maxStep ) maxStep = timeStep;            //(5.1.008)
     for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
