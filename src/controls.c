@@ -57,6 +57,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "headers.h"
+#include "controls.h"
 
 //-----------------------------------------------------------------------------
 //  Constants
@@ -83,74 +84,6 @@ static char* StatusWords[]  = {"OFF", "ON", NULL};
 static char* ConduitWords[] = {"CLOSED", "OPEN", NULL};
 static char* SettingTypeWords[] = {"CURVE", "TIMESERIES", "PID", NULL};
 
-//-----------------------------------------------------------------------------                  
-// Data Structures
-//-----------------------------------------------------------------------------
-// Rule Premise Variable
-struct TVariable
-{
-   int      node;            // index of a node (-1 if N/A)
-   int      link;            // index of a link (-1 if N/A)
-   int      attribute;       // type of attribute for node/link
-};
-
-// Rule Premise Clause 
-struct  TPremise
-{
-    int     type;                 // clause type (IF/AND/OR)
-    struct  TVariable lhsVar;     // left hand side variable                   //(5.1.008)
-    struct  TVariable rhsVar;     // right hand side variable                  //(5.1.008)
-    int     relation;             // relational operator (>, <, =, etc)
-    double  value;                // right hand side value
-    struct  TPremise *next;       // next premise clause of rule
-};
-
-// Rule Action Clause
-struct  TAction              
-{
-   int     rule;             // index of rule that action belongs to
-   int     link;             // index of link being controlled
-   int     attribute;        // attribute of link being controlled
-   int     curve;            // index of curve for modulated control
-   int     tseries;          // index of time series for modulated control
-   double  value;            // control setting for link attribute
-   double  kp, ki, kd;       // coeffs. for PID modulated control
-   double  e1, e2;           // PID set point error from previous time steps
-   struct  TAction *next;    // next action clause of rule
-};
-
-// List of Control Actions
-struct  TActionList          
-{
-   struct  TAction* action;
-   struct  TActionList* next;
-};
-
-// Control Rule
-struct  TRule
-{
-   char*    ID;                        // rule ID
-   double   priority;                  // priority level
-   struct   TPremise* firstPremise;    // pointer to first premise of rule
-   struct   TPremise* lastPremise;     // pointer to last premise of rule
-   struct   TAction*  thenActions;     // linked list of actions if true
-   struct   TAction*  elseActions;     // linked list of actions if false
-};
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-struct   TRule*       Rules;           // array of control rules
-struct   TActionList* ActionList;      // linked list of control actions
-int      InputState;                   // state of rule interpreter
-int      RuleCount;                    // total number of rules
-double   ControlValue;                 // value of controller variable
-double   SetPoint;                     // value of controller setpoint
-DateTime CurrentDate;                  // current date in whole days 
-DateTime CurrentTime;                  // current time of day (decimal)
-
-// Avoid Duplicate symbol error on C++
-//DateTime ElapsedTime;                  // elasped simulation time (decimal days)
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -170,15 +103,15 @@ int    addAction(SWMM_Project *sp, int r, char* Tok[], int nToks);
 
 int    evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep);
 double getVariableValue(SWMM_Project *sp, struct TVariable v);
-int    compareTimes(double lhsValue, int relation, double rhsValue,
+int    compareTimes(SWMM_Project *sp, double lhsValue, int relation, double rhsValue,
        double halfStep);
-int    compareValues(double lhsValue, int relation, double rhsValue);
+int    compareValues(SWMM_Project *sp, double lhsValue, int relation, double rhsValue);
 
-void   updateActionList(struct TAction* a);
+void   updateActionList(SWMM_Project *sp, struct TAction* a);
 int    executeActionList(SWMM_Project *sp, DateTime currentTime);
-void   clearActionList(void);
-void   deleteActionList(void);
-void   deleteRules(void);
+void   clearActionList(SWMM_Project *sp);
+void   deleteActionList(SWMM_Project *sp);
+void   deleteRules(SWMM_Project *sp);
 
 int    findExactMatch(char *s, char *keyword[]);
 int    setActionSetting(SWMM_Project *sp, char* tok[], int nToks, int* curve, int* tseries,
@@ -189,7 +122,7 @@ double getPIDSetting(SWMM_Project *sp, struct TAction* a, double dt);
 
 //=============================================================================
 
-int  controls_create(int n)
+int  controls_create(SWMM_Project *sp, int n)
 //
 //  Input:   n = total number of control rules
 //  Output:  returns error code
@@ -197,36 +130,41 @@ int  controls_create(int n)
 //
 {
    int r;
-   ActionList = NULL;
-   InputState = r_PRIORITY;
-   RuleCount = n;
+
+   TControlsShared *cntrl = &sp->ControlsShared;
+
+   cntrl->ActionList = NULL;
+   cntrl->InputState = r_PRIORITY;
+   cntrl->RuleCount = n;
    if ( n == 0 ) return 0;
-   Rules = (struct TRule *) calloc(RuleCount, sizeof(struct TRule));
-   if (Rules == NULL) return ERR_MEMORY;
-   for ( r=0; r<RuleCount; r++ )
+   cntrl->Rules = (struct TRule *) calloc(cntrl->RuleCount, sizeof(struct TRule));
+   if (cntrl->Rules == NULL) return ERR_MEMORY;
+   for ( r=0; r < cntrl->RuleCount; r++ )
    {
-       Rules[r].ID = NULL;
-       Rules[r].firstPremise = NULL;
-       Rules[r].lastPremise = NULL;
-       Rules[r].thenActions = NULL;
-       Rules[r].elseActions = NULL;
-       Rules[r].priority = 0.0;    
+       cntrl->Rules[r].ID = NULL;
+       cntrl->Rules[r].firstPremise = NULL;
+       cntrl->Rules[r].lastPremise = NULL;
+       cntrl->Rules[r].thenActions = NULL;
+       cntrl->Rules[r].elseActions = NULL;
+       cntrl->Rules[r].priority = 0.0;
    }
    return 0;
 }
 
 //=============================================================================
 
-void controls_delete(void)
+void controls_delete(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: deletes all control rules.
 //
 {
-   if ( RuleCount == 0 ) return;
-   deleteActionList();
-   deleteRules();
+    TControlsShared *cntrl = &sp->ControlsShared;
+
+   if ( cntrl->RuleCount == 0 ) return;
+   deleteActionList(sp);
+   deleteRules(sp);
 }
 
 //=============================================================================
@@ -242,44 +180,46 @@ int  controls_addRuleClause(SWMM_Project *sp, int r, int keyword, char* tok[],
 //  Purpose: addd a new clause to a control rule.
 //
 {
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     switch (keyword)
     {
       case r_RULE:
-        if ( Rules[r].ID == NULL )
-            Rules[r].ID = project_findID(CONTROL, tok[1]);
-        InputState = r_RULE;
+        if ( cntrl->Rules[r].ID == NULL )
+            cntrl->Rules[r].ID = project_findID(CONTROL, tok[1]);
+        cntrl->InputState = r_RULE;
         if ( nToks > 2 ) return ERR_RULE;
         return 0;
 
       case r_IF:
-        if ( InputState != r_RULE ) return ERR_RULE;
-        InputState = r_IF;
+        if ( cntrl->InputState != r_RULE ) return ERR_RULE;
+        cntrl->InputState = r_IF;
         return addPremise(sp, r, r_AND, tok, nToks);
 
       case r_AND:
-        if ( InputState == r_IF ) return addPremise(sp, r, r_AND, tok, nToks);
-        else if ( InputState == r_THEN || InputState == r_ELSE )
+        if ( cntrl->InputState == r_IF ) return addPremise(sp, r, r_AND, tok, nToks);
+        else if ( cntrl->InputState == r_THEN || cntrl->InputState == r_ELSE )
             return addAction(sp, r, tok, nToks);
         else return ERR_RULE;
 
       case r_OR:
-        if ( InputState != r_IF ) return ERR_RULE;
+        if ( cntrl->InputState != r_IF ) return ERR_RULE;
         return addPremise(sp, r, r_OR, tok, nToks);
 
       case r_THEN:
-        if ( InputState != r_IF ) return ERR_RULE;
-        InputState = r_THEN;
+        if ( cntrl->InputState != r_IF ) return ERR_RULE;
+        cntrl->InputState = r_THEN;
         return addAction(sp, r, tok, nToks);
 
       case r_ELSE:
-        if ( InputState != r_THEN ) return ERR_RULE;
-        InputState = r_ELSE;
+        if ( cntrl->InputState != r_THEN ) return ERR_RULE;
+        cntrl->InputState = r_ELSE;
         return addAction(sp, r, tok, nToks);
 
       case r_PRIORITY:
-        if ( InputState != r_THEN && InputState != r_ELSE ) return ERR_RULE;
-        InputState = r_PRIORITY;
-        if ( !getDouble(tok[1], &Rules[r].priority) ) return ERR_NUMBER;
+        if ( cntrl->InputState != r_THEN && cntrl->InputState != r_ELSE ) return ERR_RULE;
+        cntrl->InputState = r_PRIORITY;
+        if ( !getDouble(tok[1], &cntrl->Rules[r].priority) ) return ERR_NUMBER;
         if ( nToks > 2 ) return ERR_RULE;
         return 0;
     }
@@ -303,19 +243,21 @@ int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
     struct TPremise* p;                // pointer to rule premise clause
     struct TAction*  a;                // pointer to rule action clause
 
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     // --- save date and time to shared variables
-    CurrentDate = floor(currentTime);
-    CurrentTime = currentTime - floor(currentTime);
+    cntrl->CurrentDate = floor(currentTime);
+    cntrl->CurrentTime = currentTime - floor(currentTime);
     sp->ElapsedTime = elapsedTime;
 
     // --- evaluate each rule
-    if ( RuleCount == 0 ) return 0;
-    clearActionList();
-    for (r=0; r<RuleCount; r++)
+    if ( cntrl->RuleCount == 0 ) return 0;
+    clearActionList(sp);
+    for (r = 0; r < cntrl->RuleCount; r++)
     {
         // --- evaluate rule's premises
         result = TRUE;
-        p = Rules[r].firstPremise;
+        p = cntrl->Rules[r].firstPremise;
         while (p)
         {
             if ( p->type == r_OR )
@@ -333,18 +275,18 @@ int controls_evaluate(SWMM_Project *sp, DateTime currentTime,
 
         // --- if premises true, add THEN clauses to action list
         //     else add ELSE clauses to action list
-        if ( result == TRUE ) a = Rules[r].thenActions;
-        else                  a = Rules[r].elseActions;
+        if ( result == TRUE ) a = cntrl->Rules[r].thenActions;
+        else                  a = cntrl->Rules[r].elseActions;
         while (a)
         {
             updateActionValue(sp, a, currentTime, tStep);
-            updateActionList(a);
+            updateActionList(sp, a);
             a = a->next;
         }
     }
 
     // --- execute actions on action list
-    if ( ActionList ) return executeActionList(sp, currentTime);
+    if ( cntrl->ActionList ) return executeActionList(sp, currentTime);
     else return 0;
 }
 
@@ -367,6 +309,8 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
     struct TPremise* p;
     struct TVariable v1;
     struct TVariable v2;
+
+    TControlsShared *cntrl = &sp->ControlsShared;
 
     // --- check for minimum number of tokens
     if ( nToks < 5 ) return ERR_ITEMS;
@@ -396,7 +340,7 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
         err = getPremiseVariable(tok, &n, &v2);
         if ( err > 0 ) return ERR_RULE;                                        //(5.1.009)
         if ( v1.attribute != v2.attribute)                                     //(5.1.009)
-            report_writeWarningMsg(sp, WARN11, Rules[r].ID);                   //(5.1.009)
+            report_writeWarningMsg(sp, WARN11, cntrl->Rules[r].ID);                   //(5.1.009)
     }
 
     // --- otherwise get value to which LHS variable is compared to
@@ -419,15 +363,15 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
     p->relation  = relation;
     p->value     = value;
     p->next      = NULL;
-    if ( Rules[r].firstPremise == NULL )
+    if ( cntrl->Rules[r].firstPremise == NULL )
     {
-        Rules[r].firstPremise = p;
+        cntrl->Rules[r].firstPremise = p;
     }
     else
     {
-        Rules[r].lastPremise->next = p;
+        cntrl->Rules[r].lastPremise->next = p;
     }
-    Rules[r].lastPremise = p;
+    cntrl->Rules[r].lastPremise = p;
     return 0;
 }
 
@@ -619,6 +563,9 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
     int    curve = -1, tseries = -1;
     int    n;
     int    err;
+
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     double values[] = {1.0, 0.0, 0.0};
 
     struct TAction* a;
@@ -730,15 +677,15 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
         a->e1 = 0.0;
         a->e2 = 0.0;
     }
-    if ( InputState == r_THEN )
+    if ( cntrl->InputState == r_THEN )
     {
-        a->next = Rules[r].thenActions;
-        Rules[r].thenActions = a;
+        a->next = cntrl->Rules[r].thenActions;
+        cntrl->Rules[r].thenActions = a;
     }
     else
     {
-        a->next = Rules[r].elseActions;
-        Rules[r].elseActions = a;
+        a->next = cntrl->Rules[r].elseActions;
+        cntrl->Rules[r].elseActions = a;
     }
     return 0;
 }
@@ -813,9 +760,11 @@ void  updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTim
 //  Purpose: updates value of actions found from Curves or Time Series.
 //
 {
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     if ( a->curve >= 0 )
     {
-        a->value = table_lookup(&sp->Curve[a->curve], ControlValue);
+        a->value = table_lookup(&sp->Curve[a->curve], cntrl->ControlValue);
     }
     else if ( a->tseries >= 0 )
     {
@@ -846,15 +795,17 @@ double getPIDSetting(SWMM_Project *sp, struct TAction* a, double dt)
 	double p, i, d, update;
 	double tolerance = 0.0001;
 
+	TControlsShared *cntrl = &sp->ControlsShared;
+
 	// --- convert time step from days to minutes
 	dt *= 1440.0;
 
     // --- determine relative error in achieving controller set point
-    e0 = SetPoint - ControlValue;
+    e0 = cntrl->SetPoint - cntrl->ControlValue;
     if ( fabs(e0) > TINY )
     {
-        if ( SetPoint != 0.0 ) e0 = e0/SetPoint;
-        else                   e0 = e0/ControlValue;
+        if ( cntrl->SetPoint != 0.0 ) e0 = e0/cntrl->SetPoint;
+        else                   e0 = e0/cntrl->ControlValue;
     }
 
 	// --- reset previous errors to 0 if controller gets stuck
@@ -886,7 +837,7 @@ double getPIDSetting(SWMM_Project *sp, struct TAction* a, double dt)
 
 //=============================================================================
 
-void updateActionList(struct TAction* a)
+void updateActionList(SWMM_Project *sp, struct TAction* a)
 //
 //  Input:   a = an action object
 //  Output:  none
@@ -895,10 +846,13 @@ void updateActionList(struct TAction* a)
 {
     struct TActionList* listItem;
     struct TAction* a1;
-    double priority = Rules[a->rule].priority;
+
+    TControlsShared *cntrl = &sp->ControlsShared;
+
+    double priority = cntrl->Rules[a->rule].priority;
 
     // --- check if link referred to in action is already listed
-    listItem = ActionList;
+    listItem = cntrl->ActionList;
     while ( listItem )
     {
         a1 = listItem->action;
@@ -906,7 +860,7 @@ void updateActionList(struct TAction* a)
         if ( a1->link == a->link )
         {
             // --- replace old action if new action has higher priority
-            if ( priority > Rules[a1->rule].priority ) listItem->action = a;
+            if ( priority > cntrl->Rules[a1->rule].priority ) listItem->action = a;
             return;
         }
         listItem = listItem->next;
@@ -916,8 +870,8 @@ void updateActionList(struct TAction* a)
     if ( !listItem )
     {
         listItem = (struct TActionList *) malloc(sizeof(struct TActionList));
-        listItem->next = ActionList;
-        ActionList = listItem;
+        listItem->next = cntrl->ActionList;
+        cntrl->ActionList = listItem;
     }
     listItem->action = a;
 }
@@ -936,7 +890,9 @@ int executeActionList(SWMM_Project *sp, DateTime currentTime)
     struct TAction* a1;
     int count = 0;
 
-    listItem = ActionList;
+    TControlsShared *cntrl = &sp->ControlsShared;
+
+    listItem = cntrl->ActionList;
     while ( listItem )
     {
         a1 = listItem->action;
@@ -949,7 +905,7 @@ int executeActionList(SWMM_Project *sp, DateTime currentTime)
                 if ( sp->RptFlags.controls && a1->curve < 0                        //(5.1.011)
                      && a1->tseries < 0 && a1->attribute != r_PID )            //(5.1.011)
                     report_writeControlAction(sp, currentTime, sp->Link[a1->link].ID,
-                                              a1->value, Rules[a1->rule].ID);
+                                              a1->value, cntrl->Rules[a1->rule].ID);
                 count++;
             }
         }
@@ -974,6 +930,8 @@ int evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep)
     double lhsValue, rhsValue;
     int    result = FALSE;
 
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     lhsValue = getVariableValue(sp, p->lhsVar);
     if ( p->value == MISSING ) rhsValue = getVariableValue(sp, p->rhsVar);
     else                       rhsValue = p->value;
@@ -982,14 +940,14 @@ int evaluatePremise(SWMM_Project *sp, struct TPremise* p, double tStep)
     {
     case r_TIME:
     case r_CLOCKTIME:
-        return compareTimes(lhsValue, p->relation, rhsValue, tStep/2.0); 
+        return compareTimes(sp, lhsValue, p->relation, rhsValue, tStep/2.0);
     case r_TIMEOPEN:
     case r_TIMECLOSED:
-        result = compareTimes(lhsValue, p->relation, rhsValue, tStep/2.0);
-        ControlValue = lhsValue * 24.0;  // convert time from days to hours
+        result = compareTimes(sp, lhsValue, p->relation, rhsValue, tStep/2.0);
+        cntrl->ControlValue = lhsValue * 24.0;  // convert time from days to hours
         return result;
     default:
-        return compareValues(lhsValue, p->relation, rhsValue);
+        return compareValues(sp, lhsValue, p->relation, rhsValue);
     }
 }
 
@@ -1000,25 +958,27 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
     int i = v.node;
     int j = v.link;
 
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     switch ( v.attribute )
     {
       case r_TIME:
         return sp->ElapsedTime;
         
       case r_DATE:
-        return CurrentDate;
+        return cntrl->CurrentDate;
 
       case r_CLOCKTIME:
-        return CurrentTime;
+        return cntrl->CurrentTime;
 
       case r_DAY:
-        return datetime_dayOfWeek(CurrentDate);
+        return datetime_dayOfWeek(cntrl->CurrentDate);
 
       case r_MONTH:
-        return datetime_monthOfYear(CurrentDate);
+        return datetime_monthOfYear(cntrl->CurrentDate);
 
       case r_DAYOFYEAR:                                                        //(5.1.011)
-        return datetime_dayOfYear(CurrentDate);                                //(5.1.011)
+        return datetime_dayOfYear(cntrl->CurrentDate);                                //(5.1.011)
 
       case r_STATUS:
         if ( j < 0 ||
@@ -1056,12 +1016,12 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
       case r_TIMEOPEN:
           if ( j < 0 ) return MISSING;
           if ( sp->Link[j].setting <= 0.0 ) return MISSING;
-          return CurrentDate + CurrentTime - sp->Link[j].timeLastSet;
+          return cntrl->CurrentDate + cntrl->CurrentTime - sp->Link[j].timeLastSet;
 
       case r_TIMECLOSED:
           if ( j < 0 ) return MISSING;
           if ( sp->Link[j].setting > 0.0 ) return MISSING;
-          return CurrentDate + CurrentTime - sp->Link[j].timeLastSet;
+          return cntrl->CurrentDate + cntrl->CurrentTime - sp->Link[j].timeLastSet;
 ////
 
       default: return MISSING;
@@ -1070,7 +1030,7 @@ double getVariableValue(SWMM_Project *sp, struct TVariable v)
 
 //=============================================================================
 
-int compareTimes(double lhsValue, int relation, double rhsValue, double halfStep)
+int compareTimes(SWMM_Project *sp, double lhsValue, int relation, double rhsValue, double halfStep)
 //
 //  Input:   lhsValue = date/time value on left hand side of relation
 //           relation = relational operator code (see RuleRelation enumeration)
@@ -1092,20 +1052,22 @@ int compareTimes(double lhsValue, int relation, double rhsValue, double halfStep
         ||   lhsValue >= rhsValue + halfStep ) return TRUE;
         return FALSE;
     }
-    else return compareValues(lhsValue, relation, rhsValue);
+    else return compareValues(sp, lhsValue, relation, rhsValue);
 }
 
 //=============================================================================
 
-int compareValues(double lhsValue, int relation, double rhsValue)
+int compareValues(SWMM_Project *sp, double lhsValue, int relation, double rhsValue)
 //  Input:   lhsValue = value on left hand side of relation
 //           relation = relational operator code (see RuleRelation enumeration)
 //           rhsValue = value on right hand side of relation 
 //  Output:  returns TRUE if relation is satisfied
 //  Purpose: evaluates the truth of a relation between two values.
 {
-    SetPoint = rhsValue;
-    ControlValue = lhsValue;
+    TControlsShared *cntrl = &sp->ControlsShared;
+
+    cntrl->SetPoint = rhsValue;
+    cntrl->ControlValue = lhsValue;
     switch (relation)
     {
       case EQ: if ( lhsValue == rhsValue ) return TRUE; break;
@@ -1120,15 +1082,17 @@ int compareValues(double lhsValue, int relation, double rhsValue)
 
 //=============================================================================
 
-void clearActionList(void)
+void clearActionList(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: clears the list of actions to be executed.
 //
 {
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     struct TActionList* listItem;
-    listItem = ActionList;
+    listItem = cntrl->ActionList;
     while ( listItem )
     {
         listItem->action = NULL;
@@ -1138,28 +1102,30 @@ void clearActionList(void)
 
 //=============================================================================
 
-void  deleteActionList(void)
+void  deleteActionList(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
 //  Purpose: frees the memory used to hold the list of actions to be executed.
 //
 {
+    TControlsShared *cntrl = &sp->ControlsShared;
+
     struct TActionList* listItem;
     struct TActionList* nextItem;
-    listItem = ActionList;
+    listItem = cntrl->ActionList;
     while ( listItem )
     {
         nextItem = listItem->next;
         free(listItem);
         listItem = nextItem;
     }
-    ActionList = NULL;
+    cntrl->ActionList = NULL;
 }
 
 //=============================================================================
 
-void  deleteRules(void)
+void  deleteRules(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1171,23 +1137,26 @@ void  deleteRules(void)
    struct TAction*  a;
    struct TAction*  anext;
    int r;
-   for (r=0; r<RuleCount; r++)
+
+   TControlsShared *cntrl = &sp->ControlsShared;
+
+   for (r = 0; r < cntrl->RuleCount; r++)
    {
-      p = Rules[r].firstPremise;
+      p = cntrl->Rules[r].firstPremise;
       while ( p )
       {
          pnext = p->next;
          free(p);
          p = pnext;
       }
-      a = Rules[r].thenActions;
+      a = cntrl->Rules[r].thenActions;
       while (a )
       {
          anext = a->next;
          free(a);
          a = anext;
       }
-      a = Rules[r].elseActions;
+      a = cntrl->Rules[r].elseActions;
       while (a )
       {
          anext = a->next;
@@ -1195,8 +1164,8 @@ void  deleteRules(void)
          a = anext;
       }
    }
-   FREE(Rules);
-   RuleCount = 0;
+   FREE(cntrl->Rules);
+   cntrl->RuleCount = 0;
 }
 
 //=============================================================================

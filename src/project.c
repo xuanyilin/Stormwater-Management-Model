@@ -994,7 +994,7 @@ void createObjects(SWMM_Project *sp)
     lid_create(sp, sp->Nobjects[LID], sp->Nobjects[SUBCATCH]);
 
     // --- create control rules
-    sp->ErrorCode = controls_create(sp->Nobjects[CONTROL]);
+    sp->ErrorCode = controls_create(sp, sp->Nobjects[CONTROL]);
     if ( sp->ErrorCode ) return;
 
     // --- create cross section transects
@@ -1213,7 +1213,7 @@ void deleteObjects(SWMM_Project *sp)
     transect_delete(sp);
 
     // --- delete control rules
-    controls_delete();
+    controls_delete(sp);
 
     // --- delete LIDs
     lid_delete();

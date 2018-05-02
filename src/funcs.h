@@ -513,8 +513,8 @@ int     shape_validate(TShape *shape, TTable *curve);
 //-----------------------------------------------------------------------------
 //   Control Rule Methods
 //-----------------------------------------------------------------------------
-int     controls_create(int n);
-void    controls_delete(void);
+int     controls_create(SWMM_Project *sp, int n);
+void    controls_delete(SWMM_Project *sp);
 int     controls_addRuleClause(SWMM_Project *sp, int rule, int keyword,
         char* Tok[], int nTokens);
 int     controls_evaluate(SWMM_Project *sp, DateTime currentTime,
