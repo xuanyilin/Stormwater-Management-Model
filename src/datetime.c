@@ -247,7 +247,7 @@ void datetime_dateToStr(SWMM_Project *sp, DateTime date, char* s)
     int  y, m, d;
     char dateStr[DATE_STR_SIZE];
 
-    TDatetime *dttm = &sp->Datetime;
+    TDatetimeShared *dttm = &sp->DatetimeShared;
 
     datetime_decodeDate(date, &y, &m, &d);
     switch (dttm->DateFormat)
@@ -297,7 +297,7 @@ int datetime_strToDate(SWMM_Project *sp, char* s, DateTime* d)
     char month[4];
     char sep1, sep2;
 
-    TDatetime *dttm = &sp->Datetime;
+    TDatetimeShared *dttm = &sp->DatetimeShared;
 
     *d = -DateDelta;
     if (strchr(s, '-') || strchr(s, '/'))
@@ -380,7 +380,7 @@ void datetime_setDateFormat(SWMM_Project *sp, int fmt)
 //  Purpose: sets date format
 
 {
-    TDatetime *dttm = &sp->Datetime;
+    TDatetimeShared *dttm = &sp->DatetimeShared;
 
     if ( fmt >= Y_M_D && fmt <= M_D_Y)
         dttm->DateFormat = fmt;
@@ -531,7 +531,7 @@ void datetime_getTimeStamp(SWMM_Project *sp, int fmt, DateTime aDate,
     char dateStr[DATE_STR_SIZE];
     char timeStr[TIME_STR_SIZE];
     
-    TDatetime *dttm = &sp->Datetime;
+    TDatetimeShared *dttm = &sp->DatetimeShared;
 
     int  oldDateFormat = dttm->DateFormat;
 

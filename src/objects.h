@@ -62,6 +62,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "controls.h"
 #include "datetime.h"
 #include "dynwave.h"
+#include "iface.h"
 
 
 //-----------------
@@ -1233,9 +1234,10 @@ struct SWMM_Project {
 
    TClimateShared ClimateShared;
    TControlsShared ControlsShared;
-   TDatetime Datetime;
+   TDatetimeShared DatetimeShared;
    TDynwaveShared DynwaveShared;
    TGwaterShared GwaterShared;
+   TIfaceShared IfaceShared;
 };
 
 

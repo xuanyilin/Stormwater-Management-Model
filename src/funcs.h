@@ -423,9 +423,9 @@ int     iface_readFileParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    iface_openRoutingFiles(SWMM_Project *sp);
 void    iface_closeRoutingFiles(SWMM_Project *sp);
 int     iface_getNumIfaceNodes(SWMM_Project *sp, DateTime aDate);
-int     iface_getIfaceNode(int index);
-double  iface_getIfaceFlow(int index);
-double  iface_getIfaceQual(int index, int pollut);
+int     iface_getIfaceNode(SWMM_Project *sp, int index);
+double  iface_getIfaceFlow(SWMM_Project *sp, int index);
+double  iface_getIfaceQual(SWMM_Project *sp, int index, int pollut);
 void    iface_saveOutletResults(SWMM_Project *sp, DateTime reportDate, FILE* file);
 
 //-----------------------------------------------------------------------------

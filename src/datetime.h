@@ -72,6 +72,6 @@ long     datetime_timeDiff(DateTime date1, DateTime date2);
 typedef struct
 {
     int DateFormat;
-} TDatetime;
+} TDatetimeShared;
 
 #endif //DATETIME_H

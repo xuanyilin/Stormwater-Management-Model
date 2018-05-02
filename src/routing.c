@@ -648,9 +648,9 @@ void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
     // --- add interface flow to each node's lateral inflow
     for (i=0; i<numIfaceNodes; i++)
     {
-        j = iface_getIfaceNode(i);
+        j = iface_getIfaceNode(sp, i);
         if ( j < 0 ) continue;
-        q = iface_getIfaceFlow(i);
+        q = iface_getIfaceFlow(sp, i);
         if ( fabs(q) < FLOW_TOL ) continue;
         sp->Node[j].newLatFlow += q;
         massbal_addInflowFlow(EXTERNAL_INFLOW, q);
@@ -660,7 +660,7 @@ void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
         {
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
-                w = q * iface_getIfaceQual(i, p);
+                w = q * iface_getIfaceQual(sp, i, p);
                 sp->Node[j].newQual[p] += w;
                 massbal_addInflowQual(sp, EXTERNAL_INFLOW, p, w);
             }
