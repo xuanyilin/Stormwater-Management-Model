@@ -66,35 +66,24 @@ struct TreeNode
 };
 typedef struct TreeNode ExprTree;
 
-// Local variables
-//----------------
-static int    Err;
-static int    Bc;
-static int    PrevLex, CurLex;
-static int    Len, Pos;
-static char   *S;
-static char   Token[255];
-static int    Ivar;
-static double Fvalue;
-
 // math function names
-char *MathFunc[] =  {"COS", "SIN", "TAN", "COT", "ABS", "SGN",
+const char *MathFunc[] =  {"COS", "SIN", "TAN", "COT", "ABS", "SGN",
                      "SQRT", "LOG", "EXP", "ASIN", "ACOS", "ATAN",
                      "ACOT", "SINH", "COSH", "TANH", "COTH", "LOG10",
                      "STEP", NULL};
 
 // Local functions
 //----------------
-static int        sametext(char *, char *);
+static int        sametext(const char *, const char *);
 static int        isDigit(char);
 static int        isLetter(char);
-static void       getToken(void);
-static int        getMathFunc(void);
+static void       getToken(SWMM_Project *sp);
+static int        getMathFunc(SWMM_Project *sp);
 static int        getVariable(SWMM_Project *sp);
-static int        getOperand(void);
+static int        getOperand(SWMM_Project *sp);
 static int        getLex(SWMM_Project *sp);
-static double     getNumber(void);
-static ExprTree * newNode(void);
+static double     getNumber(SWMM_Project *sp);
+static ExprTree * newNode(SWMM_Project *sp);
 static ExprTree * getSingleOp(SWMM_Project *sp, int *);
 static ExprTree * getOp(SWMM_Project *sp, int *);
 static ExprTree * getTree(SWMM_Project *sp);
@@ -106,7 +95,7 @@ static int    (*getVariableIndex) (SWMM_Project *sp, char *); // return index of
 
 //=============================================================================
 
-int  sametext(char *s1, char *s2)
+int  sametext(const char *s1, const char *s2)
 /*
 **  Purpose:
 **    performs case insensitive comparison of two strings.
@@ -146,28 +135,34 @@ int isLetter(char c)
 
 //=============================================================================
 
-void getToken()
+void getToken(SWMM_Project *sp)
 {
     char c[] = " ";
-    strcpy(Token, "");
-    while ( Pos <= Len &&
-        ( isLetter(S[Pos]) || isDigit(S[Pos]) ) )
+
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
+    strcpy(mthxpr->Token, "");
+    while ( mthxpr->Pos <= mthxpr->Len &&
+        ( isLetter(mthxpr->S[mthxpr->Pos]) || isDigit(mthxpr->S[mthxpr->Pos]) ) )
     {
-        c[0] = S[Pos];
-        strcat(Token, c);
-        Pos++;
+        c[0] = mthxpr->S[mthxpr->Pos];
+        strcat(mthxpr->Token, c);
+        mthxpr->Pos++;
     }
-    Pos--;
+    mthxpr->Pos--;
 }
 
 //=============================================================================
 
-int getMathFunc()
+int getMathFunc(SWMM_Project *sp)
 {
     int i = 0;
+
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     while (MathFunc[i] != NULL)
     {
-        if (sametext(MathFunc[i], Token)) return i+10;
+        if (sametext(MathFunc[i], mthxpr->Token)) return i+10;
         i++;
     }
     return(0);
@@ -177,90 +172,99 @@ int getMathFunc()
 
 int getVariable(SWMM_Project *sp)
 {
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     if ( !getVariableIndex ) return 0;
-    Ivar = getVariableIndex(sp, Token);
-    if (Ivar >= 0) return 8;
+    mthxpr->Ivar = getVariableIndex(sp, mthxpr->Token);
+    if (mthxpr->Ivar >= 0) return 8;
     return 0;
 }
 
 //=============================================================================
 
-double getNumber()
+double getNumber(SWMM_Project *sp)
 {
     char c[] = " ";
     char sNumber[255];
     int  errflag = 0;
 
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     /* --- get whole number portion of number */
     strcpy(sNumber, "");
-    while (Pos < Len && isDigit(S[Pos]))
+    while (mthxpr->Pos < mthxpr->Len && isDigit(mthxpr->S[mthxpr->Pos]))
     {
-        c[0] = S[Pos];
+        c[0] = mthxpr->S[mthxpr->Pos];
         strcat(sNumber, c);
-        Pos++;
+        mthxpr->Pos++;
     }
 
     /* --- get fractional portion of number */
-    if (Pos < Len)
+    if (mthxpr->Pos < mthxpr->Len)
     {
-        if (S[Pos] == '.')
+        if (mthxpr->S[mthxpr->Pos] == '.')
         {
             strcat(sNumber, ".");
-            Pos++;
-            while (Pos < Len && isDigit(S[Pos]))
+            mthxpr->Pos++;
+            while (mthxpr->Pos < mthxpr->Len && isDigit(mthxpr->S[mthxpr->Pos]))
             {
-                c[0] = S[Pos];
+                c[0] = mthxpr->S[mthxpr->Pos];
                 strcat(sNumber, c);  
-                Pos++;
+                mthxpr->Pos++;
             }
         }
 
         /* --- get exponent */
-        if (Pos < Len && (S[Pos] == 'e' || S[Pos] == 'E'))
+        if (mthxpr->Pos < mthxpr->Len && (mthxpr->S[mthxpr->Pos] == 'e' ||
+                mthxpr->S[mthxpr->Pos] == 'E'))
         {
             strcat(sNumber, "E");  
-            Pos++;
-            if (Pos >= Len) errflag = 1;
+            mthxpr->Pos++;
+            if (mthxpr->Pos >= mthxpr->Len) errflag = 1;
             else
             {
-                if (S[Pos] == '-' || S[Pos] == '+')
+                if (mthxpr->S[mthxpr->Pos] == '-' || mthxpr->S[mthxpr->Pos] == '+')
                 {
-                    c[0] = S[Pos];
+                    c[0] = mthxpr->S[mthxpr->Pos];
                     strcat(sNumber, c);  
-                    Pos++;
+                    mthxpr->Pos++;
                 }
-                if (Pos >= Len || !isDigit(S[Pos])) errflag = 1;
-                else while ( Pos < Len && isDigit(S[Pos]))
+                if (mthxpr->Pos >= mthxpr->Len || !isDigit(mthxpr->S[mthxpr->Pos]))
+                    errflag = 1;
+                else while ( mthxpr->Pos < mthxpr->Len && isDigit(mthxpr->S[mthxpr->Pos]))
                 {
-                    c[0] = S[Pos];
+                    c[0] = mthxpr->S[mthxpr->Pos];
                     strcat(sNumber, c);  
-                    Pos++;
+                    mthxpr->Pos++;
                 }
             }
         }
     }
-    Pos--;
+    mthxpr->Pos--;
     if (errflag) return 0;
     else return atof(sNumber);
 }
 
 //=============================================================================
 
-int getOperand()
+int getOperand(SWMM_Project *sp)
 {
     int code;
-    switch(S[Pos])
+
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
+    switch(mthxpr->S[mthxpr->Pos])
     {
       case '(': code = 1;  break;
       case ')': code = 2;  break;
       case '+': code = 3;  break;
       case '-': code = 4;
-        if (Pos < Len-1 &&
-            isDigit(S[Pos+1]) &&
-            (CurLex == 0 || CurLex == 1))
+        if (mthxpr->Pos < mthxpr->Len-1 &&
+            isDigit(mthxpr->S[mthxpr->Pos+1]) &&
+            (mthxpr->CurLex == 0 || mthxpr->CurLex == 1))
         {
-            Pos++;
-            Fvalue = -getNumber();
+            mthxpr->Pos++;
+            mthxpr->Fvalue = -getNumber(sp);
             code = 7;
         }
         break;
@@ -278,41 +282,46 @@ int getLex(SWMM_Project *sp)
 {
     int n;
 
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     /* --- skip spaces */
-    while ( Pos < Len && S[Pos] == ' ' ) Pos++;
-    if ( Pos >= Len ) return 0;
+    while ( mthxpr->Pos < mthxpr->Len && mthxpr->S[mthxpr->Pos] == ' ' ) mthxpr->Pos++;
+    if ( mthxpr->Pos >= mthxpr->Len ) return 0;
 
     /* --- check for operand */
-    n = getOperand();
+    n = getOperand(sp);
 
     /* --- check for function/variable/number */
     if ( n == 0 )
     {
-        if ( isLetter(S[Pos]) )
+        if ( isLetter(mthxpr->S[mthxpr->Pos]) )
         {
-            getToken();
-            n = getMathFunc();
+            getToken(sp);
+            n = getMathFunc(sp);
             if ( n == 0 ) n = getVariable(sp);
         }
-        else if ( isDigit(S[Pos]) )
+        else if ( isDigit(mthxpr->S[mthxpr->Pos]) )
         {
             n = 7;
-            Fvalue = getNumber();
+            mthxpr->Fvalue = getNumber(sp);
         }
     }
-    Pos++;
-    PrevLex = CurLex;
-    CurLex = n;
+    mthxpr->Pos++;
+    mthxpr->PrevLex = mthxpr->CurLex;
+    mthxpr->CurLex = n;
     return n;
 }
 
 //=============================================================================
 
-ExprTree * newNode()
+ExprTree * newNode(SWMM_Project *sp)
 {
     ExprTree *node;
+
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     node = (ExprTree *) malloc(sizeof(ExprTree));
-    if (!node) Err = 2;
+    if (!node) mthxpr->Err = 2;
     else
     {
         node->opcode = 0;
@@ -334,10 +343,12 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
     ExprTree *right;
     ExprTree *node;
 
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     /* --- open parenthesis, so continue to grow the tree */
     if ( *lex == 1 )
     {
-        Bc++;
+        mthxpr->Bc++;
         left = getTree(sp);
     }
 
@@ -346,7 +357,7 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
         /* --- Error if not a singleton operand */
         if ( *lex < 7 || *lex == 9 || *lex > 30)
         {
-            Err = 1;
+            mthxpr->Err = 1;
             return NULL;
         }
 
@@ -355,10 +366,10 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
         /* --- simple number or variable name */
         if ( *lex == 7 || *lex == 8 )
         {
-            left = newNode();
+            left = newNode(sp);
             left->opcode = opcode;
-            if ( *lex == 7 ) left->fvalue = Fvalue;
-            if ( *lex == 8 ) left->ivar = Ivar;
+            if ( *lex == 7 ) left->fvalue = mthxpr->Fvalue;
+            if ( *lex == 8 ) left->ivar = mthxpr->Ivar;
         }
 
         /* --- function which must have a '(' after it */
@@ -367,11 +378,11 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
             *lex = getLex(sp);
             if ( *lex != 1 )
             {
-               Err = 1;
+                mthxpr->Err = 1;
                return NULL;
             }
-            Bc++;
-            left = newNode();
+            mthxpr->Bc++;
+            left = newNode(sp);
             left->left = getTree(sp);
             left->opcode = opcode;
         }
@@ -390,13 +401,13 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
         }
         if ( *lex != 7 )
         {
-            Err = 1;
+            mthxpr->Err = 1;
             return NULL;
         }
-        right = newNode();
+        right = newNode(sp);
         right->opcode = *lex;
-        right->fvalue = Fvalue;
-        node = newNode();
+        right->fvalue = mthxpr->Fvalue;
+        node = newNode(sp);
         node->left = left;
         node->right = right;
         node->opcode = 31;
@@ -406,7 +417,7 @@ ExprTree * getSingleOp(SWMM_Project *sp, int *lex)
             *lex = getLex(sp);
             if ( *lex != 2 )
             {
-                Err = 1;
+                mthxpr->Err = 1;
                 return NULL;
             }
         }
@@ -425,8 +436,10 @@ ExprTree * getOp(SWMM_Project *sp, int *lex)
     ExprTree *node;
     int neg = 0;
 
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     *lex = getLex(sp);
-    if (PrevLex == 0 || PrevLex == 1)
+    if (mthxpr->PrevLex == 0 || mthxpr->PrevLex == 1)
     {
         if ( *lex == 4 )
         {
@@ -441,8 +454,8 @@ ExprTree * getOp(SWMM_Project *sp, int *lex)
         opcode = *lex;
         *lex = getLex(sp);
         right = getSingleOp(sp, lex);
-        node = newNode();
-        if (Err) return NULL;
+        node = newNode(sp);
+        if (mthxpr->Err) return NULL;
         node->left = left;
         node->right = right;
         node->opcode = opcode;
@@ -450,8 +463,8 @@ ExprTree * getOp(SWMM_Project *sp, int *lex)
     }
     if ( neg )
     {
-        node = newNode();
-        if (Err) return NULL;
+        node = newNode(sp);
+        if (mthxpr->Err) return NULL;
         node->left = left;
         node->right = NULL;
         node->opcode = 9;
@@ -470,25 +483,27 @@ ExprTree * getTree(SWMM_Project *sp)
     ExprTree *right;
     ExprTree *node;
 
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     left = getOp(sp, &lex);
     for (;;)
     {
         if ( lex == 0 || lex == 2 )
         {
-            if ( lex == 2 ) Bc--;
+            if ( lex == 2 ) mthxpr->Bc--;
             break;
         }
 
         if (lex != 3 && lex != 4 )
         {
-            Err = 1;
+            mthxpr->Err = 1;
             break;
         }
 
         opcode = lex;
         right = getOp(sp, &lex);
-        node = newNode();
-        if (Err) break;
+        node = newNode(sp);
+        if (mthxpr->Err) break;
         node->left = left;
         node->right = right;
         node->opcode = opcode;
@@ -503,7 +518,9 @@ void traverseTree(ExprTree *tree, MathExpr **expr)
 // Converts binary tree to linked list (postfix format)
 {
     MathExpr *node;
+
     if ( tree == NULL) return;
+
     traverseTree(tree->left,  expr);
     traverseTree(tree->right, expr);
     node = (MathExpr *) malloc(sizeof(MathExpr));
@@ -512,6 +529,7 @@ void traverseTree(ExprTree *tree, MathExpr **expr)
     node->ivar = tree->ivar;
     node->next = NULL;
     node->prev = (*expr);
+
     if (*expr) (*expr)->next = node;
     (*expr) = node;
 }
@@ -757,16 +775,20 @@ MathExpr * mathexpr_create(SWMM_Project *sp, char *formula,
     ExprTree *tree;
     MathExpr *expr = NULL;
     MathExpr *result = NULL;
+
+    TMathexprShared *mthxpr = &sp->MathexprShared;
+
     getVariableIndex = getVar;
-    Err = 0;
-    PrevLex = 0;
-    CurLex = 0;
-    S = formula;
-    Len = strlen(S);
-    Pos = 0;
-    Bc = 0;
+
+    mthxpr->Err = 0;
+    mthxpr->PrevLex = 0;
+    mthxpr->CurLex = 0;
+    mthxpr->S = formula;
+    mthxpr->Len = strlen(mthxpr->S);
+    mthxpr->Pos = 0;
+    mthxpr->Bc = 0;
     tree = getTree(sp);
-    if (Bc == 0 && Err == 0)
+    if (mthxpr->Bc == 0 && mthxpr->Err == 0)
     {
 	    traverseTree(tree, &expr);
 	    while (expr)

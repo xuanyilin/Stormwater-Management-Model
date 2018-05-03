@@ -1248,7 +1248,7 @@ struct SWMM_Project {
    TLidShared LidShared;
    TLidprocShared LidprocShared;
    TMassbalShared MassbalShared;
-
+   TMathexprShared MathexprShared;
 };
 
 

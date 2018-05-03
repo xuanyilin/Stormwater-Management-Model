@@ -35,4 +35,19 @@ double mathexpr_eval(SWMM_Project *sp, MathExpr* expr,
 void  mathexpr_delete(MathExpr* expr);
 
 
+// Local variables
+//----------------
+typedef struct
+{
+    int    Err;
+    int    Bc;
+    int    PrevLex, CurLex;
+    int    Len, Pos;
+    char   *S;
+    char   Token[255];
+    int    Ivar;
+    double Fvalue;
+} TMathexprShared;
+
+
 #endif //MATHEXPR_H
