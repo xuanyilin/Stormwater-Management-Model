@@ -740,10 +740,10 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     }
 
     // --- update mass balances
-    massbal_updateRunoffTotals(RUNOFF_RAINFALL, vRain);
-    massbal_updateRunoffTotals(RUNOFF_EVAP, Vevap);
-    massbal_updateRunoffTotals(RUNOFF_INFIL, Vinfil+VlidInfil);
-    massbal_updateRunoffTotals(RUNOFF_RUNOFF, vOutflow);
+    massbal_updateRunoffTotals(sp, RUNOFF_RAINFALL, vRain);
+    massbal_updateRunoffTotals(sp, RUNOFF_EVAP, Vevap);
+    massbal_updateRunoffTotals(sp, RUNOFF_INFIL, Vinfil+VlidInfil);
+    massbal_updateRunoffTotals(sp, RUNOFF_RUNOFF, vOutflow);
 
     // --- return area-averaged runoff (ft/s)
     return runoff / area;

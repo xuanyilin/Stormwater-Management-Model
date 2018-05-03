@@ -1424,7 +1424,7 @@ void  lid_addDrainLoads(SWMM_Project *sp, int j, double c[], double tStep)
                          LperFT3 * sp->Pollut[p].mcf;
 
                     //... update system mass balance totals
-                    massbal_updateLoadingTotals(RUNOFF_LOAD, p, w);
+                    massbal_updateLoadingTotals(sp, RUNOFF_LOAD, p, w);
                 }
             }
             lidList = lidList->nextLidUnit;
@@ -1525,7 +1525,7 @@ void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
                 //... add drain flow to node's wet weather inflow
                 q = (1.0 - f) * lidUnit->oldDrainFlow + f * lidUnit->newDrainFlow;
                 sp->Node[k].newLatFlow += q;
-                massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
+                massbal_addInflowFlow(sp, WET_WEATHER_INFLOW, q);
 
                 //... add pollutant load, based on parent subcatchment quality 
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
@@ -1766,7 +1766,7 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
     //    conveyance system node
     if ( lidUnit->drainNode >= 0 )
     {
-        massbal_updateRunoffTotals(RUNOFF_DRAINS, lidDrain * tStep);
+        massbal_updateRunoffTotals(sp, RUNOFF_DRAINS, lidDrain * tStep);
     }
 
     //... save new drain outflow

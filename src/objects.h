@@ -948,6 +948,7 @@ typedef struct
    double        pctError;         // continuity error
 }  TRoutingTotals;
 
+#include "massbal.h"
 
 //-----------------------
 // SYSTEM-WIDE STATISTICS
@@ -1246,6 +1247,7 @@ struct SWMM_Project {
    TKinwaveShared KinwaveShared;
    TLidShared LidShared;
    TLidprocShared LidprocShared;
+   TMassbalShared MassbalShared;
 
 };
 

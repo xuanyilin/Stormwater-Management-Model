@@ -23,8 +23,8 @@
 
 
 // Function Declarations for API
-int     massbal_getRoutingFlowTotal(SM_RoutingTotals *routingTot);
-int     massbal_getRunoffTotal(SM_RunoffTotals *runoffTot);
+int     massbal_getRoutingFlowTotal(SWMM_Project *sp, SM_RoutingTotals *routingTot);
+int     massbal_getRunoffTotal(SWMM_Project *sp, SM_RunoffTotals *runoffTot);
 double  massbal_getTotalArea(void);
 int     massbal_getNodeTotalInflow(int index, double *value);
 
@@ -1428,7 +1428,7 @@ int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_ProjectHandle ph,
 
     SWMM_Project *sp = (SWMM_Project*)ph;
 
-    errorcode = massbal_getRoutingFlowTotal(routingTot);
+    errorcode = massbal_getRoutingFlowTotal(sp, routingTot);
 
     if (errorcode == 0)
     {
@@ -1472,7 +1472,7 @@ int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_ProjectHandle ph, SM_Runoff
 
     SWMM_Project *sp = (SWMM_Project*)ph;
 
-    errorcode = massbal_getRunoffTotal(runoffTot);
+    errorcode = massbal_getRunoffTotal(sp, runoffTot);
 
     if (errorcode == 0)
     {

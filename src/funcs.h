@@ -280,26 +280,26 @@ void    treatmnt_setInflow(SWMM_Project *sp, double qIn, double wIn[]);
 //   Mass Balance Methods
 //-----------------------------------------------------------------------------
 int     massbal_open(SWMM_Project *sp);
-void    massbal_close(void);
+void    massbal_close(SWMM_Project *sp);
 void    massbal_report(SWMM_Project *sp);
 
-void    massbal_updateRunoffTotals(int type, double v);                        //(5.1.008)
-void    massbal_updateLoadingTotals(int type, int pollut, double w);
-void    massbal_updateGwaterTotals(double vInfil, double vUpperEvap,
+void    massbal_updateRunoffTotals(SWMM_Project *sp, int type, double v);                        //(5.1.008)
+void    massbal_updateLoadingTotals(SWMM_Project *sp, int type, int pollut, double w);
+void    massbal_updateGwaterTotals(SWMM_Project *sp, double vInfil, double vUpperEvap,
         double vLowerEvap, double vLowerPerc, double vGwater);
 void    massbal_updateRoutingTotals(SWMM_Project *sp, double tStep);
 
 void    massbal_initTimeStepTotals(SWMM_Project *sp);
-void    massbal_addInflowFlow(int type, double q);
+void    massbal_addInflowFlow(SWMM_Project *sp, int type, double q);
 void    massbal_addInflowQual(SWMM_Project *sp, int type, int pollut, double w);
-void    massbal_addOutflowFlow(double q, int isFlooded);
+void    massbal_addOutflowFlow(SWMM_Project *sp, double q, int isFlooded);
 void    massbal_addOutflowQual(SWMM_Project *sp, int pollut, double mass, int isFlooded);
-void    massbal_addNodeLosses(double evapLoss, double infilLoss);
-void    massbal_addLinkLosses(double evapLoss, double infilLoss);
+void    massbal_addNodeLosses(SWMM_Project *sp, double evapLoss, double infilLoss);
+void    massbal_addLinkLosses(SWMM_Project *sp, double evapLoss, double infilLoss);
 void    massbal_addReactedMass(SWMM_Project *sp, int pollut, double mass);
 void    massbal_addSeepageLoss(SWMM_Project *sp, int pollut, double seepLoss);                   //(5.1.008)
 void    massbal_addToFinalStorage(SWMM_Project *sp, int pollut, double mass);                    //(5.1.008)
-double  massbal_getStepFlowError(void);
+double  massbal_getStepFlowError(SWMM_Project *sp);
 double  massbal_getRunoffError(SWMM_Project *sp);
 double  massbal_getFlowError(SWMM_Project *sp);
 

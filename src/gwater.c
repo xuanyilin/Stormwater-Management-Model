@@ -615,7 +615,7 @@ void updateMassBal(SWMM_Project *sp, double area, double tStep)
     vLowerEvap = gwtr->LowerEvap * ft2sec;
     vLowerPerc = gwtr->LowerLoss * ft2sec;
     vGwater    = 0.5 * (gwtr->GW->oldFlow + gwtr->GW->newFlow) * ft2sec;
-    massbal_updateGwaterTotals(vInfil, vUpperEvap, vLowerEvap, vLowerPerc,
+    massbal_updateGwaterTotals(sp, vInfil, vUpperEvap, vLowerEvap, vLowerPerc,
                                vGwater);
 }
 

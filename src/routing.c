@@ -227,7 +227,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     sp->NewRoutingTime = sp->NewRoutingTime + 1000.0 * routingStep;
 
     // --- initialize mass balance totals for time step
-    stepFlowError = massbal_getStepFlowError();
+    stepFlowError = massbal_getStepFlowError(sp);
     massbal_initTimeStepTotals(sp);
 
     // --- replace old water quality state with new state
@@ -363,7 +363,7 @@ void addExternalInflows(SWMM_Project *sp, DateTime currentDate)
 
         // --- add flow inflow to node's lateral inflow
         sp->Node[j].newLatFlow += q;
-        massbal_addInflowFlow(EXTERNAL_INFLOW, q);
+        massbal_addInflowFlow(sp, EXTERNAL_INFLOW, q);
 
         // --- add on any inflow (i.e., reverse flow) through an outfall
         if ( sp->Node[j].type == OUTFALL && sp->Node[j].oldNetInflow < 0.0 ) 
@@ -429,7 +429,7 @@ void addDryWeatherInflows(SWMM_Project *sp, DateTime currentDate)
 
         // --- add flow inflow to node's lateral inflow
         sp->Node[j].newLatFlow += q;
-        massbal_addInflowFlow(DRY_WEATHER_INFLOW, q);
+        massbal_addInflowFlow(sp, DRY_WEATHER_INFLOW, q);
 
         // --- stop if inflow is non-positive
         if ( q <= 0.0 ) continue;                                              //(5.1.007)
@@ -498,7 +498,7 @@ void addWetWeatherInflows(SWMM_Project *sp, double routingTime)
             // add runoff flow to lateral inflow
             q = subcatch_getWtdOutflow(sp, i, f);     // current runoff flow
             sp->Node[j].newLatFlow += q;
-            massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
+            massbal_addInflowFlow(sp, WET_WEATHER_INFLOW, q);
 
             // add pollutant load
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
@@ -547,7 +547,7 @@ void addGroundwaterInflows(SWMM_Project *sp, double routingTime)
                     * sp->Subcatch[i].area;
                 if ( fabs(q) < FLOW_TOL ) continue;
                 sp->Node[j].newLatFlow += q;
-                massbal_addInflowFlow(GROUNDWATER_INFLOW, q);
+                massbal_addInflowFlow(sp, GROUNDWATER_INFLOW, q);
 
                 // add pollutant load (for positive inflow)
                 if ( q > 0.0 )
@@ -613,7 +613,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
         if ( j < 0 ) continue;
         if ( fabs(q) < FLOW_TOL ) continue;
         sp->Node[j].newLatFlow += q;
-        massbal_addInflowFlow(RDII_INFLOW, q);
+        massbal_addInflowFlow(sp, RDII_INFLOW, q);
 
         // add pollutant load (for positive inflow)
         if ( q > 0.0 )
@@ -653,7 +653,7 @@ void addIfaceInflows(SWMM_Project *sp, DateTime currentDate)
         q = iface_getIfaceFlow(sp, i);
         if ( fabs(q) < FLOW_TOL ) continue;
         sp->Node[j].newLatFlow += q;
-        massbal_addInflowFlow(EXTERNAL_INFLOW, q);
+        massbal_addInflowFlow(sp, EXTERNAL_INFLOW, q);
 
         // add pollutant load (for positive inflow)
         if ( q > 0.0 )
@@ -734,7 +734,7 @@ void removeStorageLosses(SWMM_Project *sp, double tStep)
     }
 
     // --- add loss rates (ft3/sec) to time step's mass balance 
-    massbal_addNodeLosses(evapLoss/tStep, exfilLoss/tStep);
+    massbal_addNodeLosses(sp, evapLoss/tStep, exfilLoss/tStep);
 }
 
 //=============================================================================
@@ -767,7 +767,7 @@ void removeConduitLosses(SWMM_Project *sp)
             seepLoss += sp->Conduit[k].seepLossRate * barrels;
         }
     }
-    massbal_addLinkLosses(evapLoss, seepLoss);
+    massbal_addLinkLosses(sp, evapLoss, seepLoss);
 }
 
 //=============================================================================
@@ -806,7 +806,7 @@ void removeOutflows(SWMM_Project *sp, double tStep)
         q = node_getSystemOutflow(sp, i, &isFlooded);
         if ( q != 0.0 )
         {
-            massbal_addOutflowFlow(q, isFlooded);
+            massbal_addOutflowFlow(sp, q, isFlooded);
             for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
             {
                 w = q * sp->Node[i].newQual[p];

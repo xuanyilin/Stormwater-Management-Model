@@ -567,8 +567,9 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
 //  Purpose: writes computed node results to binary file.
 //
 {
-    extern TRoutingTotals StepFlowTotals;  // defined in massbal.c
     int j;
+
+    TMassbalShared *mssbl = &sp->MassbalShared;
 
     // --- find where current reporting time lies between latest routing times
     double f = (reportTime - sp->OldRoutingTime) /
@@ -588,12 +589,12 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
     }
 
     // --- update system-wide flows 
-    SysResults[SYS_FLOODING] = (REAL4) (StepFlowTotals.flooding * UCF(sp, FLOW));
-    SysResults[SYS_OUTFLOW]  = (REAL4) (StepFlowTotals.outflow * UCF(sp, FLOW));
-    SysResults[SYS_DWFLOW] = (REAL4)(StepFlowTotals.dwInflow * UCF(sp, FLOW));
-    SysResults[SYS_GWFLOW] = (REAL4)(StepFlowTotals.gwInflow * UCF(sp, FLOW));
-    SysResults[SYS_IIFLOW] = (REAL4)(StepFlowTotals.iiInflow * UCF(sp, FLOW));
-    SysResults[SYS_EXFLOW] = (REAL4)(StepFlowTotals.exInflow * UCF(sp, FLOW));
+    SysResults[SYS_FLOODING] = (REAL4) (mssbl->StepFlowTotals.flooding * UCF(sp, FLOW));
+    SysResults[SYS_OUTFLOW]  = (REAL4) (mssbl->StepFlowTotals.outflow * UCF(sp, FLOW));
+    SysResults[SYS_DWFLOW] = (REAL4)(mssbl->StepFlowTotals.dwInflow * UCF(sp, FLOW));
+    SysResults[SYS_GWFLOW] = (REAL4)(mssbl->StepFlowTotals.gwInflow * UCF(sp, FLOW));
+    SysResults[SYS_IIFLOW] = (REAL4)(mssbl->StepFlowTotals.iiInflow * UCF(sp, FLOW));
+    SysResults[SYS_EXFLOW] = (REAL4)(mssbl->StepFlowTotals.exInflow * UCF(sp, FLOW));
     SysResults[SYS_INFLOW] = SysResults[SYS_RUNOFF] +
                              SysResults[SYS_DWFLOW] +
                              SysResults[SYS_GWFLOW] +

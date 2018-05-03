@@ -720,7 +720,7 @@ int DLLEXPORT swmm_end_project(SWMM_ProjectHandle ph)
 
         // --- close all computing systems
         stats_close(sp);
-        massbal_close();
+        massbal_close(sp);
         if ( !sp->IgnoreRainfall ) rain_close(sp);
         if ( DoRunoff ) runoff_close(sp);
         if ( DoRouting ) routing_close(sp, sp->RouteModel);

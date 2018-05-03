@@ -509,7 +509,7 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
         // --- add outfall's flow to subcatchment as runon and re-set routed
         //     flow volume to 0
         subcatch_addRunonFlow(sp, k, sp->Outfall[i].vRouted/tStep);
-        massbal_updateRunoffTotals(RUNOFF_RUNON, sp->Outfall[i].vRouted);
+        massbal_updateRunoffTotals(sp, RUNOFF_RUNON, sp->Outfall[i].vRouted);
         sp->Outfall[i].vRouted = 0.0;
 
         // --- add outfall's pollutant load on to subcatchment's wet
@@ -518,7 +518,7 @@ void runoff_getOutfallRunon(SWMM_Project *sp, double tStep)
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             w = sp->Outfall[i].wRouted[p] * LperFT3;
-            massbal_updateLoadingTotals(DEPOSITION_LOAD, p, w * sp->Pollut[p].mcf);
+            massbal_updateLoadingTotals(sp, DEPOSITION_LOAD, p, w * sp->Pollut[p].mcf);
             sp->Subcatch[k].newQual[p] += w / tStep;
             sp->Outfall[i].wRouted[p] = 0.0;
         }

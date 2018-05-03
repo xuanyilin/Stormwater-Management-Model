@@ -597,7 +597,7 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     //     so that things will balance
     else
     {
-        massbal_updateLoadingTotals(BUILDUP_LOAD, p, washoffLoad);
+        massbal_updateLoadingTotals(sp, BUILDUP_LOAD, p, washoffLoad);
         landFactor[i].buildup[p] = 0.0;
     }
 	
@@ -605,7 +605,7 @@ double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     bmpRemoval = sp->Landuse[i].washoffFunc[p].bmpEffic * washoffLoad;
     if ( bmpRemoval > 0.0 )
     {
-        massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p, bmpRemoval);
+        massbal_updateLoadingTotals(sp, BMP_REMOVAL_LOAD, p, bmpRemoval);
         washoffLoad -= bmpRemoval;
     }
 
@@ -690,7 +690,7 @@ double landuse_getCoPollutLoad(SWMM_Project *sp, int p, double washoff[])
 
         // --- add washoff to buildup mass balance totals
         //     so that things will balance
-        massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * sp->Pollut[p].mcf);
+        massbal_updateLoadingTotals(sp, BUILDUP_LOAD, p, w * sp->Pollut[p].mcf);
         return w;
     }
     return 0.0;
