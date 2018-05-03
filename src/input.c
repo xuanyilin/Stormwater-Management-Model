@@ -25,21 +25,12 @@
 #include <math.h>
 #include "headers.h"
 #include "lid.h"
+#include "input.h"
 
 //-----------------------------------------------------------------------------
 //  Constants
 //-----------------------------------------------------------------------------
 static const int MAXERRS = 100;        // Max. input errors reported
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static char *Tok[MAXTOKS];             // String tokens from line of input
-static int  Ntokens;                   // Number of tokens in line of input
-static int  Mobjects[MAX_OBJ_TYPES];   // Working number of objects of each type
-static int  Mnodes[MAX_NODE_TYPES];    // Working number of node objects
-static int  Mlinks[MAX_LINK_TYPES];    // Working number of link objects
-static int  Mevents;                   // Working number of event periods      //(5.1.011)
 
 //-----------------------------------------------------------------------------
 //  External Functions (declared in funcs.h)
@@ -51,7 +42,7 @@ static int  Mevents;                   // Working number of event periods      /
 //  Local functions
 //-----------------------------------------------------------------------------
 static int  addObject(SWMM_Project *sp, int objType, char* id);
-static int  getTokens(char *s);
+static int  getTokens(SWMM_Project *sp, char *s);
 static int  parseLine(SWMM_Project *sp, int sect, char* line);
 static int  readOption(SWMM_Project *sp, char* line);
 static int  readTitle(SWMM_Project *sp, char* line);
@@ -149,15 +140,17 @@ int input_readData(SWMM_Project *sp)
     int   i;
     long  lineCount = 0;
 
+    TInputShared *inpt = &sp->InputShared;
+
     // --- initialize working item count arrays
     //     (final counts in Mobjects, Mnodes & Mlinks should
     //      match those in sp->Nobjects, sp->Nnodes and sp->Nlinks).
     if ( sp->ErrorCode ) return sp->ErrorCode;
     error_setInpError(0, "");
-    for (i = 0; i < MAX_OBJ_TYPES; i++)  Mobjects[i] = 0;
-    for (i = 0; i < MAX_NODE_TYPES; i++) Mnodes[i] = 0;
-    for (i = 0; i < MAX_LINK_TYPES; i++) Mlinks[i] = 0;
-    Mevents = 0;                                                               //(5.1.011)
+    for (i = 0; i < MAX_OBJ_TYPES; i++)  inpt->Mobjects[i] = 0;
+    for (i = 0; i < MAX_NODE_TYPES; i++) inpt->Mnodes[i] = 0;
+    for (i = 0; i < MAX_LINK_TYPES; i++) inpt->Mlinks[i] = 0;
+    inpt->Mevents = 0;                                                               //(5.1.011)
 
     // --- initialize starting date for all time series
     for ( i = 0; i < sp->Nobjects[TSERIES]; i++ )
@@ -174,11 +167,11 @@ int input_readData(SWMM_Project *sp)
         // --- make copy of line and scan for tokens
         lineCount++;
         strcpy(wLine, line);
-        Ntokens = getTokens(wLine);
+        inpt->Ntokens = getTokens(sp, wLine);
 
         // --- skip blank lines and comments
-        if ( Ntokens == 0 ) continue;
-        if ( *Tok[0] == ';' ) continue;
+        if ( inpt->Ntokens == 0 ) continue;
+        if ( *inpt->Tok[0] == ';' ) continue;
 
         // --- check if max. line length exceeded
         lineLength = strlen(line);
@@ -196,10 +189,10 @@ int input_readData(SWMM_Project *sp)
         }
 
         // --- check if at start of a new input section
-        if (*Tok[0] == '[')
+        if (*inpt->Tok[0] == '[')
         {
             // --- match token against list of section keywords
-            newsect = findmatch(Tok[0], SectWords);
+            newsect = findmatch(inpt->Tok[0], SectWords);
             if (newsect >= 0)
             {
                 // --- SPECIAL CASE FOR TRANSECTS
@@ -213,7 +206,7 @@ int input_readData(SWMM_Project *sp)
             }
             else
             {
-                inperr = error_setInpError(ERR_KEYWORD, Tok[0]);
+                inperr = error_setInpError(ERR_KEYWORD, inpt->Tok[0]);
                 report_writeInputErrorMsg(sp, inperr, sect, line, lineCount);
                 errsum++;
                 break;
@@ -448,52 +441,55 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
 //
 {
     int j, err;
+
+    TInputShared *inpt = &sp->InputShared;
+
     switch (sect)
     {
       case s_TITLE:
         return readTitle(sp, line);
 
       case s_RAINGAGE:
-        j = Mobjects[GAGE];
-        err = gage_readParams(sp, j, Tok, Ntokens);
-        Mobjects[GAGE]++;
+        j = inpt->Mobjects[GAGE];
+        err = gage_readParams(sp, j, inpt->Tok, inpt->Ntokens);
+        inpt->Mobjects[GAGE]++;
         return err;
 
       case s_TEMP:
-        return climate_readParams(sp, Tok, Ntokens);
+        return climate_readParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_EVAP:
-        return climate_readEvapParams(sp, Tok, Ntokens);
+        return climate_readEvapParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_ADJUST:                                                           //(5.1.007)
-        return climate_readAdjustments(sp, Tok, Ntokens);                      //(5.1.007)
+        return climate_readAdjustments(sp, inpt->Tok, inpt->Ntokens);                      //(5.1.007)
 
       case s_SUBCATCH:
-        j = Mobjects[SUBCATCH];
-        err = subcatch_readParams(sp, j, Tok, Ntokens);
-        Mobjects[SUBCATCH]++;
+        j = inpt->Mobjects[SUBCATCH];
+        err = subcatch_readParams(sp, j, inpt->Tok, inpt->Ntokens);
+        inpt->Mobjects[SUBCATCH]++;
         return err;
 
       case s_SUBAREA:
-        return subcatch_readSubareaParams(sp, Tok, Ntokens);
+        return subcatch_readSubareaParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_INFIL:
-        return infil_readParams(sp, sp->InfilModel, Tok, Ntokens);
+        return infil_readParams(sp, sp->InfilModel, inpt->Tok, inpt->Ntokens);
 
       case s_AQUIFER:
-        j = Mobjects[AQUIFER];
-        err = gwater_readAquiferParams(sp, j, Tok, Ntokens);
-        Mobjects[AQUIFER]++;
+        j = inpt->Mobjects[AQUIFER];
+        err = gwater_readAquiferParams(sp, j, inpt->Tok, inpt->Ntokens);
+        inpt->Mobjects[AQUIFER]++;
         return err;
 
       case s_GROUNDWATER:
-        return gwater_readGroundwaterParams(sp, Tok, Ntokens);
+        return gwater_readGroundwaterParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_GWF:
-        return gwater_readFlowExpression(sp, Tok, Ntokens);
+        return gwater_readFlowExpression(sp, inpt->Tok, inpt->Ntokens);
 
       case s_SNOWMELT:
-        return snow_readMeltParams(sp, Tok, Ntokens);
+        return snow_readMeltParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_JUNCTION:
         return readNode(sp, JUNCTION);
@@ -523,79 +519,80 @@ int  parseLine(SWMM_Project *sp, int sect, char *line)
         return readLink(sp, OUTLET);
 
       case s_XSECTION:
-        return link_readXsectParams(sp, Tok, Ntokens);
+        return link_readXsectParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_TRANSECT:
-        return transect_readParams(sp, &Mobjects[TRANSECT], Tok, Ntokens);
+        return transect_readParams(sp, &inpt->Mobjects[TRANSECT], inpt->Tok,
+                inpt->Ntokens);
 
       case s_LOSSES:
-        return link_readLossParams(sp, Tok, Ntokens);
+        return link_readLossParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_POLLUTANT:
-        j = Mobjects[POLLUT];
-        err = landuse_readPollutParams(sp, j, Tok, Ntokens);
-        Mobjects[POLLUT]++;
+        j = inpt->Mobjects[POLLUT];
+        err = landuse_readPollutParams(sp, j, inpt->Tok, inpt->Ntokens);
+        inpt->Mobjects[POLLUT]++;
         return err;
 
       case s_LANDUSE:
-        j = Mobjects[LANDUSE];
-        err = landuse_readParams(sp, j, Tok, Ntokens);
-        Mobjects[LANDUSE]++;
+        j = inpt->Mobjects[LANDUSE];
+        err = landuse_readParams(sp, j, inpt->Tok, inpt->Ntokens);
+        inpt->Mobjects[LANDUSE]++;
         return err;
 
       case s_BUILDUP:
-        return landuse_readBuildupParams(sp, Tok, Ntokens);
+        return landuse_readBuildupParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_WASHOFF:
-        return landuse_readWashoffParams(sp, Tok, Ntokens);
+        return landuse_readWashoffParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_COVERAGE:
-        return subcatch_readLanduseParams(sp, Tok, Ntokens);
+        return subcatch_readLanduseParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_INFLOW:
-        return inflow_readExtInflow(sp, Tok, Ntokens);
+        return inflow_readExtInflow(sp, inpt->Tok, inpt->Ntokens);
 
       case s_DWF:
-        return inflow_readDwfInflow(sp, Tok, Ntokens);
+        return inflow_readDwfInflow(sp, inpt->Tok, inpt->Ntokens);
 
       case s_PATTERN:
-        return inflow_readDwfPattern(sp, Tok, Ntokens);
+        return inflow_readDwfPattern(sp, inpt->Tok, inpt->Ntokens);
 
       case s_RDII:
-        return rdii_readRdiiInflow(sp, Tok, Ntokens);
+        return rdii_readRdiiInflow(sp, inpt->Tok, inpt->Ntokens);
 
       case s_UNITHYD:
-        return rdii_readUnitHydParams(sp, Tok, Ntokens);
+        return rdii_readUnitHydParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_LOADING:
-        return subcatch_readInitBuildup(sp, Tok, Ntokens);
+        return subcatch_readInitBuildup(sp, inpt->Tok, inpt->Ntokens);
 
       case s_TREATMENT:
-        return treatmnt_readExpression(sp, Tok, Ntokens);
+        return treatmnt_readExpression(sp, inpt->Tok, inpt->Ntokens);
 
       case s_CURVE:
-        return table_readCurve(sp, Tok, Ntokens);
+        return table_readCurve(sp, inpt->Tok, inpt->Ntokens);
 
       case s_TIMESERIES:
-        return table_readTimeseries(sp, Tok, Ntokens);
+        return table_readTimeseries(sp, inpt->Tok, inpt->Ntokens);
 
       case s_CONTROL:
-        return readControl(sp, Tok, Ntokens);
+        return readControl(sp, inpt->Tok, inpt->Ntokens);
 
       case s_REPORT:
-        return report_readOptions(sp, Tok, Ntokens);
+        return report_readOptions(sp, inpt->Tok, inpt->Ntokens);
 
       case s_FILE:
-        return iface_readFileParams(sp, Tok, Ntokens);
+        return iface_readFileParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_LID_CONTROL:
-        return lid_readProcParams(sp, Tok, Ntokens);
+        return lid_readProcParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_LID_USAGE:
-        return lid_readGroupParams(sp, Tok, Ntokens);
+        return lid_readGroupParams(sp, inpt->Tok, inpt->Ntokens);
 
       case s_EVENT:
-        return readEvent(sp, Tok, Ntokens);                                        //(5.1.011)
+        return readEvent(sp, inpt->Tok, inpt->Ntokens);                        //(5.1.011)
 
       default: return 0;
     }
@@ -614,6 +611,8 @@ int readControl(SWMM_Project *sp, char* tok[], int ntoks)
     int index;
     int keyword;
 
+    TInputShared *inpt = &sp->InputShared;
+
     // --- check for minimum number of tokens
     if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
 
@@ -624,19 +623,19 @@ int readControl(SWMM_Project *sp, char* tok[], int ntoks)
     // --- if line begins a new control rule, add rule ID to the database
     if ( keyword == 0 )
     {
-        if ( !project_addObject(CONTROL, tok[1], Mobjects[CONTROL]) )
+        if ( !project_addObject(CONTROL, tok[1], inpt->Mobjects[CONTROL]) )
         {
-            return error_setInpError(ERR_DUP_NAME, Tok[1]);
+            return error_setInpError(ERR_DUP_NAME, inpt->Tok[1]);
         }
-        Mobjects[CONTROL]++;
+        inpt->Mobjects[CONTROL]++;
     }
 
     // --- get index of last control rule processed
-    index = Mobjects[CONTROL] - 1;
+    index = inpt->Mobjects[CONTROL] - 1;
     if ( index < 0 ) return error_setInpError(ERR_RULE, "");
 
     // --- add current line as a new clause to the control rule
-    return controls_addRuleClause(sp, index, keyword, Tok, Ntokens);
+    return controls_addRuleClause(sp, index, keyword, inpt->Tok, inpt->Ntokens);
 }
 
 //=============================================================================
@@ -648,9 +647,11 @@ int readOption(SWMM_Project *sp, char* line)
 //  Purpose: reads an input line containing a project option.
 //
 {
-    Ntokens = getTokens(line);
-    if ( Ntokens < 2 ) return 0;
-    return project_readOption(sp, Tok[0], Tok[1]);
+    TInputShared *inpt = &sp->InputShared;
+
+    inpt->Ntokens = getTokens(sp, line);
+    if ( inpt->Ntokens < 2 ) return 0;
+    return project_readOption(sp, inpt->Tok[0], inpt->Tok[1]);
 }
 
 //=============================================================================
@@ -689,11 +690,13 @@ int readNode(SWMM_Project *sp, int type)
 //  Purpose: reads data for a node from a line of input.
 //
 {
-    int j = Mobjects[NODE];
-    int k = Mnodes[type];
-    int err = node_readParams(sp, j, type, k, Tok, Ntokens);
-    Mobjects[NODE]++;
-    Mnodes[type]++;
+    TInputShared *inpt = &sp->InputShared;
+
+    int j = inpt->Mobjects[NODE];
+    int k = inpt->Mnodes[type];
+    int err = node_readParams(sp, j, type, k, inpt->Tok, inpt->Ntokens);
+    inpt->Mobjects[NODE]++;
+    inpt->Mnodes[type]++;
     return err;
 }
 
@@ -706,11 +709,13 @@ int readLink(SWMM_Project *sp, int type)
 //  Purpose: reads data for a link from a line of input.
 //
 {
-    int j = Mobjects[LINK];
-    int k = Mlinks[type];
-    int err = link_readParams(sp, j, type, k, Tok, Ntokens);
-    Mobjects[LINK]++;
-    Mlinks[type]++;
+    TInputShared *inpt = &sp->InputShared;
+
+    int j = inpt->Mobjects[LINK];
+    int k = inpt->Mlinks[type];
+    int err = link_readParams(sp, j, type, k, inpt->Tok, inpt->Ntokens);
+    inpt->Mobjects[LINK]++;
+    inpt->Mlinks[type]++;
     return err;
 }
 
@@ -722,6 +727,8 @@ int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
 {
     DateTime x[4];
 
+    TInputShared *inpt = &sp->InputShared;
+
     if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
     if ( !datetime_strToDate(sp, tok[0], &x[0]) )
         return error_setInpError(ERR_DATETIME, tok[0]);
@@ -732,11 +739,11 @@ int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
     if ( !datetime_strToTime(tok[3], &x[3]) )
         return error_setInpError(ERR_DATETIME, tok[3]);
 
-    sp->Event[Mevents].start = x[0] + x[1];
-    sp->Event[Mevents].end = x[2] + x[3];
-    if ( sp->Event[Mevents].start >= sp->Event[Mevents].end )
+    sp->Event[inpt->Mevents].start = x[0] + x[1];
+    sp->Event[inpt->Mevents].end = x[2] + x[3];
+    if ( sp->Event[inpt->Mevents].start >= sp->Event[inpt->Mevents].end )
        return error_setInpError(ERR_DATETIME, " - start date exceeds end date");
-    Mevents++;
+    inpt->Mevents++;
     return 0;
 }
 
@@ -845,7 +852,7 @@ int  getDouble(char *s, double *y)
 
 //=============================================================================
 
-int  getTokens(char *s)
+int  getTokens(SWMM_Project *sp, char *s)
 //
 //  Input:   s = a character string
 //  Output:  returns number of tokens found in s
@@ -860,8 +867,10 @@ int  getTokens(char *s)
     int  len, m, n;
     char *c;
 
+    TInputShared *inpt = &sp->InputShared;
+
     // --- begin with no tokens
-    for (n = 0; n < MAXTOKS; n++) Tok[n] = NULL;
+    for (n = 0; n < MAXTOKS; n++) inpt->Tok[n] = NULL;
     n = 0;
 
     // --- truncate s at start of comment 
@@ -883,7 +892,7 @@ int  getTokens(char *s)
                 m = strcspn(s,"\"\n");      // find end quote or new line
             }
             s[m] = '\0';                    // null-terminate the token
-            Tok[n] = s;                     // save pointer to token 
+            inpt->Tok[n] = s;               // save pointer to token
             n++;                            // update token count
             s += m+1;                       // begin next token
         }

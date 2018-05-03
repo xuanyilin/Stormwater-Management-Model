@@ -63,7 +63,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "datetime.h"
 #include "dynwave.h"
 #include "iface.h"
-
+#include "input.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1239,6 +1239,7 @@ struct SWMM_Project {
    TGwaterShared GwaterShared;
    TIfaceShared IfaceShared;
    TInfilShared InfilShared;
+   TInputShared InputShared;
 };
 
 
