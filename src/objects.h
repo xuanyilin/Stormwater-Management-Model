@@ -612,6 +612,7 @@ typedef struct
    double        rBot;            // radius of bottom section
 }  TXsect;
 
+#include "kinwave.h"
 
 //--------------------------------------
 // CROSS SECTION TRANSECT DATA STRUCTURE
@@ -1240,6 +1241,7 @@ struct SWMM_Project {
    TIfaceShared IfaceShared;
    TInfilShared InfilShared;
    TInputShared InputShared;
+   TKinwaveShared KinwaveShared;
 };
 
 

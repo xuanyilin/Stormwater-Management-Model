@@ -28,16 +28,6 @@ static const double WT      = 0.6;     // time weighting
 static const double EPSIL   = 0.001;   // convergence criterion
 
 //-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static double   Beta1;
-static double   C1;
-static double   C2;
-static double   Afull;
-static double   Qfull;
-static TXsect*  pXsect;
-
-//-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
 //-----------------------------------------------------------------------------
 //  kinwave_execute  (called by flowrout_execute)
@@ -76,6 +66,8 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     double qin, qout;
     double a1, a2, q1, q2, q3;
 
+    TKinwaveShared *knwv = &sp->KinwaveShared;
+
     // --- no routing for non-conduit link
     (*qoutflow) = (*qinflow); 
     if ( sp->Link[j].type != CONDUIT ) return result;
@@ -84,31 +76,31 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     if ( sp->Link[j].xsect.type == DUMMY ) return result;
 
     // --- assign module-level variables
-    pXsect = &sp->Link[j].xsect;
-    Qfull = sp->Link[j].qFull;
-    Afull = sp->Link[j].xsect.aFull;
+    knwv->pXsect = &sp->Link[j].xsect;
+    knwv->Qfull = sp->Link[j].qFull;
+    knwv->Afull = sp->Link[j].xsect.aFull;
     k = sp->Link[j].subIndex;
-    Beta1 = sp->Conduit[k].beta / Qfull;
+    knwv->Beta1 = sp->Conduit[k].beta / knwv->Qfull;
  
     // --- normalize previous flows
-    q1 = sp->Conduit[k].q1 / Qfull;
-    q2 = sp->Conduit[k].q2 / Qfull;
+    q1 = sp->Conduit[k].q1 / knwv->Qfull;
+    q2 = sp->Conduit[k].q2 / knwv->Qfull;
 
     // --- normalize inflow                                                    //(5.1.008)
-    qin = (*qinflow) / sp->Conduit[k].barrels / Qfull;
+    qin = (*qinflow) / sp->Conduit[k].barrels / knwv->Qfull;
 
     // --- compute evaporation and infiltration loss rate
-	q3 = link_getLossRate(sp, j, qin*Qfull, tStep) / Qfull;                        //(5.1.008)
+	q3 = link_getLossRate(sp, j, qin*knwv->Qfull, tStep) / knwv->Qfull;                        //(5.1.008)
 
     // --- normalize previous areas
-    a1 = sp->Conduit[k].a1 / Afull;
-    a2 = sp->Conduit[k].a2 / Afull;
+    a1 = sp->Conduit[k].a1 / knwv->Afull;
+    a2 = sp->Conduit[k].a2 / knwv->Afull;
 
     // --- use full area when inlet flow >= full flow
     if ( qin >= 1.0 ) ain = 1.0;
 
     // --- get normalized inlet area corresponding to inlet flow
-    else ain = xsect_getAofS(sp, pXsect, qin/Beta1) / Afull;
+    else ain = xsect_getAofS(sp, knwv->pXsect, qin/knwv->Beta1) / knwv->Afull;
 
     // --- check for no flow
     if ( qin <= TINY && q2 <= TINY )
@@ -121,14 +113,14 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
     else
     {
         // --- compute constant factors
-        dxdt = link_getLength(sp, j) / tStep * Afull / Qfull;
+        dxdt = link_getLength(sp, j) / tStep * knwv->Afull / knwv->Qfull;
         dq   = q2 - q1;
-        C1   = dxdt * WT / WX;
-        C2   = (1.0 - WT) * (ain - a1);
-        C2   = C2 - WT * a2;
-        C2   = C2 * dxdt / WX;
-        C2   = C2 + (1.0 - WX) / WX * dq - qin;
-        C2   = C2 + q3 / WX;
+        knwv->C1   = dxdt * WT / WX;
+        knwv->C2   = (1.0 - WT) * (ain - a1);
+        knwv->C2   = knwv->C2 - WT * a2;
+        knwv->C2   = knwv->C2 * dxdt / WX;
+        knwv->C2   = knwv->C2 + (1.0 - WX) / WX * dq - qin;
+        knwv->C2   = knwv->C2 + q3 / WX;
 
         // --- starting guess for aout is value from previous time step
         aout = a2;
@@ -145,17 +137,17 @@ int kinwave_execute(SWMM_Project *sp, int j, double* qinflow, double* qoutflow, 
         if ( result <= 0 ) result = 1;
 
         // --- compute normalized outlet flow from outlet area
-        qout = Beta1 * xsect_getSofA(sp, pXsect, aout*Afull);
+        qout = knwv->Beta1 * xsect_getSofA(sp, knwv->pXsect, aout*knwv->Afull);
         if ( qin > 1.0 ) qin = 1.0;
     }
 
     // --- save new flows and areas
-    sp->Conduit[k].q1 = qin * Qfull;
-    sp->Conduit[k].a1 = ain * Afull;
-    sp->Conduit[k].q2 = qout * Qfull;
-    sp->Conduit[k].a2 = aout * Afull;
+    sp->Conduit[k].q1 = qin * knwv->Qfull;
+    sp->Conduit[k].a1 = ain * knwv->Afull;
+    sp->Conduit[k].q2 = qout * knwv->Qfull;
+    sp->Conduit[k].a2 = aout * knwv->Afull;
     sp->Conduit[k].fullState =
-        link_getFullState(sp->Conduit[k].a1, sp->Conduit[k].a2, Afull);                //(5.1.008)
+        link_getFullState(sp->Conduit[k].a1, sp->Conduit[k].a2, knwv->Afull);                //(5.1.008)
     (*qinflow)  = sp->Conduit[k].q1 * sp->Conduit[k].barrels;
     (*qoutflow) = sp->Conduit[k].q2 * sp->Conduit[k].barrels;
     return result;
@@ -187,17 +179,19 @@ int solveContinuity(SWMM_Project *sp, double qin, double ain, double* aout)
     double fLo, fHi;                   // lower/upper bounds on f
     double tol = EPSIL;                // absolute convergence tol.
 
+    TKinwaveShared *knwv = &sp->KinwaveShared;
+
     // --- first determine bounds on 'a' so that f(a) passes through 0.
 
     // --- set upper bound to area at full flow
     aHi = 1.0;
-    fHi = 1.0 + C1 + C2;
+    fHi = 1.0 + knwv->C1 + knwv->C2;
 
     // --- try setting lower bound to area where section factor is maximum
-    aLo = xsect_getAmax(sp, pXsect) / Afull;
+    aLo = xsect_getAmax(sp, knwv->pXsect) / knwv->Afull;
     if ( aLo < aHi )
     {
-        fLo = ( Beta1 * pXsect->sMax ) + (C1 * aLo) + C2;
+        fLo = ( knwv->Beta1 * knwv->pXsect->sMax ) + (knwv->C1 * aLo) + knwv->C2;
     }
     else fLo = fHi;
 
@@ -207,7 +201,7 @@ int solveContinuity(SWMM_Project *sp, double qin, double ain, double* aout)
         aHi = aLo;
         fHi = fLo;
         aLo = 0.0;
-        fLo = C2;
+        fLo = knwv->C2;
     }
 
     // --- proceed with search for root if fLo and fHi have different signs
@@ -263,8 +257,13 @@ void evalContinuity(SWMM_Project *sp, double a, double* f, double* df, void* p)
 //           w.r.t. normalized area for link with normalized outlet area 'a'.
 //
 {
-    *f  = (Beta1 * xsect_getSofA(sp, pXsect, a*Afull)) + (C1 * a) + C2;
-    *df = (Beta1 * Afull * xsect_getdSdA(sp, pXsect, a*Afull)) + C1;
+    TKinwaveShared *knwv = &sp->KinwaveShared;
+
+    *f  = (knwv->Beta1 * xsect_getSofA(sp, knwv->pXsect, a*knwv->Afull)) +
+            (knwv->C1 * a) + knwv->C2;
+
+    *df = (knwv->Beta1 * knwv->Afull *
+            xsect_getdSdA(sp, knwv->pXsect, a*knwv->Afull)) + knwv->C1;
 }
 
 //=============================================================================
