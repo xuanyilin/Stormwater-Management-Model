@@ -1216,7 +1216,7 @@ void deleteObjects(SWMM_Project *sp)
     controls_delete(sp);
 
     // --- delete LIDs
-    lid_delete();
+    lid_delete(sp);
 
     // --- now free each major category of object
     FREE(sp->Gage);

@@ -64,6 +64,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "dynwave.h"
 #include "iface.h"
 #include "input.h"
+#include "lid.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1242,6 +1243,7 @@ struct SWMM_Project {
    TInfilShared InfilShared;
    TInputShared InputShared;
    TKinwaveShared KinwaveShared;
+   TLidShared LidShared;
 };
 
 

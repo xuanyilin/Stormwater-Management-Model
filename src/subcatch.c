@@ -470,7 +470,7 @@ void subcatch_setOldState(SWMM_Project *sp, int j)
         sp->Subcatch[j].oldQual[i] = sp->Subcatch[j].newQual[i];
         sp->Subcatch[j].newQual[i] = 0.0;
     }
-    lid_setOldGroupState(j);                                                   //(5.1.008)
+    lid_setOldGroupState(sp, j);                                                   //(5.1.008)
 }
 
 //=============================================================================
@@ -488,7 +488,7 @@ double subcatch_getFracPerv(SWMM_Project *sp, int j)
     if ( sp->Subcatch[j].lidArea > 0.0 )
     {
         fracPerv = (fracPerv * (sp->Subcatch[j].area - sp->Subcatch[j].lidArea) + 
-                    lid_getPervArea(j)) / sp->Subcatch[j].area;
+                    lid_getPervArea(sp, j)) / sp->Subcatch[j].area;
         fracPerv = MIN(fracPerv, 1.0);
     }
     return fracPerv;
@@ -586,7 +586,7 @@ void subcatch_getRunon(SWMM_Project *sp, int j)
     {
         pervArea = sp->Subcatch[j].subArea[PERV].fArea *
                    (sp->Subcatch[j].area - sp->Subcatch[j].lidArea);
-        q = lid_getFlowToPerv(j);
+        q = lid_getFlowToPerv(sp, j);
         if ( pervArea > 0.0 )
         {
             sp->Subcatch[j].subArea[PERV].inflow += q / pervArea;
@@ -885,8 +885,8 @@ void  subcatch_getResults(SWMM_Project *sp, int j, double f, float x[])
     // --- add any LID drain flow to reported runoff
     if ( sp->Subcatch[j].lidArea > 0.0 )
     {
-        runoff += f1 * lid_getDrainFlow(j, PREVIOUS) +
-                  f * lid_getDrainFlow(j, CURRENT);
+        runoff += f1 * lid_getDrainFlow(sp, j, PREVIOUS) +
+                  f * lid_getDrainFlow(sp, j, CURRENT);
     }
 ////
 
