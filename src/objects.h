@@ -65,6 +65,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "iface.h"
 #include "input.h"
 #include "lid.h"
+#include "lidproc.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1244,6 +1245,8 @@ struct SWMM_Project {
    TInputShared InputShared;
    TKinwaveShared KinwaveShared;
    TLidShared LidShared;
+   TLidprocShared LidprocShared;
+
 };
 
 
