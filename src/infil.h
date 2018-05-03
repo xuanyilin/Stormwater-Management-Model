@@ -85,19 +85,19 @@ typedef struct
 //-----------------------------------------------------------------------------
 //   Exported Variables
 //-----------------------------------------------------------------------------
-extern THorton*   HortInfil;
-extern TGrnAmpt*  GAInfil;
-extern TCurveNum* CNInfil;
+//extern THorton*   HortInfil;
+//extern TGrnAmpt*  GAInfil;
+//extern TCurveNum* CNInfil;
 
 //-----------------------------------------------------------------------------
 //   Infiltration Methods
 //-----------------------------------------------------------------------------
 void    infil_create(SWMM_Project *sp, int subcatchCount, int model);
-void    infil_delete(void);
+void    infil_delete(SWMM_Project *sp);
 int     infil_readParams(SWMM_Project *sp, int model, char* tok[], int ntoks);
-void    infil_initState(int area, int model);
-void    infil_getState(int j, int m, double x[]);
-void    infil_setState(int j, int m, double x[]);
+void    infil_initState(SWMM_Project *sp, int area, int model);
+void    infil_getState(SWMM_Project *sp, int j, int m, double x[]);
+void    infil_setState(SWMM_Project *sp, int j, int m, double x[]);
 double  infil_getInfil(SWMM_Project *sp, int area, int model, double tstep,
         double rainfall, double runon, double depth);
 
@@ -106,5 +106,16 @@ void    grnampt_initState(TGrnAmpt *infil);
 double  grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
         double irate, double depth, int modelType);                            //(5.1.010)
 
+//-----------------------------------------------------------------------------
+//  Local Variables
+//-----------------------------------------------------------------------------
+typedef struct
+{
+    THorton*   HortInfil;
+    TGrnAmpt*  GAInfil;
+    TCurveNum* CNInfil;
+
+    double Fumax;   // saturated water volume in upper soil zone (ft)
+} TInfilShared;
 
 #endif //INFIL_H

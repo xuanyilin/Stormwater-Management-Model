@@ -1036,6 +1036,8 @@ void validateLidGroup(SWMM_Project *sp, int j)
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
+    TInfilShared *nfl = &sp->InfilShared;
+
     lidGroup = LidGroups[j];
     if ( lidGroup == NULL ) return;
     lidList = lidGroup->lidList;
@@ -1071,9 +1073,9 @@ void validateLidGroup(SWMM_Project *sp, int j)
         {
             if ( sp->InfilModel == GREEN_AMPT || sp->InfilModel == MOD_GREEN_AMPT )    //(5.1.010)
             {
-                p[0] = GAInfil[j].S * UCF(sp, RAINDEPTH);
-                p[1] = GAInfil[j].Ks * UCF(sp, RAINFALL);
-                p[2] = GAInfil[j].IMDmax;
+                p[0] = nfl->GAInfil[j].S * UCF(sp, RAINDEPTH);
+                p[1] = nfl->GAInfil[j].Ks * UCF(sp, RAINFALL);
+                p[2] = nfl->GAInfil[j].IMDmax;
                 if ( grnampt_setParams(sp, &(lidUnit->soilInfil), p) == FALSE )
                 {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)

@@ -1238,6 +1238,7 @@ struct SWMM_Project {
    TDynwaveShared DynwaveShared;
    TGwaterShared GwaterShared;
    TIfaceShared IfaceShared;
+   TInfilShared InfilShared;
 };
 
 

@@ -433,7 +433,7 @@ void  subcatch_initState(SWMM_Project *sp, int j)
     }
 
     // --- initialize state of infiltration, groundwater, & snow pack objects
-    if ( sp->Subcatch[j].infil == j )  infil_initState(j, sp->InfilModel);
+    if ( sp->Subcatch[j].infil == j )  infil_initState(sp, j, sp->InfilModel);
     if ( sp->Subcatch[j].groundwater ) gwater_initState(sp, j);
     if ( sp->Subcatch[j].snowpack )    snow_initSnowpack(sp, j);
 

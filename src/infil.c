@@ -36,14 +36,6 @@
 #include "headers.h"
 #include "infil.h"
 
-//-----------------------------------------------------------------------------
-//  Local Variables
-//-----------------------------------------------------------------------------
-THorton*   HortInfil = NULL;
-TGrnAmpt*  GAInfil   = NULL;
-TCurveNum* CNInfil   = NULL;
-
-static double Fumax;   // saturated water volume in upper soil zone (ft)
 
 //-----------------------------------------------------------------------------
 //  External Functions (declared in infil.h)
@@ -99,21 +91,23 @@ void infil_create(SWMM_Project *sp, int subcatchCount, int model)
 //  Output:  none
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     switch (model)
     {
     case HORTON:
     case MOD_HORTON:
-        HortInfil = (THorton *) calloc(subcatchCount, sizeof(THorton));
-        if ( HortInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
+        nfl->HortInfil = (THorton *) calloc(subcatchCount, sizeof(THorton));
+        if ( nfl->HortInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
     case GREEN_AMPT:
     case MOD_GREEN_AMPT:                                                       //(5.1.010)
-        GAInfil = (TGrnAmpt *) calloc(subcatchCount, sizeof(TGrnAmpt));
-        if ( GAInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
+        nfl->GAInfil = (TGrnAmpt *) calloc(subcatchCount, sizeof(TGrnAmpt));
+        if ( nfl->GAInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
     case CURVE_NUMBER:
-        CNInfil = (TCurveNum *) calloc(subcatchCount, sizeof(TCurveNum));
-        if ( CNInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
+        nfl->CNInfil = (TCurveNum *) calloc(subcatchCount, sizeof(TCurveNum));
+        if ( nfl->CNInfil == NULL ) sp->ErrorCode = ERR_MEMORY;
         break;
     default: sp->ErrorCode = ERR_MEMORY;
     }
@@ -121,16 +115,18 @@ void infil_create(SWMM_Project *sp, int subcatchCount, int model)
 
 //=============================================================================
 
-void infil_delete()
+void infil_delete(SWMM_Project *sp)
 //
 //  Purpose: deletes infiltration objects associated with subcatchments
 //  Input:   none
 //  Output:  none
 //
 {
-    FREE(HortInfil);
-    FREE(GAInfil);
-    FREE(CNInfil);
+    TInfilShared *nfl = &sp->InfilShared;
+
+    FREE(nfl->HortInfil);
+    FREE(nfl->GAInfil);
+    FREE(nfl->CNInfil);
 }
 
 //=============================================================================
@@ -148,6 +144,8 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
 {
     int   i, j, n, status;
     double x[5];
+
+    TInfilShared *nfl = &sp->InfilShared;
 
     // --- check that subcatchment exists
     j = project_findObject(SUBCATCH, tok[0]);
@@ -182,13 +180,13 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
     switch (m)
     {
       case HORTON:
-      case MOD_HORTON:   status = horton_setParams(sp, &HortInfil[j], x);
+      case MOD_HORTON:   status = horton_setParams(sp, &nfl->HortInfil[j], x);
                          break;
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-                         status = grnampt_setParams(sp, &GAInfil[j], x);
+                         status = grnampt_setParams(sp, &nfl->GAInfil[j], x);
                          break;
-      case CURVE_NUMBER: status = curvenum_setParams(&CNInfil[j], x);
+      case CURVE_NUMBER: status = curvenum_setParams(&nfl->CNInfil[j], x);
                          break;
       default:           status = TRUE;
     }
@@ -198,7 +196,7 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
 
 //=============================================================================
 
-void infil_initState(int j, int m)
+void infil_initState(SWMM_Project *sp, int j, int m)
 //
 //  Input:   j = subcatchment index
 //           m = infiltration method code
@@ -206,20 +204,22 @@ void infil_initState(int j, int m)
 //  Purpose: initializes state of infiltration for a subcatchment.
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     switch (m)
     {
       case HORTON:
-      case MOD_HORTON:   horton_initState(&HortInfil[j]);   break;
+      case MOD_HORTON:   horton_initState(&nfl->HortInfil[j]);   break;
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-                         grnampt_initState(&GAInfil[j]);    break;
-      case CURVE_NUMBER: curvenum_initState(&CNInfil[j]);   break;
+                         grnampt_initState(&nfl->GAInfil[j]);    break;
+      case CURVE_NUMBER: curvenum_initState(&nfl->CNInfil[j]);   break;
     }
 }
 
 //=============================================================================
 
-void infil_getState(int j, int m, double x[])
+void infil_getState(SWMM_Project *sp, int j, int m, double x[])
 //
 //  Input:   j = subcatchment index
 //           m = infiltration method code
@@ -227,20 +227,22 @@ void infil_getState(int j, int m, double x[])
 //  Purpose: retrieves the current infiltration state for a subcatchment.
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     switch (m)
     {
       case HORTON:
-      case MOD_HORTON:   horton_getState(&HortInfil[j], x); break;
+      case MOD_HORTON:   horton_getState(&nfl->HortInfil[j], x); break;
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-                         grnampt_getState(&GAInfil[j],x);   break;
-      case CURVE_NUMBER: curvenum_getState(&CNInfil[j], x); break;
+                         grnampt_getState(&nfl->GAInfil[j],x);   break;
+      case CURVE_NUMBER: curvenum_getState(&nfl->CNInfil[j], x); break;
     }
 }
 
 //=============================================================================
 
-void infil_setState(int j, int m, double x[])
+void infil_setState(SWMM_Project *sp, int j, int m, double x[])
 //
 //  Input:   j = subcatchment index
 //           m = infiltration method code
@@ -248,14 +250,16 @@ void infil_setState(int j, int m, double x[])
 //  Purpose: sets the current infiltration state for a subcatchment.
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     switch (m)
     {
       case HORTON:
-      case MOD_HORTON:   horton_setState(&HortInfil[j], x); break;
+      case MOD_HORTON:   horton_setState(&nfl->HortInfil[j], x); break;
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-                         grnampt_setState(&GAInfil[j],x);   break;
-      case CURVE_NUMBER: curvenum_setState(&CNInfil[j], x); break;
+                         grnampt_setState(&nfl->GAInfil[j],x);   break;
+      case CURVE_NUMBER: curvenum_setState(&nfl->CNInfil[j], x); break;
     }
 }
 
@@ -274,22 +278,24 @@ double infil_getInfil(SWMM_Project *sp, int j, int m, double tstep,
 //  Purpose: computes infiltration rate depending on infiltration method.
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     switch (m)
     {
       case HORTON:
-          return horton_getInfil(sp, &HortInfil[j], tstep, rainfall+runon, depth);
+          return horton_getInfil(sp, &nfl->HortInfil[j], tstep, rainfall+runon, depth);
 
       case MOD_HORTON:
-          return modHorton_getInfil(sp, &HortInfil[j], tstep, rainfall+runon,
+          return modHorton_getInfil(sp, &nfl->HortInfil[j], tstep, rainfall+runon,
                                     depth);
 
       case GREEN_AMPT:
       case MOD_GREEN_AMPT:                                                     //(5.1.010)
-        return grnampt_getInfil(sp, &GAInfil[j], tstep, rainfall+runon, depth, m); //(5.1.010)
+        return grnampt_getInfil(sp, &nfl->GAInfil[j], tstep, rainfall+runon, depth, m); //(5.1.010)
 
       case CURVE_NUMBER:
         depth += runon / tstep;
-        return curvenum_getInfil(sp, &CNInfil[j], tstep, rainfall, depth);
+        return curvenum_getInfil(sp, &nfl->CNInfil[j], tstep, rainfall, depth);
 
       default:
         return 0.0;
@@ -608,8 +614,10 @@ double grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
 //           or a storage node.
 //
 {
+    TInfilShared *nfl = &sp->InfilShared;
+
     // --- find saturated upper soil zone water volume
-    Fumax = infil->IMDmax * infil->Lu * sqrt(sp->Adjust.hydconFactor);             //(5.1.011)
+    nfl->Fumax = infil->IMDmax * infil->Lu * sqrt(sp->Adjust.hydconFactor);             //(5.1.011)
 
     // --- reduce time until next event
     infil->T -= tstep;
@@ -642,6 +650,8 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
     double ks = infil->Ks * sp->Adjust.hydconFactor;                               //(5.1.008)
     double lu = infil->Lu * sqrt(sp->Adjust.hydconFactor);                         //(5.1.011)
 
+    TInfilShared *nfl = &sp->InfilShared;
+
     // --- get available infiltration rate (rainfall + ponded water)
     ia = irate + depth / tstep;
     if ( ia < ZERO ) ia = 0.0;
@@ -651,7 +661,7 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
     {
         if ( infil->Fu <= 0.0 ) return 0.0;
         kr = lu / 90000.0 * sp->Evap.recoveryFactor;                               //(5.1.011)
-        dF = kr * Fumax * tstep;
+        dF = kr * nfl->Fumax * tstep;
         infil->F -= dF;
         infil->Fu -= dF;
         if ( infil->Fu <= 0.0 )
@@ -665,7 +675,7 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
         // --- if new wet event begins then reset IMD & F
         if ( infil->T <= 0.0 )
         {
-            infil->IMD = (Fumax - infil->Fu) / lu;                             //(5.1.011)
+            infil->IMD = (nfl->Fumax - infil->Fu) / lu;                             //(5.1.011)
             infil->F = 0.0;
         }
         return 0.0;
@@ -677,10 +687,10 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
         dF = ia * tstep;
         infil->F += dF;
         infil->Fu += dF;
-        infil->Fu = MIN(infil->Fu, Fumax);
+        infil->Fu = MIN(infil->Fu, nfl->Fumax);
         if ( modelType == GREEN_AMPT &&  infil->T <= 0.0 )                     //(5.1.010)
         {
-            infil->IMD = (Fumax - infil->Fu) / lu;                             //(5.1.011)
+            infil->IMD = (nfl->Fumax - infil->Fu) / lu;                             //(5.1.011)
             infil->F = 0.0;
         }
         return ia;
@@ -705,7 +715,7 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
         dF = ia * tstep;
         infil->F += dF;
         infil->Fu += dF;
-        infil->Fu = MIN(infil->Fu, Fumax);
+        infil->Fu = MIN(infil->Fu, nfl->Fumax);
         return ia;
     }
 
@@ -723,7 +733,7 @@ double grnampt_getUnsatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
     dF = F2 - infil->F;
     infil->F = F2;
     infil->Fu += dF;
-    infil->Fu = MIN(infil->Fu, Fumax);
+    infil->Fu = MIN(infil->Fu, nfl->Fumax);
     infil->Sat = TRUE;
     return dF / tstep;
 }
@@ -750,6 +760,8 @@ double grnampt_getSatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
     double ks = infil->Ks * sp->Adjust.hydconFactor;                               //(5.1.008)
     double lu = infil->Lu * sqrt(sp->Adjust.hydconFactor);                         //(5.1.011)
 
+    TInfilShared *nfl = &sp->InfilShared;
+
     // --- get available infiltration rate (rainfall + ponded water)
     ia = irate + depth / tstep;
     if ( ia < ZERO ) return 0.0;
@@ -772,7 +784,7 @@ double grnampt_getSatInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
     // --- update total infiltration and upper zone moisture deficit
     infil->F += dF;
     infil->Fu += dF;
-    infil->Fu = MIN(infil->Fu, Fumax);
+    infil->Fu = MIN(infil->Fu, nfl->Fumax);
     return dF / tstep;
 }
 

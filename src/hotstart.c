@@ -392,7 +392,7 @@ void  saveRunoff(SWMM_Project *sp)
 
         // Infiltration state (max. of 6 elements)
         for (j=0; j<sizeX; j++) x[j] = 0.0;
-        infil_getState(i, sp->InfilModel, x);
+        infil_getState(sp, i, sp->InfilModel, x);
         fwrite(x, sizeof(double), 6, f);
 
         // Groundwater state (4 elements)
@@ -461,7 +461,7 @@ void  readRunoff(SWMM_Project *sp)
 
         // Infiltration state (max. of 6 elements)
         for (j=0; j<6; j++) if ( !readDouble(sp, &x[j], f) ) return;
-        infil_setState(i, sp->InfilModel, x);
+        infil_setState(sp, i, sp->InfilModel, x);
 
         // Groundwater state (4 elements)
         if ( sp->Subcatch[i].groundwater != NULL )

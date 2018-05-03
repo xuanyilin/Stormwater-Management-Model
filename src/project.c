@@ -1174,7 +1174,7 @@ void deleteObjects(SWMM_Project *sp)
     }
 
     // --- free memory used for rainfall infiltration
-    infil_delete();
+    infil_delete(sp);
 
 ////  Added for release 5.1.007.  ////                                         //(5.1.007)
 ////
