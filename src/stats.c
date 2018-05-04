@@ -43,16 +43,6 @@
 #include "swmm5.h"
 
 //-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-#define MAX_STATS 5
-static TSysStats       SysStats;
-static TMaxStats       MaxMassBalErrs[MAX_STATS];
-static TMaxStats       MaxCourantCrit[MAX_STATS];
-static TMaxStats       MaxFlowTurns[MAX_STATS];
-static double          SysOutfallFlow;
-
-//-----------------------------------------------------------------------------
 //  Exportable variables (shared with statsrpt.c)
 //-----------------------------------------------------------------------------
 TSubcatchStats*     SubcatchStats;
@@ -102,6 +92,8 @@ int  stats_open(SWMM_Project *sp)
 //
 {
     int j, k, p;
+
+    TStatsShared *stts = &sp->StatsShared;
 
     // --- set all pointers to NULL
     NodeStats = NULL;
@@ -292,11 +284,11 @@ int  stats_open(SWMM_Project *sp)
     // --- initialize system stats
     MaxRunoffFlow = 0.0;
     MaxOutfallFlow = 0.0;
-    SysStats.maxTimeStep = 0.0;
-    SysStats.minTimeStep = sp->RouteStep;
-    SysStats.avgTimeStep = 0.0;
-    SysStats.avgStepCount = 0.0;
-    SysStats.steadyStateCount = 0.0;
+    stts->SysStats.maxTimeStep = 0.0;
+    stts->SysStats.minTimeStep = sp->RouteStep;
+    stts->SysStats.avgTimeStep = 0.0;
+    stts->SysStats.avgStepCount = 0.0;
+    stts->SysStats.steadyStateCount = 0.0;
     return 0;
 }
 
@@ -338,13 +330,15 @@ void  stats_report(SWMM_Project *sp)
 //  Purpose: reports simulation statistics.
 //
 {
+    TStatsShared *stts = &sp->StatsShared;
+
     // --- report flow routing accuracy statistics
     if ( sp->Nobjects[LINK] > 0 && sp->RouteModel != NO_ROUTING )
     {
         stats_findMaxStats(sp);
-        report_writeMaxStats(sp, MaxMassBalErrs, MaxCourantCrit, MAX_STATS);
-        report_writeMaxFlowTurns(sp, MaxFlowTurns, MAX_STATS);
-        report_writeSysStats(sp, &SysStats);
+        report_writeMaxStats(sp, stts->MaxMassBalErrs, stts->MaxCourantCrit, MAX_STATS);
+        report_writeMaxFlowTurns(sp, stts->MaxFlowTurns, MAX_STATS);
+        report_writeSysStats(sp, &stts->SysStats);
     }
 
     // --- report summary statistics
@@ -454,9 +448,11 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
 {
     int   j;
 
+    TStatsShared *stts = &sp->StatsShared;
+
     // --- update stats only after reporting period begins
     if ( aDate < sp->ReportStart ) return;
-    SysOutfallFlow = 0.0;
+    stts->SysOutfallFlow = 0.0;
 
     // --- update node & link stats
 #pragma omp parallel num_threads(sp->NumThreads)                                   //(5.1.008)
@@ -472,7 +468,7 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
 ////  Following code segment modified for release 5.1.012.  ////               //(5.1.012)
 
     // --- update count of times in steady state
-    SysStats.steadyStateCount += steadyState;
+    stts->SysStats.steadyStateCount += steadyState;
 
     // --- update time step stats if not in steady state
 	if ( steadyState == FALSE )
@@ -480,19 +476,19 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
         // --- skip initial time step for min. value)
         if ( sp->OldRoutingTime > 0 )
         {
-            SysStats.minTimeStep = MIN(SysStats.minTimeStep, tStep);
+            stts->SysStats.minTimeStep = MIN(stts->SysStats.minTimeStep, tStep);
         }
-        SysStats.avgTimeStep += tStep;
-        SysStats.maxTimeStep = MAX(SysStats.maxTimeStep, tStep);
+        stts->SysStats.avgTimeStep += tStep;
+        stts->SysStats.maxTimeStep = MAX(stts->SysStats.maxTimeStep, tStep);
 
         // --- update iteration step count stats
-        SysStats.avgStepCount += stepCount;
+        stts->SysStats.avgStepCount += stepCount;
 	}
 
 ////
 
     // --- update max. system outfall flow
-    MaxOutfallFlow = MAX(MaxOutfallFlow, SysOutfallFlow);
+    MaxOutfallFlow = MAX(MaxOutfallFlow, stts->SysOutfallFlow);
 }
 
 //=============================================================================
@@ -526,6 +522,8 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     double newVolume = sp->Node[j].newVolume;
     double newDepth = sp->Node[j].newDepth;
     int    canPond = (sp->AllowPonding && sp->Node[j].pondedArea > 0.0);
+
+    TStatsShared *stts = &sp->StatsShared;
 
     // --- update depth statistics
     NodeStats[j].avgDepth += newDepth;
@@ -590,7 +588,7 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
             OutfallStats[k].totalLoad[p] += sp->Node[j].inflow * 
                 sp->Node[j].newQual[p] * tStep;
         }
-        SysOutfallFlow += sp->Node[j].inflow;
+        stts->SysOutfallFlow += sp->Node[j].inflow;
     }
 
     // --- update inflow statistics
@@ -734,16 +732,18 @@ void  stats_findMaxStats(SWMM_Project *sp)
     int    j;
     double x;
 
+    TStatsShared *stts = &sp->StatsShared;
+
     // --- initialize max. stats arrays
     for (j=0; j<MAX_STATS; j++)
     {
-        MaxMassBalErrs[j].objType = NODE;
-        MaxMassBalErrs[j].index   = -1;
-        MaxMassBalErrs[j].value   = -1.0;
-        MaxCourantCrit[j].index   = -1;
-        MaxCourantCrit[j].value   = -1.0;
-        MaxFlowTurns[j].index     = -1; 
-        MaxFlowTurns[j].value     = -1.0;
+        stts->MaxMassBalErrs[j].objType = NODE;
+        stts->MaxMassBalErrs[j].index   = -1;
+        stts->MaxMassBalErrs[j].value   = -1.0;
+        stts->MaxCourantCrit[j].index   = -1;
+        stts->MaxCourantCrit[j].value   = -1.0;
+        stts->MaxFlowTurns[j].index     = -1;
+        stts->MaxFlowTurns[j].value     = -1.0;
     }
 
     // --- find links with most flow turns 
@@ -752,7 +752,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
         for (j=0; j<sp->Nobjects[LINK]; j++)
         {
             x = 100.0 * LinkStats[j].flowTurns / (2./3.*(sp->StepCount-2));
-            stats_updateMaxStats(MaxFlowTurns, LINK, j, x);
+            stats_updateMaxStats(stts->MaxFlowTurns, LINK, j, x);
         }
     }
 
@@ -770,7 +770,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
             x = 1.0 - NodeOutflow[j] / NodeInflow[j];
         else if ( NodeOutflow[j] > 0.0 ) x = -1.0;
         else                             x = 0.0;
-        stats_updateMaxStats(MaxMassBalErrs, NODE, j, 100.0*x);
+        stats_updateMaxStats(stts->MaxMassBalErrs, NODE, j, 100.0*x);
     }
 
     // --- stop if not using a variable time step
@@ -781,14 +781,14 @@ void  stats_findMaxStats(SWMM_Project *sp)
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
         x = NodeStats[j].timeCourantCritical / sp->StepCount;
-        stats_updateMaxStats(MaxCourantCrit, NODE, j, 100.0*x);
+        stats_updateMaxStats(stts->MaxCourantCrit, NODE, j, 100.0*x);
     }
 
     // --- find links most frequently Courant critical
     for (j=0; j<sp->Nobjects[LINK]; j++)
     {
         x = LinkStats[j].timeCourantCritical / sp->StepCount;
-        stats_updateMaxStats(MaxCourantCrit, LINK, j, 100.0*x);
+        stats_updateMaxStats(stts->MaxCourantCrit, LINK, j, 100.0*x);
     }
 }
 

@@ -75,6 +75,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "routing.h"
 #include "runoff.h"
 #include "shape.h"
+#include "stats.h"
 
 //-----------------
 // FILE INFORMATION
@@ -959,17 +960,17 @@ typedef struct
 
 #include "massbal.h"
 
-//-----------------------
-// SYSTEM-WIDE STATISTICS
-//-----------------------
-typedef struct
-{
-   double        minTimeStep;
-   double        maxTimeStep;
-   double        avgTimeStep;
-   double        avgStepCount;
-   double        steadyStateCount;
-}  TSysStats;
+////-----------------------
+//// SYSTEM-WIDE STATISTICS
+////-----------------------
+//typedef struct
+//{
+//   double        minTimeStep;
+//   double        maxTimeStep;
+//   double        avgTimeStep;
+//   double        avgStepCount;
+//   double        steadyStateCount;
+//}  TSysStats;
 
 
 ////--------------------
@@ -1092,15 +1093,15 @@ typedef struct
 }  TLinkStats;
 
 
-//-------------------------
-// MAXIMUM VALUE STATISTICS
-//-------------------------
-typedef struct
-{
-   int           objType;         // either NODE or LINK
-   int           index;           // node or link index
-   double        value;           // value of node or link statistic
-}  TMaxStats; 
+////-------------------------
+//// MAXIMUM VALUE STATISTICS
+////-------------------------
+//typedef struct
+//{
+//   int           objType;         // either NODE or LINK
+//   int           index;           // node or link index
+//   double        value;           // value of node or link statistic
+//}  TMaxStats;
 
 
 //------------------
@@ -1268,6 +1269,7 @@ struct SWMM_Project {
    TRoutingShared RoutingShared;
    TRunoffShared RunoffShared;
    TShapeShared ShapeShared;
+   TStatsShared StatsShared;
 
 };
 
