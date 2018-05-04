@@ -37,7 +37,7 @@ const double OneSecond = 1.1574074e-5;
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int    readGageSeriesFormat(char* tok[], int ntoks, double x[]);
+static int    readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[]);
 static int    readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[]);
 static int    getFirstRainfall(SWMM_Project *sp, int gage);
 static int    getNextRainfall(SWMM_Project *sp, int gage);
@@ -67,7 +67,7 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 
     // --- check that gage exists
     if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(GAGE, tok[0]);
+    id = project_findID(sp, GAGE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- assign default parameter values
@@ -85,7 +85,7 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     k = findmatch(tok[4], GageDataWords);
     if      ( k == RAIN_TSERIES )
     {
-        err = readGageSeriesFormat(tok, ntoks, x);
+        err = readGageSeriesFormat(sp, tok, ntoks, x);
     }
     else if ( k == RAIN_FILE    )
     {
@@ -121,7 +121,7 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 
 //=============================================================================
 
-int readGageSeriesFormat(char* tok[], int ntoks, double x[])
+int readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
 {
     int m, ts;
     DateTime aTime;
@@ -147,7 +147,7 @@ int readGageSeriesFormat(char* tok[], int ntoks, double x[])
         return error_setInpError(ERR_DATETIME, tok[3]);;
 
     // --- get time series index
-    ts = project_findObject(TSERIES, tok[5]);
+    ts = project_findObject(sp, TSERIES, tok[5]);
     if ( ts < 0 ) return error_setInpError(ERR_NAME, tok[5]);
     x[0] = (double)ts;
     strcpy(tok[2], "");

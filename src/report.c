@@ -145,7 +145,7 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
         k = SOME;
         for (t = 1; t < ntoks; t++)
         {
-            j = project_findObject(m, tok[t]);
+            j = project_findObject(sp, m, tok[t]);
             if ( j < 0 ) return error_setInpError(ERR_NAME, tok[t]);
             switch ( m )
             {

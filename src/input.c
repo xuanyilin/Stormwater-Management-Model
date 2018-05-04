@@ -248,28 +248,28 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
     switch( objType )
     {
       case s_RAINGAGE:
-        if ( !project_addObject(GAGE, id, sp->Nobjects[GAGE]) )
+        if ( !project_addObject(sp, GAGE, id, sp->Nobjects[GAGE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[GAGE]++;
         break;
 
       case s_SUBCATCH:
-        if ( !project_addObject(SUBCATCH, id, sp->Nobjects[SUBCATCH]) )
+        if ( !project_addObject(sp, SUBCATCH, id, sp->Nobjects[SUBCATCH]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[SUBCATCH]++;
         break;
 
       case s_AQUIFER:
-        if ( !project_addObject(AQUIFER, id, sp->Nobjects[AQUIFER]) )
+        if ( !project_addObject(sp, AQUIFER, id, sp->Nobjects[AQUIFER]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[AQUIFER]++;
         break;
 
       case s_UNITHYD:
         // --- the same Unit Hydrograph can span several lines
-        if ( project_findObject(UNITHYD, id) < 0 )
+        if ( project_findObject(sp, UNITHYD, id) < 0 )
         {
-            if ( !project_addObject(UNITHYD, id, sp->Nobjects[UNITHYD]) )
+            if ( !project_addObject(sp, UNITHYD, id, sp->Nobjects[UNITHYD]) )
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             sp->Nobjects[UNITHYD]++;
         }
@@ -277,94 +277,94 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
 
       case s_SNOWMELT:
         // --- the same Snowmelt object can appear on several lines
-        if ( project_findObject(SNOWMELT, id) < 0 )
+        if ( project_findObject(sp, SNOWMELT, id) < 0 )
         {
-            if ( !project_addObject(SNOWMELT, id, sp->Nobjects[SNOWMELT]) )
+            if ( !project_addObject(sp, SNOWMELT, id, sp->Nobjects[SNOWMELT]) )
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             sp->Nobjects[SNOWMELT]++;
         }
         break;
 
       case s_JUNCTION:
-        if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
+        if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[JUNCTION]++;
         break;
 
       case s_OUTFALL:
-        if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
+        if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[OUTFALL]++;
         break;
 
       case s_STORAGE:
-        if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
+        if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[STORAGE]++;
         break;
 
       case s_DIVIDER:
-        if ( !project_addObject(NODE, id, sp->Nobjects[NODE]) )
+        if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[DIVIDER]++;
         break;
 
       case s_CONDUIT:
-        if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
+        if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[CONDUIT]++;
         break;
 
       case s_PUMP:
-        if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
+        if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[PUMP]++;
         break;
 
       case s_ORIFICE:
-        if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
+        if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[ORIFICE]++;
         break;
 
       case s_WEIR:
-        if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
+        if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[WEIR]++;
         break;
 
       case s_OUTLET:
-        if ( !project_addObject(LINK, id, sp->Nobjects[LINK]) )
+        if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[OUTLET]++;
         break;
 
       case s_POLLUTANT:
-        if ( !project_addObject(POLLUT, id, sp->Nobjects[POLLUT]) )
+        if ( !project_addObject(sp, POLLUT, id, sp->Nobjects[POLLUT]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[POLLUT]++;
         break;
 
       case s_LANDUSE:
-        if ( !project_addObject(LANDUSE, id, sp->Nobjects[LANDUSE]) )
+        if ( !project_addObject(sp, LANDUSE, id, sp->Nobjects[LANDUSE]) )
             errcode = error_setInpError(ERR_DUP_NAME, id);
         sp->Nobjects[LANDUSE]++;
         break;
 
       case s_PATTERN:
         // --- a time pattern can span several lines
-        if ( project_findObject(TIMEPATTERN, id) < 0 )
+        if ( project_findObject(sp, TIMEPATTERN, id) < 0 )
         {
-            if ( !project_addObject(TIMEPATTERN, id, sp->Nobjects[TIMEPATTERN]) )
+            if ( !project_addObject(sp, TIMEPATTERN, id, sp->Nobjects[TIMEPATTERN]) )
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             sp->Nobjects[TIMEPATTERN]++;
         }
@@ -372,9 +372,9 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
 
       case s_CURVE:
         // --- a Curve can span several lines
-        if ( project_findObject(CURVE, id) < 0 )
+        if ( project_findObject(sp, CURVE, id) < 0 )
         {
-            if ( !project_addObject(CURVE, id, sp->Nobjects[CURVE]) )
+            if ( !project_addObject(sp, CURVE, id, sp->Nobjects[CURVE]) )
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             sp->Nobjects[CURVE]++;
 
@@ -387,9 +387,9 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
 
       case s_TIMESERIES:
         // --- a Time Series can span several lines
-        if ( project_findObject(TSERIES, id) < 0 )
+        if ( project_findObject(sp, TSERIES, id) < 0 )
         {
-            if ( !project_addObject(TSERIES, id, sp->Nobjects[TSERIES]) )
+            if ( !project_addObject(sp, TSERIES, id, sp->Nobjects[TSERIES]) )
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             sp->Nobjects[TSERIES]++;
         }
@@ -406,7 +406,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
             id = strtok(NULL, SEPSTR);
             if ( id ) 
             {
-                if ( !project_addObject(TRANSECT, id, sp->Nobjects[TRANSECT]) )
+                if ( !project_addObject(sp, TRANSECT, id, sp->Nobjects[TRANSECT]) )
                     errcode = error_setInpError(ERR_DUP_NAME, id);
                 sp->Nobjects[TRANSECT]++;
             }
@@ -415,9 +415,9 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
 
       case s_LID_CONTROL:
         // --- an LID object can span several lines
-        if ( project_findObject(LID, id) < 0 )
+        if ( project_findObject(sp, LID, id) < 0 )
         {
-            if ( !project_addObject(LID, id, sp->Nobjects[LID]) )
+            if ( !project_addObject(sp, LID, id, sp->Nobjects[LID]) )
             {
                 errcode = error_setInpError(ERR_DUP_NAME, id);
             }
@@ -623,7 +623,7 @@ int readControl(SWMM_Project *sp, char* tok[], int ntoks)
     // --- if line begins a new control rule, add rule ID to the database
     if ( keyword == 0 )
     {
-        if ( !project_addObject(CONTROL, tok[1], inpt->Mobjects[CONTROL]) )
+        if ( !project_addObject(sp, CONTROL, tok[1], inpt->Mobjects[CONTROL]) )
         {
             return error_setInpError(ERR_DUP_NAME, inpt->Tok[1]);
         }

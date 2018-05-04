@@ -72,7 +72,7 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that curve exists in database
-    j = project_findObject(CURVE, tok[0]);
+    j = project_findObject(sp, CURVE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check if this is first line of curve's data
@@ -80,7 +80,7 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
     if ( sp->Curve[j].ID == NULL )
     {
         // --- assign ID pointer & curve type
-        sp->Curve[j].ID = project_findID(CURVE, tok[0]);
+        sp->Curve[j].ID = project_findID(sp, CURVE, tok[0]);
         m = findmatch(tok[1], CurveTypeWords);
         if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
         sp->Curve[j].curveType = m;
@@ -123,12 +123,12 @@ int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that time series exists in database
-    j = project_findObject(TSERIES, tok[0]);
+    j = project_findObject(sp, TSERIES, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- if first line of data, assign ID pointer
     if ( sp->Tseries[j].ID == NULL )
-        sp->Tseries[j].ID = project_findID(TSERIES, tok[0]);
+        sp->Tseries[j].ID = project_findID(sp, TSERIES, tok[0]);
 
     // --- check if time series data is in an external file
     if ( strcomp(tok[1], w_FILE ) )

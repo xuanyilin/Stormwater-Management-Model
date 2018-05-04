@@ -114,9 +114,9 @@ int  treatmnt_readExpression(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- retrieve node & pollutant
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(NODE, tok[0]);
+    j = project_findObject(sp, NODE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
-    p = project_findObject(POLLUT, tok[1]);
+    p = project_findObject(sp, POLLUT, tok[1]);
     if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
 
     // --- concatenate remaining tokens into a single string
@@ -319,13 +319,13 @@ int  getVariableIndex(SWMM_Project *sp, char* s)
     if ( k >= 0 ) return k;
 
     // --- then check for a pollutant concentration
-    k = project_findObject(POLLUT, s);
+    k = project_findObject(sp, POLLUT, s);
     if ( k >= 0 ) return (k + m);
 
     // --- finally check for a pollutant removal
     if ( UCHAR(s[0]) == 'R' && s[1] == '_')
     {
-        k = project_findObject(POLLUT, s+2);
+        k = project_findObject(sp, POLLUT, s+2);
         if ( k >= 0 ) return (sp->Nobjects[POLLUT] + k + m);
     }
     return -1;

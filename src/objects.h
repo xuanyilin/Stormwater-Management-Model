@@ -67,6 +67,8 @@ typedef struct SWMM_Project SWMM_Project;
 #include "lid.h"
 #include "lidproc.h"
 #include "output.h"
+#include "hash.h"
+#include "project.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1252,6 +1254,7 @@ struct SWMM_Project {
    TMathexprShared MathexprShared;
 
    TOutputShared OutputShared;
+   TProjectShared ProjectShared;
 };
 
 

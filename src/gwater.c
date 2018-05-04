@@ -113,7 +113,7 @@ int gwater_readAquiferParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 
     // --- check that aquifer exists
     if ( ntoks < 13 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(AQUIFER, tok[0]);
+    id = project_findID(sp, AQUIFER, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- read remaining tokens as numbers
@@ -128,7 +128,7 @@ int gwater_readAquiferParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     p = -1;
     if ( ntoks > 13 )
     {
-        p = project_findObject(TIMEPATTERN, tok[13]);
+        p = project_findObject(sp, TIMEPATTERN, tok[13]);
         if ( p < 0 ) return error_setInpError(ERR_NAME, tok[13]);
     }
 
@@ -171,16 +171,16 @@ int gwater_readGroundwaterParams(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- check that specified subcatchment, aquifer & node exist
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(SUBCATCH, tok[0]);
+    j = project_findObject(sp, SUBCATCH, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check for enough tokens
     if ( ntoks < 11 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that specified aquifer and node exists
-    k = project_findObject(AQUIFER, tok[1]);
+    k = project_findObject(sp, AQUIFER, tok[1]);
     if ( k < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n = project_findObject(NODE, tok[2]);
+    n = project_findObject(sp, NODE, tok[2]);
     if ( n < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // -- read in the flow parameters
@@ -255,7 +255,7 @@ int gwater_readFlowExpression(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that subcatchment exists
-    j = project_findObject(SUBCATCH, tok[0]);
+    j = project_findObject(sp, SUBCATCH, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check if expression is for lateral or deep GW flow

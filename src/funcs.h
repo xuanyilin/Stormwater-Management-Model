@@ -64,17 +64,17 @@ int      project_readOption(SWMM_Project *sp, char* s1, char* s2);
 void     project_validate(SWMM_Project *sp);
 int      project_init(SWMM_Project *sp);
 
-int      project_addObject(int type, char* id, int n);
+int      project_addObject(SWMM_Project *sp, int type, char* id, int n);
 
 #ifdef __cplusplus
 extern "C" {		// --- use "C" linkage for C++ programs
 #endif 
-	int   DLLEXPORT   project_findObject(int type, char* id);
+	int   DLLEXPORT   project_findObject(SWMM_Project *sp, int type, char* id);
 #ifdef __cplusplus 
 }   // matches the linkage specification from above */ 
 #endif
 
-char*    project_findID(int type, char* id);
+char*    project_findID(SWMM_Project *sp, int type, char* id);
 
 double** project_createMatrix(int nrows, int ncols);
 void     project_freeMatrix(double** m);

@@ -80,10 +80,10 @@ int snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- save snow melt parameter set name if not already done so
-    j = project_findObject(SNOWMELT, tok[0]);
+    j = project_findObject(sp, SNOWMELT, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
     if ( sp->Snowmelt[j].ID == NULL )
-        sp->Snowmelt[j].ID = project_findID(SNOWMELT, tok[0]);
+        sp->Snowmelt[j].ID = project_findID(sp, SNOWMELT, tok[0]);
 
     // --- identify data keyword
     k = findmatch(tok[1], SnowmeltWords);
@@ -108,7 +108,7 @@ int snow_readMeltParams(SWMM_Project *sp, char* tok[], int ntoks)
         x[6] = -1.0;
         if ( ntoks >= 9 )
         {
-            m = project_findObject(SUBCATCH, tok[8]);
+            m = project_findObject(sp, SUBCATCH, tok[8]);
             if ( m < 0 ) return error_setInpError(ERR_NAME, tok[8]);
             x[6] = m;
         }

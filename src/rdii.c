@@ -165,11 +165,11 @@ int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that node receiving RDII exists
-    j = project_findObject(NODE, tok[0]);
+    j = project_findObject(sp, NODE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check that RDII unit hydrograph exists
-    k = project_findObject(UNITHYD, tok[1]);
+    k = project_findObject(sp, UNITHYD, tok[1]);
     if ( k < 0 ) return error_setInpError(ERR_NAME, tok[1]);
 
     // --- read in sewer area value
@@ -233,17 +233,17 @@ int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
     double x[6];
 
     // --- check that RDII UH object exists in database
-    j = project_findObject(UNITHYD, tok[0]);
+    j = project_findObject(sp, UNITHYD, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- assign UH ID to name in hash table
     if ( sp->UnitHyd[j].ID == NULL )
-        sp->UnitHyd[j].ID = project_findID(UNITHYD, tok[0]);
+        sp->UnitHyd[j].ID = project_findID(sp, UNITHYD, tok[0]);
 
     // --- line has 2 tokens; assign rain gage to UH object
     if ( ntoks == 2 )
     {
-        g = project_findObject(GAGE, tok[1]);
+        g = project_findObject(sp, GAGE, tok[1]);
         if ( g < 0 ) return error_setInpError(ERR_NAME, tok[1]);
         sp->UnitHyd[j].rainGage = g;
         return 0;
@@ -642,7 +642,7 @@ int readRdiiTextFileHeader(SWMM_Project *sp)
         if ( feof(sp->Frdii.file) ) return ERR_RDII_FILE_FORMAT;
         fgets(line, MAXLINE, sp->Frdii.file);
         sscanf(line, "%s", s1);
-        RdiiNodeIndex[i] = project_findObject(NODE, s1);
+        RdiiNodeIndex[i] = project_findObject(sp, NODE, s1);
     }
 
     // --- skip column heading line

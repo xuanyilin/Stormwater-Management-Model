@@ -66,7 +66,7 @@ int  landuse_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 {
     char *id;
     if ( ntoks < 1 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LANDUSE, tok[0]);
+    id = project_findID(sp, LANDUSE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
     sp->Landuse[j].ID = id;
     if ( ntoks > 1 )
@@ -111,7 +111,7 @@ int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 
     // --- extract pollutant name & units
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(POLLUT, tok[0]);
+    id = project_findID(sp, POLLUT, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
     k = findmatch(tok[1], QualUnitsWords);
     if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
@@ -150,7 +150,7 @@ int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     {
         if ( !strcomp(tok[7], "*") )
         {
-            coPollut = project_findObject(POLLUT, tok[7]);
+            coPollut = project_findObject(sp, POLLUT, tok[7]);
             if ( coPollut < 0 ) return error_setInpError(ERR_NAME, tok[7]);
             if ( ! getDouble(tok[8], &coFrac) || coFrac < 0.0 )
                 return error_setInpError(ERR_NUMBER, tok[8]);
@@ -206,9 +206,9 @@ int  landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks)
     double c[3], tmax;
 
     if ( ntoks < 3 ) return 0;
-    j = project_findObject(LANDUSE, tok[0]);
+    j = project_findObject(sp, LANDUSE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
-    p = project_findObject(POLLUT, tok[1]);
+    p = project_findObject(sp, POLLUT, tok[1]);
     if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
     k = findmatch(tok[2], BuildupTypeWords);
     if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[2]);
@@ -261,7 +261,7 @@ int  landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks)
             return error_setInpError(ERR_NUMBER, tok[3]);
         if ( !getDouble(tok[4], &c[1]) || c[1] < 0.0 )     //scaling factor
             return error_setInpError(ERR_NUMBER, tok[3]);
-        n = project_findObject(TSERIES, tok[5]);           //time series
+        n = project_findObject(sp, TSERIES, tok[5]);           //time series
         if ( n < 0 ) return error_setInpError(ERR_NAME, tok[4]);
         sp->Tseries[n].refersTo = EXTERNAL_BUILDUP;
         c[2] = n;
@@ -299,9 +299,9 @@ int  landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return 0;
     for (i=0; i<4; i++) x[i] = 0.0;
     func = NO_WASHOFF;
-    j = project_findObject(LANDUSE, tok[0]);
+    j = project_findObject(sp, LANDUSE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
-    p = project_findObject(POLLUT, tok[1]);
+    p = project_findObject(sp, POLLUT, tok[1]);
     if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
     if ( ntoks > 2 )
     {

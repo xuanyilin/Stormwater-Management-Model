@@ -52,11 +52,11 @@ int inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- find index of node receiving the inflow
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(NODE, tok[0]);
+    j = project_findObject(sp, NODE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- find index of inflow pollutant or use -1 for FLOW
-    param = project_findObject(POLLUT, tok[1]);
+    param = project_findObject(sp, POLLUT, tok[1]);
     if ( param < 0 )
     {
         if ( match(tok[1], w_FLOW) ) param = -1;
@@ -66,7 +66,7 @@ int inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks)
     // --- find index of inflow time series (if supplied) in data base
     if ( strlen(tok[2]) > 0 )
     {
-        tseries = project_findObject(TSERIES, tok[2]);
+        tseries = project_findObject(sp, TSERIES, tok[2]);
         if ( tseries < 0 ) return error_setInpError(ERR_NAME, tok[2]);
         sp->Tseries[tseries].refersTo = EXTERNAL_INFLOW;
     }
@@ -112,7 +112,7 @@ int inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks)
     // --- get baseline time pattern
     if ( ntoks >= 8 )
     {
-        basePat = project_findObject(TIMEPATTERN, tok[7]);
+        basePat = project_findObject(sp, TIMEPATTERN, tok[7]);
         if ( basePat < 0 ) return error_setInpError(ERR_NAME, tok[7]);
     }
 	
@@ -301,11 +301,11 @@ int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- find index of node receiving the inflow
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(NODE, tok[0]);
+    j = project_findObject(sp, NODE, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- find index of inflow pollutant (-1 for FLOW) 
-    k = project_findObject(POLLUT, tok[1]);
+    k = project_findObject(sp, POLLUT, tok[1]);
     if ( k < 0 )
     {
         if ( match(tok[1], w_FLOW) ) k = -1;
@@ -323,7 +323,7 @@ int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
     {
         if ( i >= ntoks ) break;
         if ( strlen(tok[i]) == 0 ) continue;
-        m = project_findObject(TIMEPATTERN, tok[i]);
+        m = project_findObject(sp, TIMEPATTERN, tok[i]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[i]);
         pats[i-3] = m;
     }
@@ -471,7 +471,7 @@ int inflow_readDwfPattern(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that pattern exists in database
-    j = project_findObject(TIMEPATTERN, tok[0]);
+    j = project_findObject(sp, TIMEPATTERN, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check if this is first line of pattern
@@ -479,7 +479,7 @@ int inflow_readDwfPattern(SWMM_Project *sp, char* tok[], int ntoks)
     if ( sp->Pattern[j].ID == NULL )
     {
         // --- assign ID pointer & pattern type
-        sp->Pattern[j].ID = project_findID(TIMEPATTERN, tok[0]);
+        sp->Pattern[j].ID = project_findID(sp, TIMEPATTERN, tok[0]);
         k = findmatch(tok[1], PatternTypeWords);
         if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
         sp->Pattern[j].type = k;

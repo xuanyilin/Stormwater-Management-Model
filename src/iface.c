@@ -501,7 +501,7 @@ int  getIfaceFilePolluts(SWMM_Project *sp)
             sscanf(line, "%s %s", s1, s2);
             if ( sp->Nobjects[POLLUT] > 0 )
             {
-                j = project_findObject(POLLUT, s1);
+                j = project_findObject(sp, POLLUT, s1);
                 if ( j < 0 ) continue;
                 if ( !strcomp(s2, QualUnitsWords[sp->Pollut[j].units]) )
                     return ERR_ROUTING_FILE_NOMATCH;
@@ -542,7 +542,7 @@ int getIfaceFileNodes(SWMM_Project *sp)
         if ( feof(sp->Finflows.file) ) return ERR_ROUTING_FILE_FORMAT;
         fgets(line, MAXLINE, sp->Finflows.file);
         sscanf(line, "%s", s);
-        ifc->IfaceNodes[i] = project_findObject(NODE, s);
+        ifc->IfaceNodes[i] = project_findObject(sp, NODE, s);
     }
 
     // --- skip over column headings line

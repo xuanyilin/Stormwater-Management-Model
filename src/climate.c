@@ -178,7 +178,7 @@ int  climate_readParams(SWMM_Project *sp, char* tok[], int ntoks)
       case 0: // Time series name
         // --- check that time series name exists
         if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-        i = project_findObject(TSERIES, tok[1]);
+        i = project_findObject(sp, TSERIES, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
 
         // --- record the time series as being the data source for temperature
@@ -296,7 +296,7 @@ int climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( k == RECOVERY )
     {
         if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-        i = project_findObject(TIMEPATTERN, tok[1]);
+        i = project_findObject(sp, TIMEPATTERN, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
         sp->Evap.recoveryPattern = i;
         return 0;
@@ -335,7 +335,7 @@ int climate_readEvapParams(SWMM_Project *sp, char* tok[], int ntoks)
 
       case TIMESERIES_EVAP:
         // --- for time series evap., read name of time series
-        i = project_findObject(TSERIES, tok[1]);
+        i = project_findObject(sp, TSERIES, tok[1]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[1]);
         sp->Evap.tSeries = i;
         sp->Tseries[i].refersTo = TIMESERIES_EVAP;

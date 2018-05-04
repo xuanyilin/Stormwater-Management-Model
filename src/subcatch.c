@@ -133,18 +133,18 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that named subcatch exists
-    id = project_findID(SUBCATCH, tok[0]);
+    id = project_findID(sp, SUBCATCH, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- check that rain gage exists
-    k = project_findObject(GAGE, tok[1]);
+    k = project_findObject(sp, GAGE, tok[1]);
     if ( k < 0 ) return error_setInpError(ERR_NAME, tok[1]);
     x[0] = k;
 
     // --- check that outlet node or subcatch exists
-    m = project_findObject(NODE, tok[2]);
+    m = project_findObject(sp, NODE, tok[2]);
     x[1] = m;
-    m = project_findObject(SUBCATCH, tok[2]);
+    m = project_findObject(sp, SUBCATCH, tok[2]);
     x[2] = m;
     if ( x[1] < 0.0 && x[2] < 0.0 )
         return error_setInpError(ERR_NAME, tok[2]);
@@ -160,7 +160,7 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     x[8] = -1;
     if ( ntoks > 8 )
     {
-        k = project_findObject(SNOWMELT, tok[8]);
+        k = project_findObject(sp, SNOWMELT, tok[8]);
         if ( k < 0 ) return error_setInpError(ERR_NAME, tok[8]);
         x[8] = k;
     }
@@ -206,7 +206,7 @@ int subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that named subcatch exists
-    j = project_findObject(SUBCATCH, tok[0]);
+    j = project_findObject(sp, SUBCATCH, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- read in Mannings n, depression storage, & PctZero values
@@ -294,14 +294,14 @@ int subcatch_readLanduseParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that named subcatch exists
-    j = project_findObject(SUBCATCH, tok[0]);
+    j = project_findObject(sp, SUBCATCH, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- process each pair of landuse - percent items
     for ( k = 2; k <= ntoks; k = k+2)
     {
         // --- check that named land use exists and is followed by a percent
-        m = project_findObject(LANDUSE, tok[k-1]);
+        m = project_findObject(sp, LANDUSE, tok[k-1]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[k-1]);
         if ( k+1 > ntoks ) return error_setInpError(ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &f) )
@@ -334,14 +334,14 @@ int subcatch_readInitBuildup(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that named subcatch exists
-    j = project_findObject(SUBCATCH, tok[0]);
+    j = project_findObject(sp, SUBCATCH, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- process each pair of pollutant - init. load items
     for ( k = 2; k <= ntoks; k = k+2)
     {
         // --- check for valid pollutant name and loading value
-        m = project_findObject(POLLUT, tok[k-1]);
+        m = project_findObject(sp, POLLUT, tok[k-1]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[k-1]);
         if ( k+1 > ntoks ) return error_setInpError(ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &x) )

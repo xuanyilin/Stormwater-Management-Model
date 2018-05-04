@@ -618,7 +618,7 @@ int junc_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     char*  id;
 
     if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(NODE, tok[0]);
+    id = project_findID(sp, NODE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- parse invert elev., max. depth, init. depth, surcharged depth,
@@ -670,7 +670,7 @@ int storage_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- get ID name
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(NODE, tok[0]);
+    id = project_findID(sp, NODE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- get invert elev, max. depth, & init. depth
@@ -707,7 +707,7 @@ int storage_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     // --- get surf. area curve name
     else
     {
-        m = project_findObject(CURVE, tok[5]);
+        m = project_findObject(sp, CURVE, tok[5]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[5]);
         x[6] = m;
         n = 6;
@@ -1002,7 +1002,7 @@ int divider_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- get ID name
     if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(NODE, tok[0]);
+    id = project_findID(sp, NODE, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- get invert elev.
@@ -1017,7 +1017,7 @@ int divider_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     // --- otherwise get index of diverted link
     else
     {
-        m1 = project_findObject(LINK, tok[2]);
+        m1 = project_findObject(sp, LINK, tok[2]);
         if ( m1 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
         x[1] = m1;
     }
@@ -1033,7 +1033,7 @@ int divider_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     if ( m1 == TABULAR_DIVIDER )
     {
         if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
-        m2 = project_findObject(CURVE, tok[4]);
+        m2 = project_findObject(sp, CURVE, tok[4]);
         if ( m2 < 0 ) return error_setInpError(ERR_NAME, tok[4]);
         x[3] = m2;
         n = 5;
@@ -1220,7 +1220,7 @@ int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     char*  id;
 
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(NODE, tok[0]);                      // node ID
+    id = project_findID(sp, NODE, tok[0]);                      // node ID
     if ( id == NULL )
         return error_setInpError(ERR_NAME, tok[0]);
     if ( ! getDouble(tok[1], &x[0]) )                       // invert elev. 
@@ -1246,12 +1246,12 @@ int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
               return error_setInpError(ERR_NUMBER, tok[3]);
           break;
         case TIDAL_OUTFALL:                                // tidal curve
-          m = project_findObject(CURVE, tok[3]);              
+          m = project_findObject(sp, CURVE, tok[3]);
           if ( m < 0 ) return error_setInpError(ERR_NAME, tok[3]);
           x[3] = m;
           break;
         case TIMESERIES_OUTFALL:                           // stage time series
-          m = project_findObject(TSERIES, tok[3]);            
+          m = project_findObject(sp, TSERIES, tok[3]);
           if ( m < 0 ) return error_setInpError(ERR_NAME, tok[3]);
           x[4] = m;
           sp->Tseries[m].refersTo = TIMESERIES_OUTFALL;
@@ -1267,7 +1267,7 @@ int outfall_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 ////  Added for release 5.1.008.  ////                                         //(5.1.008)
     if ( ntoks == n+1)
     {
-        m = project_findObject(SUBCATCH, tok[n]);
+        m = project_findObject(sp, SUBCATCH, tok[n]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[n]);
         x[6] = m;
     }

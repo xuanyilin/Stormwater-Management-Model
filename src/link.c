@@ -168,7 +168,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- get index of link
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(LINK, tok[0]);
+    j = project_findObject(sp, LINK, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
 
     // --- get code of xsection shape
@@ -184,7 +184,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
     // --- for irregular shape, find index of transect object
     if ( k == IRREGULAR )
     {
-        i = project_findObject(TRANSECT, tok[2]);
+        i = project_findObject(sp, TRANSECT, tok[2]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[2]);
         sp->Link[j].xsect.type = k;
         sp->Link[j].xsect.transect = i;
@@ -196,7 +196,7 @@ int link_readXsectParams(SWMM_Project *sp, char* tok[], int ntoks)
         {
             if ( !getDouble(tok[2], &x[0]) || x[0] <= 0.0 )
                return error_setInpError(ERR_NUMBER, tok[2]);
-            i = project_findObject(CURVE, tok[3]);
+            i = project_findObject(sp, CURVE, tok[3]);
             if ( i < 0 ) return error_setInpError(ERR_NAME, tok[3]);
             sp->Link[j].xsect.type = k;
             sp->Link[j].xsect.transect = i;
@@ -261,7 +261,7 @@ int link_readLossParams(SWMM_Project *sp, char* tok[], int ntoks)
     double seepRate = 0.0;
 
     if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(LINK, tok[0]);
+    j = project_findObject(sp, LINK, tok[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
     for (i=1; i<=3; i++)
     {
@@ -921,11 +921,11 @@ int  conduit_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LINK, tok[0]);                // link ID
+    id = project_findID(sp, LINK, tok[0]);                // link ID
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    n1 = project_findObject(NODE, tok[1]);            // upstrm. node
+    n1 = project_findObject(sp, NODE, tok[1]);            // upstrm. node
     if ( n1 < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n2 = project_findObject(NODE, tok[2]);            // dwnstrm. node
+    n2 = project_findObject(sp, NODE, tok[2]);            // dwnstrm. node
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- parse length & Mannings N
@@ -1393,11 +1393,11 @@ int  pump_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LINK, tok[0]);
+    id = project_findID(sp, LINK, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    n1 = project_findObject(NODE, tok[1]);
+    n1 = project_findObject(sp, NODE, tok[1]);
     if ( n1 < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n2 = project_findObject(NODE, tok[2]);
+    n2 = project_findObject(sp, NODE, tok[2]);
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- parse curve name
@@ -1406,7 +1406,7 @@ int  pump_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     {
         if ( !strcomp(tok[3],"*") )
         {
-            m = project_findObject(CURVE, tok[3]);
+            m = project_findObject(sp, CURVE, tok[3]);
             if ( m < 0 ) return error_setInpError(ERR_NAME, tok[3]);
             x[0] = m;
         }
@@ -1628,11 +1628,11 @@ int  orifice_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LINK, tok[0]);
+    id = project_findID(sp, LINK, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    n1 = project_findObject(NODE, tok[1]);
+    n1 = project_findObject(sp, NODE, tok[1]);
     if ( n1 < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n2 = project_findObject(NODE, tok[2]);
+    n2 = project_findObject(sp, NODE, tok[2]);
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- parse orifice parameters
@@ -1998,11 +1998,11 @@ int   weir_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LINK, tok[0]);
+    id = project_findID(sp, LINK, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    n1 = project_findObject(NODE, tok[1]);
+    n1 = project_findObject(sp, NODE, tok[1]);
     if ( n1 < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n2 = project_findObject(NODE, tok[2]);
+    n2 = project_findObject(sp, NODE, tok[2]);
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- parse weir parameters
@@ -2526,11 +2526,11 @@ int outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
 
     // --- check for valid ID and end node IDs
     if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LINK, tok[0]);
+    id = project_findID(sp, LINK, tok[0]);
     if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    n1 = project_findObject(NODE, tok[1]);
+    n1 = project_findObject(sp, NODE, tok[1]);
     if ( n1 < 0 ) return error_setInpError(ERR_NAME, tok[1]);
-    n2 = project_findObject(NODE, tok[2]);
+    n2 = project_findObject(sp, NODE, tok[2]);
     if ( n2 < 0 ) return error_setInpError(ERR_NAME, tok[2]);
 
     // --- get height above invert
@@ -2570,7 +2570,7 @@ int outlet_readParams(SWMM_Project *sp, int j, int k, char* tok[], int ntoks)
     // --- get name of outlet rating curve
     else
     {
-        i = project_findObject(CURVE, tok[5]);
+        i = project_findObject(sp, CURVE, tok[5]);
         if ( i < 0 ) return error_setInpError(ERR_NAME, tok[5]);
         x[3] = i;
         n = 6;

@@ -97,7 +97,7 @@ static char* SettingTypeWords[] = {"CURVE", "TIMESERIES", "PID", NULL};
 //  Local functions
 //-----------------------------------------------------------------------------
 int    addPremise(SWMM_Project *sp, int r, int type, char* Tok[], int nToks);
-int    getPremiseVariable(char* tok[], int* k, struct TVariable* v);
+int    getPremiseVariable(SWMM_Project *sp, char* tok[], int* k, struct TVariable* v);
 int    getPremiseValue(SWMM_Project *sp, char* token, int attrib, double* value);
 int    addAction(SWMM_Project *sp, int r, char* Tok[], int nToks);
 
@@ -186,7 +186,7 @@ int  controls_addRuleClause(SWMM_Project *sp, int r, int keyword, char* tok[],
     {
       case r_RULE:
         if ( cntrl->Rules[r].ID == NULL )
-            cntrl->Rules[r].ID = project_findID(CONTROL, tok[1]);
+            cntrl->Rules[r].ID = project_findID(sp, CONTROL, tok[1]);
         cntrl->InputState = r_RULE;
         if ( nToks > 2 ) return ERR_RULE;
         return 0;
@@ -317,7 +317,7 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
 
     // --- get LHS variable
     n = 1;
-    err = getPremiseVariable(tok, &n, &v1);
+    err = getPremiseVariable(sp, tok, &n, &v1);
     if ( err > 0 ) return err;
 
     // --- get relational operator
@@ -337,7 +337,7 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
     // --- see if a RHS variable is supplied
     if ( findmatch(tok[n], ObjectWords) >= 0 && n + 3 >= nToks )
     {
-        err = getPremiseVariable(tok, &n, &v2);
+        err = getPremiseVariable(sp, tok, &n, &v2);
         if ( err > 0 ) return ERR_RULE;                                        //(5.1.009)
         if ( v1.attribute != v2.attribute)                                     //(5.1.009)
             report_writeWarningMsg(sp, WARN11, cntrl->Rules[r].ID);            //(5.1.009)
@@ -377,7 +377,7 @@ int  addPremise(SWMM_Project *sp, int r, int type, char* tok[], int nToks)
 
 //=============================================================================
 
-int getPremiseVariable(char* tok[], int* k, struct TVariable* v)
+int getPremiseVariable(SWMM_Project *sp, char* tok[], int* k, struct TVariable* v)
 //
 //  Input:   tok = array of string tokens containing premise statement
 //           k = index of current token
@@ -401,7 +401,7 @@ int getPremiseVariable(char* tok[], int* k, struct TVariable* v)
     switch (obj)
     {
       case r_NODE:
-        node = project_findObject(NODE, tok[n]);
+        node = project_findObject(sp, NODE, tok[n]);
         if ( node < 0 ) return error_setInpError(ERR_NAME, tok[n]);
         break;
 
@@ -411,7 +411,7 @@ int getPremiseVariable(char* tok[], int* k, struct TVariable* v)
       case r_ORIFICE:
       case r_WEIR:
       case r_OUTLET:
-        link = project_findObject(LINK, tok[n]);
+        link = project_findObject(sp, LINK, tok[n]);
         if ( link < 0 ) return error_setInpError(ERR_NAME, tok[n]);
         break;
       default: n--;
@@ -580,7 +580,7 @@ int  addAction(SWMM_Project *sp, int r, char* tok[], int nToks)
         return error_setInpError(ERR_KEYWORD, tok[1]);
 
     // --- check that object name exists and is of correct type
-    link = project_findObject(LINK, tok[2]);
+    link = project_findObject(sp, LINK, tok[2]);
     if ( link < 0 ) return error_setInpError(ERR_NAME, tok[2]);
     switch (obj)
     {
@@ -716,14 +716,14 @@ int  setActionSetting(SWMM_Project *sp, char* tok[], int nToks, int* curve,
 
     // --- control determined by a curve - find curve index
     case r_CURVE:
-        m = project_findObject(CURVE, tok[6]);
+        m = project_findObject(sp, CURVE, tok[6]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[6]);
         *curve = m;
         break;
 
     // --- control determined by a time series - find time series index
     case r_TIMESERIES:
-        m = project_findObject(TSERIES, tok[6]);
+        m = project_findObject(sp, TSERIES, tok[6]);
         if ( m < 0 ) return error_setInpError(ERR_NAME, tok[6]);
         *tseries = m;
         sp->Tseries[m].refersTo = CONTROL;

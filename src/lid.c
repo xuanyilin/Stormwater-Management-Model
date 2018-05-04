@@ -335,12 +335,12 @@ int lid_readProcParams(SWMM_Project *sp, char* toks[], int ntoks)
     if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
 
     // --- check that LID exists in database
-    j = project_findObject(LID, toks[0]);
+    j = project_findObject(sp, LID, toks[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
 
     // --- assign ID if not done yet
     if ( ld->LidProcs[j].ID == NULL )
-        ld->LidProcs[j].ID = project_findID(LID, toks[0]);
+        ld->LidProcs[j].ID = project_findID(sp, LID, toks[0]);
 
     // --- check if second token is the type of LID
     m = findmatch(toks[1], LidTypeWords);
@@ -402,11 +402,11 @@ int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
     if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
 
     //... find subcatchment
-    j = project_findObject(SUBCATCH, toks[0]);
+    j = project_findObject(sp, SUBCATCH, toks[0]);
     if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
 
     //... find LID process in list of LID processes
-    k = project_findObject(LID, toks[1]);
+    k = project_findObject(sp, LID, toks[1]);
     if ( k < 0 ) return error_setInpError(ERR_NAME, toks[1]);
 
     //... get number of replicates
@@ -433,10 +433,10 @@ int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
     //... read optional underdrain outlet
     if ( ntoks >= 10 && strcmp(toks[9], "*") != 0 )
     {
-        drainSubcatch = project_findObject(SUBCATCH, toks[9]);
+        drainSubcatch = project_findObject(sp, SUBCATCH, toks[9]);
         if ( drainSubcatch < 0 )
         {
-            drainNode = project_findObject(NODE, toks[9]);
+            drainNode = project_findObject(sp, NODE, toks[9]);
             if ( drainNode < 0 ) return error_setInpError(ERR_NAME, toks[9]);
         }
     }

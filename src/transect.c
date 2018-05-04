@@ -141,7 +141,7 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
         // --- check that transect was already added to project
         //     (by input_countObjects)
         if ( ntoks < 10 ) return error_setInpError(ERR_ITEMS, "");
-        id = project_findID(TRANSECT, tok[1]);
+        id = project_findID(sp, TRANSECT, tok[1]);
         if ( id == NULL ) return error_setInpError(ERR_NAME, tok[1]);
 
         // --- read in rest of numerical values on data line

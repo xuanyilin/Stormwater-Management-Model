@@ -70,11 +70,7 @@
 //-----------------------------------------------------------------------------
 ////  Constants for DYNWAVE flow routing moved to dynwave.c.  ////             //(5.1.008)
 
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static HTtable* Htable[MAX_OBJ_TYPES]; // Hash tables for object ID names
-static char     MemPoolAllocated;      // TRUE if memory pool allocated 
+
 
 //-----------------------------------------------------------------------------
 //  External Functions (declared in funcs.h)
@@ -100,7 +96,7 @@ static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
 static void createObjects(SWMM_Project *sp);
 static void deleteObjects(SWMM_Project *sp);
 static void createHashTables(SWMM_Project *sp);
-static void deleteHashTables(void);
+static void deleteHashTables(SWMM_Project *sp);
 
 
 //=============================================================================
@@ -277,7 +273,7 @@ void project_close(SWMM_Project *sp)
 //
 {
     deleteObjects(sp);
-    deleteHashTables();
+    deleteHashTables(sp);
 }
 
 //=============================================================================
@@ -302,7 +298,7 @@ int  project_init(SWMM_Project *sp)
 
 //=============================================================================
 
-int   project_addObject(int type, char *id, int n)
+int   project_addObject(SWMM_Project *sp, int type, char *id, int n)
 //
 //  Input:   type = object type
 //           id   = object ID string
@@ -315,8 +311,10 @@ int   project_addObject(int type, char *id, int n)
     int  len;
     char *newID;
 
+    TProjectShared *prjct = &sp->ProjectShared;
+
     // --- do nothing if object already placed in hash table
-    if ( project_findObject(type, id) >= 0 ) return 0;
+    if ( project_findObject(sp, type, id) >= 0 ) return 0;
 
     // --- use memory from the hash tables' common memory pool to store
     //     a copy of the object's ID string
@@ -325,14 +323,14 @@ int   project_addObject(int type, char *id, int n)
     strcpy(newID, id);
 
     // --- insert object's ID into the hash table for that type of object
-    result = HTinsert(Htable[type], newID, n);
+    result = HTinsert(prjct->Htable[type], newID, n);
     if ( result == 0 ) result = -1;
     return result;
 }
 
 //=============================================================================
 
-int DLLEXPORT  project_findObject(int type, char *id)
+int DLLEXPORT  project_findObject(SWMM_Project *sp, int type, char *id)
 //
 //  Input:   type = object type
 //           id   = object ID
@@ -340,7 +338,9 @@ int DLLEXPORT  project_findObject(int type, char *id)
 //  Purpose: uses hash table to find index of an object with a given ID.
 //
 {
-    return HTfind(Htable[type], id);
+    TProjectShared *prjct = &sp->ProjectShared;
+
+    return HTfind(prjct->Htable[type], id);
 }
 
 
@@ -348,7 +348,7 @@ int DLLEXPORT  project_findObject(int type, char *id)
 
 //=============================================================================
 
-char  *project_findID(int type, char *id)
+char  *project_findID(SWMM_Project *sp, int type, char *id)
 //
 //  Input:   type = object type
 //           id   = ID name being sought
@@ -356,7 +356,9 @@ char  *project_findID(int type, char *id)
 //  Purpose: uses hash table to find address of given string entry.
 //
 {
-    return HTfindKey(Htable[type], id);
+    TProjectShared *prjct = &sp->ProjectShared;
+
+    return HTfindKey(prjct->Htable[type], id);
 }
 
 //=============================================================================
@@ -729,6 +731,8 @@ void initPointers(SWMM_Project *sp)
 //  Purpose: assigns NULL to all dynamic arrays for a new project.
 //
 {
+    TProjectShared *prjct = &sp->ProjectShared;
+
     sp->Gage     = NULL;
     sp->Subcatch = NULL;
     sp->Node     = NULL;
@@ -752,7 +756,7 @@ void initPointers(SWMM_Project *sp)
     sp->UnitHyd    = NULL;
     sp->Snowmelt   = NULL;
     sp->Event      = NULL;                                                         //(5.1.011)
-    MemPoolAllocated = FALSE;
+    prjct->MemPoolAllocated = FALSE;
 }
 
 //=============================================================================
@@ -1252,21 +1256,24 @@ void createHashTables(SWMM_Project *sp)
 //  Purpose: allocates memory for object ID hash tables
 //
 {   int j;
-    MemPoolAllocated = FALSE;
+
+    TProjectShared *prjct = &sp->ProjectShared;
+
+    prjct->MemPoolAllocated = FALSE;
     for (j = 0; j < MAX_OBJ_TYPES ; j++)
     {
-        Htable[j] = HTcreate();
-        if ( Htable[j] == NULL ) report_writeErrorMsg(sp, ERR_MEMORY, "");
+        prjct->Htable[j] = HTcreate();
+        if ( prjct->Htable[j] == NULL ) report_writeErrorMsg(sp, ERR_MEMORY, "");
     }
 
     // --- initialize memory pool used to store object ID's
     if ( AllocInit() == NULL ) report_writeErrorMsg(sp, ERR_MEMORY, "");
-    else MemPoolAllocated = TRUE;
+    else prjct->MemPoolAllocated = TRUE;
 }
 
 //=============================================================================
 
-void deleteHashTables()
+void deleteHashTables(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -1274,13 +1281,16 @@ void deleteHashTables()
 //
 {
     int j;
+
+    TProjectShared *prjct = &sp->ProjectShared;
+
     for (j = 0; j < MAX_OBJ_TYPES; j++)
     {
-        if ( Htable[j] != NULL ) HTfree(Htable[j]);
+        if ( prjct->Htable[j] != NULL ) HTfree(prjct->Htable[j]);
     }
 
     // --- free object ID memory pool
-    if ( MemPoolAllocated ) AllocFreePool();
+    if ( prjct->MemPoolAllocated ) AllocFreePool();
 }
 
 //=============================================================================
