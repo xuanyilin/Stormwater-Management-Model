@@ -66,9 +66,6 @@ void    writeLinkLoads(SWMM_Project *sp);
 
 #define WRITE(x) (report_writeLine(sp,(x)))
 
-static char   FlowFmt[6];
-static double Vcf;
-
 //=============================================================================
 
 void statsrpt_writeReport(SWMM_Project *sp)
@@ -78,13 +75,19 @@ void statsrpt_writeReport(SWMM_Project *sp)
 //  Purpose: reports simulation summary statistics.
 //
 {
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+
     // --- set number of decimal places for reporting flow values
-    if ( sp->FlowUnits == MGD || sp->FlowUnits == CMS ) strcpy(FlowFmt, "%9.3f");
-    else strcpy(FlowFmt, "%9.2f");
+    if ( sp->FlowUnits == MGD || sp->FlowUnits == CMS )
+        strcpy(sttsrpt->FlowFmt, "%9.3f");
+    else
+        strcpy(sttsrpt->FlowFmt, "%9.2f");
 
     // --- volume conversion factor from ft3 to Mgal or Mliters
-    if (sp->UnitSystem == US) Vcf = 7.48 / 1.0e6;
-    else                  Vcf = 28.317 / 1.0e6;
+    if (sp->UnitSystem == US)
+        sttsrpt->Vcf = 7.48 / 1.0e6;
+    else
+        sttsrpt->Vcf = 28.317 / 1.0e6;
 
     // --- report summary results for subcatchment runoff 
     if ( sp->Nobjects[SUBCATCH] > 0 )
@@ -124,6 +127,8 @@ void writeSubcatchRunoff(SWMM_Project *sp)
     int    j;
     double a, x, r;
 
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
     WRITE("");
     WRITE("***************************");
@@ -159,12 +164,14 @@ void writeSubcatchRunoff(SWMM_Project *sp)
         fprintf(sp->Frpt.file, " %10.2f", x/a);
         x = SubcatchStats[j].runoff * UCF(sp, RAINDEPTH);
         fprintf(sp->Frpt.file, " %10.2f", x/a);
-        x = SubcatchStats[j].runoff * Vcf;
-	fprintf(sp->Frpt.file, "%12.2f", x);
+        x = SubcatchStats[j].runoff * sttsrpt->Vcf;
+        fprintf(sp->Frpt.file, "%12.2f", x);
         x = SubcatchStats[j].maxFlow * UCF(sp, FLOW);
         fprintf(sp->Frpt.file, " %8.2f", x);
         r = SubcatchStats[j].precip + SubcatchStats[j].runon;
-        if ( r > 0.0 ) r = SubcatchStats[j].runoff / r;
+
+        if ( r > 0.0 )
+            r = SubcatchStats[j].runoff / r;
         fprintf(sp->Frpt.file, "%8.3f", r);
     }
     WRITE("");
@@ -350,6 +357,8 @@ void writeNodeFlows(SWMM_Project *sp)
     int j;
     int days1, hrs1, mins1;
 
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+
     WRITE("");
     WRITE("*******************");
     WRITE("Node Inflow Summary");
@@ -372,14 +381,14 @@ void writeNodeFlows(SWMM_Project *sp)
         fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
         fprintf(sp->Frpt.file, " %-9s", NodeTypeWords[sp->Node[j].type]);
         getElapsedTime(sp, NodeStats[j].maxInflowDate, &days1, &hrs1, &mins1);
-        fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxLatFlow * UCF(sp, FLOW));
-        fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxInflow * UCF(sp, FLOW));
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, NodeStats[j].maxLatFlow * UCF(sp, FLOW));
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, NodeStats[j].maxInflow * UCF(sp, FLOW));
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days1, hrs1, mins1);
-		fprintf(sp->Frpt.file, "%12.3g", NodeStats[j].totLatFlow * Vcf);
-		fprintf(sp->Frpt.file, "%12.3g", NodeInflow[j] * Vcf);
+		fprintf(sp->Frpt.file, "%12.3g", NodeStats[j].totLatFlow * sttsrpt->Vcf);
+		fprintf(sp->Frpt.file, "%12.3g", NodeInflow[j] * sttsrpt->Vcf);
     	if ( fabs(NodeOutflow[j]) < 1.0 )
             fprintf(sp->Frpt.file, "%12.3f %s",
-                (NodeInflow[j]-NodeOutflow[j])*Vcf*1.0e6,
+                (NodeInflow[j]-NodeOutflow[j])*sttsrpt->Vcf*1.0e6,
                 VolUnitsWords2[sp->UnitSystem]);
 	    else
             fprintf(sp->Frpt.file, "%12.3f", (NodeInflow[j]-NodeOutflow[j]) /
@@ -442,6 +451,8 @@ void writeNodeFlooding(SWMM_Project *sp)
     int    days, hrs, mins;
     double t;
 
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+
     WRITE("");
     WRITE("*********************");
     WRITE("Node Flooding Summary");
@@ -477,10 +488,10 @@ void writeNodeFlooding(SWMM_Project *sp)
         }
         fprintf(sp->Frpt.file, "\n  %-20s", sp->Node[j].ID);
         fprintf(sp->Frpt.file, " %7.2f ", t);
-        fprintf(sp->Frpt.file, FlowFmt, NodeStats[j].maxOverflow * UCF(sp, FLOW));
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, NodeStats[j].maxOverflow * UCF(sp, FLOW));
         getElapsedTime(sp, NodeStats[j].maxOverflowDate, &days, &hrs, &mins);
         fprintf(sp->Frpt.file, "   %4d  %02d:%02d", days, hrs, mins);
-		fprintf(sp->Frpt.file, "%12.3f", NodeStats[j].volFlooded * Vcf);
+		fprintf(sp->Frpt.file, "%12.3f", NodeStats[j].volFlooded * sttsrpt->Vcf);
         if ( sp->RouteModel == DW )
             fprintf(sp->Frpt.file, " %9.3f",
                 (NodeStats[j].maxDepth - sp->Node[j].fullDepth) * UCF(sp, LENGTH));
@@ -505,6 +516,8 @@ void writeStorageVolumes(SWMM_Project *sp)
     int    j, k, days, hrs, mins;
     double avgVol, maxVol, pctAvgVol, pctMaxVol;
     double addedVol, pctEvapLoss, pctSeepLoss;
+
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
 
     if ( sp->Nnodes[STORAGE] > 0 )
     {
@@ -555,7 +568,7 @@ void writeStorageVolumes(SWMM_Project *sp)
 
             getElapsedTime(sp, StorageStats[k].maxVolDate, &days, &hrs, &mins);
             fprintf(sp->Frpt.file, "    %4d  %02d:%02d  ", days, hrs, mins);
-            fprintf(sp->Frpt.file, FlowFmt, StorageStats[k].maxFlow*UCF(sp, FLOW));
+            fprintf(sp->Frpt.file, sttsrpt->FlowFmt, StorageStats[k].maxFlow*UCF(sp, FLOW));
         }
         WRITE("");
     }
@@ -576,6 +589,8 @@ void writeOutfallLoads(SWMM_Project *sp)
     double  outfallCount, flowCount;
     double  flowSum, freqSum, volSum;
     double* totals;
+
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
 
     if ( sp->Nnodes[OUTFALL] > 0 )
     {
@@ -637,10 +652,10 @@ void writeOutfallLoads(SWMM_Project *sp)
             flowSum += x;
 
             fprintf(sp->Frpt.file, " ");
-            fprintf(sp->Frpt.file, FlowFmt, x);
+            fprintf(sp->Frpt.file, sttsrpt->FlowFmt, x);
             fprintf(sp->Frpt.file, " ");
-            fprintf(sp->Frpt.file, FlowFmt, OutfallStats[k].maxFlow*UCF(sp, FLOW));
-            fprintf(sp->Frpt.file, "%12.3f", NodeInflow[j] * Vcf);
+            fprintf(sp->Frpt.file, sttsrpt->FlowFmt, OutfallStats[k].maxFlow*UCF(sp, FLOW));
+            fprintf(sp->Frpt.file, "%12.3f", NodeInflow[j] * sttsrpt->Vcf);
             volSum += NodeInflow[j];
 
             // --- print load of each pollutant for outfall
@@ -661,10 +676,10 @@ void writeOutfallLoads(SWMM_Project *sp)
 
         fprintf(sp->Frpt.file, "\n  System              %7.2f ",
             freqSum/outfallCount);
-        fprintf(sp->Frpt.file, FlowFmt, flowSum);
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, flowSum);
         fprintf(sp->Frpt.file, " ");
-        fprintf(sp->Frpt.file, FlowFmt, MaxOutfallFlow*UCF(sp, FLOW));
-		fprintf(sp->Frpt.file, "%12.3f", volSum * Vcf);
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, MaxOutfallFlow*UCF(sp, FLOW));
+		fprintf(sp->Frpt.file, "%12.3f", volSum * sttsrpt->Vcf);
 
         for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
@@ -688,6 +703,8 @@ void writeLinkFlows(SWMM_Project *sp)
 {
     int    j, k, days, hrs, mins;
     double v, fullDepth;
+
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
 
     if ( sp->Nobjects[LINK] == 0 ) return;
     WRITE("");
@@ -722,7 +739,7 @@ void writeLinkFlows(SWMM_Project *sp)
 
         // --- print max. flow & time of occurrence
         getElapsedTime(sp, LinkStats[j].maxFlowDate, &days, &hrs, &mins);
-        fprintf(sp->Frpt.file, FlowFmt, LinkStats[j].maxFlow*UCF(sp, FLOW));
+        fprintf(sp->Frpt.file, sttsrpt->FlowFmt, LinkStats[j].maxFlow*UCF(sp, FLOW));
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days, hrs, mins);
 
         // --- print max flow / flow capacity for pumps
@@ -860,6 +877,8 @@ void writePumpFlows(SWMM_Project *sp)
     int    j, k;
     double avgFlow, pctUtilized, pctOffCurve1, pctOffCurve2, totalSeconds;
 
+    TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+
     if ( sp->Nlinks[PUMP] == 0 ) return;
 
     WRITE("");
@@ -889,7 +908,7 @@ void writePumpFlows(SWMM_Project *sp)
         fprintf(sp->Frpt.file, " %8.2f  %10d %9.2f %9.2f %9.2f %9.3f %9.2f",
             pctUtilized, PumpStats[k].startUps, PumpStats[k].minFlow*UCF(sp, FLOW),
             avgFlow*UCF(sp, FLOW), PumpStats[k].maxFlow*UCF(sp, FLOW), 
-            PumpStats[k].volume*Vcf, PumpStats[k].energy);
+            PumpStats[k].volume*sttsrpt->Vcf, PumpStats[k].energy);
         pctOffCurve1 = PumpStats[k].offCurveLow;
         pctOffCurve2 = PumpStats[k].offCurveHigh;
         if ( PumpStats[k].utilized > 0.0 )

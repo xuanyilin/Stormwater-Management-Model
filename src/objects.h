@@ -76,6 +76,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "runoff.h"
 #include "shape.h"
 #include "stats.h"
+#include "statsrpt.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1270,6 +1271,7 @@ struct SWMM_Project {
    TRunoffShared RunoffShared;
    TShapeShared ShapeShared;
    TStatsShared StatsShared;
+   TStatsrptShared StatsrptShared;
 
 };
 
