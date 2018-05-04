@@ -38,11 +38,6 @@
 #include "headers.h"
 #include "odesolve.h"
 
-//-----------------------------------------------------------------------------
-//  Exportable variables 
-//-----------------------------------------------------------------------------
-char    HasWetLids;  // TRUE if any LIDs are wet (used in lidproc.c)           //(5.1.008)
-double* OutflowLoad; // exported pollutant mass load (used in surfqual.c)
 
 //-----------------------------------------------------------------------------
 //  Imported variables
@@ -85,11 +80,11 @@ int runoff_open(SWMM_Project *sp)
     if ( !odesolve_open(MAXODES) ) report_writeErrorMsg(sp, ERR_ODE_SOLVER, "");
 
     // --- allocate memory for pollutant runoff loads                          //(5.1.008)
-    OutflowLoad = NULL;
+    rnff->OutflowLoad = NULL;
     if ( sp->Nobjects[POLLUT] > 0 )
     {
-        OutflowLoad = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-        if ( !OutflowLoad ) report_writeErrorMsg(sp, ERR_MEMORY, "");
+        rnff->OutflowLoad = (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
+        if ( !rnff->OutflowLoad ) report_writeErrorMsg(sp, ERR_MEMORY, "");
     }
 
     // --- see if a runoff interface file should be opened
@@ -126,7 +121,7 @@ void runoff_close(SWMM_Project *sp)
     odesolve_close();
 
     // --- free memory for pollutant runoff loads                              //(5.1.008)
-    FREE(OutflowLoad);
+    FREE(rnff->OutflowLoad);
 
     // --- close runoff interface file if in use
     if ( sp->Frunoff.file )
@@ -244,7 +239,7 @@ void runoff_execute(SWMM_Project *sp)
     // --- determine runoff and pollutant buildup/washoff in each subcatchment
     rnff->HasSnow = FALSE;
     rnff->HasRunoff = FALSE;
-    HasWetLids = FALSE;                                                        //(5.1.008)
+    rnff->HasWetLids = FALSE;                                                        //(5.1.008)
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         // --- find total runoff rate (in ft/sec) over the subcatchment
@@ -313,7 +308,7 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
 
 ////  Following code segment modified for release 5.1.012.  ////               //(5.1.012)
     // --- determine whether wet or dry time step applies
-    if ( rnff->IsRaining || rnff->HasSnow || rnff->HasRunoff || HasWetLids )
+    if ( rnff->IsRaining || rnff->HasSnow || rnff->HasRunoff || rnff->HasWetLids )
     {
         timeStep = sp->WetStep;
     }

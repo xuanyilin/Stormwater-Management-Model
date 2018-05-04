@@ -9,11 +9,17 @@
 #define SRC_RUNOFF_H_
 
 
-//-----------------------------------------------------------------------------
-// Shared variables
-//-----------------------------------------------------------------------------
 typedef struct
 {
+    //-----------------------------------------------------------------------------
+    //  Exportable variables
+    //-----------------------------------------------------------------------------
+    char    HasWetLids;  // TRUE if any LIDs are wet (used in lidproc.c)           //(5.1.008)
+    double* OutflowLoad; // exported pollutant mass load (used in surfqual.c)
+
+    //-----------------------------------------------------------------------------
+    // Shared variables
+    //-----------------------------------------------------------------------------
     char  IsRaining;                // TRUE if precip. falls on study area
     char  HasRunoff;                // TRUE if study area generates runoff
     char  HasSnow;                  // TRUE if any snow cover on study area

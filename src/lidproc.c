@@ -97,7 +97,7 @@ enum LidRptVars {
 //-----------------------------------------------------------------------------
 //  Imported variables 
 //-----------------------------------------------------------------------------
-extern char HasWetLids;      // TRUE if any LIDs are wet (declared in runoff.c)
+//extern char HasWetLids;      // TRUE if any LIDs are wet (declared in runoff.c)
 
 //-----------------------------------------------------------------------------
 //  External Functions (declared in lid.h)
@@ -344,6 +344,7 @@ void lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit, double ucfRainfall
     double elapsedHrs;                 // elapsed hours
 
     TLidprocShared *ldprc = &sp->LidprocShared;
+    TRunoffShared *rnff = &sp->RunoffShared;
 
     //... find total evap. rate and stored volume
     totalEvap = ldprc->SurfaceEvap + ldprc->PaveEvap + ldprc->SoilEvap +
@@ -365,7 +366,7 @@ void lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit, double ucfRainfall
        ) isDry = TRUE;
 
     //... update status of HasWetLids
-    if ( !isDry ) HasWetLids = TRUE;
+    if ( !isDry ) rnff->HasWetLids = TRUE;
 
     //... write results to LID report file                                     //(5.1.012)
     if ( lidUnit->rptFile )                                                    //(5.1.012)

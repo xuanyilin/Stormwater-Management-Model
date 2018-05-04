@@ -121,9 +121,8 @@ char* LidTypeWords[] =
 //extern double     VlidOut;             // surface outflow from LID units
 //extern double     VlidDrain;           // drain outflow from LID units
 //extern double     VlidReturn;          // LID outflow returned to pervious area
-
-extern char       HasWetLids;          // TRUE if any LIDs are wet             //(5.1.010)
-                                       // (from RUNOFF.C)                      //(5.1.010)
+//extern char       HasWetLids;          // TRUE if any LIDs are wet             //(5.1.010)
+//                                       // (from RUNOFF.C)                      //(5.1.010)
 
 ////  Deleted for release 5.1.008.  ////                                       //(5.1.008)
 //static double     NextReportTime;
@@ -1143,9 +1142,10 @@ void lid_initState(SWMM_Project *sp)
     double     initDryTime = sp->StartDryDays * SECperDAY;
 
     TLidShared *ld = &sp->LidShared;
+    TRunoffShared *rnff = &sp->RunoffShared;
 
     //NextReportTime = (double) (sp->ReportStep * 1000.0);                         //(5.1.008)
-    HasWetLids = FALSE;                                                        //(5.1.010)
+    rnff->HasWetLids = FALSE;                                                        //(5.1.010)
     for (j = 0; j < ld->GroupCount; j++)
     {
         //... check if group exists
@@ -1190,7 +1190,7 @@ void lid_initState(SWMM_Project *sp)
                         ld->LidProcs[k].drainMat.thickness;
                 initVol += lidUnit->storageDepth * ld->LidProcs[k].drainMat.voidFrac;
             }
-            if ( lidUnit->initSat > 0.0 ) HasWetLids = TRUE;                   //(5.1.010)
+            if ( lidUnit->initSat > 0.0 ) rnff->HasWetLids = TRUE;                   //(5.1.010)
 
             //... initialize water balance totals
             lidproc_initWaterBalance(lidUnit, initVol);
