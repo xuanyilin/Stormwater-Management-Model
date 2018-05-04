@@ -39,17 +39,6 @@
 #include "odesolve.h"
 
 //-----------------------------------------------------------------------------
-// Shared variables
-//-----------------------------------------------------------------------------
-static char  IsRaining;                // TRUE if precip. falls on study area
-static char  HasRunoff;                // TRUE if study area generates runoff
-static char  HasSnow;                  // TRUE if any snow cover on study area
-static int   Nsteps;                   // number of runoff time steps taken
-static int   MaxSteps;                 // final number of runoff time steps
-static long  MaxStepsPos;              // position in Runoff interface file
-                                       //    where MaxSteps is saved
-
-//-----------------------------------------------------------------------------
 //  Exportable variables 
 //-----------------------------------------------------------------------------
 char    HasWetLids;  // TRUE if any LIDs are wet (used in lidproc.c)           //(5.1.008)
@@ -85,10 +74,12 @@ int runoff_open(SWMM_Project *sp)
 //  Purpose: opens the runoff analyzer.
 //
 {
-    IsRaining = FALSE;
-    HasRunoff = FALSE;
-    HasSnow = FALSE;
-    Nsteps = 0;
+    TRunoffShared *rnff = &sp->RunoffShared;
+
+    rnff->IsRaining = FALSE;
+    rnff->HasRunoff = FALSE;
+    rnff->HasSnow = FALSE;
+    rnff->Nsteps = 0;
 
     // --- open the Ordinary Differential Equation solver
     if ( !odesolve_open(MAXODES) ) report_writeErrorMsg(sp, ERR_ODE_SOLVER, "");
@@ -129,6 +120,8 @@ void runoff_close(SWMM_Project *sp)
 //  Purpose: closes the runoff analyzer.
 //
 {
+    TRunoffShared *rnff = &sp->RunoffShared;
+
     // --- close the ODE solver
     odesolve_close();
 
@@ -141,8 +134,8 @@ void runoff_close(SWMM_Project *sp)
         // --- write to file number of time steps simulated
         if ( sp->Frunoff.mode == SAVE_FILE )
         {
-            fseek(sp->Frunoff.file, MaxStepsPos, SEEK_SET);
-            fwrite(&Nsteps, sizeof(int), 1, sp->Frunoff.file);
+            fseek(sp->Frunoff.file, rnff->MaxStepsPos, SEEK_SET);
+            fwrite(&rnff->Nsteps, sizeof(int), 1, sp->Frunoff.file);
         }
         fclose(sp->Frunoff.file);
     }
@@ -168,6 +161,8 @@ void runoff_execute(SWMM_Project *sp)
     DateTime currentDate;              // current date/time 
     char     canSweep;                 // TRUE if street sweeping can occur
 
+    TRunoffShared *rnff = &sp->RunoffShared;
+
     if ( sp->ErrorCode ) return;
 
     // --- find previous runoff time step in sec                               //(5.1.011)
@@ -191,11 +186,11 @@ void runoff_execute(SWMM_Project *sp)
     // --- update current rainfall at each raingage
     //     NOTE: must examine gages in sequential order due to possible
     //     presence of co-gages (gages that share same rain time series).
-    IsRaining = FALSE;
+    rnff->IsRaining = FALSE;
     for (j = 0; j < sp->Nobjects[GAGE]; j++)
     {
         gage_setState(sp, j, currentDate);
-        if ( sp->Gage[j].rainfall > 0.0 ) IsRaining = TRUE;
+        if ( sp->Gage[j].rainfall > 0.0 ) rnff->IsRaining = TRUE;
     }
 
     // --- read runoff results from interface file if applicable
@@ -247,8 +242,8 @@ void runoff_execute(SWMM_Project *sp)
     }
     
     // --- determine runoff and pollutant buildup/washoff in each subcatchment
-    HasSnow = FALSE;
-    HasRunoff = FALSE;
+    rnff->HasSnow = FALSE;
+    rnff->HasRunoff = FALSE;
     HasWetLids = FALSE;                                                        //(5.1.008)
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
@@ -259,8 +254,8 @@ void runoff_execute(SWMM_Project *sp)
         runoff = subcatch_getRunoff(sp, j, runoffStep);
 
         // --- update state of study area surfaces
-        if ( runoff > 0.0 ) HasRunoff = TRUE;
-        if ( sp->Subcatch[j].newSnowDepth > 0.0 ) HasSnow = TRUE;
+        if ( runoff > 0.0 ) rnff->HasRunoff = TRUE;
+        if ( sp->Subcatch[j].newSnowDepth > 0.0 ) rnff->HasSnow = TRUE;
 
         // --- skip pollutant buildup/washoff if quality ignored
         if ( sp->IgnoreQuality ) continue;
@@ -280,7 +275,7 @@ void runoff_execute(SWMM_Project *sp)
     stats_updateMaxRunoff(sp);
 
     // --- save runoff results to interface file if one is used
-    Nsteps++;
+    rnff->Nsteps++;
     if ( sp->Frunoff.mode == SAVE_FILE )
     {
         runoff_saveToFile(sp, (float)runoffStep);
@@ -303,6 +298,8 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
     long timeStep;
     long maxStep = sp->DryStep;
 
+    TRunoffShared *rnff = &sp->RunoffShared;
+
     // --- find shortest time until next evaporation or rainfall value
     //     (this represents the maximum possible time step)
     timeStep = datetime_timeDiff(climate_getNextEvapDate(sp), currentDate);      //(5.1.008)
@@ -316,7 +313,7 @@ double runoff_getTimeStep(SWMM_Project *sp, DateTime currentDate)
 
 ////  Following code segment modified for release 5.1.012.  ////               //(5.1.012)
     // --- determine whether wet or dry time step applies
-    if ( IsRaining || HasSnow || HasRunoff || HasWetLids )
+    if ( rnff->IsRaining || rnff->HasSnow || rnff->HasRunoff || HasWetLids )
     {
         timeStep = sp->WetStep;
     }
@@ -343,7 +340,9 @@ void runoff_initFile(SWMM_Project *sp)
     char  fileStamp[] = "SWMM5-RUNOFF";
     char  fStamp[] = "SWMM5-RUNOFF";
 
-    MaxSteps = 0;
+    TRunoffShared *rnff = &sp->RunoffShared;
+
+    rnff->MaxSteps = 0;
     if ( sp->Frunoff.mode == SAVE_FILE )
     {
         // --- write file stamp, # subcatchments & # pollutants to file
@@ -354,8 +353,8 @@ void runoff_initFile(SWMM_Project *sp)
         fwrite(&nSubcatch, sizeof(int), 1, sp->Frunoff.file);
         fwrite(&nPollut, sizeof(int), 1, sp->Frunoff.file);
         fwrite(&flowUnits, sizeof(int), 1, sp->Frunoff.file);
-        MaxStepsPos = ftell(sp->Frunoff.file);
-        fwrite(&MaxSteps, sizeof(int), 1, sp->Frunoff.file);
+        rnff->MaxStepsPos = ftell(sp->Frunoff.file);
+        fwrite(&rnff->MaxSteps, sizeof(int), 1, sp->Frunoff.file);
     }
 
     if ( sp->Frunoff.mode == USE_FILE )
@@ -373,11 +372,11 @@ void runoff_initFile(SWMM_Project *sp)
         fread(&nSubcatch, sizeof(int), 1, sp->Frunoff.file);
         fread(&nPollut, sizeof(int), 1, sp->Frunoff.file);
         fread(&flowUnits, sizeof(int), 1, sp->Frunoff.file);
-        fread(&MaxSteps, sizeof(int), 1, sp->Frunoff.file);
+        fread(&rnff->MaxSteps, sizeof(int), 1, sp->Frunoff.file);
         if ( nSubcatch != sp->Nobjects[SUBCATCH]
         ||   nPollut   != sp->Nobjects[POLLUT]
         ||   flowUnits != sp->FlowUnits
-        ||   MaxSteps  <= 0 )
+        ||   rnff->MaxSteps  <= 0 )
         {
              report_writeErrorMsg(sp, ERR_RUNOFF_FILE_FORMAT, "");
         }
@@ -420,8 +419,10 @@ void  runoff_readFromFile(SWMM_Project *sp)
     float  tStep;                      // runoff time step (sec)
     TGroundwater* gw;                  // ptr. to Groundwater object
 
+    TRunoffShared *rnff = &sp->RunoffShared;
+
     // --- make sure not past end of file
-    if ( Nsteps > MaxSteps )
+    if ( rnff->Nsteps > rnff->MaxSteps )
     {
          report_writeErrorMsg(sp, ERR_RUNOFF_FILE_END, "");
          return;
@@ -480,7 +481,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
     sp->OldRunoffTime = sp->NewRunoffTime;
     sp->NewRunoffTime = sp->OldRunoffTime + (double)(tStep)*1000.0;
     sp->NewRunoffTime = MIN(sp->NewRunoffTime, sp->TotalDuration);                         //(5.1.008)
-    Nsteps++;
+    rnff->Nsteps++;
 }
 
 //=============================================================================
