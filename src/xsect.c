@@ -45,7 +45,7 @@
 //-----------------------------------------------------------------------------
 // Ratio of area at max. flow to full area
 // (= 1.0 for open shapes, < 1.0 for closed shapes)
-double  Amax[] = {
+const double  Amax[25] = {
                      1.0,     //  DUMMY
                      0.9756,  //  CIRCULAR
                      0.9756,  //  FILLED_CIRCULAR

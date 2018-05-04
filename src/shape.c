@@ -13,11 +13,6 @@
 #include <math.h>
 #include "headers.h"
 
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static double Atotal;
-static double Ptotal;
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -77,6 +72,8 @@ int computeShapeTables(SWMM_Project *sp, TShape *shape, TTable *curve)
     double dy, y, y1, y2, w, w1, w2;
     double yLast, wLast, wMax;
 
+    TShapeShared *shp = &sp->ShapeShared;
+
     // --- get first entry of user's shape curve
     if (!table_getFirstEntry(sp, curve, &y1, &w1)) {
         return FALSE;
@@ -123,8 +120,8 @@ int computeShapeTables(SWMM_Project *sp, TShape *shape, TTable *curve)
     shape->areaTbl[0]  = 0.0;
     shape->hradTbl[0]  = 0.0;
     shape->widthTbl[0] = w1;
-    Ptotal             = w1;
-    Atotal             = 0.0;
+    shp->Ptotal             = w1;
+    shp->Atotal             = 0.0;
 
     // --- fill in rest of geometry tables
     y = 0.0;
@@ -155,19 +152,19 @@ int computeShapeTables(SWMM_Project *sp, TShape *shape, TTable *curve)
 
         // --- get top width, area, & perimeter of current interval
         w = getWidth(y, y1, y2, w1, w2);
-        Atotal += getArea(y, w, yLast, wLast);
-        Ptotal += getPerim(y, w, yLast, wLast);
+        shp->Atotal += getArea(y, w, yLast, wLast);
+        shp->Ptotal += getPerim(y, w, yLast, wLast);
 
         // --- add top width to total perimeter if at top of shape
         if (y == 1.0) {
-            Ptotal += w2;
+            shp->Ptotal += w2;
         }
 
         // --- update table values
         shape->widthTbl[i] = w;
-        shape->areaTbl[i]  = Atotal;
-        if (Ptotal > 0.0) {
-            shape->hradTbl[i] = Atotal / Ptotal;
+        shape->areaTbl[i]  = shp->Atotal;
+        if (shp->Ptotal > 0.0) {
+            shape->hradTbl[i] = shp->Atotal / shp->Ptotal;
         } else {
             shape->hradTbl[i] = 0.0;
         }
@@ -263,14 +260,17 @@ int getNextInterval(SWMM_Project *sp, TTable *curve, double y, double yLast,
 //
 //  Note:    heights and widths are with repsect to a shape of unit height.
 {
+
+    TShapeShared *shp = &sp->ShapeShared;
+
     // --- keep advancing while the current geom. table height is
     //     above the end of the curve table interval
     while (y > *y2) {
         // --- move start of geom. table interval up to the end of
         //     the current curve table interval
         if (*y2 > yLast) {
-            Atotal += getArea(*y2, *w2, yLast, wLast);
-            Ptotal += getPerim(*y2, *w2, yLast, wLast);
+            shp->Atotal += getArea(*y2, *w2, yLast, wLast);
+            shp->Ptotal += getPerim(*y2, *w2, yLast, wLast);
             yLast = *y2;
             wLast = *w2;
         }
