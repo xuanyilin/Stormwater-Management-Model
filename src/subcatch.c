@@ -53,26 +53,7 @@ const double MCOEFF    = 1.49;              // constant in Manning Eq.
 const double MEXP      = 1.6666667;         // exponent in Manning Eq.
 const double ODETOL    = 0.0001;            // acceptable error for ODE solver
 
-//-----------------------------------------------------------------------------
-// Globally shared variables   
-//-----------------------------------------------------------------------------
-// Volumes (ft3) for a subcatchment over a time step                           //(5.1.008)
-double     Vevap;         // evaporation
-double     Vpevap;        // pervious area evaporation
-double     Vinfil;        // non-LID infiltration
-double     Vinflow;       // non-LID precip + snowmelt + runon + ponded water
-double     Voutflow;      // non-LID runoff to subcatchment's outlet
-double     VlidIn;        // impervious area flow to LID units
-double     VlidInfil;     // infiltration from LID units
-double     VlidOut;       // surface outflow from LID units
-double     VlidDrain;     // drain outflow from LID units
-double     VlidReturn;    // LID outflow returned to pervious area
-
-//-----------------------------------------------------------------------------
-// Locally shared variables   
-//-----------------------------------------------------------------------------
-static  TSubarea* theSubarea;     // subarea to which getDdDt() is applied
-static  char *RunoffRoutingWords[] = { w_OUTLET,  w_IMPERV, w_PERV, NULL};
+const char *RunoffRoutingWords[] = { w_OUTLET,  w_IMPERV, w_PERV, NULL};
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)   
@@ -655,23 +636,25 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     double runoff    = 0.0;            // total runoff flow on subcatch (cfs)
     double evapRate  = 0.0;            // potential evaporation rate (ft/sec)
 
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- initialize shared water balance variables
-    Vevap     = 0.0;
-    Vpevap    = 0.0;
-    Vinfil    = 0.0;
-    Voutflow  = 0.0;
-    VlidIn    = 0.0;
-    VlidInfil = 0.0;
-    VlidOut   = 0.0;
-    VlidDrain = 0.0;
-    VlidReturn = 0.0;
+    sbctch->Vevap     = 0.0;
+    sbctch->Vpevap    = 0.0;
+    sbctch->Vinfil    = 0.0;
+    sbctch->Voutflow  = 0.0;
+    sbctch->VlidIn    = 0.0;
+    sbctch->VlidInfil = 0.0;
+    sbctch->VlidOut   = 0.0;
+    sbctch->VlidDrain = 0.0;
+    sbctch->VlidReturn = 0.0;
 
     // --- find volume of inflow to non-LID portion of subcatchment as existing
     //     ponded water + any runon volume from upstream areas;
     //     rainfall and snowmelt will be added as each sub-area is analyzed
     nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
     vRunon = sp->Subcatch[j].runon * tStep * nonLidArea;
-    Vinflow = vRunon + subcatch_getDepth(sp, j) * nonLidArea;
+    sbctch->Vinflow = vRunon + subcatch_getDepth(sp, j) * nonLidArea;
 
 ////  Added to release 5.1.009.  ////                                          //(5.1.009)
     // --- find LID runon only if LID occupies full subcatchment
@@ -709,28 +692,30 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
     // --- update groundwater levels & flows if applicable
     if ( !sp->IgnoreGwater && sp->Subcatch[j].groundwater )
     {
-        gwater_getGroundwater(sp, j, Vpevap, Vinfil+VlidInfil, tStep);             //(5.1.010)
+        gwater_getGroundwater(sp, j, sbctch->Vpevap,
+                sbctch->Vinfil + sbctch->VlidInfil, tStep);             //(5.1.010)
     }
 
     // --- save subcatchment's total loss rates (ft/s)
     area = sp->Subcatch[j].area;
-    sp->Subcatch[j].evapLoss = Vevap / tStep / area;
-    sp->Subcatch[j].infilLoss = (Vinfil + VlidInfil) / tStep / area;
+    sp->Subcatch[j].evapLoss = sbctch->Vevap / tStep / area;
+    sp->Subcatch[j].infilLoss = (sbctch->Vinfil + sbctch->VlidInfil) / tStep / area;
 
     // --- find net surface runoff volume
     //     (VlidDrain accounts for LID drain flows)
-    vOutflow = Voutflow      // runoff from all non-LID areas
-               - VlidIn      // runoff treated by LID units
-               + VlidOut;    // runoff from LID units
+    vOutflow = sbctch->Voutflow      // runoff from all non-LID areas
+               - sbctch->VlidIn      // runoff treated by LID units
+               + sbctch->VlidOut;    // runoff from LID units
     sp->Subcatch[j].newRunoff = vOutflow / tStep;
 
     // --- obtain external precip. volume (without any snowmelt)
     vRain = sp->Subcatch[j].rainfall * tStep * area;
 
     // --- update the cumulative stats for this subcatchment
-    stats_updateSubcatchStats(sp, j, vRain, vRunon, Vevap, Vinfil + VlidInfil,
-                              vOutflow + VlidDrain,
-                              sp->Subcatch[j].newRunoff + VlidDrain/tStep);
+    stats_updateSubcatchStats(sp, j, vRain, vRunon, sbctch->Vevap,
+            sbctch->Vinfil + sbctch->VlidInfil,
+                              vOutflow + sbctch->VlidDrain,
+                              sp->Subcatch[j].newRunoff + sbctch->VlidDrain/tStep);
 
     // --- include this subcatchment's contribution to overall flow balance
     //     only if its outlet is a drainage system node
@@ -741,8 +726,9 @@ double subcatch_getRunoff(SWMM_Project *sp, int j, double tStep)
 
     // --- update mass balances
     massbal_updateRunoffTotals(sp, RUNOFF_RAINFALL, vRain);
-    massbal_updateRunoffTotals(sp, RUNOFF_EVAP, Vevap);
-    massbal_updateRunoffTotals(sp, RUNOFF_INFIL, Vinfil+VlidInfil);
+    massbal_updateRunoffTotals(sp, RUNOFF_EVAP, sbctch->Vevap);
+    massbal_updateRunoffTotals(sp, RUNOFF_INFIL,
+            sbctch->Vinfil + sbctch->VlidInfil);
     massbal_updateRunoffTotals(sp, RUNOFF_RUNOFF, vOutflow);
 
     // --- return area-averaged runoff (ft/s)
@@ -949,6 +935,8 @@ double getSubareaRunoff(SWMM_Project *sp, int j, int i, double area, double prec
     double    runoff = 0.0;            // runoff rate (ft/sec)
     TSubarea* subarea;                 // pointer to subarea being analyzed
 
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- no runoff if no area
     if ( area == 0.0 ) return 0.0;
 
@@ -970,10 +958,10 @@ double getSubareaRunoff(SWMM_Project *sp, int j, int i, double area, double prec
     surfMoisture += subarea->inflow;
 
     // --- update total inflow, evaporation & infiltration volumes
-    Vinflow += precip * area * tStep;
-    Vevap += surfEvap * area * tStep;
-    if ( i == PERV ) Vpevap += Vevap;
-    Vinfil += infil * area * tStep;
+    sbctch->Vinflow += precip * area * tStep;
+    sbctch->Vevap += surfEvap * area * tStep;
+    if ( i == PERV ) sbctch->Vpevap += sbctch->Vevap;
+    sbctch->Vinfil += infil * area * tStep;
 
     // --- if losses exceed available moisture then no ponded water remains
     if ( surfEvap + infil >= surfMoisture )
@@ -995,7 +983,7 @@ double getSubareaRunoff(SWMM_Project *sp, int j, int i, double area, double prec
     // --- compute runoff volume leaving subcatchment for mass balance purposes
     //     (fOutlet is the fraction of this subarea's runoff that goes to the
     //     subcatchment outlet as opposed to another subarea of the subcatchment)
-    Voutflow += subarea->fOutlet * runoff * area * tStep;
+    sbctch->Voutflow += subarea->fOutlet * runoff * area * tStep;
     return runoff;
 }
 
@@ -1078,6 +1066,8 @@ void updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* dt)
     double dx;                         // depth above depression storage (ft)
     double tx = *dt;                   // time over which dx > 0 (sec)
 
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- see if not enough inflow to fill depression storage (dStore)
     if ( subarea->depth + ix*tx <= subarea->dStore )
     {
@@ -1098,7 +1088,7 @@ void updatePondedDepth(SWMM_Project *sp, TSubarea* subarea, double* dt)
         // --- now integrate depth over remaining time step tx
         if ( subarea->alpha > 0.0 && tx > 0.0 )
         {
-            theSubarea = subarea;
+            sbctch->theSubarea = subarea;
             odesolve_integrate(sp, &(subarea->depth), 1, 0, tx, ODETOL, tx,
                                getDdDt);
         }
@@ -1128,15 +1118,17 @@ void  getDdDt(SWMM_Project *sp, double t, double* d, double* dddt)
 //           for the subarea whose runoff is being computed.
 //
 {
-    double ix = theSubarea->inflow;                                            //(5.1.008)
-    double rx = *d - theSubarea->dStore;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
+    double ix = sbctch->theSubarea->inflow;                                            //(5.1.008)
+    double rx = *d - sbctch->theSubarea->dStore;
     if ( rx < 0.0 )
     {
         rx = 0.0;
     }
     else
     {
-        rx = theSubarea->alpha * pow(rx, MEXP);
+        rx = sbctch->theSubarea->alpha * pow(rx, MEXP);
     }
     *dddt = ix - rx;
 }

@@ -77,6 +77,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "shape.h"
 #include "stats.h"
 #include "statsrpt.h"
+#include "subcatch.h"
 
 //-----------------
 // FILE INFORMATION
@@ -360,27 +361,27 @@ typedef struct
 }  TSnowpack;
 
 
-//---------------
-// SUBAREA OBJECT
-//---------------
-// An array of 3 subarea objects is associated with each subcatchment object.
-// They describe the runoff process on 3 types of surfaces:
-//   1 - impervious with no depression storage
-//   2 - impervious with depression storage
-//   3 - pervious
-typedef struct
-{
-   int           routeTo;         // code indicating where outflow is sent
-   double        fOutlet;         // fraction of outflow to outlet
-   double        N;               // Manning's n
-   double        fArea;           // fraction of total area
-   double        dStore;          // depression storage (ft)
-   //-----------------------------
-   double        alpha;           // overland flow factor
-   double        inflow;          // inflow rate (ft/sec)
-   double        runoff;          // runoff rate (ft/sec)
-   double        depth;           // depth of surface runoff (ft)
-}  TSubarea;
+////---------------
+//// SUBAREA OBJECT
+////---------------
+//// An array of 3 subarea objects is associated with each subcatchment object.
+//// They describe the runoff process on 3 types of surfaces:
+////   1 - impervious with no depression storage
+////   2 - impervious with depression storage
+////   3 - pervious
+//typedef struct
+//{
+//   int           routeTo;         // code indicating where outflow is sent
+//   double        fOutlet;         // fraction of outflow to outlet
+//   double        N;               // Manning's n
+//   double        fArea;           // fraction of total area
+//   double        dStore;          // depression storage (ft)
+//   //-----------------------------
+//   double        alpha;           // overland flow factor
+//   double        inflow;          // inflow rate (ft/sec)
+//   double        runoff;          // runoff rate (ft/sec)
+//   double        depth;           // depth of surface runoff (ft)
+//}  TSubarea;
 
 
 //-------------------------
@@ -1272,6 +1273,7 @@ struct SWMM_Project {
    TShapeShared ShapeShared;
    TStatsShared StatsShared;
    TStatsrptShared StatsrptShared;
+   TSubcatchShared SubcatchShared;
 
 };
 

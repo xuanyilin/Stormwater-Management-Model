@@ -28,14 +28,14 @@
 extern  double*    OutflowLoad;   // exported pollutant mass load
 
 // Volumes (ft3) for a subcatchment over a time step declared in SUBCATCH.C
-extern double      Vinfil;        // non-LID infiltration
-extern double      Vinflow;       // non-LID precip + snowmelt + runon + ponded water
-extern double      Voutflow;      // non-LID runoff to subcatchment's outlet
-extern double      VlidIn;        // inflow to LID units
-extern double      VlidInfil;     // infiltration from LID units
-extern double      VlidOut;       // surface outflow from LID units
-extern double      VlidDrain;     // drain outflow from LID units
-extern double      VlidReturn;    // LID outflow returned to pervious area
+//extern double      Vinfil;        // non-LID infiltration
+//extern double      Vinflow;       // non-LID precip + snowmelt + runon + ponded water
+//extern double      Voutflow;      // non-LID runoff to subcatchment's outlet
+//extern double      VlidIn;        // inflow to LID units
+//extern double      VlidInfil;     // infiltration from LID units
+//extern double      VlidOut;       // surface outflow from LID units
+//extern double      VlidDrain;     // drain outflow from LID units
+//extern double      VlidReturn;    // LID outflow returned to pervious area
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)   
@@ -210,6 +210,8 @@ void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
     double vOut2;            // runoff volume after LID treatment (ft3)
     double area;             // subcatchment area (ft2)
 
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- return if there is no area or no pollutants
     area = sp->Subcatch[j].area;
     if ( sp->Nobjects[POLLUT] == 0 || area == 0.0 ) return;
@@ -234,13 +236,13 @@ void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
     // --- runoff volume before LID treatment (ft3)
     //     (Voutflow, computed in subcatch_getRunoff, is subcatchment
     //      runoff volume before LID treatment)
-    vOut1 = Voutflow + vLidRain + vLidRunon;             
+    vOut1 = sbctch->Voutflow + vLidRain + vLidRunon;
 
     // --- surface runoff + LID drain flow volume leaving the subcatchment
     //     (Subcatch.newRunoff, computed in subcatch_getRunoff, includes
     //      any surface runoff reduction from LID treatment)
     vSurfOut = sp->Subcatch[j].newRunoff * tStep;
-    vOut2 = vSurfOut + VlidDrain;
+    vOut2 = vSurfOut + sbctch->VlidDrain;
 
     // --- determine if subcatchment outflow is below a small cutoff
     hasOutflow = (vOut2 > MIN_RUNOFF * area * tStep);
@@ -256,7 +258,7 @@ void  surfqual_getWashoff(SWMM_Project *sp, int j, double runoff, double tStep)
         //     loads (with LID return flow included) to BMP removal
         if ( sp->Subcatch[j].lidArea > 0.0 )
         {    
-            massLoad = cOut * (vOut1 - vOut2 - VlidReturn) * sp->Pollut[p].mcf;
+            massLoad = cOut * (vOut1 - vOut2 - sbctch->VlidReturn) * sp->Pollut[p].mcf;
             massbal_updateLoadingTotals(sp, BMP_REMOVAL_LOAD, p, massLoad);
         }
 
@@ -324,6 +326,8 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
            fullArea,    // full subcatchment area (ft2)
            nonLidArea;  // non-LID area (ft2)
 
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- subcatchment and non-LID areas
     if ( sp->Subcatch[j].area == sp->Subcatch[j].lidArea ) return;
     fullArea = sp->Subcatch[j].area;
@@ -340,7 +344,7 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
 
         // --- surface is dry and has no runon -- add any remaining mass
         //     to overall mass balance's FINAL_LOAD category
-        if ( Vinflow == 0.0 )
+        if ( sbctch->Vinflow == 0.0 )
         {
             massbal_updateLoadingTotals(sp, FINAL_LOAD, p,
                 sp->Subcatch[j].pondedQual[p] * sp->Pollut[p].mcf);
@@ -352,16 +356,16 @@ void findPondedLoads(SWMM_Project *sp, int j, double tStep)
             //     (newQual[] temporarily holds runon mass loading)
             wRunon = sp->Subcatch[j].newQual[p] * tStep;
             wPonded = sp->Subcatch[j].pondedQual[p] + wRain + wRunon;
-            cPonded = wPonded / Vinflow;
+            cPonded = wPonded / sbctch->Vinflow;
 
             // --- mass lost to infiltration
-            wInfil = cPonded * Vinfil;
+            wInfil = cPonded * sbctch->Vinfil;
             wInfil = MIN(wInfil, wPonded);
             massbal_updateLoadingTotals(sp, INFIL_LOAD, p, wInfil * sp->Pollut[p].mcf);
             wPonded -= wInfil;
 
             // --- mass lost to runoff
-            wOutflow = cPonded * Voutflow;
+            wOutflow = cPonded * sbctch->Voutflow;
             wOutflow = MIN(wOutflow, wPonded);
             wPonded -= wOutflow;
 
@@ -396,6 +400,8 @@ void  findWashoffLoads(SWMM_Project *sp, int j, double runoff)
     double w,                          // co-pollutant load (mass)
            area = sp->Subcatch[j].area;    // subcatchment area (ft2)
     
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     // --- examine each land use
     if ( runoff < MIN_RUNOFF ) return;
     for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
@@ -406,7 +412,8 @@ void  findWashoffLoads(SWMM_Project *sp, int j, double runoff)
             for (p = 0; p < sp->Nobjects[POLLUT]; p++)
             {
                 OutflowLoad[p] += landuse_getWashoffLoad(
-                    sp, i, p, area, sp->Subcatch[j].landFactor, runoff, Voutflow);
+                    sp, i, p, area, sp->Subcatch[j].landFactor, runoff,
+                    sbctch->Voutflow);
             }
         }
     }

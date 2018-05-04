@@ -113,14 +113,15 @@ char* LidTypeWords[] =
 //  Imported Variables (from SUBCATCH.C)
 //-----------------------------------------------------------------------------
 // Volumes (ft3) for a subcatchment over a time step                           //(5.1.008)
-extern double     Vevap;               // evaporation
-extern double     Vpevap;              // pervious area evaporation
-extern double     Vinfil;              // non-LID infiltration
-extern double     VlidInfil;           // infiltration from LID units
-extern double     VlidIn;              // impervious area flow to LID units
-extern double     VlidOut;             // surface outflow from LID units
-extern double     VlidDrain;           // drain outflow from LID units
-extern double     VlidReturn;          // LID outflow returned to pervious area
+//extern double     Vevap;               // evaporation
+//extern double     Vpevap;              // pervious area evaporation
+//extern double     Vinfil;              // non-LID infiltration
+//extern double     VlidInfil;           // infiltration from LID units
+//extern double     VlidIn;              // impervious area flow to LID units
+//extern double     VlidOut;             // surface outflow from LID units
+//extern double     VlidDrain;           // drain outflow from LID units
+//extern double     VlidReturn;          // LID outflow returned to pervious area
+
 extern char       HasWetLids;          // TRUE if any LIDs are wet             //(5.1.010)
                                        // (from RUNOFF.C)                      //(5.1.010)
 
@@ -1569,6 +1570,7 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
     double qReturn = 0.0;         // LID outflow returned to pervious area (cfs) 
 
     TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
 
     //... return if there are no LID's
     theLidGroup = ld->LidGroups[j];
@@ -1603,7 +1605,7 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
             lidInflow = qImperv * lidUnit->fromImperv / lidArea;
 
             //... update total runoff volume treated
-            VlidIn += lidInflow * lidArea * tStep;
+            sbctch->VlidIn += lidInflow * lidArea * tStep;
 
             //... add rainfall onto LID inflow (ft/s)
             lidInflow = lidInflow + sp->Subcatch[j].rainfall;
@@ -1628,9 +1630,9 @@ void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
     theLidGroup->flowToPerv = qReturn;
 
     //... save the LID group's total surface, drain and return flow volumes
-    VlidOut = qRunoff * tStep; 
-    VlidDrain = qDrain * tStep;
-    VlidReturn = qReturn * tStep;
+    sbctch->VlidOut = qRunoff * tStep;
+    sbctch->VlidDrain = qDrain * tStep;
+    sbctch->VlidReturn = qReturn * tStep;
 }
 
 //=============================================================================
@@ -1647,12 +1649,13 @@ void findNativeInfil(SWMM_Project *sp, int j, double tStep)
     double nonLidArea;
 
     TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
 
     //... subcatchment has non-LID pervious area
     nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
     if ( nonLidArea > 0.0 && sp->Subcatch[j].fracImperv < 1.0 )
     {
-        ld->NativeInfil = Vinfil / nonLidArea / tStep;
+        ld->NativeInfil = sbctch->Vinfil / nonLidArea / tStep;
     }
 
     //... otherwise find infil. rate for the subcatchment's rainfall + runon
@@ -1730,6 +1733,7 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
            lidDrain;         // drain flow rate from LID unit (ft/s & cfs)
 
     TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
 
     //... identify the LID process of the LID unit being analyzed
     lidProc = &ld->LidProcs[lidUnit->lidIndex];
@@ -1773,11 +1777,11 @@ void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
     lidUnit->newDrainFlow = lidDrain;
 
     //... update moisture losses (ft3)
-    Vevap  += lidEvap * tStep * lidArea;
-    VlidInfil += lidInfil * tStep * lidArea;
+    sbctch->Vevap  += lidEvap * tStep * lidArea;
+    sbctch->VlidInfil += lidInfil * tStep * lidArea;
     if ( isLidPervious(sp, lidUnit->lidIndex) )
     {
-        Vpevap += lidEvap * tStep * lidArea;
+        sbctch->Vpevap += lidEvap * tStep * lidArea;
     }
 
     //... update time since last rainfall (for Rain Barrel emptying)
