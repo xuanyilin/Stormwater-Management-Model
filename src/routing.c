@@ -47,12 +47,6 @@
 #include "headers.h"
 #include "lid.h"                                                               //(5.1.008)
 
-//-----------------------------------------------------------------------------
-// Shared variables
-//-----------------------------------------------------------------------------
-static int* SortedLinks;
-static int  NextEvent;                                                         //(5.1.011)
-static int  BetweenEvents;                                                     //(5.1.012)
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -87,20 +81,22 @@ int routing_open(SWMM_Project *sp)
 //  Purpose: initializes the routing analyzer.
 //
 {
+    TRoutingShared *rtng = &sp->RoutingShared;
+
     // --- open treatment system
     if ( !treatmnt_open(sp) ) return sp->ErrorCode;
 
     // --- topologically sort the links
-    SortedLinks = NULL;
+    rtng->SortedLinks = NULL;
     if ( sp->Nobjects[LINK] > 0 )
     {
-        SortedLinks = (int *) calloc(sp->Nobjects[LINK], sizeof(int));
-        if ( !SortedLinks )
+        rtng->SortedLinks = (int *) calloc(sp->Nobjects[LINK], sizeof(int));
+        if ( !rtng->SortedLinks )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
         }
-        toposort_sortLinks(sp, SortedLinks);
+        toposort_sortLinks(sp, rtng->SortedLinks);
         if ( sp->ErrorCode ) return sp->ErrorCode;
     }
 
@@ -113,9 +109,9 @@ int routing_open(SWMM_Project *sp)
 
     // --- initialize routing events                                           //(5.1.011)
     if ( sp->NumEvents > 0 ) sortEvents(sp);                                         //(5.1.011)
-    NextEvent = 0;                                                             //(5.1.011)
+    rtng->NextEvent = 0;                                                             //(5.1.011)
     //InSteadyState = (sp->NumEvents > 0);                                         //(5.1.012)
-    BetweenEvents = (sp->NumEvents > 0);                                           //(5.1.012)
+    rtng->BetweenEvents = (sp->NumEvents > 0);                                           //(5.1.012)
     return sp->ErrorCode;
 }
 
@@ -128,13 +124,15 @@ void routing_close(SWMM_Project *sp, int routingModel)
 //  Purpose: closes down the routing analyzer.
 //
 {
+    TRoutingShared *rtng = &sp->RoutingShared;
+
     // --- close any routing interface files
     iface_closeRoutingFiles(sp);
 
     // --- free allocated memory
     flowrout_close(sp, routingModel);
     treatmnt_close();
-    FREE(SortedLinks);
+    FREE(rtng->SortedLinks);
 }
 
 //=============================================================================
@@ -151,22 +149,24 @@ double routing_getRoutingStep(SWMM_Project *sp, int routingModel, double fixedSt
 {
     double date1, date2, nextTime;
 
+    TRoutingShared *rtng = &sp->RoutingShared;
+
     if ( sp->Nobjects[LINK] == 0 ) return fixedStep;
 
     // --- find largest step possible if between routing events
-    if ( sp->NumEvents > 0 && BetweenEvents )                                      //(5.1.012)
+    if ( sp->NumEvents > 0 && rtng->BetweenEvents )                                      //(5.1.012)
     {
         nextTime = MIN(sp->NewRunoffTime, sp->ReportTime);
         date1 = getDateTime(sp, sp->NewRoutingTime);
         date2 = getDateTime(sp, nextTime);
-        if ( date2 > date1 && date2 < sp->Event[NextEvent].start )
+        if ( date2 > date1 && date2 < sp->Event[rtng->NextEvent].start )
         {
             return (nextTime - sp->NewRoutingTime) / 1000.0;
         }
         else
         {
             date1 = getDateTime(sp, sp->NewRoutingTime + 1000.0 * fixedStep);
-            if ( date1 < sp->Event[NextEvent].start ) return fixedStep;
+            if ( date1 < sp->Event[rtng->NextEvent].start ) return fixedStep;
         }
     }
 
@@ -192,6 +192,8 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     int      inSteadyState = FALSE;
     DateTime currentDate;
     double   stepFlowError;
+
+    TRoutingShared *rtng = &sp->RoutingShared;
 
     // --- update continuity with current state
     //     applied over 1/2 of time step
@@ -247,19 +249,20 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
     // --- check if can skip non-event periods
     if ( sp->NumEvents > 0 )
     {
-        if ( currentDate > sp->Event[NextEvent].end )
+        if ( currentDate > sp->Event[rtng->NextEvent].end )
         {
-            BetweenEvents = TRUE;
-            NextEvent++;
+            rtng->BetweenEvents = TRUE;
+            rtng->NextEvent++;
         }
-        else if ( currentDate >= sp->Event[NextEvent].start && BetweenEvents == TRUE )
+        else if ( currentDate >= sp->Event[rtng->NextEvent].start &&
+                rtng->BetweenEvents == TRUE )
         {
-			BetweenEvents = FALSE;
+			rtng->BetweenEvents = FALSE;
         }
     }
 
     // --- if not between routing events
-    if ( BetweenEvents == FALSE )
+    if ( rtng->BetweenEvents == FALSE )
     {
         // --- find evap. & seepage losses from storage nodes
         for (j = 0; j < sp->Nobjects[NODE]; j++)
@@ -300,7 +303,7 @@ void routing_execute(SWMM_Project *sp, int routingModel, double routingStep)
             // --- route flow through the drainage network
             if ( sp->Nobjects[LINK] > 0 )
             {
-                stepCount = flowrout_execute(sp, SortedLinks, routingModel, routingStep);
+                stepCount = flowrout_execute(sp, rtng->SortedLinks, routingModel, routingStep);
             }
         }
 
