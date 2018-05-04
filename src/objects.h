@@ -69,6 +69,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "output.h"
 #include "hash.h"
 #include "project.h"
+#include "rain.h"
 
 //-----------------
 // FILE INFORMATION
@@ -966,17 +967,17 @@ typedef struct
 }  TSysStats;
 
 
-//--------------------
-// RAINFALL STATISTICS
-//--------------------
-typedef struct
-{
-   DateTime    startDate;
-   DateTime    endDate;
-   long        periodsRain;
-   long        periodsMissing;
-   long        periodsMalfunc;
-}  TRainStats;
+////--------------------
+//// RAINFALL STATISTICS
+////--------------------
+//typedef struct
+//{
+//   DateTime    startDate;
+//   DateTime    endDate;
+//   long        periodsRain;
+//   long        periodsMissing;
+//   long        periodsMalfunc;
+//}  TRainStats;
 
 
 //------------------------
@@ -1255,6 +1256,7 @@ struct SWMM_Project {
 
    TOutputShared OutputShared;
    TProjectShared ProjectShared;
+   TRainShared RainShared;
 };
 
 
