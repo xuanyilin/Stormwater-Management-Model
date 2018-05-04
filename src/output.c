@@ -24,39 +24,11 @@
 #include <string.h>
 #include <math.h>
 #include "headers.h"
+#include "output.h"
 
-
-// Definition of 4-byte integer, 4-byte real and 8-byte real types
-#define INT4  int
-#define REAL4 float
-#define REAL8 double
 
 enum InputDataType {INPUT_TYPE_CODE, INPUT_AREA, INPUT_INVERT, INPUT_MAX_DEPTH,
                     INPUT_OFFSET, INPUT_LENGTH};
-
-//-----------------------------------------------------------------------------
-//  Shared variables    
-//-----------------------------------------------------------------------------
-static INT4      IDStartPos;           // starting file position of ID names
-static INT4      InputStartPos;        // starting file position of input data
-static INT4      OutputStartPos;       // starting file position of output data
-static INT4      BytesPerPeriod;       // bytes saved per simulation time period
-static INT4      NsubcatchResults;     // number of subcatchment output variables
-static INT4      NnodeResults;         // number of node output variables
-static INT4      NlinkResults;         // number of link output variables
-static INT4      NumSubcatch;          // number of subcatchments reported on
-static INT4      NumNodes;             // number of nodes reported on
-static INT4      NumLinks;             // number of links reported on
-static INT4      NumPolluts;           // number of pollutants reported on
-static REAL4     SysResults[MAX_SYS_RESULTS];    // values of system output vars.
-
-//-----------------------------------------------------------------------------
-//  Exportable variables (shared with report.c)
-//-----------------------------------------------------------------------------
-REAL4*           SubcatchResults;
-REAL4*           NodeResults;
-REAL4*           LinkResults;
-
 
 //-----------------------------------------------------------------------------
 //  Local functions
@@ -96,47 +68,58 @@ int output_open(SWMM_Project *sp)
     REAL4 x;
     REAL8 z;
 
+    TOutputShared *otpt = &sp->OutputShared;
+
     // --- open binary output file
     output_openOutFile(sp);
     if ( sp->ErrorCode ) return sp->ErrorCode;
 
     // --- ignore pollutants if no water quality analsis performed
-    if ( sp->IgnoreQuality ) NumPolluts = 0;
-    else NumPolluts = sp->Nobjects[POLLUT];
+    if ( sp->IgnoreQuality ) otpt->NumPolluts = 0;
+    else otpt->NumPolluts = sp->Nobjects[POLLUT];
 
     // --- subcatchment results consist of Rainfall, Snowdepth, Evap, 
     //     Infil, Runoff, GW Flow, GW Elev, GW Sat, and Washoff
-    NsubcatchResults = MAX_SUBCATCH_RESULTS - 1 + NumPolluts;
+    otpt->NsubcatchResults = MAX_SUBCATCH_RESULTS - 1 + otpt->NumPolluts;
 
     // --- node results consist of Depth, Head, Volume, Lateral Inflow,
     //     Total Inflow, Overflow and Quality
-    NnodeResults = MAX_NODE_RESULTS - 1 + NumPolluts;
+    otpt->NnodeResults = MAX_NODE_RESULTS - 1 + otpt->NumPolluts;
 
     // --- link results consist of Depth, Flow, Velocity, Froude No.,
     //     Capacity and Quality
-    NlinkResults = MAX_LINK_RESULTS - 1 + NumPolluts;
+    otpt->NlinkResults = MAX_LINK_RESULTS - 1 + otpt->NumPolluts;
 
     // --- get number of objects reported on
-    NumSubcatch = 0;
-    NumNodes = 0;
-    NumLinks = 0;
-    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) if (sp->Subcatch[j].rptFlag) NumSubcatch++;
-    for (j=0; j<sp->Nobjects[NODE]; j++) if (sp->Node[j].rptFlag) NumNodes++;
-    for (j=0; j<sp->Nobjects[LINK]; j++) if (sp->Link[j].rptFlag) NumLinks++;
+    otpt->NumSubcatch = 0;
+    otpt->NumNodes = 0;
+    otpt->NumLinks = 0;
 
-    BytesPerPeriod = sizeof(REAL8)
-        + NumSubcatch * NsubcatchResults * sizeof(REAL4)
-        + NumNodes * NnodeResults * sizeof(REAL4)
-        + NumLinks * NlinkResults * sizeof(REAL4)
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
+        if (sp->Subcatch[j].rptFlag)
+            otpt->NumSubcatch++;
+
+    for (j=0; j<sp->Nobjects[NODE]; j++)
+        if (sp->Node[j].rptFlag)
+            otpt->NumNodes++;
+
+    for (j=0; j<sp->Nobjects[LINK]; j++)
+        if (sp->Link[j].rptFlag)
+            otpt->NumLinks++;
+
+    otpt->BytesPerPeriod = sizeof(REAL8)
+        + otpt->NumSubcatch * otpt->NsubcatchResults * sizeof(REAL4)
+        + otpt->NumNodes * otpt->NnodeResults * sizeof(REAL4)
+        + otpt->NumLinks * otpt->NlinkResults * sizeof(REAL4)
         + MAX_SYS_RESULTS * sizeof(REAL4);
     sp->Nperiods = 0;
 
     SubcatchResults = NULL;
     NodeResults = NULL;
     LinkResults = NULL;
-    SubcatchResults = (REAL4 *) calloc(NsubcatchResults, sizeof(REAL4));
-    NodeResults = (REAL4 *) calloc(NnodeResults, sizeof(REAL4));
-    LinkResults = (REAL4 *) calloc(NlinkResults, sizeof(REAL4));
+    SubcatchResults = (REAL4 *) calloc(otpt->NsubcatchResults, sizeof(REAL4));
+    NodeResults = (REAL4 *) calloc(otpt->NnodeResults, sizeof(REAL4));
+    LinkResults = (REAL4 *) calloc(otpt->NlinkResults, sizeof(REAL4));
     if ( !SubcatchResults || !NodeResults || !LinkResults )
     {
         report_writeErrorMsg(sp, ERR_MEMORY, "");
@@ -150,39 +133,46 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Version number
     k = sp->FlowUnits;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // Flow units
-    k = NumSubcatch;
+    k = otpt->NumSubcatch;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # subcatchments
-    k = NumNodes;
+    k = otpt->NumNodes;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # nodes
-    k = NumLinks;
+    k = otpt->NumLinks;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # links
-    k = NumPolluts;
+    k = otpt->NumPolluts;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);   // # pollutants
 
     // --- save ID names of subcatchments, nodes, links, & pollutants 
-    IDStartPos = ftell(sp->Fout.file);
+    otpt->IDStartPos = ftell(sp->Fout.file);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
-        if ( sp->Subcatch[j].rptFlag ) output_saveID(sp->Subcatch[j].ID, sp->Fout.file);
+        if ( sp->Subcatch[j].rptFlag )
+            output_saveID(sp->Subcatch[j].ID, sp->Fout.file);
     }
+
     for (j=0; j<sp->Nobjects[NODE];     j++)
     {
-        if ( sp->Node[j].rptFlag ) output_saveID(sp->Node[j].ID, sp->Fout.file);
+        if ( sp->Node[j].rptFlag )
+            output_saveID(sp->Node[j].ID, sp->Fout.file);
     }
+
     for (j=0; j<sp->Nobjects[LINK];     j++)
     {
-        if ( sp->Link[j].rptFlag ) output_saveID(sp->Link[j].ID, sp->Fout.file);
+        if ( sp->Link[j].rptFlag )
+            output_saveID(sp->Link[j].ID, sp->Fout.file);
     }
-    for (j=0; j<NumPolluts; j++) output_saveID(sp->Pollut[j].ID, sp->Fout.file);
+
+    for (j=0; j < otpt->NumPolluts; j++)
+        output_saveID(sp->Pollut[j].ID, sp->Fout.file);
 
     // --- save codes of pollutant concentration units
-    for (j=0; j<NumPolluts; j++)
+    for (j=0; j < otpt->NumPolluts; j++)
     {
         k = sp->Pollut[j].units;
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
-    InputStartPos = ftell(sp->Fout.file);
+    otpt->InputStartPos = ftell(sp->Fout.file);
 
     // --- save subcatchment area
     k = 1;
@@ -261,7 +251,7 @@ int output_open(SWMM_Project *sp)
     }
 
     // --- save number & codes of subcatchment result variables
-    k = NsubcatchResults;
+    k = otpt->NsubcatchResults;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = SUBCATCH_RAINFALL;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
@@ -280,14 +270,14 @@ int output_open(SWMM_Project *sp)
     k = SUBCATCH_SOIL_MOIST;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
 
-    for (j=0; j<NumPolluts; j++) 
+    for (j = 0; j < otpt->NumPolluts; j++)
     {
         k = SUBCATCH_WASHOFF + j;
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
     // --- save number & codes of node result variables
-    k = NnodeResults;
+    k = otpt->NnodeResults;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_DEPTH;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
@@ -301,14 +291,14 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = NODE_OVERFLOW;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
-    for (j=0; j<NumPolluts; j++)
+    for (j = 0; j < otpt->NumPolluts; j++)
     {
         k = NODE_QUAL + j;
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     }
 
     // --- save number & codes of link result variables
-    k = NlinkResults;
+    k = otpt->NlinkResults;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_FLOW;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
@@ -320,7 +310,7 @@ int output_open(SWMM_Project *sp)
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = LINK_CAPACITY;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
-    for (j=0; j<NumPolluts; j++)
+    for (j = 0; j < otpt->NumPolluts; j++)
     {
         k = LINK_QUAL + j;
         fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
@@ -349,7 +339,7 @@ int output_open(SWMM_Project *sp)
         report_writeErrorMsg(sp, ERR_OUT_WRITE, "");
         return sp->ErrorCode;
     }
-    OutputStartPos = ftell(sp->Fout.file);
+    otpt->OutputStartPos = ftell(sp->Fout.file);
     if ( sp->Fout.mode == SCRATCH_FILE ) output_checkFileSize(sp);
     return sp->ErrorCode;
 }
@@ -364,12 +354,15 @@ void  output_checkFileSize(SWMM_Project *sp)
 //           to access using an integer file pointer variable.
 //
 {
+    TOutputShared *otpt = &sp->OutputShared;
+
     if ( sp->RptFlags.subcatchments != NONE ||
          sp->RptFlags.nodes != NONE ||
          sp->RptFlags.links != NONE )
     {
-        if ( (double)OutputStartPos + (double)BytesPerPeriod * sp->TotalDuration
-             / 1000.0 / (double)sp->ReportStep >= (double)MAXFILESIZE )
+        if ( (double)otpt->OutputStartPos + (double)otpt->BytesPerPeriod *
+                sp->TotalDuration/ 1000.0 / (double)sp->ReportStep
+                >= (double)MAXFILESIZE )
         {
             report_writeErrorMsg(sp, ERR_FILE_SIZE, "");
         }
@@ -418,11 +411,14 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
 //
 {
     int i;
-    DateTime reportDate = getDateTime(sp, reportTime);
     REAL8 date;
 
+    DateTime reportDate = getDateTime(sp, reportTime);
+
+    TOutputShared *otpt = &sp->OutputShared;
+
     if ( reportDate < sp->ReportStart ) return;
-    for (i=0; i<MAX_SYS_RESULTS; i++) SysResults[i] = 0.0f;
+    for (i=0; i<MAX_SYS_RESULTS; i++) otpt->SysResults[i] = 0.0f;
     date = reportDate;
     fwrite(&date, sizeof(REAL8), 1, sp->Fout.file);
     if (sp->Nobjects[SUBCATCH] > 0)
@@ -431,7 +427,7 @@ void output_saveResults(SWMM_Project *sp, double reportTime)
         output_saveNodeResults(sp, reportTime, sp->Fout.file);
     if (sp->Nobjects[LINK] > 0)
         output_saveLinkResults(sp, reportTime, sp->Fout.file);
-    fwrite(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
+    fwrite(otpt->SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
     if ( sp->Foutflows.mode == SAVE_FILE && !sp->IgnoreRouting )
         iface_saveOutletResults(sp, reportDate, sp->Foutflows.file);
     sp->Nperiods++;
@@ -448,9 +444,11 @@ void output_end(SWMM_Project *sp)
 {
     INT4 k;
 
-    fwrite(&IDStartPos, sizeof(INT4), 1, sp->Fout.file);
-    fwrite(&InputStartPos, sizeof(INT4), 1, sp->Fout.file);
-    fwrite(&OutputStartPos, sizeof(INT4), 1, sp->Fout.file);
+    TOutputShared *otpt = &sp->OutputShared;
+
+    fwrite(&otpt->IDStartPos, sizeof(INT4), 1, sp->Fout.file);
+    fwrite(&otpt->InputStartPos, sizeof(INT4), 1, sp->Fout.file);
+    fwrite(&otpt->OutputStartPos, sizeof(INT4), 1, sp->Fout.file);
     k = sp->Nperiods;
     fwrite(&k, sizeof(INT4), 1, sp->Fout.file);
     k = (INT4)error_getCode(sp->ErrorCode);
@@ -507,6 +505,8 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
     REAL4    totalArea = 0.0f; 
     DateTime reportDate = getDateTime(sp, reportTime);
 
+    TOutputShared *otpt = &sp->OutputShared;
+
     // --- update reported rainfall at each rain gage
     for ( j=0; j<sp->Nobjects[GAGE]; j++ )
     {
@@ -522,38 +522,38 @@ void output_saveSubcatchResults(SWMM_Project *sp, double reportTime, FILE* file)
         // --- retrieve interpolated results for reporting time & write to file
         subcatch_getResults(sp, j, f, SubcatchResults);
         if ( sp->Subcatch[j].rptFlag )
-            fwrite(SubcatchResults, sizeof(REAL4), NsubcatchResults, file);
+            fwrite(SubcatchResults, sizeof(REAL4), otpt->NsubcatchResults, file);
 
         // --- update system-wide results
         area = sp->Subcatch[j].area * UCF(sp, LANDAREA);
         totalArea += (REAL4)area;
-        SysResults[SYS_RAINFALL] +=
+        otpt->SysResults[SYS_RAINFALL] +=
             (REAL4)(SubcatchResults[SUBCATCH_RAINFALL] * area);
-        SysResults[SYS_SNOWDEPTH] +=
+        otpt->SysResults[SYS_SNOWDEPTH] +=
             (REAL4)(SubcatchResults[SUBCATCH_SNOWDEPTH] * area);
-        SysResults[SYS_EVAP] +=
+        otpt->SysResults[SYS_EVAP] +=
             (REAL4)(SubcatchResults[SUBCATCH_EVAP] * area);
-        if ( sp->Subcatch[j].groundwater ) SysResults[SYS_EVAP] += 
+        if ( sp->Subcatch[j].groundwater ) otpt->SysResults[SYS_EVAP] +=
             (REAL4)(sp->Subcatch[j].groundwater->evapLoss * UCF(sp, EVAPRATE) * area);
-        SysResults[SYS_INFIL] +=
+        otpt->SysResults[SYS_INFIL] +=
             (REAL4)(SubcatchResults[SUBCATCH_INFIL] * area);
-        SysResults[SYS_RUNOFF] += (REAL4)SubcatchResults[SUBCATCH_RUNOFF];
+        otpt->SysResults[SYS_RUNOFF] += (REAL4)SubcatchResults[SUBCATCH_RUNOFF];
     }
 
     // --- normalize system-wide results to catchment area
     if ( sp->UnitSystem == SI ) f = (5./9.) * (sp->Temp.ta - 32.0);
     else f = sp->Temp.ta;
-    SysResults[SYS_TEMPERATURE] = (REAL4)f;
+    otpt->SysResults[SYS_TEMPERATURE] = (REAL4)f;
     
     f = sp->Evap.rate * UCF(sp, EVAPRATE);                                             //(5.1.010)
-    SysResults[SYS_PET] = (REAL4)f;                                            //(5.1.010)
+    otpt->SysResults[SYS_PET] = (REAL4)f;                                            //(5.1.010)
 
     if ( totalArea > 0.0 )                                                     //(5.1.008)
     {
-        SysResults[SYS_EVAP]      /= totalArea;
-        SysResults[SYS_RAINFALL]  /= totalArea;
-        SysResults[SYS_SNOWDEPTH] /= totalArea;
-        SysResults[SYS_INFIL]     /= totalArea;
+        otpt->SysResults[SYS_EVAP]      /= totalArea;
+        otpt->SysResults[SYS_RAINFALL]  /= totalArea;
+        otpt->SysResults[SYS_SNOWDEPTH] /= totalArea;
+        otpt->SysResults[SYS_INFIL]     /= totalArea;
     }
 }
 
@@ -570,6 +570,7 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
     int j;
 
     TMassbalShared *mssbl = &sp->MassbalShared;
+    TOutputShared *otpt = &sp->OutputShared;
 
     // --- find where current reporting time lies between latest routing times
     double f = (reportTime - sp->OldRoutingTime) /
@@ -581,25 +582,25 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
         // --- retrieve interpolated results for reporting time & write to file
         node_getResults(sp, j, f, NodeResults);
         if ( sp->Node[j].rptFlag )
-            fwrite(NodeResults, sizeof(REAL4), NnodeResults, file);
+            fwrite(NodeResults, sizeof(REAL4), otpt->NnodeResults, file);
         stats_updateMaxNodeDepth(j, NodeResults[NODE_DEPTH]);                 //(5.1.008)
 
         // --- update system-wide storage volume 
-        SysResults[SYS_STORAGE] += NodeResults[NODE_VOLUME];
+        otpt->SysResults[SYS_STORAGE] += NodeResults[NODE_VOLUME];
     }
 
     // --- update system-wide flows 
-    SysResults[SYS_FLOODING] = (REAL4) (mssbl->StepFlowTotals.flooding * UCF(sp, FLOW));
-    SysResults[SYS_OUTFLOW]  = (REAL4) (mssbl->StepFlowTotals.outflow * UCF(sp, FLOW));
-    SysResults[SYS_DWFLOW] = (REAL4)(mssbl->StepFlowTotals.dwInflow * UCF(sp, FLOW));
-    SysResults[SYS_GWFLOW] = (REAL4)(mssbl->StepFlowTotals.gwInflow * UCF(sp, FLOW));
-    SysResults[SYS_IIFLOW] = (REAL4)(mssbl->StepFlowTotals.iiInflow * UCF(sp, FLOW));
-    SysResults[SYS_EXFLOW] = (REAL4)(mssbl->StepFlowTotals.exInflow * UCF(sp, FLOW));
-    SysResults[SYS_INFLOW] = SysResults[SYS_RUNOFF] +
-                             SysResults[SYS_DWFLOW] +
-                             SysResults[SYS_GWFLOW] +
-                             SysResults[SYS_IIFLOW] +
-                             SysResults[SYS_EXFLOW];
+    otpt->SysResults[SYS_FLOODING] = (REAL4) (mssbl->StepFlowTotals.flooding * UCF(sp, FLOW));
+    otpt->SysResults[SYS_OUTFLOW]  = (REAL4) (mssbl->StepFlowTotals.outflow * UCF(sp, FLOW));
+    otpt->SysResults[SYS_DWFLOW] = (REAL4)(mssbl->StepFlowTotals.dwInflow * UCF(sp, FLOW));
+    otpt->SysResults[SYS_GWFLOW] = (REAL4)(mssbl->StepFlowTotals.gwInflow * UCF(sp, FLOW));
+    otpt->SysResults[SYS_IIFLOW] = (REAL4)(mssbl->StepFlowTotals.iiInflow * UCF(sp, FLOW));
+    otpt->SysResults[SYS_EXFLOW] = (REAL4)(mssbl->StepFlowTotals.exInflow * UCF(sp, FLOW));
+    otpt->SysResults[SYS_INFLOW] = otpt->SysResults[SYS_RUNOFF] +
+                             otpt->SysResults[SYS_DWFLOW] +
+                             otpt->SysResults[SYS_GWFLOW] +
+                             otpt->SysResults[SYS_IIFLOW] +
+                             otpt->SysResults[SYS_EXFLOW];
 }
 
 //=============================================================================
@@ -616,6 +617,8 @@ void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
     double f;
     double z;
 
+    TOutputShared *otpt = &sp->OutputShared;
+
     // --- find where current reporting time lies between latest routing times
     f = (reportTime - sp->OldRoutingTime) / (sp->NewRoutingTime - sp->OldRoutingTime);
 
@@ -625,11 +628,11 @@ void output_saveLinkResults(SWMM_Project *sp, double reportTime, FILE* file)
         // --- retrieve interpolated results for reporting time & write to file
         link_getResults(sp, j, f, LinkResults);
         if ( sp->Link[j].rptFlag ) 
-            fwrite(LinkResults, sizeof(REAL4), NlinkResults, file);
+            fwrite(LinkResults, sizeof(REAL4), otpt->NlinkResults, file);
 
         // --- update system-wide results
         z = ((1.0-f)*sp->Link[j].oldVolume + f*sp->Link[j].newVolume) * UCF(sp, VOLUME);
-        SysResults[SYS_STORAGE] += (REAL4)z;
+        otpt->SysResults[SYS_STORAGE] += (REAL4)z;
     }
 }
 
@@ -643,7 +646,11 @@ void output_readDateTime(SWMM_Project *sp, int period, DateTime* days)
 //           from the binary output file.
 //
 {
-    INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
+    INT4 bytePos;
+
+    TOutputShared *otpt = &sp->OutputShared;
+
+    bytePos = otpt->OutputStartPos + (period-1)*otpt->BytesPerPeriod;
     fseek(sp->Fout.file, bytePos, SEEK_SET);
     *days = NO_DATE;
     fread(days, sizeof(REAL8), 1, sp->Fout.file);
@@ -660,10 +667,14 @@ void output_readSubcatchResults(SWMM_Project *sp, int period, int index)
 //           period.
 //
 {
-    INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
-    bytePos += sizeof(REAL8) + index*NsubcatchResults*sizeof(REAL4);
+    INT4 bytePos;
+
+    TOutputShared *otpt = &sp->OutputShared;
+
+    bytePos = otpt->OutputStartPos + (period-1)*otpt->BytesPerPeriod;
+    bytePos += sizeof(REAL8) + index*otpt->NsubcatchResults*sizeof(REAL4);
     fseek(sp->Fout.file, bytePos, SEEK_SET);
-    fread(SubcatchResults, sizeof(REAL4), NsubcatchResults, sp->Fout.file);
+    fread(SubcatchResults, sizeof(REAL4), otpt->NsubcatchResults, sp->Fout.file);
 }
 
 //=============================================================================
@@ -676,11 +687,15 @@ void output_readNodeResults(SWMM_Project *sp, int period, int index)
 //  Purpose: reads computed results for a node at a specific time period.
 //
 {
-    INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
-    bytePos += sizeof(REAL8) + NumSubcatch*NsubcatchResults*sizeof(REAL4);
-    bytePos += index*NnodeResults*sizeof(REAL4);
+    INT4 bytePos;
+
+    TOutputShared *otpt = &sp->OutputShared;
+
+    bytePos = otpt->OutputStartPos + (period-1)*otpt->BytesPerPeriod;
+    bytePos += sizeof(REAL8) + otpt->NumSubcatch*otpt->NsubcatchResults*sizeof(REAL4);
+    bytePos += index*otpt->NnodeResults*sizeof(REAL4);
     fseek(sp->Fout.file, bytePos, SEEK_SET);
-    fread(NodeResults, sizeof(REAL4), NnodeResults, sp->Fout.file);
+    fread(NodeResults, sizeof(REAL4), otpt->NnodeResults, sp->Fout.file);
 }
 
 //=============================================================================
@@ -693,13 +708,17 @@ void output_readLinkResults(SWMM_Project *sp, int period, int index)
 //  Purpose: reads computed results for a link at a specific time period.
 //
 {
-    INT4 bytePos = OutputStartPos + (period-1)*BytesPerPeriod;
-    bytePos += sizeof(REAL8) + NumSubcatch*NsubcatchResults*sizeof(REAL4);
-    bytePos += NumNodes*NnodeResults*sizeof(REAL4);
-    bytePos += index*NlinkResults*sizeof(REAL4);
+    INT4 bytePos;
+
+    TOutputShared *otpt = &sp->OutputShared;
+
+    bytePos = otpt->OutputStartPos + (period-1)*otpt->BytesPerPeriod;
+    bytePos += sizeof(REAL8) + otpt->NumSubcatch*otpt->NsubcatchResults*sizeof(REAL4);
+    bytePos += otpt->NumNodes*otpt->NnodeResults*sizeof(REAL4);
+    bytePos += index*otpt->NlinkResults*sizeof(REAL4);
     fseek(sp->Fout.file, bytePos, SEEK_SET);
-    fread(LinkResults, sizeof(REAL4), NlinkResults, sp->Fout.file);
-    fread(SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
+    fread(LinkResults, sizeof(REAL4), otpt->NlinkResults, sp->Fout.file);
+    fread(otpt->SysResults, sizeof(REAL4), MAX_SYS_RESULTS, sp->Fout.file);
 }
 
 //=============================================================================
