@@ -71,6 +71,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "project.h"
 #include "rain.h"
 #include "rdii.h"
+#include "report.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1259,6 +1260,9 @@ struct SWMM_Project {
    TProjectShared ProjectShared;
    TRainShared RainShared;
    TRdiiShared RdiiShared;
+
+   TReportShared ReportShared;
+
 };
 
 

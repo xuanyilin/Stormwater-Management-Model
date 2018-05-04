@@ -51,12 +51,6 @@
 #define LINE_64 \
 "----------------------------------------------------------------"
 
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static time_t SysTime;
-
 //-----------------------------------------------------------------------------
 //  Imported variables
 //-----------------------------------------------------------------------------
@@ -189,12 +183,14 @@ void report_writeSysTime(SWMM_Project *sp)
     double  elapsedTime;
     time_t  endTime;
 
+    TReportShared *rprt = &sp->ReportShared;
+
     if ( sp->Frpt.file )
     {
-        fprintf(sp->Frpt.file, FMT20, ctime(&SysTime));
+        fprintf(sp->Frpt.file, FMT20, ctime(&rprt->SysTime));
         time(&endTime);
         fprintf(sp->Frpt.file, FMT20a, ctime(&endTime));
-        elapsedTime = difftime(endTime, SysTime);
+        elapsedTime = difftime(endTime, rprt->SysTime);
         fprintf(sp->Frpt.file, FMT21);
         if ( elapsedTime < 1.0 ) fprintf(sp->Frpt.file, "< 1 sec");
         else
@@ -225,6 +221,8 @@ void report_writeLogo(SWMM_Project *sp)
 {
 	char SEMVERSION[SEMVERSION_LEN];
 
+	TReportShared *rprt = &sp->ReportShared;
+
 	getSemVersion(SEMVERSION);
 
 	sprintf(sp->Msg, \
@@ -233,7 +231,7 @@ void report_writeLogo(SWMM_Project *sp)
     fprintf(sp->Frpt.file, sp->Msg);
     fprintf(sp->Frpt.file, FMT09);
     fprintf(sp->Frpt.file, FMT10);
-    time(&SysTime);                    // Save starting wall clock time
+    time(&rprt->SysTime);                    // Save starting wall clock time
 }
 
 //=============================================================================
