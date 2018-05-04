@@ -222,7 +222,7 @@ int     rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks);
 void    rdii_openRdii(SWMM_Project *sp);
 void    rdii_closeRdii(SWMM_Project *sp);
 int     rdii_getNumRdiiFlows(SWMM_Project *sp, DateTime aDate);
-void    rdii_getRdiiFlow(int index, int* node, double* q);
+void    rdii_getRdiiFlow(SWMM_Project *sp, int index, int* node, double* q);
 
 //-----------------------------------------------------------------------------
 //   Landuse Methods

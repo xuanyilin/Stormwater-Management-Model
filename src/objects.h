@@ -70,6 +70,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "hash.h"
 #include "project.h"
 #include "rain.h"
+#include "rdii.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1257,6 +1258,7 @@ struct SWMM_Project {
    TOutputShared OutputShared;
    TProjectShared ProjectShared;
    TRainShared RainShared;
+   TRdiiShared RdiiShared;
 };
 
 

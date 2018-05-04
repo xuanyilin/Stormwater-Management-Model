@@ -609,7 +609,7 @@ void addRdiiInflows(SWMM_Project *sp, DateTime currentDate)
     // --- add RDII flow to each node's lateral inflow
     for (i=0; i<numRdiiNodes; i++)
     {
-        rdii_getRdiiFlow(i, &j, &q);
+        rdii_getRdiiFlow(sp, i, &j, &q);
         if ( j < 0 ) continue;
         if ( fabs(q) < FLOW_TOL ) continue;
         sp->Node[j].newLatFlow += q;
