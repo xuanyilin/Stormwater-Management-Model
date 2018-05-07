@@ -131,7 +131,7 @@ void routing_close(SWMM_Project *sp, int routingModel)
 
     // --- free allocated memory
     flowrout_close(sp, routingModel);
-    treatmnt_close();
+    treatmnt_close(sp);
     FREE(rtng->SortedLinks);
 }
 

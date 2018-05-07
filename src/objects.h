@@ -80,7 +80,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "subcatch.h"
 #include "toposort.h"
 #include "transect.h"
-
+#include "treatmnt.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1279,6 +1279,7 @@ struct SWMM_Project {
    TSubcatchShared SubcatchShared;
    TToposortShared ToposortShared;
    TTransectShared TransectShared;
+   TTreatmntShared TreatmntShared;
 
 };
 

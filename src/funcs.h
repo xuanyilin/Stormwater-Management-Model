@@ -269,7 +269,7 @@ void    qualrout_execute(SWMM_Project *sp, double tStep);
 //   Treatment Methods
 //-----------------------------------------------------------------------------
 int     treatmnt_open(SWMM_Project *sp);
-void    treatmnt_close(void);
+void    treatmnt_close(SWMM_Project *sp);
 int     treatmnt_readExpression(SWMM_Project *sp, char* tok[], int ntoks);
 void    treatmnt_delete(SWMM_Project *sp, int node);
 void    treatmnt_treat(SWMM_Project *sp, int node, double q, double v,
