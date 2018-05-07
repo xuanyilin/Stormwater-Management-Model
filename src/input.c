@@ -749,7 +749,7 @@ int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
 
 //=============================================================================
 
-int  findmatch(char *s, char *keyword[])
+int  findmatch(char *s, const char *keyword[])
 //
 //  Input:   s = character string
 //           keyword = array of keyword strings
@@ -768,7 +768,7 @@ int  findmatch(char *s, char *keyword[])
 
 //=============================================================================
 
-int  match(char *str, char *substr)
+int  match(const char *str, const char *substr)
 //
 //  Input:   str = character string being searched
 //           substr = sub-string being searched for

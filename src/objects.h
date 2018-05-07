@@ -78,6 +78,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "stats.h"
 #include "statsrpt.h"
 #include "subcatch.h"
+#include "toposort.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1274,6 +1275,7 @@ struct SWMM_Project {
    TStatsShared StatsShared;
    TStatsrptShared StatsrptShared;
    TSubcatchShared SubcatchShared;
+   TToposortShared ToposortShared;
 
 };
 

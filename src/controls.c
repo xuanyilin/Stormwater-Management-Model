@@ -72,17 +72,17 @@ enum RuleAttrib   {r_DEPTH, r_HEAD, r_VOLUME, r_INFLOW, r_FLOW, r_STATUS,      /
 enum RuleRelation {EQ, NE, LT, LE, GT, GE};
 enum RuleSetting  {r_CURVE, r_TIMESERIES, r_PID, r_NUMERIC};
 
-static char* ObjectWords[] =
+static const char* ObjectWords[] =
     {"NODE", "LINK", "CONDUIT", "PUMP", "ORIFICE", "WEIR", "OUTLET",
 	 "SIMULATION", NULL};
-static char* AttribWords[] =
+static const char* AttribWords[] =
     {"DEPTH", "HEAD", "VOLUME", "INFLOW", "FLOW", "STATUS", "SETTING",         //(5.1.008)
      "TIMEOPEN", "TIMECLOSED","TIME", "DATE", "CLOCKTIME", "DAYOFYEAR",        //(5.1.011)
      "DAY", "MONTH", NULL};                                                    //(5.1.011)
-static char* RelOpWords[] = {"=", "<>", "<", "<=", ">", ">=", NULL};
-static char* StatusWords[]  = {"OFF", "ON", NULL};
-static char* ConduitWords[] = {"CLOSED", "OPEN", NULL};
-static char* SettingTypeWords[] = {"CURVE", "TIMESERIES", "PID", NULL};
+static const char* RelOpWords[] = {"=", "<>", "<", "<=", ">", ">=", NULL};
+static const char* StatusWords[]  = {"OFF", "ON", NULL};
+static const char* ConduitWords[] = {"CLOSED", "OPEN", NULL};
+static const char* SettingTypeWords[] = {"CURVE", "TIMESERIES", "PID", NULL};
 
 
 //-----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ void   clearActionList(SWMM_Project *sp);
 void   deleteActionList(SWMM_Project *sp);
 void   deleteRules(SWMM_Project *sp);
 
-int    findExactMatch(char *s, char *keyword[]);
+int    findExactMatch(char *s, const char *keyword[]);
 int    setActionSetting(SWMM_Project *sp, char* tok[], int nToks, int* curve, int* tseries,
        int* attrib, double* value);
 void   updateActionValue(SWMM_Project *sp, struct TAction* a, DateTime currentTime,
@@ -1170,7 +1170,7 @@ void  deleteRules(SWMM_Project *sp)
 
 //=============================================================================
 
-int  findExactMatch(char *s, char *keyword[])
+int  findExactMatch(char *s, const char *keyword[])
 //
 //  Input:   s = character string
 //           keyword = array of keyword strings

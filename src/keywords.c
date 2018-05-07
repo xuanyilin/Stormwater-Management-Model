@@ -39,36 +39,36 @@
 #include <stdlib.h>          // need this to define NULL
 #include "text.h"
 
-char* BuildupTypeWords[]   = { w_NONE, w_POW, w_EXP, w_SAT, w_EXT, NULL};
-char* CurveTypeWords[]     = { w_STORAGE, w_DIVERSION, w_TIDAL, w_RATING,
+const char* BuildupTypeWords[]   = { w_NONE, w_POW, w_EXP, w_SAT, w_EXT, NULL};
+const char* CurveTypeWords[]     = { w_STORAGE, w_DIVERSION, w_TIDAL, w_RATING,
                                w_CONTROLS, w_SHAPE,
                                w_PUMP1, w_PUMP2, w_PUMP3, w_PUMP4, NULL}; 
-char* DividerTypeWords[]   = { w_CUTOFF, w_TABULAR, w_WEIR, w_OVERFLOW, NULL};
-char* EvapTypeWords[]      = { w_CONSTANT, w_MONTHLY, w_TIMESERIES,
+const char* DividerTypeWords[]   = { w_CUTOFF, w_TABULAR, w_WEIR, w_OVERFLOW, NULL};
+const char* EvapTypeWords[]      = { w_CONSTANT, w_MONTHLY, w_TIMESERIES,
                                w_TEMPERATURE, w_FILE, w_RECOVERY,
                                w_DRYONLY, NULL};
-char* FileTypeWords[]      = { w_RAINFALL, w_RUNOFF, w_HOTSTART, w_RDII,
+const char* FileTypeWords[]      = { w_RAINFALL, w_RUNOFF, w_HOTSTART, w_RDII,
                                w_INFLOWS, w_OUTFLOWS, NULL};
-char* FileModeWords[]      = { w_NO, w_SCRATCH, w_USE, w_SAVE, NULL};
-char* FlowUnitWords[]      = { w_CFS, w_GPM, w_MGD, w_CMS, w_LPS, w_MLD, NULL};
-char* ForceMainEqnWords[]  = { w_H_W, w_D_W, NULL};
-char* GageDataWords[]      = { w_TIMESERIES, w_FILE, NULL};
-char* InfilModelWords[]    = { w_HORTON, w_MOD_HORTON, w_GREEN_AMPT,
+const char* FileModeWords[]      = { w_NO, w_SCRATCH, w_USE, w_SAVE, NULL};
+const char* FlowUnitWords[]      = { w_CFS, w_GPM, w_MGD, w_CMS, w_LPS, w_MLD, NULL};
+const char* ForceMainEqnWords[]  = { w_H_W, w_D_W, NULL};
+const char* GageDataWords[]      = { w_TIMESERIES, w_FILE, NULL};
+const char* InfilModelWords[]    = { w_HORTON, w_MOD_HORTON, w_GREEN_AMPT,
                                w_MOD_GREEN_AMPT, w_CURVE_NUMEBR, NULL};        //(5.1.010)
-char* InertDampingWords[]  = { w_NONE, w_PARTIAL, w_FULL, NULL};
-char* LinkOffsetWords[]    = { w_DEPTH, w_ELEVATION, NULL};
-char* LinkTypeWords[]      = { w_CONDUIT, w_PUMP, w_ORIFICE,
+const char* InertDampingWords[]  = { w_NONE, w_PARTIAL, w_FULL, NULL};
+const char* LinkOffsetWords[]    = { w_DEPTH, w_ELEVATION, NULL};
+const char* LinkTypeWords[]      = { w_CONDUIT, w_PUMP, w_ORIFICE,
                                w_WEIR, w_OUTLET };
-char* LoadUnitsWords[]     = { w_LBS, w_KG, w_LOGN };
-char* NodeTypeWords[]      = { w_JUNCTION, w_OUTFALL,
+const char* LoadUnitsWords[]     = { w_LBS, w_KG, w_LOGN };
+const char* NodeTypeWords[]      = { w_JUNCTION, w_OUTFALL,
                                w_STORAGE, w_DIVIDER };
-char* NoneAllWords[]       = { w_NONE, w_ALL, NULL};
-char* NormalFlowWords[]    = { w_SLOPE, w_FROUDE, w_BOTH, NULL};
-char* NormalizerWords[]    = { w_PER_AREA, w_PER_CURB, NULL};
-char* NoYesWords[]         = { w_NO, w_YES, NULL};
-char* OffOnWords[]         = { w_OFF, w_ON, NULL};
-char* OldRouteModelWords[] = { w_NONE, w_NF, w_KW, w_EKW, w_DW, NULL};
-char* OptionWords[]        = { w_FLOW_UNITS,        w_INFIL_MODEL,
+const char* NoneAllWords[]       = { w_NONE, w_ALL, NULL};
+const char* NormalFlowWords[]    = { w_SLOPE, w_FROUDE, w_BOTH, NULL};
+const char* NormalizerWords[]    = { w_PER_AREA, w_PER_CURB, NULL};
+const char* NoYesWords[]         = { w_NO, w_YES, NULL};
+const char* OffOnWords[]         = { w_OFF, w_ON, NULL};
+const char* OldRouteModelWords[] = { w_NONE, w_NF, w_KW, w_EKW, w_DW, NULL};
+const char* OptionWords[]        = { w_FLOW_UNITS,        w_INFIL_MODEL,
                                w_ROUTE_MODEL,       w_START_DATE,
                                w_START_TIME,        w_END_DATE,
                                w_END_TIME,          w_REPORT_START_DATE,
@@ -89,25 +89,25 @@ char* OptionWords[]        = { w_FLOW_UNITS,        w_INFIL_MODEL,
                                w_SYS_FLOW_TOL,      w_LAT_FLOW_TOL,
                                w_IGNORE_RDII,       w_MIN_ROUTE_STEP,          //(5.1.008)
                                w_NUM_THREADS,       NULL};                     //(5.1.008)
-char* OrificeTypeWords[]   = { w_SIDE, w_BOTTOM, NULL};
-char* OutfallTypeWords[]   = { w_FREE, w_NORMAL, w_FIXED, w_TIDAL,
+const char* OrificeTypeWords[]   = { w_SIDE, w_BOTTOM, NULL};
+const char* OutfallTypeWords[]   = { w_FREE, w_NORMAL, w_FIXED, w_TIDAL,
                                w_TIMESERIES, NULL};
-char* PatternTypeWords[]   = { w_MONTHLY, w_DAILY, w_HOURLY, w_WEEKEND, NULL};
-char* PondingUnitsWords[]  = { w_PONDED_FEET, w_PONDED_METERS };
-char* ProcessVarWords[]    = { w_HRT, w_DT, w_FLOW, w_DEPTH, w_AREA, NULL};
-char* PumpTypeWords[]      = { w_TYPE1, w_TYPE2, w_TYPE3, w_TYPE4, w_IDEAL };
-char* QualUnitsWords[]     = { w_MGperL, w_UGperL, w_COUNTperL, NULL};
-char* RainTypeWords[]      = { w_INTENSITY, w_VOLUME, w_CUMULATIVE, NULL};
-char* RainUnitsWords[]     = { w_INCHES, w_MMETER, NULL};
-char* RelationWords[]      = { w_TABULAR, w_FUNCTIONAL, NULL};
-char* ReportWords[]        = { w_INPUT, w_CONTINUITY, w_FLOWSTATS,
+const char* PatternTypeWords[]   = { w_MONTHLY, w_DAILY, w_HOURLY, w_WEEKEND, NULL};
+const char* PondingUnitsWords[]  = { w_PONDED_FEET, w_PONDED_METERS };
+const char* ProcessVarWords[]    = { w_HRT, w_DT, w_FLOW, w_DEPTH, w_AREA, NULL};
+const char* PumpTypeWords[]      = { w_TYPE1, w_TYPE2, w_TYPE3, w_TYPE4, w_IDEAL };
+const char* QualUnitsWords[]     = { w_MGperL, w_UGperL, w_COUNTperL, NULL};
+const char* RainTypeWords[]      = { w_INTENSITY, w_VOLUME, w_CUMULATIVE, NULL};
+const char* RainUnitsWords[]     = { w_INCHES, w_MMETER, NULL};
+const char* RelationWords[]      = { w_TABULAR, w_FUNCTIONAL, NULL};
+const char* ReportWords[]        = { w_INPUT, w_CONTINUITY, w_FLOWSTATS,
                                w_CONTROLS, w_SUBCATCH, w_NODE, w_LINK,
                                w_NODESTATS, NULL};
-char* RouteModelWords[]    = { w_NONE, w_STEADY, w_KINWAVE, w_XKINWAVE,
+const char* RouteModelWords[]    = { w_NONE, w_STEADY, w_KINWAVE, w_XKINWAVE,
                                w_DYNWAVE, NULL};
-char* RuleKeyWords[]       = { w_RULE, w_IF, w_AND, w_OR, w_THEN, w_ELSE, 
+const char* RuleKeyWords[]       = { w_RULE, w_IF, w_AND, w_OR, w_THEN, w_ELSE,
                                w_PRIORITY, NULL};
-char* SectWords[]          = { ws_TITLE,          ws_OPTION,
+const char* SectWords[]          = { ws_TITLE,          ws_OPTION,
                                ws_FILE,           ws_RAINGAGE,
                                ws_TEMP,           ws_EVAP, 
                                ws_SUBCATCH,       ws_SUBAREA,
