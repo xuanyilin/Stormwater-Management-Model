@@ -15,26 +15,6 @@
 #include <math.h>
 #include "headers.h"
 
-//-----------------------------------------------------------------------------
-//  Constants
-//-----------------------------------------------------------------------------
-#define MAXSTATION 1500                // max. number of stations in a transect
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static int    Ntransects;              // total number of transects
-static int    Nstations;               // number of stations in current transect
-static double  Station[MAXSTATION+1];  // x-coordinate of each station
-static double  Elev[MAXSTATION+1];     // elevation of each station
-static double  Nleft;                  // Manning's n for left overbank
-static double  Nright;                 // Manning's n for right overbank
-static double  Nchannel;               // Manning's n for main channel
-static double  Xleftbank;              // station where left overbank ends
-static double  Xrightbank;             // station where right overbank begins
-static double  Xfactor;                // multiplier for station spacing
-static double  Yfactor;                // factor added to station elevations
-static double  Lfactor;                // main channel/flood plain length
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)   
@@ -48,12 +28,12 @@ static double  Lfactor;                // main channel/flood plain length
 //  Local functions
 //-----------------------------------------------------------------------------
 static int    setParams(SWMM_Project *sp, int transect, char* id, double x[]);
-static int    setManning(double n[]);
+static int    setManning(SWMM_Project *sp, double n[]);
 static int    addStation(SWMM_Project *sp, double x, double y);
-static double getFlow(int k, double a, double wp, int findFlow);
+static double getFlow(SWMM_Project *sp, int k, double a, double wp, int findFlow);
 static void   getGeometry(SWMM_Project *sp, int i, int j, double y);
-static void   getSliceGeom(int k, double y, double yu, double yd, double *w,
-              double *a, double *wp);
+static void   getSliceGeom(SWMM_Project *sp, int k, double y, double yu,
+        double yd, double *w, double *a, double *wp);
 static void   setMaxSectionFactor(SWMM_Project *sp, int transect);
 
 //=============================================================================
@@ -65,14 +45,16 @@ int transect_create(SWMM_Project *sp, int n)
 //  Purpose: creates an array of cross-section transects.
 //
 {
-    Ntransects = n;
+    TTransectShared *trnsct = &sp->TransectShared;
+
+    trnsct->Ntransects = n;
     if ( n == 0 ) return 0;
-    sp->Transect = (TTransect *) calloc(Ntransects, sizeof(TTransect));
+    sp->Transect = (TTransect *) calloc(trnsct->Ntransects, sizeof(TTransect));
     if ( sp->Transect == NULL ) return ERR_MEMORY;
-    Nchannel = 0.0;
-    Nleft = 0.0;
-    Nright = 0.0;
-    Nstations = 0;
+    trnsct->Nchannel = 0.0;
+    trnsct->Nleft = 0.0;
+    trnsct->Nright = 0.0;
+    trnsct->Nstations = 0;
     return 0;
 }
 
@@ -85,9 +67,11 @@ void transect_delete(SWMM_Project *sp)
 //  Purpose: deletes memory allocated for all transects.
 //
 {
-    if ( Ntransects == 0 ) return;
+    TTransectShared *trnsct = &sp->TransectShared;
+
+    if ( trnsct->Ntransects == 0 ) return;
     FREE(sp->Transect);
-    Ntransects = 0;
+    trnsct->Ntransects = 0;
 }
 
 //=============================================================================
@@ -133,7 +117,7 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
             if ( ! getDouble(tok[i], &x[i]) )
                 return error_setInpError(ERR_NUMBER, tok[i]);
         }
-        return setManning(x);
+        return setManning(sp, x);
 
       // --- X1 line: identifies start of next transect
       case 1:
@@ -191,26 +175,29 @@ void  transect_validate(SWMM_Project *sp, int j)
 {
     int    i, nLast;
     double dy, y, ymin, ymax;
-    double oldNchannel = Nchannel;
+
+    TTransectShared *trnsct = &sp->TransectShared;
+
+    double oldNchannel = trnsct->Nchannel;
 
     // --- check for valid transect data
-    if ( j < 0 || j >= Ntransects ) return;
-    if ( Nstations < 2 ) 
+    if ( j < 0 || j >= trnsct->Ntransects ) return;
+    if ( trnsct->Nstations < 2 )
     {
         report_writeErrorMsg(sp, ERR_TRANSECT_TOO_FEW, sp->Transect[j].ID);
         return;
     }
-    if ( Nstations >= MAXSTATION )
+    if ( trnsct->Nstations >= MAXSTATION )
     {
         report_writeErrorMsg(sp, ERR_TRANSECT_TOO_MANY, sp->Transect[j].ID);
         return;
     }
-    if ( Nchannel <= 0.0 )
+    if ( trnsct->Nchannel <= 0.0 )
     {
         report_writeErrorMsg(sp, ERR_TRANSECT_MANNING, sp->Transect[j].ID);
         return;
     }
-    if ( Xleftbank > Xrightbank )
+    if ( trnsct->Xleftbank > trnsct->Xrightbank )
     {
         report_writeErrorMsg(sp, ERR_TRANSECT_OVERBANK, sp->Transect[j].ID);
         return;
@@ -218,16 +205,16 @@ void  transect_validate(SWMM_Project *sp, int j)
 
     // --- adjust main channel's Mannings n to make its equivalent
     //     length equal to that of entire flood plain
-    Nchannel = Nchannel * sqrt(Lfactor);
-    sp->Transect[j].lengthFactor = Lfactor;
+    trnsct->Nchannel = trnsct->Nchannel * sqrt(trnsct->Lfactor);
+    sp->Transect[j].lengthFactor = trnsct->Lfactor;
 
     // --- find max. depth across transect
-    ymax = Elev[1];
-    ymin = Elev[1];
-    for (i = 2; i <= Nstations; i++)
+    ymax = trnsct->Elev[1];
+    ymin = trnsct->Elev[1];
+    for (i = 2; i <= trnsct->Nstations; i++)
     {
-        ymax = MAX(Elev[i], ymax);
-        ymin = MIN(Elev[i], ymin);
+        ymax = MAX(trnsct->Elev[i], ymax);
+        ymin = MIN(trnsct->Elev[i], ymin);
     }
     if ( ymin >= ymax )
     {
@@ -237,11 +224,11 @@ void  transect_validate(SWMM_Project *sp, int j)
     sp->Transect[j].yFull = ymax - ymin;
 
     // --- add vertical sides to transect to reach full ht. on both ends
-    Station[0] = Station[1];
-    Elev[0] = ymax;
-    Nstations++;
-    Station[Nstations] = Station[Nstations-1];
-    Elev[Nstations] = Elev[0];
+    trnsct->Station[0] = trnsct->Station[1];
+    trnsct->Elev[0] = ymax;
+    trnsct->Nstations++;
+    trnsct->Station[trnsct->Nstations] = trnsct->Station[trnsct->Nstations-1];
+    trnsct->Elev[trnsct->Nstations] = trnsct->Elev[0];
 
     // --- determine size & depth increment for geometry tables
     sp->Transect[j].nTbl = N_TRANSECT_TBL;
@@ -290,7 +277,7 @@ void  transect_validate(SWMM_Project *sp, int j)
 
 //=============================================================================
 
-int  setManning(double n[])
+int  setManning(SWMM_Project *sp, double n[])
 //
 //  Input:   n[] = array of Manning's n values
 //  Output:  returns an error code
@@ -298,15 +285,18 @@ int  setManning(double n[])
 //
 {
     int i;
+
+    TTransectShared *trnsct = &sp->TransectShared;
+
     for (i=1; i<=3; i++)
     {
         if ( n[i] < 0.0 ) return ERR_NUMBER;
     }
-    if ( n[1] > 0.0 ) Nleft = n[1];
-    if ( n[2] > 0.0 ) Nright = n[2];
-    if ( n[3] > 0.0 ) Nchannel = n[3];
-    if ( Nleft == 0.0  ) Nleft = Nchannel;
-    if ( Nright == 0.0 ) Nright = Nchannel;
+    if ( n[1] > 0.0 ) trnsct->Nleft = n[1];
+    if ( n[2] > 0.0 ) trnsct->Nright = n[2];
+    if ( n[3] > 0.0 ) trnsct->Nchannel = n[3];
+    if ( trnsct->Nleft == 0.0  ) trnsct->Nleft = trnsct->Nchannel;
+    if ( trnsct->Nright == 0.0 ) trnsct->Nright = trnsct->Nchannel;
     return 0;
 }
 
@@ -321,18 +311,20 @@ int  setParams(SWMM_Project *sp, int j, char* id, double x[])
 //  Purpose: assigns parameter values to current transect being processed.
 //
 {
-    if ( j < 0 || j >= Ntransects ) return ERR_NUMBER;
+    TTransectShared *trnsct = &sp->TransectShared;
+
+    if ( j < 0 || j >= trnsct->Ntransects ) return ERR_NUMBER;
     sp->Transect[j].ID = id;                         // ID name
-    Xleftbank = x[3] / UCF(sp, LENGTH);              // left overbank location
-    Xrightbank = x[4] / UCF(sp, LENGTH);             // right overbank location
-    Lfactor = x[7];                              // channel/bank length
-    if ( Lfactor == 0.0 ) Lfactor = 1.0;
-    Xfactor = x[8];                              // station location multiplier
-    if ( Xfactor == 0.0 ) Xfactor = 1.0;
-    Xleftbank *= Xfactor;                        // adjusted left bank
-    Xrightbank *= Xfactor;                       // adjusted right bank
-    Yfactor = x[9] / UCF(sp, LENGTH);                // elevation offset
-    Nstations = 0;
+    trnsct->Xleftbank = x[3] / UCF(sp, LENGTH);              // left overbank location
+    trnsct->Xrightbank = x[4] / UCF(sp, LENGTH);             // right overbank location
+    trnsct->Lfactor = x[7];                              // channel/bank length
+    if ( trnsct->Lfactor == 0.0 ) trnsct->Lfactor = 1.0;
+    trnsct->Xfactor = x[8];                              // station location multiplier
+    if ( trnsct->Xfactor == 0.0 ) trnsct->Xfactor = 1.0;
+    trnsct->Xleftbank *= trnsct->Xfactor;                        // adjusted left bank
+    trnsct->Xrightbank *= trnsct->Xfactor;                       // adjusted right bank
+    trnsct->Yfactor = x[9] / UCF(sp, LENGTH);                // elevation offset
+    trnsct->Nstations = 0;
     return 0;
 }
 
@@ -346,20 +338,22 @@ int  addStation(SWMM_Project *sp, double y, double x)
 //  Purpose: adds a new station to the transect currently being processed.
 //
 {
+    TTransectShared *trnsct = &sp->TransectShared;
+
     // --- check for valid number of stations
-    if ( Nstations < 0 ) return ERR_TRANSECT_UNKNOWN;
-    Nstations++;
-    if ( Nstations >= MAXSTATION ) return 0;
+    if ( trnsct->Nstations < 0 ) return ERR_TRANSECT_UNKNOWN;
+    trnsct->Nstations++;
+    if ( trnsct->Nstations >= MAXSTATION ) return 0;
 
     // --- add station distance, modified by distance multiplier
-    Station[Nstations] = x * Xfactor / UCF(sp, LENGTH);
+    trnsct->Station[trnsct->Nstations] = x * trnsct->Xfactor / UCF(sp, LENGTH);
 
     // --- add station elevation, modified by offset elevation
-    Elev[Nstations] = (y + Yfactor) / UCF(sp, LENGTH);
+    trnsct->Elev[trnsct->Nstations] = (y + trnsct->Yfactor) / UCF(sp, LENGTH);
 
     // --- check if station distances are non-increasing
-    if ( Nstations > 1
-        && Station[Nstations] < Station[Nstations-1] )
+    if ( trnsct->Nstations > 1
+        && trnsct->Station[trnsct->Nstations] < trnsct->Station[trnsct->Nstations-1] )
         return ERR_TRANSECT_SEQUENCE;
     return 0;    
 }
@@ -387,24 +381,26 @@ void  getGeometry(SWMM_Project *sp, int i, int j, double y)
            qSum;             // total flow across transect
     int   findFlow;          // true if flow thru area slice needs updating
 
+    TTransectShared *trnsct = &sp->TransectShared;
+
     // --- initialize
     wpSum = 0.0;
     aSum = 0.0;
     qSum = 0.0;
 
     // --- examine each horizontal station from left to right
-    for (k = 1; k <= Nstations; k++)
+    for (k = 1; k <= trnsct->Nstations; k++)
     {
         // --- determine low & high elevations for transect sub-section
-        if ( Elev[k-1] >= Elev[k] )
+        if ( trnsct->Elev[k-1] >= trnsct->Elev[k] )
         {
-            yhi = Elev[k-1];
-            ylo = Elev[k];
+            yhi = trnsct->Elev[k-1];
+            ylo = trnsct->Elev[k];
         }
         else
         {
-            yhi = Elev[k];
-            ylo = Elev[k-1];
+            yhi = trnsct->Elev[k];
+            ylo = trnsct->Elev[k-1];
         }
 
         // --- skip station if its totally dry
@@ -412,7 +408,7 @@ void  getGeometry(SWMM_Project *sp, int i, int j, double y)
 
         // --- get top width, area & wetted perimeter values for transect
         //     slice between station k and k-1
-        getSliceGeom(k, y, ylo, yhi, &w, &a, &wp);
+        getSliceGeom(sp, k, y, ylo, yhi, &w, &a, &wp);
 
         // --- update total transect values
         wpSum += wp;
@@ -421,11 +417,11 @@ void  getGeometry(SWMM_Project *sp, int i, int j, double y)
         sp->Transect[j].widthTbl[i] += w;
 
         // --- must update flow if station elevation is above water level
-        if ( Elev[k] >= y ) findFlow = TRUE;
+        if ( trnsct->Elev[k] >= y ) findFlow = TRUE;
         else findFlow = FALSE;
 
         // --- update flow across transect if called for
-        q = getFlow(k, aSum, wpSum, findFlow);
+        q = getFlow(sp, k, aSum, wpSum, findFlow);
         if ( q > 0.0 )
         {
             qSum += q;
@@ -439,13 +435,13 @@ void  getGeometry(SWMM_Project *sp, int i, int j, double y)
     //     total flow, total area, and main channel n
     aSum = sp->Transect[j].areaTbl[i];
     if ( aSum == 0.0 ) sp->Transect[j].hradTbl[i] = sp->Transect[j].hradTbl[i-1];
-    else sp->Transect[j].hradTbl[i] = pow(qSum * Nchannel / 1.49 / aSum, 1.5);
+    else sp->Transect[j].hradTbl[i] = pow(qSum * trnsct->Nchannel / 1.49 / aSum, 1.5);
 }
 
 //=============================================================================
 
-void getSliceGeom(int k, double y, double ylo, double yhi, double *w,
-                  double *a, double *wp)
+void getSliceGeom(SWMM_Project *sp, int k, double y, double ylo, double yhi,
+        double *w, double *a, double *wp)
 //
 //  Input:   k = station index
 //           y = water elevation
@@ -470,8 +466,10 @@ void getSliceGeom(int k, double y, double ylo, double yhi, double *w,
 {
     double width, ratio;
 
+    TTransectShared *trnsct = &sp->TransectShared;
+
     // --- compute width & wetted perimeter of transect slice
-    width = fabs(Station[k] - Station[k-1]);
+    width = fabs(trnsct->Station[k] - trnsct->Station[k-1]);
     (*w) = width;
     (*wp) = sqrt(width * width + (yhi - ylo) * (yhi - ylo));
     (*a)  = 0.0;
@@ -495,7 +493,7 @@ void getSliceGeom(int k, double y, double ylo, double yhi, double *w,
 
 //=============================================================================
 
-double getFlow(int k, double a, double wp, int findFlow)
+double getFlow(SWMM_Project *sp, int k, double a, double wp, int findFlow)
 //
 //  Input:   k = index of station at end of transect sub-section
 //           a = flow area of sub-section
@@ -507,25 +505,27 @@ double getFlow(int k, double a, double wp, int findFlow)
 {
     double n;                          // Manning's n
 
+    TTransectShared *trnsct = &sp->TransectShared;
+
     if ( findFlow == FALSE)
     {
         // --- flow needs updating if we are at last station
-        if ( k == Nstations - 1 ) findFlow = TRUE;
+        if ( k == trnsct->Nstations - 1 ) findFlow = TRUE;
 
         // --- flow needs updating if we are at end of left overbank and
         //     there is a change in Manning's n and section not vertical
-        else if ( Station[k] == Xleftbank )
+        else if ( trnsct->Station[k] == trnsct->Xleftbank )
         {
-            if ( Nleft != Nchannel &&
-                Station[k] != Station[k-1] ) findFlow = TRUE;
+            if ( trnsct->Nleft != trnsct->Nchannel &&
+                    trnsct->Station[k] != trnsct->Station[k-1] ) findFlow = TRUE;
         }
 
         // --- flow needs updating if we are at start of right overbank and
         //     there is a change in Manning's n and section not vertical
-        else if ( Station[k] == Xrightbank )
+        else if ( trnsct->Station[k] == trnsct->Xrightbank )
         {
-            if ( Nright != Nchannel &&
-                Station[k] != Station[k+1] ) findFlow = TRUE;
+            if ( trnsct->Nright != trnsct->Nchannel &&
+                    trnsct->Station[k] != trnsct->Station[k+1] ) findFlow = TRUE;
         }
     }
 
@@ -533,9 +533,9 @@ double getFlow(int k, double a, double wp, int findFlow)
     if ( findFlow )
     {
         // --- find value of Manning's n to use
-        n = Nchannel;
-        if ( Station[k-1] < Xleftbank ) n = Nleft;
-        if ( Station[k] > Xrightbank )  n = Nright;
+        n = trnsct->Nchannel;
+        if ( trnsct->Station[k-1] < trnsct->Xleftbank ) n = trnsct->Nleft;
+        if ( trnsct->Station[k] > trnsct->Xrightbank )  n = trnsct->Nright;
 
         // --- compute flow through flow area
         return PHI / n * a * pow(a/wp, 2./3.);

@@ -58,7 +58,7 @@ enum   GWvariables {
          gwvMAX};
 
 // Names of GW variables that can be used in GW outflow expression
-static char* GWVarWords[] = {"HGW", "HSW", "HCB", "HGS", "KS", "K",            //(5.1.010)
+static const char* GWVarWords[] = {"HGW", "HSW", "HCB", "HGS", "KS", "K",            //(5.1.010)
                              "THETA", "PHI", "FI", "FU", "A", NULL};           //(5.1.008)
 
 //-----------------------------------------------------------------------------

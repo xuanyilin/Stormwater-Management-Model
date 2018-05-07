@@ -94,10 +94,10 @@ enum LidLayerTypes {
 //// Note: DRAINMAT must be placed before DRAIN so the two keywords can
 ///        be distinguished from one another when parsing a line of input. 
 
-char* LidLayerWords[] =
+const char* LidLayerWords[] =
     {"SURFACE", "SOIL", "STORAGE", "PAVEMENT", "DRAINMAT", "DRAIN", NULL};
 
-char* LidTypeWords[] =
+const char* LidTypeWords[] =
     {"BC",                   //bio-retention cell
      "RG",                   //rain garden
      "GR",                   //green roof
@@ -395,8 +395,6 @@ int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
     double     x[5];
     char*      fname = NULL;                                                   //(5.1.008)
     int        drainSubcatch = -1, drainNode = -1;                             //(5.1.008)
-
-    TLidShared *ld = &sp->LidShared;
 
     //... check for valid number of input tokens
     if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");

@@ -335,8 +335,6 @@ double massbal_getBuildup(SWMM_Project *sp, int p)
     int    i, j;
     double load = 0.0;
 
-    TMassbalShared *mssbl = &sp->MassbalShared;
-
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         for (i = 0; i < sp->Nobjects[LANDUSE]; i++)

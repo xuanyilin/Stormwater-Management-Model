@@ -135,18 +135,18 @@ const char* SectWords[]          = { ws_TITLE,          ws_OPTION,
                                ws_LID_USAGE,      ws_GWF,                      //(5.1.007)
                                ws_ADJUST,         ws_EVENT,                    //(5.1.011)
                                NULL};                       
-char* SnowmeltWords[]      = { w_PLOWABLE, w_IMPERV, w_PERV, w_REMOVAL, NULL};
-char* TempKeyWords[]       = { w_TIMESERIES, w_FILE, w_WINDSPEED, w_SNOWMELT,
+const char* SnowmeltWords[]      = { w_PLOWABLE, w_IMPERV, w_PERV, w_REMOVAL, NULL};
+const char* TempKeyWords[]       = { w_TIMESERIES, w_FILE, w_WINDSPEED, w_SNOWMELT,
                                w_ADC, NULL};
-char* TransectKeyWords[]   = { w_NC, w_X1, w_GR, NULL};
-char* TreatTypeWords[]     = { w_REMOVAL, w_CONCEN, NULL};
-char* UHTypeWords[]        = { w_SHORT, w_MEDIUM, w_LONG, NULL};
-char* VolUnitsWords[]      = { w_MGAL, w_MLTRS };
-char* VolUnitsWords2[]     = { w_GAL, w_LTR };
-char* WashoffTypeWords[]   = { w_NONE, w_EXP, w_RC, w_EMC, NULL};
-char* WeirTypeWords[]      = { w_TRANSVERSE, w_SIDEFLOW, w_VNOTCH,
+const char* TransectKeyWords[]   = { w_NC, w_X1, w_GR, NULL};
+const char* TreatTypeWords[]     = { w_REMOVAL, w_CONCEN, NULL};
+const char* UHTypeWords[]        = { w_SHORT, w_MEDIUM, w_LONG, NULL};
+const char* VolUnitsWords[]      = { w_MGAL, w_MLTRS };
+const char* VolUnitsWords2[]     = { w_GAL, w_LTR };
+const char* WashoffTypeWords[]   = { w_NONE, w_EXP, w_RC, w_EMC, NULL};
+const char* WeirTypeWords[]      = { w_TRANSVERSE, w_SIDEFLOW, w_VNOTCH,
                                w_TRAPEZOIDAL, w_ROADWAY, NULL};                //(5.1.010)
-char* XsectTypeWords[]     = { w_DUMMY,           w_CIRCULAR,
+const char* XsectTypeWords[]     = { w_DUMMY,           w_CIRCULAR,
                                w_FILLED_CIRCULAR, w_RECT_CLOSED,
                                w_RECT_OPEN,       w_TRAPEZOIDAL,
                                w_TRIANGULAR,      w_PARABOLIC,
