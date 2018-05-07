@@ -833,13 +833,13 @@ int stats_getNodeStat(SWMM_Project *sp, int index, TNodeStats *nodeStats)
 	int errorcode = 0;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -868,13 +868,13 @@ int stats_getStorageStat(SWMM_Project *sp, int index, TStorageStats *storageStat
 	int errorcode = 0;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -913,13 +913,13 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
     int p;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -974,13 +974,13 @@ int stats_getLinkStat(SWMM_Project *sp, int index, TLinkStats *linkStats)
 	int errorcode = 0;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -1010,13 +1010,13 @@ int stats_getPumpStat(SWMM_Project *sp, int index, TPumpStats *pumpStats)
 	int errorcode = 0;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -1055,13 +1055,13 @@ int stats_getSubcatchStat(SWMM_Project *sp ,int index, TSubcatchStats *subcatchS
     int p;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}

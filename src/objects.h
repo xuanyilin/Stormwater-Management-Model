@@ -81,6 +81,7 @@ typedef struct SWMM_Project SWMM_Project;
 #include "toposort.h"
 #include "transect.h"
 #include "treatmnt.h"
+#include "swmm-internal.h"
 
 //-----------------
 // FILE INFORMATION
@@ -1281,6 +1282,7 @@ struct SWMM_Project {
    TTransectShared TransectShared;
    TTreatmntShared TreatmntShared;
 
+   TSwmmShared SwmmShared;
 };
 
 

@@ -26,7 +26,7 @@
 int     massbal_getRoutingFlowTotal(SWMM_Project *sp, SM_RoutingTotals *routingTot);
 int     massbal_getRunoffTotal(SWMM_Project *sp, SM_RunoffTotals *runoffTot);
 double  massbal_getTotalArea(void);
-int     massbal_getNodeTotalInflow(int index, double *value);
+int     massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value);
 
 int  stats_getNodeStat(SWMM_Project *sp, int index, SM_NodeStats *nodeStats);
 int  stats_getStorageStat(SWMM_Project *sp, int index, SM_StorageStats *storageStats);
@@ -69,7 +69,7 @@ int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_ProjectHandle ph, int time
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if (swmm_IsOpenFlag() == FALSE)
+    if (swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -113,12 +113,12 @@ int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_ProjectHandle ph, int time
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
     // Check if Simulation is Running
-    else if(swmm_IsStartedFlag() == TRUE)
+    else if(swmm_IsStartedFlag(sp) == TRUE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -177,7 +177,7 @@ int DLLEXPORT  swmm_getSimulationUnit_project(SWMM_ProjectHandle ph, int type, i
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -217,7 +217,7 @@ int DLLEXPORT  swmm_getSimulationAnalysisSetting_project(SWMM_ProjectHandle ph,
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -265,7 +265,7 @@ int DLLEXPORT  swmm_getSimulationParam_project(SWMM_ProjectHandle ph, int type, 
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -349,7 +349,7 @@ int DLLEXPORT swmm_getObjectId_project(SWMM_ProjectHandle ph, int type, int inde
     strcpy(id,"");
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -417,7 +417,7 @@ int DLLEXPORT swmm_getNodeType_project(SWMM_ProjectHandle ph, int index, int *Nt
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -448,7 +448,7 @@ int DLLEXPORT swmm_getLinkType_project(SWMM_ProjectHandle ph, int index, int *Lt
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -479,7 +479,7 @@ int DLLEXPORT swmm_getLinkConnections_project(SWMM_ProjectHandle ph, int index, 
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -513,7 +513,7 @@ int DLLEXPORT swmm_getLinkDirection_project(SWMM_ProjectHandle ph, int index, si
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -547,7 +547,7 @@ int DLLEXPORT swmm_getNodeParam_project(SWMM_ProjectHandle ph, int index, int Pa
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -594,12 +594,12 @@ int DLLEXPORT swmm_setNodeParam_project(SWMM_ProjectHandle ph, int index, int Pa
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
      // Check if Simulation is Running
-    else if(swmm_IsStartedFlag() == TRUE)
+    else if(swmm_IsStartedFlag(sp) == TRUE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -648,7 +648,7 @@ int DLLEXPORT swmm_getLinkParam_project(SWMM_ProjectHandle ph, int index, int Pa
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -699,7 +699,7 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_ProjectHandle ph, int index, int Pa
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -715,14 +715,14 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_ProjectHandle ph, int index, int Pa
             // offset1
             case SM_OFFSET1:
                 // Check if Simulation is Running
-                if(swmm_IsStartedFlag() == TRUE)
+                if(swmm_IsStartedFlag(sp) == TRUE)
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
                 sp->Link[index].offset1 = value / UCF(sp, LENGTH); break;
             case SM_OFFSET2:
                 // Check if Simulation is Running
-                if(swmm_IsStartedFlag() == TRUE)
+                if(swmm_IsStartedFlag(sp) == TRUE)
                 {
                     errcode = ERR_API_SIM_NRUNNING; break;
                 }
@@ -764,7 +764,7 @@ int DLLEXPORT swmm_getSubcatchParam_project(SWMM_ProjectHandle ph, int index, in
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -811,12 +811,12 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_ProjectHandle ph, int index,
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
      // Check if Simulation is Running
-    else if(swmm_IsStartedFlag() == TRUE)
+    else if(swmm_IsStartedFlag(sp) == TRUE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -867,7 +867,7 @@ int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_ProjectHandle ph, int i
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -921,7 +921,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_ProjectHandle ph, char *dt
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Simulation is Running
-    if(swmm_IsStartedFlag() == FALSE) return(ERR_API_SIM_NRUNNING);
+    if(swmm_IsStartedFlag(sp) == FALSE) return(ERR_API_SIM_NRUNNING);
 
     // Fetch Current Time
     currentTime = getDateTime(sp, sp->NewRoutingTime);
@@ -956,7 +956,7 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_ProjectHandle ph, int index, int t
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Simulation is Running
-    if(swmm_IsStartedFlag() == FALSE)
+    if(swmm_IsStartedFlag(sp) == FALSE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -1010,7 +1010,7 @@ int DLLEXPORT swmm_getLinkResult_project(SWMM_ProjectHandle ph, int index, int t
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Simulation is Running
-    if(swmm_IsStartedFlag() == FALSE)
+    if(swmm_IsStartedFlag(sp) == FALSE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -1063,7 +1063,7 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_ProjectHandle ph, int index, i
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Simulation is Running
-    if(swmm_IsStartedFlag() == FALSE)
+    if(swmm_IsStartedFlag(sp) == FALSE)
     {
         errcode = ERR_API_SIM_NRUNNING;
     }
@@ -1155,7 +1155,7 @@ int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_ProjectHandle ph, int index, 
 
     SWMM_Project *sp = (SWMM_Project*)ph;
 
-    errorcode = massbal_getNodeTotalInflow(index, value);
+    errorcode = massbal_getNodeTotalInflow(sp, index, value);
 
     if (errorcode == 0)
     {
@@ -1522,7 +1522,7 @@ int DLLEXPORT swmm_getGagePrecip_project(SWMM_ProjectHandle ph, int index,
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
 	    errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -1555,7 +1555,7 @@ int DLLEXPORT swmm_setGagePrecip_project(SWMM_ProjectHandle ph, int index, doubl
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag() == FALSE)
+    if(swmm_IsOpenFlag(sp) == FALSE)
     {
 	    errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -1599,7 +1599,7 @@ int DLLEXPORT swmm_setLinkSetting_project(SWMM_ProjectHandle ph, int index,
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if (swmm_IsOpenFlag() == FALSE)
+    if (swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -1647,7 +1647,7 @@ int DLLEXPORT swmm_setNodeInflow_project(SWMM_ProjectHandle ph, int index, doubl
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if (swmm_IsOpenFlag() == FALSE)
+    if (swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }
@@ -1715,7 +1715,7 @@ int DLLEXPORT swmm_setOutfallStage_project(SWMM_ProjectHandle ph, int index, dou
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if (swmm_IsOpenFlag() == FALSE)
+    if (swmm_IsOpenFlag(sp) == FALSE)
     {
         errcode = ERR_API_INPUTNOTOPEN;
     }

@@ -163,8 +163,8 @@ void DLLEXPORT   swmm_clearError_project(SWMM_ProjectHandle ph);
 int  DLLEXPORT   swmm_checkError(char** msg_buffer);
 int  DLLEXPORT   swmm_checkError_project(SWMM_ProjectHandle ph, char** msg_buffer);
 
-int  swmm_IsOpenFlag(void);
-int  swmm_IsStartedFlag(void);
+int  swmm_IsOpenFlag(SWMM_Project *sp);
+int  swmm_IsStartedFlag(SWMM_Project *sp);
 
 #ifdef __cplusplus 
 }   // matches the linkage specification from above */ 

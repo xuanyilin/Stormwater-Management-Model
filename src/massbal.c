@@ -1151,13 +1151,13 @@ int massbal_getRoutingFlowTotal(SWMM_Project *sp, TRoutingTotals *RoutingTotal)
     TMassbalShared *mssbl = &sp->MassbalShared;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -1182,13 +1182,13 @@ int massbal_getRunoffTotal(SWMM_Project *sp, TRunoffTotals *runoffTot)
     TMassbalShared *mssbl = &sp->MassbalShared;
 
 	// Check if Open
-	if (swmm_IsOpenFlag() == FALSE)
+	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_INPUTNOTOPEN;
 	}
 
 	// Check if Simulation is Running
-	else if (swmm_IsStartedFlag() == FALSE)
+	else if (swmm_IsStartedFlag(sp) == FALSE)
 	{
 		errorcode = ERR_API_SIM_NRUNNING;
 	}
@@ -1208,7 +1208,7 @@ double massbal_getTotalArea(void)
 	return TotalArea;
 }
 
-int massbal_getNodeTotalInflow(int index, double *value)
+int massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value)
 //
 // Input:  NodeIndex
 // Output: Volume
@@ -1218,12 +1218,12 @@ int massbal_getNodeTotalInflow(int index, double *value)
     int errorcode = 0;
 
     // Check if Open
-    if (swmm_IsOpenFlag() == FALSE)
+    if (swmm_IsOpenFlag(sp) == FALSE)
     {
         errorcode = ERR_API_INPUTNOTOPEN;
     }
 	// Check if Simulation is Running
-    else if (swmm_IsStartedFlag() == FALSE)
+    else if (swmm_IsStartedFlag(sp) == FALSE)
     {
         errorcode = ERR_API_SIM_NRUNNING;
     }

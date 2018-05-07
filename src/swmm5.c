@@ -151,16 +151,6 @@ const double Qcf[6] =                  // Flow Conversion Factors:
      0.02832, 28.317,  2.4466 };       // cms, lps, mld --> cfs
 
 //-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-static int  IsOpenFlag;           // TRUE if a project has been opened
-static int  IsStartedFlag;        // TRUE if a simulation has been started
-static int  SaveResultsFlag;      // TRUE if output to be saved to binary file
-static int  ExceptionCount;       // number of exceptions handled
-static int  DoRunoff;             // TRUE if runoff is computed
-static int  DoRouting;            // TRUE if flow routing is computed
-
-//-----------------------------------------------------------------------------
 //  External functions (prototyped in swmm5.h)
 //-----------------------------------------------------------------------------
 //  swmm_run
@@ -217,9 +207,9 @@ int  main(int argc, char *argv[])
     start = time(0);
 
     // --- initialize flags
-    IsOpenFlag = FALSE;
-    IsStartedFlag = FALSE;
-    SaveResultsFlag = TRUE;
+//    IsOpenFlag = FALSE;
+//    IsStartedFlag = FALSE;
+//    SaveResultsFlag = TRUE;
 
     // --- check for proper number of command line arguments
 	if (argc == 1)
@@ -408,6 +398,7 @@ int DLLEXPORT swmm_open_project(SWMM_ProjectHandle ph, char* f1, char* f2, char*
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     #ifndef __unix__
 	#ifdef DLL
@@ -426,14 +417,14 @@ int DLLEXPORT swmm_open_project(SWMM_ProjectHandle ph, char* f1, char* f2, char*
         sp->ErrorCode = 0;
         strcpy(sp->ErrorMsg, "");
         sp->Warnings = 0;
-        IsOpenFlag = FALSE;
-        IsStartedFlag = FALSE;
-        ExceptionCount = 0;
+        swmm->IsOpenFlag = FALSE;
+        swmm->IsStartedFlag = FALSE;
+        swmm->ExceptionCount = 0;
 
         // --- open a SWMM project
         project_open(sp, f1, f2, f3);
         if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                      //(5.1.011)
-        IsOpenFlag = TRUE;
+        swmm->IsOpenFlag = TRUE;
         report_writeLogo(sp);
         writecon(FMT06);
 
@@ -472,18 +463,19 @@ int DLLEXPORT swmm_start_project(SWMM_ProjectHandle ph, int saveResults)
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     // --- check that a project is open & no run started
     if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                          //(5.1.011)
-    if ( !IsOpenFlag || IsStartedFlag )
+    if ( !swmm->IsOpenFlag || swmm->IsStartedFlag )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(sp->ErrorCode);                                       //(5.1.011)
     }
 
     // --- save saveResults flag to global variable                            //(5.1.011)
-    SaveResultsFlag = saveResults;                                             //(5.1.011)
-    ExceptionCount = 0;
+    swmm->SaveResultsFlag = saveResults;                                             //(5.1.011)
+    swmm->ExceptionCount = 0;
 
 #ifdef EXH                                                                     //(5.1.011)
     // --- begin exception handling loop here
@@ -499,7 +491,7 @@ int DLLEXPORT swmm_start_project(SWMM_ProjectHandle ph, int saveResults)
         sp->ReportTime =   (double)(1000 * sp->ReportStep);
         sp->StepCount = 0;
         sp->NonConvergeCount = 0;
-        IsStartedFlag = TRUE;
+        swmm->IsStartedFlag = TRUE;
 
         // --- initialize global continuity errors
         sp->RunoffError = 0.0;
@@ -516,10 +508,10 @@ int DLLEXPORT swmm_start_project(SWMM_ProjectHandle ph, int saveResults)
         project_init(sp);
 
         // --- see if runoff & routing needs to be computed
-        if ( sp->Nobjects[SUBCATCH] > 0 ) DoRunoff = TRUE;
-        else DoRunoff = FALSE;
-        if ( sp->Nobjects[NODE] > 0 && !sp->IgnoreRouting ) DoRouting = TRUE;
-        else DoRouting = FALSE;
+        if ( sp->Nobjects[SUBCATCH] > 0 ) swmm->DoRunoff = TRUE;
+        else swmm->DoRunoff = FALSE;
+        if ( sp->Nobjects[NODE] > 0 && !sp->IgnoreRouting ) swmm->DoRouting = TRUE;
+        else swmm->DoRouting = FALSE;
 
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
 ////
@@ -527,13 +519,13 @@ int DLLEXPORT swmm_start_project(SWMM_ProjectHandle ph, int saveResults)
         output_open(sp);
 
         // --- open runoff processor
-        if ( DoRunoff ) runoff_open(sp);
+        if ( swmm->DoRunoff ) runoff_open(sp);
 
         // --- open & read hot start file if present
         if ( !hotstart_open(sp) ) return sp->ErrorCode;
 
         // --- open routing processor
-        if ( DoRouting ) routing_open(sp);
+        if ( swmm->DoRouting ) routing_open(sp);
 
         // --- open mass balance and statistics processors
         massbal_open(sp);
@@ -568,10 +560,11 @@ int DLLEXPORT swmm_step_project(SWMM_ProjectHandle ph, double* elapsedTime)     
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     // --- check that simulation can proceed
     if ( sp->ErrorCode ) return error_getCode(sp->ErrorCode);                          //(5.1.011)
-    if ( !IsOpenFlag || !IsStartedFlag  )
+    if ( !swmm->IsOpenFlag || !swmm->IsStartedFlag  )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(sp->ErrorCode);                                       //(5.1.011)
@@ -594,7 +587,7 @@ int DLLEXPORT swmm_step_project(SWMM_ProjectHandle ph, double* elapsedTime)     
         // --- save results at next reporting time
         if ( sp->NewRoutingTime >= sp->ReportTime )
         {
-            if ( SaveResultsFlag ) output_saveResults(sp, sp->ReportTime);
+            if ( swmm->SaveResultsFlag ) output_saveResults(sp, sp->ReportTime);
             sp->ReportTime = sp->ReportTime + (double)(1000 * sp->ReportStep);
         }
 
@@ -631,6 +624,8 @@ void execRouting(SWMM_Project *sp)                                              
     double   nextRoutingTime;          // updated elapsed routing time (msec)
     double   routingStep;              // routing time step (sec)
 
+    TSwmmShared *swmm = &sp->SwmmShared;
+
 #ifdef EXH                                                                     //(5.1.011)
     // --- begin exception handling loop here
     __try
@@ -638,7 +633,7 @@ void execRouting(SWMM_Project *sp)                                              
     {
         // --- determine when next routing time occurs
         sp->StepCount++;
-        if ( !DoRouting ) routingStep = MIN(sp->WetStep, sp->ReportStep);
+        if ( !swmm->DoRouting ) routingStep = MIN(sp->WetStep, sp->ReportStep);
         else routingStep = routing_getRoutingStep(sp, sp->RouteModel, sp->RouteStep);
         if ( routingStep <= 0.0 )
         {
@@ -659,7 +654,7 @@ void execRouting(SWMM_Project *sp)                                              
 ////
 
         // --- compute runoff until next routing time reached or exceeded
-        if ( DoRunoff ) while ( sp->NewRunoffTime < nextRoutingTime )
+        if ( swmm->DoRunoff ) while ( sp->NewRunoffTime < nextRoutingTime )
         {
             runoff_execute(sp);
             if ( sp->ErrorCode ) return;
@@ -670,7 +665,7 @@ void execRouting(SWMM_Project *sp)                                              
   
         // --- route flows & pollutants through drainage system                //(5.1.008)
         //     (while updating sp->NewRoutingTime)                                 //(5.1.008)
-        if ( DoRouting ) routing_execute(sp, sp->RouteModel, routingStep);
+        if ( swmm->DoRouting ) routing_execute(sp, sp->RouteModel, routingStep);
         else sp->NewRoutingTime = nextRoutingTime;
     }
 
@@ -698,15 +693,16 @@ int DLLEXPORT swmm_end_project(SWMM_ProjectHandle ph)
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     // --- check that project opened and run started
-    if ( !IsOpenFlag )
+    if ( !swmm->IsOpenFlag )
     {
         report_writeErrorMsg(sp, ERR_NOT_OPEN, "");
         return error_getCode(sp->ErrorCode);                                       //(5.1.011)
     }
 
-    if ( IsStartedFlag )
+    if ( swmm->IsStartedFlag )
     {
         // --- write ending records to binary output file
         if ( sp->Fout.file ) output_end(sp);
@@ -722,10 +718,10 @@ int DLLEXPORT swmm_end_project(SWMM_ProjectHandle ph)
         stats_close(sp);
         massbal_close(sp);
         if ( !sp->IgnoreRainfall ) rain_close(sp);
-        if ( DoRunoff ) runoff_close(sp);
-        if ( DoRouting ) routing_close(sp, sp->RouteModel);
+        if ( swmm->DoRunoff ) runoff_close(sp);
+        if ( swmm->DoRouting ) routing_close(sp, sp->RouteModel);
         hotstart_close(sp);
-        IsStartedFlag = FALSE;
+        swmm->IsStartedFlag = FALSE;
     }
     return error_getCode(sp->ErrorCode);                                           //(5.1.011)
 }
@@ -768,9 +764,10 @@ int DLLEXPORT swmm_close_project(SWMM_ProjectHandle ph)
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     if ( sp->Fout.file ) output_close();
-    if ( IsOpenFlag ) project_close(sp);
+    if ( swmm->IsOpenFlag ) project_close(sp);
     report_writeSysTime(sp);
     if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);
     if ( sp->Frpt.file != NULL ) fclose(sp->Frpt.file);
@@ -779,8 +776,9 @@ int DLLEXPORT swmm_close_project(SWMM_ProjectHandle ph)
         fclose(sp->Fout.file);
         if ( sp->Fout.mode == SCRATCH_FILE ) remove(sp->Fout.name);
     }
-    IsOpenFlag = FALSE;
-    IsStartedFlag = FALSE;
+    swmm->IsOpenFlag = FALSE;
+    swmm->IsStartedFlag = FALSE;
+
     return 0;
 }
 
@@ -804,12 +802,13 @@ int  DLLEXPORT swmm_getMassBalErr_project(SWMM_ProjectHandle ph, float* runoffEr
 //
 {
     SWMM_Project *sp = (SWMM_Project*)ph;
+    TSwmmShared *swmm = &sp->SwmmShared;
 
     *runoffErr = 0.0;
     *flowErr   = 0.0;
     *qualErr   = 0.0;
 
-    if ( IsOpenFlag && !IsStartedFlag)
+    if ( swmm->IsOpenFlag && !swmm->IsStartedFlag)
     {
         *runoffErr = (float)sp->RunoffError;
         *flowErr   = (float)sp->FlowError;
@@ -1119,6 +1118,9 @@ int xfilter(SWMM_Project *sp, int xc, char* module, double elapsedTime, long ste
     long hour;                         // current hour of simulation
     char msg[40];                      // exception type text
     char xmsg[120];                    // error message text
+
+    TSwmmShared *swmm = &sp->SwmmShared;
+
     switch (xc)
     {
     case EXCEPTION_ACCESS_VIOLATION:
@@ -1165,7 +1167,7 @@ int xfilter(SWMM_Project *sp, int xc, char* module, double elapsedTime, long ste
     sprintf(xmsg, "%sin module %s at step %d, hour %d",                        //(5.1.011)
             msg, module, step, hour);                                          //(5.1.011)
     if ( rc == EXCEPTION_EXECUTE_HANDLER ||
-         ++ExceptionCount >= MAX_EXCEPTIONS )
+         ++swmm->ExceptionCount >= MAX_EXCEPTIONS )
     {
         strcat(xmsg, " --- execution halted.");
         rc = EXCEPTION_EXECUTE_HANDLER;
@@ -1176,21 +1178,25 @@ int xfilter(SWMM_Project *sp, int xc, char* module, double elapsedTime, long ste
 #endif
 
 
-int swmm_IsOpenFlag()
+int swmm_IsOpenFlag(SWMM_Project *sp)
 //
 // Check if Project is Open
 {
+    TSwmmShared *swmm = &sp->SwmmShared;
+
 	// TRUE if a project has been opened
-	return IsOpenFlag;
+	return swmm->IsOpenFlag;
 }
 
 
-int swmm_IsStartedFlag()
+int swmm_IsStartedFlag(SWMM_Project *sp)
 //
 // Check if Simulation has started
 {
+    TSwmmShared *swmm = &sp->SwmmShared;
+
 	// TRUE if a simulation has been started
-	return IsStartedFlag;
+	return swmm->IsStartedFlag;
 }
 
 
