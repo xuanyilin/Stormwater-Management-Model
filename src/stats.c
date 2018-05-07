@@ -57,8 +57,8 @@ double              MaxRunoffFlow;
 //-----------------------------------------------------------------------------
 //  Imported variables
 //-----------------------------------------------------------------------------
-extern double*         NodeInflow;     // defined in massbal.c
-extern double*         NodeOutflow;    // defined in massbal.c
+//extern double*         NodeInflow;     // defined in massbal.c
+//extern double*         NodeOutflow;    // defined in massbal.c
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -733,6 +733,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     double x;
 
     TStatsShared *stts = &sp->StatsShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     // --- initialize max. stats arrays
     for (j=0; j<MAX_STATS; j++)
@@ -761,14 +762,14 @@ void  stats_findMaxStats(SWMM_Project *sp)
     {
         // --- skip terminal nodes and nodes with negligible inflow
         if ( sp->Node[j].degree <= 0  ) continue;
-        if ( NodeInflow[j] <= 0.1 ) continue;
+        if ( mssblx->NodeInflow[j] <= 0.1 ) continue;
 
         // --- evaluate mass balance error
         //     (Note: NodeInflow & NodeOutflow include any initial and final
         //            stored volumes, respectively).
-        if ( NodeInflow[j]  > 0.0 )
-            x = 1.0 - NodeOutflow[j] / NodeInflow[j];
-        else if ( NodeOutflow[j] > 0.0 ) x = -1.0;
+        if ( mssblx->NodeInflow[j]  > 0.0 )
+            x = 1.0 - mssblx->NodeOutflow[j] / mssblx->NodeInflow[j];
+        else if ( mssblx->NodeOutflow[j] > 0.0 ) x = -1.0;
         else                             x = 0.0;
         stats_updateMaxStats(stts->MaxMassBalErrs, NODE, j, 100.0*x);
     }

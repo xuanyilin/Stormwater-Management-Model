@@ -25,7 +25,7 @@
 // Function Declarations for API
 int     massbal_getRoutingFlowTotal(SWMM_Project *sp, SM_RoutingTotals *routingTot);
 int     massbal_getRunoffTotal(SWMM_Project *sp, SM_RunoffTotals *runoffTot);
-double  massbal_getTotalArea(void);
+double  massbal_getTotalArea(SWMM_Project *sp);
 int     massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value);
 
 int  stats_getNodeStat(SWMM_Project *sp, int index, SM_NodeStats *nodeStats);
@@ -1476,7 +1476,7 @@ int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_ProjectHandle ph, SM_Runoff
 
     if (errorcode == 0)
     {
-        double TotalArea = massbal_getTotalArea();
+        double TotalArea = massbal_getTotalArea(sp);
         // Cumulative Rainfall Volume
         runoffTot->rainfall *= (UCF(sp, RAINDEPTH) / TotalArea);
         // Cumulative Evaporation Volume

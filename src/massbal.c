@@ -49,13 +49,6 @@ static const double MAX_RUNOFF_BALANCE_ERR = 10.0;
 static const double MAX_FLOW_BALANCE_ERR   = 10.0;
 
 //-----------------------------------------------------------------------------
-//  Exportable variables
-//-----------------------------------------------------------------------------
-double*  NodeInflow;              // total inflow volume to each node (ft3)
-double*  NodeOutflow;             // total outflow volume from each node (ft3)
-double   TotalArea;               // total drainage area (ft2)
-
-//-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
 //-----------------------------------------------------------------------------
 //  massbal_open                (called from swmm_start in swmm5.c)
@@ -101,6 +94,7 @@ int massbal_open(SWMM_Project *sp)
     int j, n;
 
     TMassbalShared *mssbl = &sp->MassbalShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     // --- initialize global continuity errors
     sp->RunoffError = 0.0;
@@ -118,12 +112,12 @@ int massbal_open(SWMM_Project *sp)
     mssbl->RunoffTotals.snowRemoved = 0.0;
     mssbl->RunoffTotals.initStorage = 0.0;
     mssbl->RunoffTotals.initSnowCover = 0.0;
-    TotalArea = 0.0;
+    mssblx->TotalArea = 0.0;
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         mssbl->RunoffTotals.initStorage += subcatch_getStorage(sp, j);
         mssbl->RunoffTotals.initSnowCover += snow_getSnowCover(sp, j);
-        TotalArea += sp->Subcatch[j].area;
+        mssblx->TotalArea += sp->Subcatch[j].area;
     }
 
     // --- initialize groundwater totals
@@ -173,8 +167,8 @@ int massbal_open(SWMM_Project *sp)
     mssbl->LoadingTotals = NULL;
     mssbl->QualTotals = NULL;
     mssbl->StepQualTotals = NULL;
-    NodeInflow = NULL;
-    NodeOutflow = NULL;
+    mssblx->NodeInflow = NULL;
+    mssblx->NodeOutflow = NULL;
 
     // --- allocate memory for WQ washoff continuity totals
     n = sp->Nobjects[POLLUT];
@@ -232,19 +226,20 @@ int massbal_open(SWMM_Project *sp)
     // --- allocate memory for nodal flow continuity
     if ( sp->Nobjects[NODE] > 0 )
     {
-        NodeInflow = (double *) calloc(sp->Nobjects[NODE], sizeof(double));
-        if ( NodeInflow == NULL )
+        mssblx->NodeInflow = (double *) calloc(sp->Nobjects[NODE], sizeof(double));
+        if ( mssblx->NodeInflow == NULL )
         {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
              return sp->ErrorCode;
         }
-        NodeOutflow = (double *) calloc(sp->Nobjects[NODE], sizeof(double));
-        if ( NodeOutflow == NULL )
+        mssblx->NodeOutflow = (double *) calloc(sp->Nobjects[NODE], sizeof(double));
+        if ( mssblx->NodeOutflow == NULL )
         {
              report_writeErrorMsg(sp, ERR_MEMORY, "");
              return sp->ErrorCode;
         }
-        for (j = 0; j < sp->Nobjects[NODE]; j++) NodeInflow[j] = sp->Node[j].newVolume;
+        for (j = 0; j < sp->Nobjects[NODE]; j++)
+            mssblx->NodeInflow[j] = sp->Node[j].newVolume;
     }
     return sp->ErrorCode;
 }
@@ -259,12 +254,13 @@ void massbal_close(SWMM_Project *sp)
 //
 {
     TMassbalShared *mssbl = &sp->MassbalShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     FREE(mssbl->LoadingTotals);
     FREE(mssbl->QualTotals);
     FREE(mssbl->StepQualTotals);
-    FREE(NodeInflow);
-    FREE(NodeOutflow);
+    FREE(mssblx->NodeInflow);
+    FREE(mssblx->NodeOutflow);
 }
 
 //=============================================================================
@@ -280,12 +276,13 @@ void massbal_report(SWMM_Project *sp)
     double gwArea = 0.0;
 
     TMassbalShared *mssbl = &sp->MassbalShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     if ( sp->Nobjects[SUBCATCH] > 0 )
     {
         if ( massbal_getRunoffError(sp) > MAX_RUNOFF_BALANCE_ERR ||
              sp->RptFlags.continuity == TRUE
-           ) report_writeRunoffError(sp, &mssbl->RunoffTotals, TotalArea);
+           ) report_writeRunoffError(sp, &mssbl->RunoffTotals, mssblx->TotalArea);
 
         if ( sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality )
         {
@@ -641,6 +638,7 @@ void massbal_updateRoutingTotals(SWMM_Project *sp, double tStep)
     int j;
 
     TMassbalShared *mssbl = &sp->MassbalShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     mssbl->FlowTotals.dwInflow += mssbl->StepFlowTotals.dwInflow * tStep;
     mssbl->FlowTotals.wwInflow += mssbl->StepFlowTotals.wwInflow * tStep;
@@ -668,17 +666,17 @@ void massbal_updateRoutingTotals(SWMM_Project *sp, double tStep)
 
     for ( j = 0; j < sp->Nobjects[NODE]; j++)
     {
-        NodeInflow[j] += sp->Node[j].inflow * tStep;
+        mssblx->NodeInflow[j] += sp->Node[j].inflow * tStep;
         if ( sp->Node[j].type == OUTFALL || 
             (sp->Node[j].degree == 0 && sp->Node[j].type != STORAGE) )                 //(5.1.012)
         {
-            NodeOutflow[j] += sp->Node[j].inflow * tStep;
+            mssblx->NodeOutflow[j] += sp->Node[j].inflow * tStep;
         }
         else
         {
-            NodeOutflow[j] += sp->Node[j].outflow * tStep; 
+            mssblx->NodeOutflow[j] += sp->Node[j].outflow * tStep;
             if ( sp->Node[j].newVolume <= sp->Node[j].fullVolume ) 
-                NodeOutflow[j] += sp->Node[j].overflow * tStep; 
+                mssblx->NodeOutflow[j] += sp->Node[j].overflow * tStep;
         }
     }
 }
@@ -696,11 +694,13 @@ double massbal_getStorage(SWMM_Project *sp, char isFinalStorage)
     double totalStorage = 0.0;
     double nodeStorage;
 
+    TMassbalExport *mssblx = &sp->MassbalExport;
+
     // --- get volume in nodes
     for (j = 0; j < sp->Nobjects[NODE]; j++)
     {
         nodeStorage = sp->Node[j].newVolume;
-        if ( isFinalStorage ) NodeOutflow[j] += nodeStorage;
+        if ( isFinalStorage ) mssblx->NodeOutflow[j] += nodeStorage;
         totalStorage += nodeStorage;
     }
 
@@ -1200,12 +1200,14 @@ int massbal_getRunoffTotal(SWMM_Project *sp, TRunoffTotals *runoffTot)
 	return errorcode;
 }
 
-double massbal_getTotalArea(void)
+double massbal_getTotalArea(SWMM_Project *sp)
 //
 // Return: Total Area for Runoff Surface
 // Purpose: Used for Toolkit API Unit Conversion
 {
-	return TotalArea;
+    TMassbalExport *mssblx = &sp->MassbalExport;
+
+	return mssblx->TotalArea;
 }
 
 int massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value)
@@ -1216,6 +1218,8 @@ int massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value)
 // Purpose: Used for ToolkitAPI to pull total Node Inflow.
 {
     int errorcode = 0;
+
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     // Check if Open
     if (swmm_IsOpenFlag(sp) == FALSE)
@@ -1229,7 +1233,7 @@ int massbal_getNodeTotalInflow(SWMM_Project *sp, int index, double *value)
     }
     else
     {
-		*value = NodeInflow[index];
+		*value = mssblx->NodeInflow[index];
     }
     return errorcode;
 }

@@ -43,8 +43,9 @@ extern TOutfallStats*  OutfallStats;
 extern TPumpStats*     PumpStats;
 extern double          MaxOutfallFlow;
 extern double          MaxRunoffFlow;
-extern double*         NodeInflow;             // defined in MASSBAL.C
-extern double*         NodeOutflow;            // defined in massbal.c
+
+//extern double*         NodeInflow;             // defined in MASSBAL.C
+//extern double*         NodeOutflow;            // defined in massbal.c
 
 //-----------------------------------------------------------------------------
 //  Local functions
@@ -358,6 +359,7 @@ void writeNodeFlows(SWMM_Project *sp)
     int days1, hrs1, mins1;
 
     TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     WRITE("");
     WRITE("*******************");
@@ -385,14 +387,14 @@ void writeNodeFlows(SWMM_Project *sp)
         fprintf(sp->Frpt.file, sttsrpt->FlowFmt, NodeStats[j].maxInflow * UCF(sp, FLOW));
         fprintf(sp->Frpt.file, "  %4d  %02d:%02d", days1, hrs1, mins1);
 		fprintf(sp->Frpt.file, "%12.3g", NodeStats[j].totLatFlow * sttsrpt->Vcf);
-		fprintf(sp->Frpt.file, "%12.3g", NodeInflow[j] * sttsrpt->Vcf);
-    	if ( fabs(NodeOutflow[j]) < 1.0 )
+		fprintf(sp->Frpt.file, "%12.3g", mssblx->NodeInflow[j] * sttsrpt->Vcf);
+    	if ( fabs(mssblx->NodeOutflow[j]) < 1.0 )
             fprintf(sp->Frpt.file, "%12.3f %s",
-                (NodeInflow[j]-NodeOutflow[j])*sttsrpt->Vcf*1.0e6,
+                (mssblx->NodeInflow[j] - mssblx->NodeOutflow[j])*sttsrpt->Vcf*1.0e6,
                 VolUnitsWords2[sp->UnitSystem]);
 	    else
-            fprintf(sp->Frpt.file, "%12.3f", (NodeInflow[j]-NodeOutflow[j]) /
-                                          NodeOutflow[j]*100.); 
+            fprintf(sp->Frpt.file, "%12.3f", (mssblx->NodeInflow[j] - mssblx->NodeOutflow[j]) /
+                    mssblx->NodeOutflow[j]*100.);
     }
     WRITE("");
 }
@@ -518,6 +520,7 @@ void writeStorageVolumes(SWMM_Project *sp)
     double addedVol, pctEvapLoss, pctSeepLoss;
 
     TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     if ( sp->Nnodes[STORAGE] > 0 )
     {
@@ -555,7 +558,7 @@ void writeStorageVolumes(SWMM_Project *sp)
             }
             pctEvapLoss = 0.0;
             pctSeepLoss = 0.0;
-            addedVol = NodeInflow[j] + StorageStats[k].initVol;
+            addedVol = mssblx->NodeInflow[j] + StorageStats[k].initVol;
             if ( addedVol > 0.0 )
             {
                 pctEvapLoss = StorageStats[k].evapLosses / addedVol * 100.0;
@@ -591,6 +594,7 @@ void writeOutfallLoads(SWMM_Project *sp)
     double* totals;
 
     TStatsrptShared *sttsrpt = &sp->StatsrptShared;
+    TMassbalExport *mssblx = &sp->MassbalExport;
 
     if ( sp->Nnodes[OUTFALL] > 0 )
     {
@@ -655,8 +659,8 @@ void writeOutfallLoads(SWMM_Project *sp)
             fprintf(sp->Frpt.file, sttsrpt->FlowFmt, x);
             fprintf(sp->Frpt.file, " ");
             fprintf(sp->Frpt.file, sttsrpt->FlowFmt, OutfallStats[k].maxFlow*UCF(sp, FLOW));
-            fprintf(sp->Frpt.file, "%12.3f", NodeInflow[j] * sttsrpt->Vcf);
-            volSum += NodeInflow[j];
+            fprintf(sp->Frpt.file, "%12.3f", mssblx->NodeInflow[j] * sttsrpt->Vcf);
+            volSum += mssblx->NodeInflow[j];
 
             // --- print load of each pollutant for outfall
             for (p=0; p<sp->Nobjects[POLLUT]; p++)
