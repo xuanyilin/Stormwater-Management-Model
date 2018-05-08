@@ -45,7 +45,7 @@ void DLLEXPORT swmm_getAPIError(int errcode, char *s)
 // Return:  API Error
 // Purpose: Get an error message
 {
-    char *errmsg = error_getMsg(errcode);
+    const char *errmsg = error_getMsg(errcode);
     strcpy(s, errmsg);
 }
 

@@ -53,61 +53,8 @@ static const int    MAXDAYSPERMONTH = 32;
 enum   ClimateVarType {TMIN, TMAX, EVAP, WIND};
 enum   WindSpeedType  {WDMV, AWND};                                            //(5.1.007)
 
-static char* ClimateVarWords[] = {"TMIN", "TMAX", "EVAP", "WDMV", "AWND",      //(5.1.007)
+static const char* ClimateVarWords[] = {"TMIN", "TMAX", "EVAP", "WDMV", "AWND",      //(5.1.007)
                                   NULL};
-
-////  Added for release 5.1.010.  ////                                         //(5.1.010)
-//-----------------------------------------------------------------------------
-//  Data Structures
-//-----------------------------------------------------------------------------
-//typedef struct
-//{
-//    double    tAve;          // moving avg. for daily temperature (deg F)
-//    double    tRng;          // moving avg. for daily temp. range (deg F)
-//    double    ta[7];         // data window for tAve
-//    double    tr[7];         // data window for tRng
-//    int       count;         // length of moving average window
-//    int       maxCount;      // maximum length of moving average window
-//    int       front;         // index of front of moving average window
-//} TMovAve;
-////
-
-
-//-----------------------------------------------------------------------------
-//  Shared variables
-//-----------------------------------------------------------------------------
-// Temperature variables
-// static double    Tmin;                 // min. daily temperature (deg F)
-//static double    Tmax;                 // max. daily temperature (deg F)
-//static double    Trng;                 // 1/2 range of daily temperatures
-//static double    Trng1;                // prev. max - current min. temp.
-//static double    Tave;                 // average daily temperature (deg F)
-//static double    Hrsr;                 // time of min. temp. (hrs)
-//static double    Hrss;                 // time of max. temp (hrs)
-//static double    Hrday;                // avg. of min/max temp times
-//static double    Dhrdy;                // hrs. between min. & max. temp. times
-//static double    Dydif;                // hrs. between max. & min. temp. times
-//static DateTime  LastDay;              // date of last day with temp. data
-//static TMovAve   Tma;                  // moving average of daily temperatures //(5.1.010)
-
-// Evaporation variables
-//static DateTime  NextEvapDate;         // next date when evap. rate changes
-//static double    NextEvapRate;         // next evaporation rate (user units)
-
-// Climate file variables
-//static int      FileFormat;            // file format (see ClimateFileFormats)
-//static int      FileYear;              // current year of file data
-//static int      FileMonth;             // current month of year of file data
-//static int      FileDay;               // current day of month of file data
-//static int      FileLastDay;           // last day of current month of file data
-//static int      FileElapsedDays;       // number of days read from file
-//static double   FileValue[4];          // current day's values of climate data
-//static double   FileData[4][32];       // month's worth of daily climate data
-//static char     FileLine[MAXLINE+1];   // line from climate data file
-//
-//static int      FileFieldPos[4];       // start of data fields for file record //(5.1.007)
-//static int      FileDateFieldPos;      // start of date field for file record  //(5.1.007)
-//static int      FileWindType;          // wind speed type;                     //(5.1.007)
 
 //-----------------------------------------------------------------------------
 //  External functions (defined in funcs.h)

@@ -77,7 +77,7 @@ int runoff_open(SWMM_Project *sp)
     rnff->Nsteps = 0;
 
     // --- open the Ordinary Differential Equation solver
-    if ( !odesolve_open(MAXODES) ) report_writeErrorMsg(sp, ERR_ODE_SOLVER, "");
+    if ( !odesolve_open(sp, MAXODES) ) report_writeErrorMsg(sp, ERR_ODE_SOLVER, "");
 
     // --- allocate memory for pollutant runoff loads                          //(5.1.008)
     rnff->OutflowLoad = NULL;
@@ -118,7 +118,7 @@ void runoff_close(SWMM_Project *sp)
     TRunoffShared *rnff = &sp->RunoffShared;
 
     // --- close the ODE solver
-    odesolve_close();
+    odesolve_close(sp);
 
     // --- free memory for pollutant runoff loads                              //(5.1.008)
     FREE(rnff->OutflowLoad);

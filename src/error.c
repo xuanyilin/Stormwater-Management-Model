@@ -184,7 +184,7 @@
 //        (in error.h) whenever a new error message is added.
 /////////////////////////////////////////////////////////////////////////////
 
-char* ErrorMsgs[] =
+const char* ErrorMsgs[] =
     { "",     ERR101, ERR103, ERR105, ERR107, ERR108, ERR109, ERR110, ERR111,
       ERR112, ERR113, ERR114, ERR115, ERR117, ERR119, ERR121, ERR122, ERR131,
       ERR133, ERR134, ERR135, ERR136, ERR137, ERR138, ERR139, ERR141, ERR143,
@@ -199,7 +199,7 @@ char* ErrorMsgs[] =
       ERR363, ERR401, ERR402, ERR403, ERR405, ERR501, ERR502, ERR503, ERR504,
 	  ERR505, ERR506, ERR507, ERR508, ERR509};
 
-int ErrorCodes[] =
+const int ErrorCodes[] =
     { 0,      101,    103,    105,    107,    108,    109,    110,    111,
       112,    113,    114,    115,    117,    119,    121,    122,    131,
       133,    134,    135,    136,    137,    138,    139,    141,    143,
@@ -216,7 +216,7 @@ int ErrorCodes[] =
 
 char  ErrString[256];
 
-char* error_getMsg(int i)
+const char* error_getMsg(int i)
 {
     if ( i >= 0 && i < MAXERRMSG ) return ErrorMsgs[i];
     else return ErrorMsgs[0];

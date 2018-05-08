@@ -62,10 +62,12 @@ typedef struct SWMM_Project SWMM_Project;
 #include "controls.h"
 #include "datetime.h"
 #include "dynwave.h"
+#include "gwater.h"
 #include "iface.h"
 #include "input.h"
 #include "lid.h"
 #include "lidproc.h"
+#include "odesolve.h"
 #include "output.h"
 #include "hash.h"
 #include "massbal.h"
@@ -251,74 +253,6 @@ typedef struct
 }   TEvent;
 
 
-//-------------------
-// AQUIFER OBJECT
-//-------------------
-typedef struct
-{
-    char*       ID;               // aquifer name
-    double      porosity;         // soil porosity
-    double      wiltingPoint;     // soil wilting point
-    double      fieldCapacity;    // soil field capacity
-    double      conductivity;     // soil hyd. conductivity (ft/sec)
-    double      conductSlope;     // slope of conductivity v. moisture curve
-    double      tensionSlope;     // slope of tension v. moisture curve
-    double      upperEvapFrac;    // evaporation available in upper zone
-    double      lowerEvapDepth;   // evap depth existing in lower zone (ft)
-    double      lowerLossCoeff;   // coeff. for losses to deep GW (ft/sec)
-    double      bottomElev;       // elevation of bottom of aquifer (ft)
-    double      waterTableElev;   // initial water table elevation (ft)
-    double      upperMoisture;    // initial moisture content of unsat. zone
-    int         upperEvapPat;     // monthly upper evap. adjustment factors
-} TAquifer;
-
-
-////  Added to release 5.1.008.  ////                                          //(5.1.008)
-//-----------------------
-// GROUNDWATER STATISTICS
-//-----------------------
-typedef struct
-{
-    double       infil;           // total infiltration (ft)
-    double       evap;            // total evaporation (ft)
-    double       latFlow;         // total lateral outflow (ft)
-    double       deepFlow;        // total flow to deep aquifer (ft)
-    double       avgUpperMoist;   // avg. upper zone moisture
-    double       finalUpperMoist; // final upper zone moisture
-    double       avgWaterTable;   // avg. water table height (ft)
-    double       finalWaterTable; // final water table height (ft)
-    double       maxFlow;         // max. lateral outflow (cfs)
-}  TGWaterStats;
-
-
-//------------------------
-// GROUNDWATER OBJECT
-//------------------------
-typedef struct
-{
-    int           aquifer;        // index of associated gw aquifer 
-    int           node;           // index of node receiving gw flow
-    double        surfElev;       // elevation of ground surface (ft)
-    double        a1, b1;         // ground water outflow coeff. & exponent
-    double        a2, b2;         // surface water outflow coeff. & exponent
-    double        a3;             // surf./ground water interaction coeff.
-    double        fixedDepth;     // fixed surface water water depth (ft)
-    double        nodeElev;       // elevation of receiving node invert (ft)
-    double        bottomElev;     // bottom elevation of lower GW zone (ft)
-    double        waterTableElev; // initial water table elevation (ft)
-    double        upperMoisture;  // initial moisture content of unsat. zone
-    //----------------------------
-    double        theta;          // upper zone moisture content
-    double        lowerDepth;     // depth of saturated zone (ft)
-    double        oldFlow;        // gw outflow from previous time period (fps)  //(5.1.011)
-    double        newFlow;        // gw outflow from current time period (fps)   //(5.1.011)
-    double        evapLoss;       // evaporation loss rate (ft/sec)
-    double        maxInfilVol;    // max. infil. upper zone can accept (ft)
-    TGWaterStats  stats;          // gw statistics                             //(5.1.008)
-} TGroundwater;
-
-#include "gwater.h"
-
 //----------------
 // SNOWMELT OBJECT
 //----------------
@@ -364,29 +298,6 @@ typedef struct
    double        sbws[3];         // final AWESI of linear ADC
    double        imelt[3];        // immediate melt (ft)
 }  TSnowpack;
-
-
-////---------------
-//// SUBAREA OBJECT
-////---------------
-//// An array of 3 subarea objects is associated with each subcatchment object.
-//// They describe the runoff process on 3 types of surfaces:
-////   1 - impervious with no depression storage
-////   2 - impervious with depression storage
-////   3 - pervious
-//typedef struct
-//{
-//   int           routeTo;         // code indicating where outflow is sent
-//   double        fOutlet;         // fraction of outflow to outlet
-//   double        N;               // Manning's n
-//   double        fArea;           // fraction of total area
-//   double        dStore;          // depression storage (ft)
-//   //-----------------------------
-//   double        alpha;           // overland flow factor
-//   double        inflow;          // inflow rate (ft/sec)
-//   double        runoff;          // runoff rate (ft/sec)
-//   double        depth;           // depth of surface runoff (ft)
-//}  TSubarea;
 
 
 //-------------------------
@@ -892,225 +803,6 @@ typedef struct
 }  TRptFlags;
 
 
-////-------------------------------
-//// CUMULATIVE RUNOFF TOTALS
-////-------------------------------
-//typedef struct
-//{                                 // All volume totals are in ft3.             //(5.1.008)
-//   double        rainfall;        // rainfall volume
-//   double        evap;            // evaporation loss
-//   double        infil;           // infiltration loss
-//   double        runoff;          // runoff volume
-//   double        drains;          // LID drains                                //(5.1.008)
-//   double        runon;           // runon from outfalls                       //(5.1.008)
-//   double        initStorage;     // inital surface storage
-//   double        finalStorage;    // final surface storage
-//   double        initSnowCover;   // initial snow cover
-//   double        finalSnowCover;  // final snow cover
-//   double        snowRemoved;     // snow removal
-//   double        pctError;        // continuity error (%)
-//}  TRunoffTotals;
-//
-//
-////--------------------------
-//// CUMULATIVE LOADING TOTALS
-////--------------------------
-//typedef struct
-//{                                 // All loading totals are in lbs.
-//   double        initLoad;        // initial loading
-//   double        buildup;         // loading added from buildup
-//   double        deposition;      // loading added from wet deposition
-//   double        sweeping;        // loading removed by street sweeping
-//   double        bmpRemoval;      // loading removed by BMPs
-//   double        infil;           // loading removed by infiltration
-//   double        runoff;          // loading removed by runoff
-//   double        finalLoad;       // final loading
-//   double        pctError;        // continuity error (%)
-//}  TLoadingTotals;
-//
-//
-////------------------------------
-//// CUMULATIVE GROUNDWATER TOTALS
-////------------------------------
-//typedef struct
-//{                                 // All GW flux totals are in feet.
-//   double        infil;           // surface infiltration
-//   double        upperEvap;       // upper zone evaporation loss
-//   double        lowerEvap;       // lower zone evaporation loss
-//   double        lowerPerc;       // percolation out of lower zone
-//   double        gwater;          // groundwater flow
-//   double        initStorage;     // initial groundwater storage
-//   double        finalStorage;    // final groundwater storage
-//   double        pctError;        // continuity error (%)
-//}  TGwaterTotals;
-//
-//
-////----------------------------
-//// CUMULATIVE ROUTING TOTALS
-////----------------------------
-//typedef struct
-//{                                  // All routing totals are in ft3.
-//   double        dwInflow;         // dry weather inflow
-//   double        wwInflow;         // wet weather inflow
-//   double        gwInflow;         // groundwater inflow
-//   double        iiInflow;         // RDII inflow
-//   double        exInflow;         // direct inflow
-//   double        flooding;         // internal flooding
-//   double        outflow;          // external outflow
-//   double        evapLoss;         // evaporation loss
-//   double        seepLoss;         // seepage loss
-//   double        reacted;          // reaction losses
-//   double        initStorage;      // initial storage volume
-//   double        finalStorage;     // final storage volume
-//   double        pctError;         // continuity error
-//}  TRoutingTotals;
-//
-
-
-////-----------------------
-//// SYSTEM-WIDE STATISTICS
-////-----------------------
-//typedef struct
-//{
-//   double        minTimeStep;
-//   double        maxTimeStep;
-//   double        avgTimeStep;
-//   double        avgStepCount;
-//   double        steadyStateCount;
-//}  TSysStats;
-
-
-////--------------------
-//// RAINFALL STATISTICS
-////--------------------
-//typedef struct
-//{
-//   DateTime    startDate;
-//   DateTime    endDate;
-//   long        periodsRain;
-//   long        periodsMissing;
-//   long        periodsMalfunc;
-//}  TRainStats;
-
-
-////------------------------
-//// SUBCATCHMENT STATISTICS
-////------------------------
-//typedef struct
-//{
-//    double       precip;
-//    double       runon;
-//    double       evap;
-//    double       infil;
-//    double       runoff;
-//    double       maxFlow;
-//    double*      surfaceBuildup;
-//}  TSubcatchStats;
-//
-//
-////----------------
-//// NODE STATISTICS
-////----------------
-//typedef struct
-//{
-//   double        avgDepth;
-//   double        maxDepth;
-//   DateTime      maxDepthDate;
-//   double        maxRptDepth;                                                  //(5.1.008)
-//   double        volFlooded;
-//   double        timeFlooded;
-//   double        timeSurcharged;
-//   double        timeCourantCritical;
-//   double        totLatFlow;
-//   double        maxLatFlow;
-//   double        maxInflow;
-//   double        maxOverflow;
-//   double        maxPondedVol;
-//   DateTime      maxInflowDate;
-//   DateTime      maxOverflowDate;
-//}  TNodeStats;
-//
-//
-////-------------------
-//// STORAGE STATISTICS
-////-------------------
-//typedef struct
-//{
-//   double        initVol;
-//   double        avgVol;
-//   double        maxVol;
-//   double        maxFlow;
-//   double        evapLosses;
-//   double        exfilLosses;
-//   DateTime      maxVolDate;
-//}  TStorageStats;
-//
-//
-////-------------------
-//// OUTFALL STATISTICS
-////-------------------
-//typedef struct
-//{
-//   double       avgFlow;
-//   double       maxFlow;
-//   double*      totalLoad;
-//   int          totalPeriods;
-//}  TOutfallStats;
-//
-//
-////----------------
-//// PUMP STATISTICS
-////----------------
-//typedef struct
-//{
-//   double       utilized;
-//   double       minFlow;
-//   double       avgFlow;
-//   double       maxFlow;
-//   double       volume;
-//   double       energy;
-//   double       offCurveLow;
-//   double       offCurveHigh;
-//   int          startUps;
-//   int          totalPeriods;
-//}  TPumpStats;
-//
-//
-////----------------
-//// LINK STATISTICS
-////----------------
-//typedef struct
-//{
-//   double        maxFlow;
-//   DateTime      maxFlowDate;
-//   double        maxVeloc;
-//   //DateTime      maxVelocDate;  //deprecated                                 //(5.1.008)
-//   double        maxDepth;
-//   double        timeNormalFlow;
-//   double        timeInletControl;
-//   double        timeSurcharged;
-//   double        timeFullUpstream;
-//   double        timeFullDnstream;
-//   double        timeFullFlow;
-//   double        timeCapacityLimited;
-//   double        timeInFlowClass[MAX_FLOW_CLASSES];
-//   double        timeCourantCritical;
-//   long          flowTurns;
-//   int           flowTurnSign;
-//}  TLinkStats;
-
-
-////-------------------------
-//// MAXIMUM VALUE STATISTICS
-////-------------------------
-//typedef struct
-//{
-//   int           objType;         // either NODE or LINK
-//   int           index;           // node or link index
-//   double        value;           // value of node or link statistic
-//}  TMaxStats;
-
-
 //------------------
 // REPORT FIELD INFO
 //------------------
@@ -1268,6 +960,7 @@ struct SWMM_Project {
    TMassbalExport MassbalExport;
    TMathexprShared MathexprShared;
 
+   TOdesolveShared OdesolveShared;
    TOutputShared OutputShared;
    TProjectShared ProjectShared;
    TRainShared RainShared;

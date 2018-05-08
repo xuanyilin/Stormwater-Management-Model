@@ -177,7 +177,7 @@ enum  ErrorType {
 	  ERR_API_PATTERN_INDEX,    //509  112
       MAXERRMSG};
       
-char* error_getMsg(int i);
+const char* error_getMsg(int i);
 int   error_getCode(int i);
 int   error_setInpError(int errcode, char* s);
 
