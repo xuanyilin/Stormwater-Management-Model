@@ -114,7 +114,6 @@
 #include "consts.h"                    // defined constants
 #include "macros.h"                    // macros used throughout SWMM
 #include "enums.h"                     // enumerated variables
-#include "error.h"                     // error message codes
 //#include "datetime.h"                  // date/time functions
 #include "objects.h"                   // definitions of SWMM's data objects
 #include "funcs.h"                     // declaration of all global functions
@@ -124,6 +123,7 @@
 #include "toolkitAPI.h"
 #include "globals.h"                   // declaration of all global variables
                                        //   callable from other programs
+#include "error.h"                     // error message codes
 #define  MAX_EXCEPTIONS 100            // max. number of exceptions handled
 
 //-----------------------------------------------------------------------------
@@ -142,11 +142,11 @@ const double Ucf[10][2] =
       {2.203e-6,  1.0e-6    },         // MASS (lb, kg --> mg)
       {43560.0,   3048.0    }          // GWFLOW (cfs/ac, cms/ha --> ft/sec)
       };
-#ifdef __cplusplus
-extern const double Qcf[6] =           // Flow Conversion Factors:
-#else
+//#ifdef __cplusplus
+//extern const double Qcf[6] =           // Flow Conversion Factors:
+//#else
 const double Qcf[6] =                  // Flow Conversion Factors:
-#endif 
+//#endif
     {1.0,     448.831, 0.64632,        // cfs, gpm, mgd --> cfs
      0.02832, 28.317,  2.4466 };       // cms, lps, mld --> cfs
 
@@ -766,7 +766,7 @@ int DLLEXPORT swmm_close_project(SWMM_ProjectHandle ph)
     SWMM_Project *sp = (SWMM_Project*)ph;
     TSwmmShared *swmm = &sp->SwmmShared;
 
-    if ( sp->Fout.file ) output_close();
+    if ( sp->Fout.file ) output_close(sp);
     if ( swmm->IsOpenFlag ) project_close(sp);
     report_writeSysTime(sp);
     if ( sp->Finp.file != NULL ) fclose(sp->Finp.file);

@@ -99,7 +99,7 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
 
     // --- match first token to a transect keyword
     k = findmatch(tok[0], TransectKeyWords);
-    if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[0]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[0]);
 
     // --- read parameters associated with keyword
     switch ( k )
@@ -111,11 +111,11 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
         transect_validate(sp, index - 1);
 
         // --- read Manning's n values
-        if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
+        if ( ntoks < 4 ) return error_setInpError(sp, ERR_ITEMS, "");
         for (i = 1; i <= 3; i++)
         {
             if ( ! getDouble(tok[i], &x[i]) )
-                return error_setInpError(ERR_NUMBER, tok[i]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i]);
         }
         return setManning(sp, x);
 
@@ -124,15 +124,15 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
 
         // --- check that transect was already added to project
         //     (by input_countObjects)
-        if ( ntoks < 10 ) return error_setInpError(ERR_ITEMS, "");
+        if ( ntoks < 10 ) return error_setInpError(sp, ERR_ITEMS, "");
         id = project_findID(sp, TRANSECT, tok[1]);
-        if ( id == NULL ) return error_setInpError(ERR_NAME, tok[1]);
+        if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[1]);
 
         // --- read in rest of numerical values on data line
         for ( i = 2; i < 10; i++ )
         {
             if ( ! getDouble(tok[i], &x[i]) )
-                return error_setInpError(ERR_NUMBER, tok[i]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i]);
         }
 
         // --- update total transect count
@@ -145,16 +145,16 @@ int transect_readParams(SWMM_Project *sp, int* count, char* tok[], int ntoks)
       case 2:
 
         // --- check that line contains pairs of data values
-        if ( (ntoks - 1) % 2 > 0 ) return error_setInpError(ERR_ITEMS, "");
+        if ( (ntoks - 1) % 2 > 0 ) return error_setInpError(sp, ERR_ITEMS, "");
 
         // --- parse each pair of Elevation-Station values
         i = 1;
         while ( i < ntoks )
         {
             if ( ! getDouble(tok[i], &x[1]) )
-                return error_setInpError(ERR_NUMBER, tok[i]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i]);
             if ( ! getDouble(tok[i+1], &x[2]) )
-                return error_setInpError(ERR_NUMBER, tok[i+1]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i+1]);
             errcode = addStation(sp, x[1], x[2]);
             if ( errcode ) return errcode;
             i += 2;

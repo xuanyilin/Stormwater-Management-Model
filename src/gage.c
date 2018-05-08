@@ -66,9 +66,9 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     double   x[7];
 
     // --- check that gage exists
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
     id = project_findID(sp, GAGE, tok[0]);
-    if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- assign default parameter values
     x[0] = -1.0;         // No time series index
@@ -81,7 +81,7 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     strcpy(fname, "");
     strcpy(staID, "");
 
-    if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 5 ) return error_setInpError(sp, ERR_ITEMS, "");
     k = findmatch(tok[4], GageDataWords);
     if      ( k == RAIN_TSERIES )
     {
@@ -89,12 +89,12 @@ int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     }
     else if ( k == RAIN_FILE    )
     {
-        if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
+        if ( ntoks < 8 ) return error_setInpError(sp, ERR_ITEMS, "");
         sstrncpy(fname, tok[5], MAXFNAME);
         sstrncpy(staID, tok[6], MAXMSG);
         err = readGageFileFormat(sp, tok, ntoks, x);
     }
-    else return error_setInpError(ERR_KEYWORD, tok[4]);
+    else return error_setInpError(sp, ERR_KEYWORD, tok[4]);
 
     // --- save parameters to rain gage object
     if ( err > 0 ) return err;
@@ -126,11 +126,11 @@ int readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
     int m, ts;
     DateTime aTime;
 
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- determine type of rain data
     m = findmatch(tok[1], RainTypeWords);
-    if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+    if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     x[1] = (double)m;
 
     // --- get data time interval & convert to seconds
@@ -139,16 +139,16 @@ int readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
     {
         x[2] = floor(aTime*SECperDAY + 0.5);
     }
-    else return error_setInpError(ERR_DATETIME, tok[2]);
-    if ( x[2] <= 0.0 ) return error_setInpError(ERR_DATETIME, tok[2]);
+    else return error_setInpError(sp, ERR_DATETIME, tok[2]);
+    if ( x[2] <= 0.0 ) return error_setInpError(sp, ERR_DATETIME, tok[2]);
 
     // --- get snow catch deficiency factor
     if ( !getDouble(tok[3], &x[3]) )
-        return error_setInpError(ERR_DATETIME, tok[3]);;
+        return error_setInpError(sp, ERR_DATETIME, tok[3]);;
 
     // --- get time series index
     ts = project_findObject(sp, TSERIES, tok[5]);
-    if ( ts < 0 ) return error_setInpError(ERR_NAME, tok[5]);
+    if ( ts < 0 ) return error_setInpError(sp, ERR_NAME, tok[5]);
     x[0] = (double)ts;
     strcpy(tok[2], "");
     return 0;
@@ -164,7 +164,7 @@ int readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
 
     // --- determine type of rain data
     m = findmatch(tok[1], RainTypeWords);
-    if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+    if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     x[1] = (double)m;
 
     // --- get data time interval & convert to seconds
@@ -173,23 +173,23 @@ int readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
     {
         x[2] = floor(aTime*SECperDAY + 0.5);
     }
-    else return error_setInpError(ERR_DATETIME, tok[2]);
-    if ( x[2] <= 0.0 ) return error_setInpError(ERR_DATETIME, tok[2]);
+    else return error_setInpError(sp, ERR_DATETIME, tok[2]);
+    if ( x[2] <= 0.0 ) return error_setInpError(sp, ERR_DATETIME, tok[2]);
 
     // --- get snow catch deficiency factor
     if ( !getDouble(tok[3], &x[3]) )
-        return error_setInpError(ERR_NUMBER, tok[3]);
+        return error_setInpError(sp, ERR_NUMBER, tok[3]);
  
     // --- get rain depth units
     u = findmatch(tok[7], RainUnitsWords);
-    if ( u < 0 ) return error_setInpError(ERR_KEYWORD, tok[7]);
+    if ( u < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[7]);
     x[6] = (double)u;
 
     // --- get start date (if present)
     if ( ntoks > 8 && *tok[8] != '*')
     {
         if ( !datetime_strToDate(sp, tok[8], &aDate) )
-            return error_setInpError(ERR_DATETIME, tok[8]);
+            return error_setInpError(sp, ERR_DATETIME, tok[8]);
         x[4] = (float) aDate;
     }
     return 0;

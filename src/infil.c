@@ -149,7 +149,7 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
 
     // --- check that subcatchment exists
     j = project_findObject(sp, SUBCATCH, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- number of input tokens depends on infiltration model m
     if      ( m == HORTON )       n = 5;
@@ -158,21 +158,21 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
     else if ( m == MOD_GREEN_AMPT )   n = 4;                                   //(5.1.010)
     else if ( m == CURVE_NUMBER ) n = 4;
     else return 0;
-    if ( ntoks < n ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < n ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- parse numerical values from tokens
     for (i = 0; i < 5; i++) x[i] = 0.0;
     for (i = 1; i < n; i++)
     {
         if ( ! getDouble(tok[i], &x[i-1]) )
-            return error_setInpError(ERR_NUMBER, tok[i]);
+            return error_setInpError(sp, ERR_NUMBER, tok[i]);
     }
 
     // --- special case for Horton infil. - last parameter is optional
     if ( (m == HORTON || m == MOD_HORTON) && ntoks > n )
     {
         if ( ! getDouble(tok[n], &x[n-1]) )
-            return error_setInpError(ERR_NUMBER, tok[n]);
+            return error_setInpError(sp, ERR_NUMBER, tok[n]);
     }
 
     // --- assign parameter values to infil. object
@@ -190,7 +190,7 @@ int infil_readParams(SWMM_Project *sp, int m, char* tok[], int ntoks)
                          break;
       default:           status = TRUE;
     }
-    if ( !status ) return error_setInpError(ERR_NUMBER, "");
+    if ( !status ) return error_setInpError(sp, ERR_NUMBER, "");
     return 0;
 }
 

@@ -185,7 +185,7 @@ void    routing_close(SWMM_Project *sp, int routingModel);
 //-----------------------------------------------------------------------------
 int     output_open(SWMM_Project *sp);
 void    output_end(SWMM_Project *sp);
-void    output_close(void);
+void    output_close(SWMM_Project *sp);
 void    output_checkFileSize(SWMM_Project *sp);
 void    output_saveResults(SWMM_Project *sp, double reportTime);
 void    output_readDateTime(SWMM_Project *sp, int period, DateTime *aDate);

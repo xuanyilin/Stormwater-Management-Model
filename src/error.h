@@ -179,7 +179,7 @@ enum  ErrorType {
       
 const char* error_getMsg(int i);
 int   error_getCode(int i);
-int   error_setInpError(int errcode, char* s);
+int   error_setInpError(SWMM_Project *sp, int errcode, char* s);
 
 
 #endif //ERROR_H

@@ -69,11 +69,11 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
     double x, y;
 
     // --- check for minimum number of tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that curve exists in database
     j = project_findObject(sp, CURVE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- check if this is first line of curve's data
     //     (curve's ID will not have been assigned yet)
@@ -82,7 +82,7 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
         // --- assign ID pointer & curve type
         sp->Curve[j].ID = project_findID(sp, CURVE, tok[0]);
         m = findmatch(tok[1], CurveTypeWords);
-        if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+        if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         sp->Curve[j].curveType = m;
         k1 = 2;
     }
@@ -90,11 +90,11 @@ int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
     // --- start reading pairs of X-Y value tokens
     for ( k = k1; k < ntoks; k = k+2)
     {
-        if ( k+1 >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+        if ( k+1 >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &x) )
-            return error_setInpError(ERR_NUMBER, tok[k]);
+            return error_setInpError(sp, ERR_NUMBER, tok[k]);
         if ( ! getDouble(tok[k+1], &y) )
-            return error_setInpError(ERR_NUMBER, tok[k+1]);
+            return error_setInpError(sp, ERR_NUMBER, tok[k+1]);
         table_addEntry(&sp->Curve[j], x, y);
     }
     return 0;
@@ -120,11 +120,11 @@ int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
     DateTime t;                        // time portion of date/time value
 
     // --- check for minimum number of tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that time series exists in database
     j = project_findObject(sp, TSERIES, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- if first line of data, assign ID pointer
     if ( sp->Tseries[j].ID == NULL )
@@ -158,14 +158,14 @@ int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
             break;
 
           case 2:            // look for a time entry
-            if ( k >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+            if ( k >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
 
             // --- first check for decimal hours format
             if ( getDouble(tok[k], &t) ) t /= 24.0;
 
             // --- then for an hrs:min format
             else if ( !datetime_strToTime(tok[k], &t) )
-                return error_setInpError(ERR_NUMBER, tok[k]);
+                return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
             // --- save date + time in x
             x = sp->Tseries[j].lastDate + t;
@@ -177,9 +177,9 @@ int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
 
           case 3:
             // --- extract a numeric value from token
-            if ( k >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+            if ( k >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
             if ( ! getDouble(tok[k], &y) )
-                return error_setInpError(ERR_NUMBER, tok[k]);
+                return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
             // --- add date/time & value to time series
             table_addEntry(&sp->Tseries[j], x, y);

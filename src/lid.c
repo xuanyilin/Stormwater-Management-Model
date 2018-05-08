@@ -332,11 +332,11 @@ int lid_readProcParams(SWMM_Project *sp, char* toks[], int ntoks)
     TLidShared *ld = &sp->LidShared;
 
     // --- check for minimum number of tokens
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that LID exists in database
     j = project_findObject(sp, LID, toks[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, toks[0]);
 
     // --- assign ID if not done yet
     if ( ld->LidProcs[j].ID == NULL )
@@ -363,7 +363,7 @@ int lid_readProcParams(SWMM_Project *sp, char* toks[], int ntoks)
     case DRAIN: return readDrainData(sp, j, toks, ntoks);
     case DRAINMAT: return readDrainMatData(sp, j, toks, ntoks);
     }
-    return error_setInpError(ERR_KEYWORD, toks[1]);
+    return error_setInpError(sp, ERR_KEYWORD, toks[1]);
 }
 
 //=============================================================================
@@ -397,31 +397,31 @@ int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
     int        drainSubcatch = -1, drainNode = -1;                             //(5.1.008)
 
     //... check for valid number of input tokens
-    if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 8 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     //... find subcatchment
     j = project_findObject(sp, SUBCATCH, toks[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, toks[0]);
 
     //... find LID process in list of LID processes
     k = project_findObject(sp, LID, toks[1]);
-    if ( k < 0 ) return error_setInpError(ERR_NAME, toks[1]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_NAME, toks[1]);
 
     //... get number of replicates
     n = atoi(toks[2]);
-    if ( n < 0 ) return error_setInpError(ERR_NUMBER, toks[2]);
+    if ( n < 0 ) return error_setInpError(sp, ERR_NUMBER, toks[2]);
     if ( n == 0 ) return 0;
 
     //... convert next 4 tokens to doubles
     for (i = 3; i <= 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-3]) || x[i-3] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... check for valid percentages on tokens 5 & 6 (x[2] & x[3])
     for (i = 2; i <= 3; i++) if ( x[i] > 100.0 )
-        return error_setInpError(ERR_NUMBER, toks[i+3]);
+        return error_setInpError(sp, ERR_NUMBER, toks[i+3]);
 
     //... read optional report file name
     if ( ntoks >= 9 && strcmp(toks[8], "*") != 0 ) fname = toks[8];
@@ -435,7 +435,7 @@ int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
         if ( drainSubcatch < 0 )
         {
             drainNode = project_findObject(sp, NODE, toks[9]);
-            if ( drainNode < 0 ) return error_setInpError(ERR_NAME, toks[9]);
+            if ( drainNode < 0 ) return error_setInpError(sp, ERR_NAME, toks[9]);
         }
     }
 ////
@@ -472,14 +472,14 @@ int addLidUnit(SWMM_Project *sp, int j, int k, int n, double x[], char* fname,
     if ( !lidGroup )
     {
         lidGroup = (struct LidGroup *) malloc(sizeof(struct LidGroup));
-        if ( !lidGroup ) return error_setInpError(ERR_MEMORY, "");
+        if ( !lidGroup ) return error_setInpError(sp, ERR_MEMORY, "");
         lidGroup->lidList = NULL;
         ld->LidGroups[j] = lidGroup;
     }
 
     //... create a new LID unit to add to the group
     lidUnit = (TLidUnit *) malloc(sizeof(TLidUnit));
-    if ( !lidUnit ) return error_setInpError(ERR_MEMORY, "");
+    if ( !lidUnit ) return error_setInpError(sp, ERR_MEMORY, "");
     lidUnit->rptFile = NULL;
 
     //... add the LID unit to the group
@@ -487,7 +487,7 @@ int addLidUnit(SWMM_Project *sp, int j, int k, int n, double x[], char* fname,
     if ( !lidList )
     {
         free(lidUnit);
-        return error_setInpError(ERR_MEMORY, "");
+        return error_setInpError(sp, ERR_MEMORY, "");
     }
     lidList->lidUnit = lidUnit;
     lidList->nextLidUnit = lidGroup->lidList;
@@ -508,7 +508,7 @@ int addLidUnit(SWMM_Project *sp, int j, int k, int n, double x[], char* fname,
     if ( fname != NULL )
     {
         if ( !createLidRptFile(lidUnit, fname) ) 
-            return error_setInpError(ERR_RPT_FILE, fname);
+            return error_setInpError(sp, ERR_RPT_FILE, fname);
     }
     return 0;
 }
@@ -547,13 +547,13 @@ int readSurfaceData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 
     TLidShared *ld = &sp->LidShared;
 
-    if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
-    if ( x[1] >= 1.0 ) return error_setInpError(ERR_NUMBER, toks[3]);           
+    if ( x[1] >= 1.0 ) return error_setInpError(sp, ERR_NUMBER, toks[3]);
     if ( x[0] == 0.0 ) x[1] = 0.0;
 
     ld->LidProcs[j].surface.thickness     = x[0] / UCF(sp, RAINDEPTH);
@@ -584,11 +584,11 @@ int readPavementData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 
     TLidShared *ld = &sp->LidShared;
 
-    if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... convert void ratio to void fraction
@@ -622,11 +622,11 @@ int readSoilData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 
     TLidShared *ld = &sp->LidShared;
 
-    if ( ntoks < 9 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 9 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 9; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
     ld->LidProcs[j].soil.thickness = x[0] / UCF(sp, RAINDEPTH);
     ld->LidProcs[j].soil.porosity  = x[1];
@@ -659,11 +659,11 @@ int readStorageData(SWMM_Project *sp, int j, char* toks[], int ntoks)
     TLidShared *ld = &sp->LidShared;
 
     //... read numerical parameters
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 6; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2])  || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... convert void ratio to void fraction
@@ -698,11 +698,11 @@ int readDrainData(SWMM_Project *sp, int j, char* toks[], int ntoks)
     TLidShared *ld = &sp->LidShared;
 
     //... read numerical parameters
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 6; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2])  || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... save parameters to LID drain layer structure
@@ -734,12 +734,12 @@ int readDrainMatData(SWMM_Project *sp, int j, char* toks[], int ntoks)
     TLidShared *ld = &sp->LidShared;
 
     //... read numerical parameters
-    if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 5 ) return error_setInpError(sp, ERR_ITEMS, "");
 	if ( ld->LidProcs[j].lidType != GREEN_ROOF ) return 0;
     for (i = 2; i < 5; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... save parameters to LID drain layer structure

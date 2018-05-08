@@ -42,7 +42,7 @@
 //-----------------------------------------------------------------------------
 //  Imported variables
 //-----------------------------------------------------------------------------
-extern float* SubcatchResults;         // Results vector defined in OUTPUT.C
+//extern float* SubcatchResults;         // Results vector defined in OUTPUT.C
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -388,14 +388,17 @@ void  runoff_saveToFile(SWMM_Project *sp, float tStep)
 //
 {
     int j;
+
+    TOutputExport *otptx = &sp->OutputExport;
+
     int n = MAX_SUBCATCH_RESULTS + sp->Nobjects[POLLUT] - 1;
     
 
     fwrite(&tStep, sizeof(float), 1, sp->Frunoff.file);
     for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
     {
-        subcatch_getResults(sp, j, 1.0, SubcatchResults);
-        fwrite(SubcatchResults, sizeof(float), n, sp->Frunoff.file);
+        subcatch_getResults(sp, j, 1.0, otptx->SubcatchResults);
+        fwrite(otptx->SubcatchResults, sizeof(float), n, sp->Frunoff.file);
     }
 }
 
@@ -415,6 +418,7 @@ void  runoff_readFromFile(SWMM_Project *sp)
     TGroundwater* gw;                  // ptr. to Groundwater object
 
     TRunoffShared *rnff = &sp->RunoffShared;
+    TOutputExport *otptx = &sp->OutputExport;
 
     // --- make sure not past end of file
     if ( rnff->Nsteps > rnff->MaxSteps )
@@ -437,31 +441,31 @@ void  runoff_readFromFile(SWMM_Project *sp)
     for (j = 0; j < sp->Nobjects[SUBCATCH]; j++)
     {
         // --- read vector of saved results
-        kount += fread(SubcatchResults, sizeof(float), nResults, sp->Frunoff.file);
+        kount += fread(otptx->SubcatchResults, sizeof(float), nResults, sp->Frunoff.file);
 
         // --- extract hydrologic results, converting units where necessary
         //     (results were saved to file in user's units)
-        sp->Subcatch[j].newSnowDepth = SubcatchResults[SUBCATCH_SNOWDEPTH] /
+        sp->Subcatch[j].newSnowDepth = otptx->SubcatchResults[SUBCATCH_SNOWDEPTH] /
                                    UCF(sp, RAINDEPTH);
-        sp->Subcatch[j].evapLoss     = SubcatchResults[SUBCATCH_EVAP] /
+        sp->Subcatch[j].evapLoss     = otptx->SubcatchResults[SUBCATCH_EVAP] /
                                    UCF(sp, RAINFALL);
-        sp->Subcatch[j].infilLoss    = SubcatchResults[SUBCATCH_INFIL] /
+        sp->Subcatch[j].infilLoss    = otptx->SubcatchResults[SUBCATCH_INFIL] /
                                    UCF(sp, RAINFALL);
-        sp->Subcatch[j].newRunoff    = SubcatchResults[SUBCATCH_RUNOFF] /
+        sp->Subcatch[j].newRunoff    = otptx->SubcatchResults[SUBCATCH_RUNOFF] /
                                    UCF(sp, FLOW);
         gw = sp->Subcatch[j].groundwater;
         if ( gw )
         {
-            gw->newFlow    = SubcatchResults[SUBCATCH_GW_FLOW] / UCF(sp, FLOW);
+            gw->newFlow    = otptx->SubcatchResults[SUBCATCH_GW_FLOW] / UCF(sp, FLOW);
             gw->lowerDepth = sp->Aquifer[gw->aquifer].bottomElev -
-                             (SubcatchResults[SUBCATCH_GW_ELEV] / UCF(sp, LENGTH));
-            gw->theta      = SubcatchResults[SUBCATCH_SOIL_MOIST];
+                             (otptx->SubcatchResults[SUBCATCH_GW_ELEV] / UCF(sp, LENGTH));
+            gw->theta      = otptx->SubcatchResults[SUBCATCH_SOIL_MOIST];
         }
 
         // --- extract water quality results
         for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         {
-            sp->Subcatch[j].newQual[i] = SubcatchResults[SUBCATCH_WASHOFF + i];
+            sp->Subcatch[j].newQual[i] = otptx->SubcatchResults[SUBCATCH_WASHOFF + i];
         }
     }
 

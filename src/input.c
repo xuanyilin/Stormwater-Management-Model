@@ -71,7 +71,7 @@ int input_countObjects(SWMM_Project *sp)
 
     // --- initialize number of objects & set default values
     if ( sp->ErrorCode ) return sp->ErrorCode;
-    error_setInpError(0, "");
+    error_setInpError(sp, 0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++) sp->Nobjects[i] = 0;
     for (i = 0; i < MAX_NODE_TYPES; i++) sp->Nnodes[i] = 0;
     for (i = 0; i < MAX_LINK_TYPES; i++) sp->Nlinks[i] = 0;
@@ -146,7 +146,7 @@ int input_readData(SWMM_Project *sp)
     //     (final counts in Mobjects, Mnodes & Mlinks should
     //      match those in sp->Nobjects, sp->Nnodes and sp->Nlinks).
     if ( sp->ErrorCode ) return sp->ErrorCode;
-    error_setInpError(0, "");
+    error_setInpError(sp, 0, "");
     for (i = 0; i < MAX_OBJ_TYPES; i++)  inpt->Mobjects[i] = 0;
     for (i = 0; i < MAX_NODE_TYPES; i++) inpt->Mnodes[i] = 0;
     for (i = 0; i < MAX_LINK_TYPES; i++) inpt->Mlinks[i] = 0;
@@ -206,7 +206,7 @@ int input_readData(SWMM_Project *sp)
             }
             else
             {
-                inperr = error_setInpError(ERR_KEYWORD, inpt->Tok[0]);
+                inperr = error_setInpError(sp, ERR_KEYWORD, inpt->Tok[0]);
                 report_writeInputErrorMsg(sp, inperr, sect, line, lineCount);
                 errsum++;
                 break;
@@ -249,19 +249,19 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
     {
       case s_RAINGAGE:
         if ( !project_addObject(sp, GAGE, id, sp->Nobjects[GAGE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[GAGE]++;
         break;
 
       case s_SUBCATCH:
         if ( !project_addObject(sp, SUBCATCH, id, sp->Nobjects[SUBCATCH]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[SUBCATCH]++;
         break;
 
       case s_AQUIFER:
         if ( !project_addObject(sp, AQUIFER, id, sp->Nobjects[AQUIFER]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[AQUIFER]++;
         break;
 
@@ -270,7 +270,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( project_findObject(sp, UNITHYD, id) < 0 )
         {
             if ( !project_addObject(sp, UNITHYD, id, sp->Nobjects[UNITHYD]) )
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             sp->Nobjects[UNITHYD]++;
         }
         break;
@@ -280,83 +280,83 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( project_findObject(sp, SNOWMELT, id) < 0 )
         {
             if ( !project_addObject(sp, SNOWMELT, id, sp->Nobjects[SNOWMELT]) )
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             sp->Nobjects[SNOWMELT]++;
         }
         break;
 
       case s_JUNCTION:
         if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[JUNCTION]++;
         break;
 
       case s_OUTFALL:
         if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[OUTFALL]++;
         break;
 
       case s_STORAGE:
         if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[STORAGE]++;
         break;
 
       case s_DIVIDER:
         if ( !project_addObject(sp, NODE, id, sp->Nobjects[NODE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[NODE]++;
         sp->Nnodes[DIVIDER]++;
         break;
 
       case s_CONDUIT:
         if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[CONDUIT]++;
         break;
 
       case s_PUMP:
         if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[PUMP]++;
         break;
 
       case s_ORIFICE:
         if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[ORIFICE]++;
         break;
 
       case s_WEIR:
         if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[WEIR]++;
         break;
 
       case s_OUTLET:
         if ( !project_addObject(sp, LINK, id, sp->Nobjects[LINK]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LINK]++;
         sp->Nlinks[OUTLET]++;
         break;
 
       case s_POLLUTANT:
         if ( !project_addObject(sp, POLLUT, id, sp->Nobjects[POLLUT]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[POLLUT]++;
         break;
 
       case s_LANDUSE:
         if ( !project_addObject(sp, LANDUSE, id, sp->Nobjects[LANDUSE]) )
-            errcode = error_setInpError(ERR_DUP_NAME, id);
+            errcode = error_setInpError(sp, ERR_DUP_NAME, id);
         sp->Nobjects[LANDUSE]++;
         break;
 
@@ -365,7 +365,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( project_findObject(sp, TIMEPATTERN, id) < 0 )
         {
             if ( !project_addObject(sp, TIMEPATTERN, id, sp->Nobjects[TIMEPATTERN]) )
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             sp->Nobjects[TIMEPATTERN]++;
         }
         break;
@@ -375,7 +375,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( project_findObject(sp, CURVE, id) < 0 )
         {
             if ( !project_addObject(sp, CURVE, id, sp->Nobjects[CURVE]) )
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             sp->Nobjects[CURVE]++;
 
             // --- check for a conduit shape curve
@@ -390,7 +390,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         if ( project_findObject(sp, TSERIES, id) < 0 )
         {
             if ( !project_addObject(sp, TSERIES, id, sp->Nobjects[TSERIES]) )
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             sp->Nobjects[TSERIES]++;
         }
         break;
@@ -407,7 +407,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
             if ( id ) 
             {
                 if ( !project_addObject(sp, TRANSECT, id, sp->Nobjects[TRANSECT]) )
-                    errcode = error_setInpError(ERR_DUP_NAME, id);
+                    errcode = error_setInpError(sp, ERR_DUP_NAME, id);
                 sp->Nobjects[TRANSECT]++;
             }
         }
@@ -419,7 +419,7 @@ int  addObject(SWMM_Project *sp, int objType, char* id)
         {
             if ( !project_addObject(sp, LID, id, sp->Nobjects[LID]) )
             {
-                errcode = error_setInpError(ERR_DUP_NAME, id);
+                errcode = error_setInpError(sp, ERR_DUP_NAME, id);
             }
             sp->Nobjects[LID]++;
         }
@@ -614,25 +614,25 @@ int readControl(SWMM_Project *sp, char* tok[], int ntoks)
     TInputShared *inpt = &sp->InputShared;
 
     // --- check for minimum number of tokens
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- get index of control rule keyword
     keyword = findmatch(tok[0], RuleKeyWords);
-    if ( keyword < 0 ) return error_setInpError(ERR_KEYWORD, tok[0]);
+    if ( keyword < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[0]);
 
     // --- if line begins a new control rule, add rule ID to the database
     if ( keyword == 0 )
     {
         if ( !project_addObject(sp, CONTROL, tok[1], inpt->Mobjects[CONTROL]) )
         {
-            return error_setInpError(ERR_DUP_NAME, inpt->Tok[1]);
+            return error_setInpError(sp, ERR_DUP_NAME, inpt->Tok[1]);
         }
         inpt->Mobjects[CONTROL]++;
     }
 
     // --- get index of last control rule processed
     index = inpt->Mobjects[CONTROL] - 1;
-    if ( index < 0 ) return error_setInpError(ERR_RULE, "");
+    if ( index < 0 ) return error_setInpError(sp, ERR_RULE, "");
 
     // --- add current line as a new clause to the control rule
     return controls_addRuleClause(sp, index, keyword, inpt->Tok, inpt->Ntokens);
@@ -729,20 +729,20 @@ int  readEvent(SWMM_Project *sp, char* tok[], int ntoks)
 
     TInputShared *inpt = &sp->InputShared;
 
-    if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 4 ) return error_setInpError(sp, ERR_ITEMS, "");
     if ( !datetime_strToDate(sp, tok[0], &x[0]) )
-        return error_setInpError(ERR_DATETIME, tok[0]);
+        return error_setInpError(sp, ERR_DATETIME, tok[0]);
     if ( !datetime_strToTime(tok[1], &x[1]) )
-        return error_setInpError(ERR_DATETIME, tok[1]);
+        return error_setInpError(sp, ERR_DATETIME, tok[1]);
     if ( !datetime_strToDate(sp, tok[2], &x[2]) )
-        return error_setInpError(ERR_DATETIME, tok[2]);
+        return error_setInpError(sp, ERR_DATETIME, tok[2]);
     if ( !datetime_strToTime(tok[3], &x[3]) )
-        return error_setInpError(ERR_DATETIME, tok[3]);
+        return error_setInpError(sp, ERR_DATETIME, tok[3]);
 
     sp->Event[inpt->Mevents].start = x[0] + x[1];
     sp->Event[inpt->Mevents].end = x[2] + x[3];
     if ( sp->Event[inpt->Mevents].start >= sp->Event[inpt->Mevents].end )
-       return error_setInpError(ERR_DATETIME, " - start date exceeds end date");
+       return error_setInpError(sp, ERR_DATETIME, " - start date exceeds end date");
     inpt->Mevents++;
     return 0;
 }

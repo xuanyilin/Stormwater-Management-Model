@@ -9,6 +9,8 @@
 #define SRC_CLIMATE_H_
 
 
+#include "consts.h"
+
 typedef double DateTime;
 
 //-----------------------------------------------------------------------------

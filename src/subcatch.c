@@ -111,15 +111,15 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     double x[9];
 
     // --- check for enough tokens
-    if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 8 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that named subcatch exists
     id = project_findID(sp, SUBCATCH, tok[0]);
-    if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- check that rain gage exists
     k = project_findObject(sp, GAGE, tok[1]);
-    if ( k < 0 ) return error_setInpError(ERR_NAME, tok[1]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_NAME, tok[1]);
     x[0] = k;
 
     // --- check that outlet node or subcatch exists
@@ -128,13 +128,13 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     m = project_findObject(sp, SUBCATCH, tok[2]);
     x[2] = m;
     if ( x[1] < 0.0 && x[2] < 0.0 )
-        return error_setInpError(ERR_NAME, tok[2]);
+        return error_setInpError(sp, ERR_NAME, tok[2]);
 
     // --- read area, %imperv, width, slope, & curb length
     for ( i = 3; i < 8; i++)
     {
         if ( ! getDouble(tok[i], &x[i]) || x[i] < 0.0 )
-            return error_setInpError(ERR_NUMBER, tok[i]);
+            return error_setInpError(sp, ERR_NUMBER, tok[i]);
     }
 
     // --- if snowmelt object named, check that it exists
@@ -142,7 +142,7 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     if ( ntoks > 8 )
     {
         k = project_findObject(sp, SNOWMELT, tok[8]);
-        if ( k < 0 ) return error_setInpError(ERR_NAME, tok[8]);
+        if ( k < 0 ) return error_setInpError(sp, ERR_NAME, tok[8]);
         x[8] = k;
     }
 
@@ -161,7 +161,7 @@ int  subcatch_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
     if ( x[8] >= 0 )
     {
         if ( !snow_createSnowpack(sp, j, (int)x[8]) )
-            return error_setInpError(ERR_MEMORY, "");
+            return error_setInpError(sp, ERR_MEMORY, "");
     }
     return 0;
 }
@@ -184,22 +184,22 @@ int subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks)
     double x[7];
 
     // --- check for enough tokens
-    if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that named subcatch exists
     j = project_findObject(sp, SUBCATCH, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- read in Mannings n, depression storage, & PctZero values
     for (i = 0; i < 5; i++)
     {
         if ( ! getDouble(tok[i+1], &x[i])  || x[i] < 0.0 )
-            return error_setInpError(ERR_NAME, tok[i+1]);
+            return error_setInpError(sp, ERR_NAME, tok[i+1]);
     }
 
     // --- check for valid runoff routing keyword
     m = findmatch(tok[6], RunoffRoutingWords);
-    if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[6]);
+    if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[6]);
 
     // --- get percent routed parameter if present (default is 100)
     x[5] = m;
@@ -207,7 +207,7 @@ int subcatch_readSubareaParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks >= 8 )
     {
         if ( ! getDouble(tok[7], &x[6]) || x[6] < 0.0 || x[6] > 100.0 )
-            return error_setInpError(ERR_NUMBER, tok[7]);
+            return error_setInpError(sp, ERR_NUMBER, tok[7]);
         x[6] /= 100.0;
     }
 
@@ -272,21 +272,21 @@ int subcatch_readLanduseParams(SWMM_Project *sp, char* tok[], int ntoks)
     double  f;
 
     // --- check for enough tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that named subcatch exists
     j = project_findObject(sp, SUBCATCH, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- process each pair of landuse - percent items
     for ( k = 2; k <= ntoks; k = k+2)
     {
         // --- check that named land use exists and is followed by a percent
         m = project_findObject(sp, LANDUSE, tok[k-1]);
-        if ( m < 0 ) return error_setInpError(ERR_NAME, tok[k-1]);
-        if ( k+1 > ntoks ) return error_setInpError(ERR_ITEMS, "");
+        if ( m < 0 ) return error_setInpError(sp, ERR_NAME, tok[k-1]);
+        if ( k+1 > ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &f) )
-            return error_setInpError(ERR_NUMBER, tok[k]);
+            return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
         // --- store land use fraction in subcatch's landFactor property
         sp->Subcatch[j].landFactor[m].fraction = f/100.0;
@@ -312,21 +312,21 @@ int subcatch_readInitBuildup(SWMM_Project *sp, char* tok[], int ntoks)
     double  x;
 
     // --- check for enough tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that named subcatch exists
     j = project_findObject(sp, SUBCATCH, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- process each pair of pollutant - init. load items
     for ( k = 2; k <= ntoks; k = k+2)
     {
         // --- check for valid pollutant name and loading value
         m = project_findObject(sp, POLLUT, tok[k-1]);
-        if ( m < 0 ) return error_setInpError(ERR_NAME, tok[k-1]);
-        if ( k+1 > ntoks ) return error_setInpError(ERR_ITEMS, "");
+        if ( m < 0 ) return error_setInpError(sp, ERR_NAME, tok[k-1]);
+        if ( k+1 > ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &x) )
-            return error_setInpError(ERR_NUMBER, tok[k]);
+            return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
         // --- store loading in subcatch's initBuildup property
         sp->Subcatch[j].initBuildup[m] = x;

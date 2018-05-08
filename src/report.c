@@ -55,10 +55,11 @@
 //  Imported variables
 //-----------------------------------------------------------------------------
 #define REAL4 float
-extern REAL4* SubcatchResults;         // Results vectors defined in OUTPUT.C
-extern REAL4* NodeResults;             //  "
-extern REAL4* LinkResults;             //  "
-extern char   ErrString[81];           // defined in ERROR.C
+//extern REAL4* SubcatchResults;         // Results vectors defined in OUTPUT.C
+//extern REAL4* NodeResults;             //  "
+//extern REAL4* LinkResults;             //  "
+
+//extern char   ErrString[81];           // defined in ERROR.C
 
 //-----------------------------------------------------------------------------
 //  Local functions
@@ -87,37 +88,37 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
 {
     char  k;
     int   j, m, t;
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
     k = (char)findmatch(tok[0], ReportWords);
-    if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[0]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[0]);
     switch ( k )
     {
       case 0: // Input
         m = findmatch(tok[1], NoYesWords);
         if      ( m == YES ) sp->RptFlags.input = TRUE;
         else if ( m == NO )  sp->RptFlags.input = FALSE;
-        else                 return error_setInpError(ERR_KEYWORD, tok[1]);
+        else                 return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         return 0;
 
       case 1: // Continuity
         m = findmatch(tok[1], NoYesWords);
         if      ( m == YES ) sp->RptFlags.continuity = TRUE;
         else if ( m == NO )  sp->RptFlags.continuity = FALSE;
-        else                 return error_setInpError(ERR_KEYWORD, tok[1]);
+        else                 return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         return 0;
 
       case 2: // Flow Statistics
         m = findmatch(tok[1], NoYesWords);
         if      ( m == YES ) sp->RptFlags.flowStats = TRUE;
         else if ( m == NO )  sp->RptFlags.flowStats = FALSE;
-        else                 return error_setInpError(ERR_KEYWORD, tok[1]);
+        else                 return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         return 0;
 
       case 3: // Controls
         m = findmatch(tok[1], NoYesWords);
         if      ( m == YES ) sp->RptFlags.controls = TRUE;
         else if ( m == NO )  sp->RptFlags.controls = FALSE;
-        else                 return error_setInpError(ERR_KEYWORD, tok[1]);
+        else                 return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         return 0;
 
       case 4:  m = SUBCATCH;  break;  // Subcatchments
@@ -128,10 +129,10 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
         m = findmatch(tok[1], NoYesWords);
         if      ( m == YES ) sp->RptFlags.nodeStats = TRUE;
         else if ( m == NO )  sp->RptFlags.nodeStats = FALSE;
-        else                 return error_setInpError(ERR_KEYWORD, tok[1]);
+        else                 return error_setInpError(sp, ERR_KEYWORD, tok[1]);
         return 0;
 
-      default: return error_setInpError(ERR_KEYWORD, tok[1]);
+      default: return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     }
     k = (char)findmatch(tok[1], NoneAllWords);
     if ( k < 0 )
@@ -140,7 +141,7 @@ int report_readOptions(SWMM_Project *sp, char* tok[], int ntoks)
         for (t = 1; t < ntoks; t++)
         {
             j = project_findObject(sp, m, tok[t]);
-            if ( j < 0 ) return error_setInpError(ERR_NAME, tok[t]);
+            if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[t]);
             switch ( m )
             {
               case SUBCATCH:  sp->Subcatch[j].rptFlag = TRUE;  break;
@@ -1100,6 +1101,8 @@ void report_Subcatchments(SWMM_Project *sp)
     int      hasGwater   = (sp->Nobjects[AQUIFER] > 0  && !sp->IgnoreGwater);
     int      hasQuality  = (sp->Nobjects[POLLUT] > 0 && !sp->IgnoreQuality);
 
+    TOutputExport *otptx = &sp->OutputExport;
+
     if ( sp->Nobjects[SUBCATCH] == 0 ) return;
     WRITE("");
     WRITE("********************");
@@ -1118,21 +1121,21 @@ void report_Subcatchments(SWMM_Project *sp)
                 datetime_timeToStr(days, theTime);
                 output_readSubcatchResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s %10.3f%10.3f%10.4f",
-                    theDate, theTime, SubcatchResults[SUBCATCH_RAINFALL],
-                    SubcatchResults[SUBCATCH_EVAP]/24.0 +
-                    SubcatchResults[SUBCATCH_INFIL],
-                    SubcatchResults[SUBCATCH_RUNOFF]);
+                    theDate, theTime, otptx->SubcatchResults[SUBCATCH_RAINFALL],
+                    otptx->SubcatchResults[SUBCATCH_EVAP]/24.0 +
+                    otptx->SubcatchResults[SUBCATCH_INFIL],
+                    otptx->SubcatchResults[SUBCATCH_RUNOFF]);
                 if ( hasSnowmelt )
                     fprintf(sp->Frpt.file, "  %10.3f",
-                        SubcatchResults[SUBCATCH_SNOWDEPTH]);
+                            otptx->SubcatchResults[SUBCATCH_SNOWDEPTH]);
                 if ( hasGwater )
                     fprintf(sp->Frpt.file, "%10.3f%10.4f",
-                        SubcatchResults[SUBCATCH_GW_ELEV],
-                        SubcatchResults[SUBCATCH_GW_FLOW]);
+                            otptx->SubcatchResults[SUBCATCH_GW_ELEV],
+                            otptx->SubcatchResults[SUBCATCH_GW_FLOW]);
                 if ( hasQuality )
                     for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                         fprintf(sp->Frpt.file, "%10.3f",
-                            SubcatchResults[SUBCATCH_WASHOFF+p]);
+                                otptx->SubcatchResults[SUBCATCH_WASHOFF+p]);
             }
             WRITE("");
             k++;
@@ -1224,6 +1227,8 @@ void report_Nodes(SWMM_Project *sp)
     char     theDate[20];
     char     theTime[20];
 
+    TOutputExport *otptx = &sp->OutputExport;
+
     if ( sp->Nobjects[NODE] == 0 ) return;
     WRITE("");
     WRITE("************");
@@ -1242,11 +1247,11 @@ void report_Nodes(SWMM_Project *sp)
                 datetime_timeToStr(days, theTime);
                 output_readNodeResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
-                    theDate, theTime, NodeResults[NODE_INFLOW],
-                    NodeResults[NODE_OVERFLOW], NodeResults[NODE_DEPTH],
-                    NodeResults[NODE_HEAD]);
+                    theDate, theTime, otptx->NodeResults[NODE_INFLOW],
+                    otptx->NodeResults[NODE_OVERFLOW], otptx->NodeResults[NODE_DEPTH],
+                    otptx->NodeResults[NODE_HEAD]);
                 if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    fprintf(sp->Frpt.file, " %9.3f", NodeResults[NODE_QUAL + p]);
+                    fprintf(sp->Frpt.file, " %9.3f", otptx->NodeResults[NODE_QUAL + p]);
             }
             WRITE("");
             k++;
@@ -1304,6 +1309,8 @@ void report_Links(SWMM_Project *sp)
     char     theDate[12];
     char     theTime[9];
 
+    TOutputExport *otptx = &sp->OutputExport;
+
     if ( sp->Nobjects[LINK] == 0 ) return;
     WRITE("");
     WRITE("************");
@@ -1322,11 +1329,11 @@ void report_Links(SWMM_Project *sp)
                 datetime_timeToStr(days, theTime);
                 output_readLinkResults(sp, period, k);
                 fprintf(sp->Frpt.file, "\n  %11s %8s  %9.3f %9.3f %9.3f %9.3f",
-                    theDate, theTime, LinkResults[LINK_FLOW],
-                    LinkResults[LINK_VELOCITY], LinkResults[LINK_DEPTH],
-                    LinkResults[LINK_CAPACITY]);
+                    theDate, theTime, otptx->LinkResults[LINK_FLOW],
+                    otptx->LinkResults[LINK_VELOCITY], otptx->LinkResults[LINK_DEPTH],
+                    otptx->LinkResults[LINK_CAPACITY]);
                 if ( !sp->IgnoreQuality ) for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    fprintf(sp->Frpt.file, " %9.3f", LinkResults[LINK_QUAL + p]);
+                    fprintf(sp->Frpt.file, " %9.3f", otptx->LinkResults[LINK_QUAL + p]);
             }
             WRITE("");
             k++;
@@ -1433,7 +1440,7 @@ void report_writeInputErrorMsg(SWMM_Project *sp, int k, int sect, char* line,
 {
     if ( sp->Frpt.file )
     {
-        report_writeErrorMsg(sp, k, ErrString);
+        report_writeErrorMsg(sp, k, sp->ErrString);
         if ( sect < 0 ) fprintf(sp->Frpt.file, FMT17, lineCount);
         else            fprintf(sp->Frpt.file, FMT18, lineCount, SectWords[sect]);
         fprintf(sp->Frpt.file, "\n  %s", line);

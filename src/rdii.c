@@ -50,13 +50,13 @@ enum FileTypes {BINARY, TEXT};         // File mode types
 //-----------------------------------------------------------------------------
 // Imported Variables
 //-----------------------------------------------------------------------------
-#ifdef __cplusplus
-extern const double Qcf[];             // flow units conversion factors
+//#ifdef __cplusplus
+//extern const double Qcf[];             // flow units conversion factors
                                        // (see swmm5.c)
-#else
-extern double Qcf[];                   // flow units conversion factors
+//#else
+extern const double Qcf[];                   // flow units conversion factors
                                        // (see swmm5.c)
-#endif 
+//#endif
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
@@ -127,26 +127,26 @@ int rdii_readRdiiInflow(SWMM_Project *sp, char* tok[], int ntoks)
     TRdiiInflow* inflow;
 
     // --- check for proper number of items
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that node receiving RDII exists
     j = project_findObject(sp, NODE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- check that RDII unit hydrograph exists
     k = project_findObject(sp, UNITHYD, tok[1]);
-    if ( k < 0 ) return error_setInpError(ERR_NAME, tok[1]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_NAME, tok[1]);
 
     // --- read in sewer area value
     if ( !getDouble(tok[2], &a) || a < 0.0 )
-        return error_setInpError(ERR_NUMBER, tok[2]);
+        return error_setInpError(sp, ERR_NUMBER, tok[2]);
 
     // --- create the RDII inflow object if it doesn't already exist
     inflow = sp->Node[j].rdiiInflow;
     if ( inflow == NULL )
     {
         inflow = (TRdiiInflow *) malloc(sizeof(TRdiiInflow));
-        if ( !inflow ) return error_setInpError(ERR_MEMORY, "");
+        if ( !inflow ) return error_setInpError(sp, ERR_MEMORY, "");
     }
 
     // --- assign UH & area to inflow object
@@ -199,7 +199,7 @@ int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
 
     // --- check that RDII UH object exists in database
     j = project_findObject(sp, UNITHYD, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- assign UH ID to name in hash table
     if ( sp->UnitHyd[j].ID == NULL )
@@ -209,18 +209,18 @@ int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
     if ( ntoks == 2 )
     {
         g = project_findObject(sp, GAGE, tok[1]);
-        if ( g < 0 ) return error_setInpError(ERR_NAME, tok[1]);
+        if ( g < 0 ) return error_setInpError(sp, ERR_NAME, tok[1]);
         sp->UnitHyd[j].rainGage = g;
         return 0;
     }
-    else if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    else if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- find which month UH params apply to
     m = datetime_findMonth(tok[1]);
     if ( m == 0 )
     {
         if ( !match(tok[1], w_ALL) )
-            return error_setInpError(ERR_KEYWORD, tok[1]);
+            return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     }
 
     // --- find type of UH being specified
@@ -233,7 +233,7 @@ int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
     for ( i = 0; i < 3; i++ )
     {
         if ( ! getDouble(tok[i+3], &x[i]) )
-            return error_setInpError(ERR_NUMBER, tok[i+3]);
+            return error_setInpError(sp, ERR_NUMBER, tok[i+3]);
     }
 
     // --- read the IA parameters if present
@@ -243,7 +243,7 @@ int rdii_readUnitHydParams(SWMM_Project *sp, char* tok[], int ntoks)
         if ( ntoks > i+3 )
         {
             if ( ! getDouble(tok[i+3], &x[i]) )
-                return error_setInpError(ERR_NUMBER, tok[i+2]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i+2]);
         }
     }
 
@@ -269,13 +269,13 @@ int readOldUHFormat(SWMM_Project *sp, int j, int m, char* tok[], int ntoks)
     double p[9], x[6];
 
     // --- check for proper number of tokens
-    if ( ntoks < 11 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 11 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- read 3 sets of r-t-k values
     for ( i = 0; i < 9; i++ )
     {
         if ( ! getDouble(tok[i+2], &p[i]) )
-            return error_setInpError(ERR_NUMBER, tok[i+2]);
+            return error_setInpError(sp, ERR_NUMBER, tok[i+2]);
     }
 
     // --- read initial abstraction parameters
@@ -285,7 +285,7 @@ int readOldUHFormat(SWMM_Project *sp, int j, int m, char* tok[], int ntoks)
         if ( ntoks > i+11 )
         {
             if ( ! getDouble(tok[i+11], &x[i+3]) )
-                return error_setInpError(ERR_NUMBER, tok[i+11]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i+11]);
         }
     }
 

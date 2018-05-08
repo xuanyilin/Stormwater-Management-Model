@@ -52,6 +52,8 @@
 #define OBJECTS_H
 
 
+#include "consts.h"
+
 // Forward declare an alias for SWMM_Project to resolve cyclic dependency
 typedef struct SWMM_Project SWMM_Project;
 
@@ -840,7 +842,8 @@ struct SWMM_Project {
                  Msg[MAXMSG+1],            // Text of output message
                  ErrorMsg[MAXMSG+1],       // Text of error message           //(5.1.011)
                  Title[MAXTITLE][MAXMSG+1],// Project title
-                 TempDir[MAXFNAME+1];      // Temporary file directory
+                 TempDir[MAXFNAME+1],      // Temporary file directory
+                 ErrString[256];
 
    TRptFlags
                  RptFlags;                 // Reporting options
@@ -962,6 +965,7 @@ struct SWMM_Project {
 
    TOdesolveShared OdesolveShared;
    TOutputShared OutputShared;
+   TOutputExport OutputExport;
    TProjectShared ProjectShared;
    TRainShared RainShared;
    TRdiiShared RdiiShared;

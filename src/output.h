@@ -14,6 +14,7 @@
 #define REAL4 float
 #define REAL8 double
 
+
 //-----------------------------------------------------------------------------
 //  Shared variables
 //-----------------------------------------------------------------------------
@@ -33,12 +34,16 @@ typedef struct
     REAL4     SysResults[MAX_SYS_RESULTS];    // values of system output vars.
 } TOutputShared;
 
+
 //-----------------------------------------------------------------------------
 //  Exportable variables (shared with report.c)
 //-----------------------------------------------------------------------------
-REAL4*           SubcatchResults;
-REAL4*           NodeResults;
-REAL4*           LinkResults;
+typedef struct
+{
+    REAL4*           SubcatchResults;
+    REAL4*           NodeResults;
+    REAL4*           LinkResults;
+} TOutputExport;
 
 
 #endif /* SRC_OUTPUT_H_ */

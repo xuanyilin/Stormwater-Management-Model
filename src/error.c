@@ -20,6 +20,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <string.h>
+#include "objects.h"
 #include "error.h"
 
 #define ERR101 "\n  ERROR 101: memory allocation error."
@@ -214,7 +215,7 @@ const int ErrorCodes[] =
       363,    401,    402,    403,    405,    501,    502,    503,    504,
 	  505,    506,    507,    508,    509};
 
-char  ErrString[256];
+//char  ErrString[256];
 
 const char* error_getMsg(int i)
 {
@@ -228,8 +229,8 @@ int  error_getCode(int i)
     else return 0;
 }
 
-int  error_setInpError(int errcode, char* s)
+int  error_setInpError(SWMM_Project *sp, int errcode, char* s)
 {
-    strcpy(ErrString, s);
+    strcpy(sp->ErrString, s);
     return errcode;
 }
