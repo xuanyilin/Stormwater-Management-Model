@@ -32,21 +32,6 @@
 #include "headers.h"
 #include "lid.h"
 
-////-----------------------------------------------------------------------------
-////  Imported variables
-////-----------------------------------------------------------------------------
-//extern TSubcatchStats* SubcatchStats;          // defined in STATS.C
-//extern TNodeStats*     NodeStats;
-//extern TLinkStats*     LinkStats;
-//extern TStorageStats*  StorageStats;
-//extern TOutfallStats*  OutfallStats;
-//extern TPumpStats*     PumpStats;
-//extern double          MaxOutfallFlow;
-//extern double          MaxRunoffFlow;
-
-//extern double*         NodeInflow;             // defined in MASSBAL.C
-//extern double*         NodeOutflow;            // defined in massbal.c
-
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------

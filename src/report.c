@@ -52,16 +52,6 @@
 "----------------------------------------------------------------"
 
 //-----------------------------------------------------------------------------
-//  Imported variables
-//-----------------------------------------------------------------------------
-#define REAL4 float
-//extern REAL4* SubcatchResults;         // Results vectors defined in OUTPUT.C
-//extern REAL4* NodeResults;             //  "
-//extern REAL4* LinkResults;             //  "
-
-//extern char   ErrString[81];           // defined in ERROR.C
-
-//-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
 static void report_LoadingErrors(SWMM_Project *sp, int p1, int p2,

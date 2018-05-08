@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "headers.h"
-#include "lid.h"
-#include "input.h"
 
 //-----------------------------------------------------------------------------
 //  Constants

@@ -57,7 +57,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "headers.h"
-#include "controls.h"
 
 //-----------------------------------------------------------------------------
 //  Constants

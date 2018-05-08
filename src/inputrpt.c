@@ -14,7 +14,6 @@
 #include <string.h>
 #include <time.h>
 #include "headers.h"
-#include "lid.h"
 
 #define WRITE(x) (report_writeLine(sp,(x)))
 

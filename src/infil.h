@@ -28,6 +28,7 @@ enum InfilType {
      MOD_GREEN_AMPT,              // Modified Green-Ampt infiltration          //(5.1.010)
      CURVE_NUMBER};               // SCS Curve Number infiltration
 
+
 //---------------------
 // Horton Infiltration
 //---------------------
@@ -82,12 +83,6 @@ typedef struct
 
 }  TCurveNum;
 
-//-----------------------------------------------------------------------------
-//   Exported Variables
-//-----------------------------------------------------------------------------
-//extern THorton*   HortInfil;
-//extern TGrnAmpt*  GAInfil;
-//extern TCurveNum* CNInfil;
 
 //-----------------------------------------------------------------------------
 //   Infiltration Methods
@@ -105,6 +100,7 @@ int     grnampt_setParams(SWMM_Project *sp, TGrnAmpt *infil, double p[]);
 void    grnampt_initState(TGrnAmpt *infil);
 double  grnampt_getInfil(SWMM_Project *sp, TGrnAmpt *infil, double tstep,
         double irate, double depth, int modelType);                            //(5.1.010)
+
 
 //-----------------------------------------------------------------------------
 //  Local Variables

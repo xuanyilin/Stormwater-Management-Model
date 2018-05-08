@@ -47,11 +47,6 @@
 #include "headers.h"
 
 //-----------------------------------------------------------------------------
-//  Local Variables
-//-----------------------------------------------------------------------------
-static int fileVersion;
-
-//-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)
 //-----------------------------------------------------------------------------
 // hotstart_open                          (called by swmm_start in swmm5.c)
@@ -132,9 +127,9 @@ int openHotstartFile1(SWMM_Project *sp)
 
     // --- check that file contains proper header records
     fread(fStampx, sizeof(char), strlen(fileStamp2), sp->Fhotstart1.file);
-    if      ( strcmp(fStampx, fileStamp4) == 0 ) fileVersion = 4;              //(5.1.008)
-    else if ( strcmp(fStampx, fileStamp3) == 0 ) fileVersion = 3;
-    else if ( strcmp(fStampx, fileStamp2) == 0 ) fileVersion = 2;
+    if      ( strcmp(fStampx, fileStamp4) == 0 ) sp->FileVersion = 4;              //(5.1.008)
+    else if ( strcmp(fStampx, fileStamp3) == 0 ) sp->FileVersion = 3;
+    else if ( strcmp(fStampx, fileStamp2) == 0 ) sp->FileVersion = 2;
     else
     {
         rewind(sp->Fhotstart1.file);
@@ -144,7 +139,7 @@ int openHotstartFile1(SWMM_Project *sp)
             report_writeErrorMsg(sp, ERR_HOTSTART_FILE_FORMAT, "");
             return FALSE;
         }
-        fileVersion = 1;
+        sp->FileVersion = 1;
     }
 
     nSubcatch = -1;
@@ -153,12 +148,12 @@ int openHotstartFile1(SWMM_Project *sp)
     nPollut = -1;
     nLandUses = -1;
     flowUnits = -1;
-    if ( fileVersion >= 2 )                                                    //(5.1.002)
+    if ( sp->FileVersion >= 2 )                                                    //(5.1.002)
     {    
         fread(&nSubcatch, sizeof(int), 1, sp->Fhotstart1.file);
     }
     else nSubcatch = sp->Nobjects[SUBCATCH];
-    if ( fileVersion >= 3 )                                                    //(5.1.008)
+    if ( sp->FileVersion >= 3 )                                                    //(5.1.008)
     {
         fread(&nLandUses, sizeof(int), 1, sp->Fhotstart1.file);
     }
@@ -179,7 +174,7 @@ int openHotstartFile1(SWMM_Project *sp)
     }
 
     // --- read contents of the file and close it
-    if ( fileVersion >= 3 ) readRunoff(sp);                                      //(5.1.008)
+    if ( sp->FileVersion >= 3 ) readRunoff(sp);                                      //(5.1.008)
     readRouting(sp);
     fclose(sp->Fhotstart1.file);
     if ( sp->ErrorCode ) return FALSE;
@@ -291,7 +286,7 @@ void readRouting(SWMM_Project *sp)
     FILE* f = sp->Fhotstart1.file;
 
     // --- for file format 2, assign GW moisture content and lower depth
-    if ( fileVersion == 2 )
+    if ( sp->FileVersion == 2 )
     {
         // --- flow and available upper zone volume not used
         xgw[2] = 0.0;
@@ -318,7 +313,7 @@ void readRouting(SWMM_Project *sp)
         sp->Node[i].newLatFlow = x;
 
 ////  New code added to release 5.1.008.  ////                                 //(5.1.008)
-        if ( fileVersion >= 4 &&  sp->Node[i].type == STORAGE )
+        if ( sp->FileVersion >= 4 &&  sp->Node[i].type == STORAGE )
         {
             if ( !readFloat(sp, &x, f) ) return;
             j = sp->Node[i].subIndex;
@@ -333,7 +328,7 @@ void readRouting(SWMM_Project *sp)
         }
 
         // --- read in zeros here for backwards compatibility
-        if ( fileVersion <= 2 )
+        if ( sp->FileVersion <= 2 )
         {
             for (j = 0; j < sp->Nobjects[POLLUT]; j++)
             {

@@ -32,7 +32,6 @@
 #include <math.h>
 #include "headers.h"
 #include "odesolve.h"
-#include "gwater.h"
 
 //-----------------------------------------------------------------------------
 //  Constants

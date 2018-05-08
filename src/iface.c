@@ -17,13 +17,13 @@
 //-----------------------------------------------------------------------------
 //  Imported variables
 //-----------------------------------------------------------------------------
-#ifdef __cplusplus
-extern const double Qcf[];             // flow units conversion factors
+//#ifdef __cplusplus
+//extern const double Qcf[];             // flow units conversion factors
                                        // (see swmm5.c)
-#else
-extern double Qcf[];                   // flow units conversion factors
+//#else
+extern const double Qcf[];                   // flow units conversion factors
                                        // (see swmm5.c)
-#endif 
+//#endif
 
 //-----------------------------------------------------------------------------
 //  External Functions (declared in funcs.h)
@@ -47,7 +47,6 @@ static int   getIfaceFileNodes(SWMM_Project *sp);
 static void  setOldIfaceValues(SWMM_Project *sp);
 static void  readNewIfaceValues(SWMM_Project *sp);
 static int   isOutletNode(SWMM_Project *sp, int node);
-
 
 //=============================================================================
 

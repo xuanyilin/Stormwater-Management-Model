@@ -47,7 +47,6 @@
 #if defined(_OPENMP)
   #include <omp.h>                                                             //(5.1.008)
 #endif
-#include "dynwave.h"
 
 //-----------------------------------------------------------------------------
 //     Constants 

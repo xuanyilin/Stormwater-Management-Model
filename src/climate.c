@@ -35,7 +35,6 @@
 #include <string.h>
 #include <math.h>
 #include "headers.h"
-#include "climate.h"
 
 ////-----------------------------------------------------------------------------
 ////  Constants

@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "headers.h"
-#include "datetime.h"
 
 // Macro to convert charcter x to upper case
 #define UCHAR(x) (((x) >= 'a' && (x) <= 'z') ? ((x)&~32) : (x))

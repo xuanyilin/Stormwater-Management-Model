@@ -40,7 +40,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "headers.h"
-#include "swmm5.h"
 
 //-----------------------------------------------------------------------------
 //  Constants   

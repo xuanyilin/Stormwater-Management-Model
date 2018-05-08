@@ -45,7 +45,7 @@
 //-----------------------------------------------------------------------------
 // Ratio of area at max. flow to full area
 // (= 1.0 for open shapes, < 1.0 for closed shapes)
-const double  Amax[25] = {
+static const double  Amax[25] = {
                      1.0,     //  DUMMY
                      0.9756,  //  CIRCULAR
                      0.9756,  //  FILLED_CIRCULAR
@@ -105,11 +105,11 @@ typedef struct
 //-----------------------------------------------------------------------------
 static double generic_getAofS(SWMM_Project *sp, TXsect* xsect, double s);
 static void   evalSofA(SWMM_Project *sp, double a, double* f, double* df, void* p);
-static double tabular_getdSdA(TXsect* xsect, double a, double *table, int nItems);
+static double tabular_getdSdA(TXsect* xsect, double a, const double *table, const int nItems);
 static double generic_getdSdA(SWMM_Project *sp, TXsect* xsect, double a);
-static double lookup(double x, double *table, int nItems);
-static double invLookup(double y, double *table, int nItems);
-static int    locate(double y, double *table, int nItems);
+static double lookup(double x, const double *table, const int nItems);
+static double invLookup(double y, const double *table, const int nItems);
+static int    locate(double y, const double *table, int nItems);
 
 static double rect_closed_getSofA(SWMM_Project *sp, TXsect* xsect, double a);
 static double rect_closed_getdSdA(SWMM_Project *sp, TXsect* xsect, double a);
@@ -1359,7 +1359,7 @@ void evalSofA(SWMM_Project *sp, double a, double* f, double* df, void* p)
 
 //=============================================================================
 
-double tabular_getdSdA(TXsect* xsect, double a, double *table, int nItems)
+double tabular_getdSdA(TXsect* xsect, double a, const double *table, const int nItems)
 //
 //  Input:   xsect = ptr. to cross section data structure
 //           a = area (ft2)
@@ -1409,7 +1409,7 @@ double generic_getdSdA(SWMM_Project *sp, TXsect* xsect, double a)
 
 //=============================================================================
 
-double lookup(double x, double *table, int nItems)
+double lookup(double x, const double *table, const int nItems)
 //
 //  Input:   x = value of independent variable in a geometry table
 //           table = ptr. to geometry table
@@ -1446,7 +1446,7 @@ double lookup(double x, double *table, int nItems)
 
 //=============================================================================
 
-double invLookup(double y, double *table, int nItems)
+double invLookup(double y, const double *table, const int nItems)
 //
 //  Input:   y = value of dependent variable in a geometry table
 //           table = ptr. to geometry table
@@ -1506,7 +1506,7 @@ double invLookup(double y, double *table, int nItems)
 
 //=============================================================================
 
-int locate(double y, double *table, int jLast)
+int locate(double y, const double *table, int jLast)
 //
 //  Input:   y      = value being located in table
 //           table  = ptr. to table with monotonically increasing entries

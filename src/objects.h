@@ -879,7 +879,8 @@ struct SWMM_Project {
                  SweepEnd,                 // Day of year when sweeping ends
                  MaxTrials,                // Max. trials for DW routing
                  NumThreads,               // Number of parallel threads used //(5.1.008)
-                 NumEvents;                // Number of detailed events       //(5.1.011)
+                 NumEvents,                // Number of detailed events       //(5.1.011)
+                 FileVersion;              // Hotstart file version number
 //                 InSteadyState;            // System flows remain constant    //(5.1.012)
 
    double

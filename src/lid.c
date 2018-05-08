@@ -69,7 +69,6 @@
 
 #include <math.h>
 #include "headers.h"
-#include "lid.h"
 
 ////  New error messages added to release 5.1.008.  ////                       //(5.1.008)
 #define ERR_PAVE_LAYER " - check pavement layer parameters"

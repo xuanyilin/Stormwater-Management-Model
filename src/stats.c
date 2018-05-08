@@ -40,13 +40,7 @@
   #include <omp.h>                                                             //(5.1.008)
 #endif
 #include "headers.h"
-#include "swmm5.h"
 
-//-----------------------------------------------------------------------------
-//  Imported variables
-//-----------------------------------------------------------------------------
-//extern double*         NodeInflow;     // defined in massbal.c
-//extern double*         NodeOutflow;    // defined in massbal.c
 
 //-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)

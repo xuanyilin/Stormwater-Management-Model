@@ -22,22 +22,6 @@
 #include "lid.h"
 
 //-----------------------------------------------------------------------------
-//  Imported variables 
-//-----------------------------------------------------------------------------
-// Declared in RUNOFF.C
-//extern  double*    OutflowLoad;   // exported pollutant mass load
-
-// Volumes (ft3) for a subcatchment over a time step declared in SUBCATCH.C
-//extern double      Vinfil;        // non-LID infiltration
-//extern double      Vinflow;       // non-LID precip + snowmelt + runon + ponded water
-//extern double      Voutflow;      // non-LID runoff to subcatchment's outlet
-//extern double      VlidIn;        // inflow to LID units
-//extern double      VlidInfil;     // infiltration from LID units
-//extern double      VlidOut;       // surface outflow from LID units
-//extern double      VlidDrain;     // drain outflow from LID units
-//extern double      VlidReturn;    // LID outflow returned to pervious area
-
-//-----------------------------------------------------------------------------
 //  External functions (declared in funcs.h)   
 //-----------------------------------------------------------------------------
 //  surfqual_initState         (called from subcatch_initState)
