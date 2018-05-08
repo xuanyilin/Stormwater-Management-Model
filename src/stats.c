@@ -43,18 +43,6 @@
 #include "swmm5.h"
 
 //-----------------------------------------------------------------------------
-//  Exportable variables (shared with statsrpt.c)
-//-----------------------------------------------------------------------------
-TSubcatchStats*     SubcatchStats;
-TNodeStats*         NodeStats;
-TLinkStats*         LinkStats;
-TStorageStats*      StorageStats;
-TOutfallStats*      OutfallStats;
-TPumpStats*         PumpStats;
-double              MaxOutfallFlow;
-double              MaxRunoffFlow;
-
-//-----------------------------------------------------------------------------
 //  Imported variables
 //-----------------------------------------------------------------------------
 //extern double*         NodeInflow;     // defined in massbal.c
@@ -94,47 +82,48 @@ int  stats_open(SWMM_Project *sp)
     int j, k, p;
 
     TStatsShared *stts = &sp->StatsShared;
+    TStatsExport *sttsx = &sp->StatsExport;
 
     // --- set all pointers to NULL
-    NodeStats = NULL;
-    LinkStats = NULL;
-    StorageStats = NULL;
-    OutfallStats = NULL;
-    PumpStats = NULL;
+    sttsx->NodeStats = NULL;
+    sttsx->LinkStats = NULL;
+    sttsx->StorageStats = NULL;
+    sttsx->OutfallStats = NULL;
+    sttsx->PumpStats = NULL;
 
     // --- allocate memory for & initialize subcatchment statistics
-    SubcatchStats = NULL;
+    sttsx->SubcatchStats = NULL;
     if ( sp->Nobjects[SUBCATCH] > 0 )
     {
-        SubcatchStats = (TSubcatchStats *) calloc(sp->Nobjects[SUBCATCH],
+        sttsx->SubcatchStats = (TSubcatchStats *) calloc(sp->Nobjects[SUBCATCH],
                                                sizeof(TSubcatchStats));
-        if ( !SubcatchStats )
+        if ( !sttsx->SubcatchStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
         }
         for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
         {
-            SubcatchStats[j].precip  = 0.0;
-            SubcatchStats[j].runon   = 0.0;
-            SubcatchStats[j].evap    = 0.0;
-            SubcatchStats[j].infil   = 0.0;
-            SubcatchStats[j].runoff  = 0.0;
-            SubcatchStats[j].maxFlow = 0.0;
+            sttsx->SubcatchStats[j].precip  = 0.0;
+            sttsx->SubcatchStats[j].runon   = 0.0;
+            sttsx->SubcatchStats[j].evap    = 0.0;
+            sttsx->SubcatchStats[j].infil   = 0.0;
+            sttsx->SubcatchStats[j].runoff  = 0.0;
+            sttsx->SubcatchStats[j].maxFlow = 0.0;
 
             if ( sp->Nobjects[POLLUT] > 0 )
             {
-                SubcatchStats[j].surfaceBuildup =
+                sttsx->SubcatchStats[j].surfaceBuildup =
                     (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-                if ( !SubcatchStats[j].surfaceBuildup )
+                if ( !sttsx->SubcatchStats[j].surfaceBuildup )
                 {
                     report_writeErrorMsg(sp, ERR_MEMORY, "");
                     return sp->ErrorCode;
                 }
                 for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
-                    SubcatchStats[j].surfaceBuildup[p] = 0.0;
+                    sttsx->SubcatchStats[j].surfaceBuildup[p] = 0.0;
             }
-            else SubcatchStats[j].surfaceBuildup = NULL;
+            else sttsx->SubcatchStats[j].surfaceBuildup = NULL;
         }
 
 ////  Added to release 5.1.008.  ////                                          //(5.1.008)
@@ -156,9 +145,9 @@ int  stats_open(SWMM_Project *sp)
     // --- allocate memory for node & link stats
     if ( sp->Nobjects[LINK] > 0 )
     {
-        NodeStats = (TNodeStats *) calloc(sp->Nobjects[NODE], sizeof(TNodeStats));
-        LinkStats = (TLinkStats *) calloc(sp->Nobjects[LINK], sizeof(TLinkStats));
-        if ( !NodeStats || !LinkStats )
+        sttsx->NodeStats = (TNodeStats *) calloc(sp->Nobjects[NODE], sizeof(TNodeStats));
+        sttsx->LinkStats = (TLinkStats *) calloc(sp->Nobjects[LINK], sizeof(TLinkStats));
+        if ( !sttsx->NodeStats || !sttsx->LinkStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
@@ -166,49 +155,49 @@ int  stats_open(SWMM_Project *sp)
     }
 
     // --- initialize node stats
-    if ( NodeStats ) for ( j = 0; j < sp->Nobjects[NODE]; j++ )
+    if ( sttsx->NodeStats ) for ( j = 0; j < sp->Nobjects[NODE]; j++ )
     {
-        NodeStats[j].avgDepth = 0.0;
-        NodeStats[j].maxDepth = 0.0;
-        NodeStats[j].maxDepthDate = sp->StartDateTime;
-        NodeStats[j].maxRptDepth = 0.0;                                        //(5.1.008)
-        NodeStats[j].volFlooded = 0.0;
-        NodeStats[j].timeFlooded = 0.0;
-        NodeStats[j].timeSurcharged = 0.0;
-        NodeStats[j].timeCourantCritical = 0.0;
-        NodeStats[j].totLatFlow = 0.0;
-        NodeStats[j].maxLatFlow = 0.0;
-        NodeStats[j].maxInflow = 0.0;
-        NodeStats[j].maxOverflow = 0.0;
-        NodeStats[j].maxPondedVol = 0.0;
-        NodeStats[j].maxInflowDate = sp->StartDateTime;
-        NodeStats[j].maxOverflowDate = sp->StartDateTime;
+        sttsx->NodeStats[j].avgDepth = 0.0;
+        sttsx->NodeStats[j].maxDepth = 0.0;
+        sttsx->NodeStats[j].maxDepthDate = sp->StartDateTime;
+        sttsx->NodeStats[j].maxRptDepth = 0.0;                                        //(5.1.008)
+        sttsx->NodeStats[j].volFlooded = 0.0;
+        sttsx->NodeStats[j].timeFlooded = 0.0;
+        sttsx->NodeStats[j].timeSurcharged = 0.0;
+        sttsx->NodeStats[j].timeCourantCritical = 0.0;
+        sttsx->NodeStats[j].totLatFlow = 0.0;
+        sttsx->NodeStats[j].maxLatFlow = 0.0;
+        sttsx->NodeStats[j].maxInflow = 0.0;
+        sttsx->NodeStats[j].maxOverflow = 0.0;
+        sttsx->NodeStats[j].maxPondedVol = 0.0;
+        sttsx->NodeStats[j].maxInflowDate = sp->StartDateTime;
+        sttsx->NodeStats[j].maxOverflowDate = sp->StartDateTime;
     }
 
     // --- initialize link stats
-    if ( LinkStats ) for ( j = 0; j < sp->Nobjects[LINK]; j++ )
+    if ( sttsx->LinkStats ) for ( j = 0; j < sp->Nobjects[LINK]; j++ )
     {
-        LinkStats[j].maxFlow = 0.0;
-        LinkStats[j].maxVeloc = 0.0;
-        LinkStats[j].maxDepth = 0.0;
-        LinkStats[j].timeSurcharged = 0.0;
-        LinkStats[j].timeFullUpstream = 0.0;
-        LinkStats[j].timeFullDnstream = 0.0;
-        LinkStats[j].timeFullFlow = 0.0;
-        LinkStats[j].timeCapacityLimited = 0.0;
-        LinkStats[j].timeCourantCritical = 0.0;
+        sttsx->LinkStats[j].maxFlow = 0.0;
+        sttsx->LinkStats[j].maxVeloc = 0.0;
+        sttsx->LinkStats[j].maxDepth = 0.0;
+        sttsx->LinkStats[j].timeSurcharged = 0.0;
+        sttsx->LinkStats[j].timeFullUpstream = 0.0;
+        sttsx->LinkStats[j].timeFullDnstream = 0.0;
+        sttsx->LinkStats[j].timeFullFlow = 0.0;
+        sttsx->LinkStats[j].timeCapacityLimited = 0.0;
+        sttsx->LinkStats[j].timeCourantCritical = 0.0;
         for (k=0; k<MAX_FLOW_CLASSES; k++)
-            LinkStats[j].timeInFlowClass[k] = 0.0;
-        LinkStats[j].flowTurns = 0;
-        LinkStats[j].flowTurnSign = 0;
+            sttsx->LinkStats[j].timeInFlowClass[k] = 0.0;
+        sttsx->LinkStats[j].flowTurns = 0;
+        sttsx->LinkStats[j].flowTurnSign = 0;
     }
 
     // --- allocate memory for & initialize storage unit statistics
     if ( sp->Nnodes[STORAGE] > 0 )
     {
-        StorageStats = (TStorageStats *) calloc(sp->Nnodes[STORAGE],
+        sttsx->StorageStats = (TStorageStats *) calloc(sp->Nnodes[STORAGE],
                            sizeof(TStorageStats));
-        if ( !StorageStats )
+        if ( !sttsx->StorageStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
@@ -217,73 +206,73 @@ int  stats_open(SWMM_Project *sp)
         {
             if ( sp->Node[k].type != STORAGE ) continue;
             j = sp->Node[k].subIndex;
-            StorageStats[j].initVol = sp->Node[k].newVolume;
-            StorageStats[j].avgVol = 0.0;
-            StorageStats[j].maxVol = 0.0;
-            StorageStats[j].maxFlow = 0.0;
-            StorageStats[j].evapLosses = 0.0;
-            StorageStats[j].exfilLosses = 0.0;                                 //(5.1.007)
-            StorageStats[j].maxVolDate = sp->StartDateTime;
+            sttsx->StorageStats[j].initVol = sp->Node[k].newVolume;
+            sttsx->StorageStats[j].avgVol = 0.0;
+            sttsx->StorageStats[j].maxVol = 0.0;
+            sttsx->StorageStats[j].maxFlow = 0.0;
+            sttsx->StorageStats[j].evapLosses = 0.0;
+            sttsx->StorageStats[j].exfilLosses = 0.0;                                 //(5.1.007)
+            sttsx->StorageStats[j].maxVolDate = sp->StartDateTime;
         }
     }
 
     // --- allocate memory for & initialize outfall statistics
     if ( sp->Nnodes[OUTFALL] > 0 )
     {
-        OutfallStats = (TOutfallStats *) calloc(sp->Nnodes[OUTFALL],
+        sttsx->OutfallStats = (TOutfallStats *) calloc(sp->Nnodes[OUTFALL],
                            sizeof(TOutfallStats));
-        if ( !OutfallStats )
+        if ( !sttsx->OutfallStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
         }
         else for ( j = 0; j < sp->Nnodes[OUTFALL]; j++ )
         {
-            OutfallStats[j].avgFlow = 0.0;
-            OutfallStats[j].maxFlow = 0.0;
-            OutfallStats[j].totalPeriods = 0;
+            sttsx->OutfallStats[j].avgFlow = 0.0;
+            sttsx->OutfallStats[j].maxFlow = 0.0;
+            sttsx->OutfallStats[j].totalPeriods = 0;
             if ( sp->Nobjects[POLLUT] > 0 )
             {
-                OutfallStats[j].totalLoad =
+                sttsx->OutfallStats[j].totalLoad =
                     (double *) calloc(sp->Nobjects[POLLUT], sizeof(double));
-                if ( !OutfallStats[j].totalLoad )
+                if ( !sttsx->OutfallStats[j].totalLoad )
                 {
                     report_writeErrorMsg(sp, ERR_MEMORY, "");
                     return sp->ErrorCode;
                 }
                 for (k=0; k<sp->Nobjects[POLLUT]; k++)
-                    OutfallStats[j].totalLoad[k] = 0.0;
+                    sttsx->OutfallStats[j].totalLoad[k] = 0.0;
             }
-            else OutfallStats[j].totalLoad = NULL;
+            else sttsx->OutfallStats[j].totalLoad = NULL;
         }
     }
 
     // --- allocate memory & initialize pumping statistics
     if ( sp->Nlinks[PUMP] > 0 )
     { 
-        PumpStats = (TPumpStats *) calloc(sp->Nlinks[PUMP], sizeof(TPumpStats));
-        if ( !PumpStats ) 
+        sttsx->PumpStats = (TPumpStats *) calloc(sp->Nlinks[PUMP], sizeof(TPumpStats));
+        if ( !sttsx->PumpStats )
         {
             report_writeErrorMsg(sp, ERR_MEMORY, "");
             return sp->ErrorCode;
         }
         else for ( j = 0; j < sp->Nlinks[PUMP]; j++ )
         {
-            PumpStats[j].utilized = 0.0;
-            PumpStats[j].minFlow  = 0.0;
-            PumpStats[j].avgFlow  = 0.0;
-            PumpStats[j].maxFlow  = 0.0; 
-            PumpStats[j].volume   = 0.0;
-            PumpStats[j].energy   = 0.0;
-            PumpStats[j].startUps = 0;
-            PumpStats[j].offCurveLow = 0.0; 
-            PumpStats[j].offCurveHigh = 0.0;
+            sttsx->PumpStats[j].utilized = 0.0;
+            sttsx->PumpStats[j].minFlow  = 0.0;
+            sttsx->PumpStats[j].avgFlow  = 0.0;
+            sttsx->PumpStats[j].maxFlow  = 0.0;
+            sttsx->PumpStats[j].volume   = 0.0;
+            sttsx->PumpStats[j].energy   = 0.0;
+            sttsx->PumpStats[j].startUps = 0;
+            sttsx->PumpStats[j].offCurveLow = 0.0;
+            sttsx->PumpStats[j].offCurveHigh = 0.0;
         } 
     } 
 
     // --- initialize system stats
-    MaxRunoffFlow = 0.0;
-    MaxOutfallFlow = 0.0;
+    sttsx->MaxRunoffFlow = 0.0;
+    sttsx->MaxOutfallFlow = 0.0;
     stts->SysStats.maxTimeStep = 0.0;
     stts->SysStats.minTimeStep = sp->RouteStep;
     stts->SysStats.avgTimeStep = 0.0;
@@ -303,22 +292,24 @@ void  stats_close(SWMM_Project *sp)
 {
     int j;
 
-    if ( SubcatchStats)
+    TStatsExport *sttsx = &sp->StatsExport;
+
+    if ( sttsx->SubcatchStats)
     {
         for ( j=0; j<sp->Nobjects[SUBCATCH]; j++ )
-            FREE(SubcatchStats[j].surfaceBuildup);
-        FREE(SubcatchStats);
+            FREE(sttsx->SubcatchStats[j].surfaceBuildup);
+        FREE(sttsx->SubcatchStats);
     }
-    FREE(NodeStats);
-    FREE(LinkStats);
-    FREE(StorageStats); 
-    if ( OutfallStats )
+    FREE(sttsx->NodeStats);
+    FREE(sttsx->LinkStats);
+    FREE(sttsx->StorageStats);
+    if ( sttsx->OutfallStats )
     {
         for ( j=0; j<sp->Nnodes[OUTFALL]; j++ )
-            FREE(OutfallStats[j].totalLoad);
-        FREE(OutfallStats);
+            FREE(sttsx->OutfallStats[j].totalLoad);
+        FREE(sttsx->OutfallStats);
     }
-    FREE(PumpStats);
+    FREE(sttsx->PumpStats);
 }
 
 //=============================================================================
@@ -365,16 +356,18 @@ void   stats_updateSubcatchStats(SWMM_Project *sp, int j, double rainVol,
 {
     int p;
     
-    SubcatchStats[j].precip += rainVol;
-    SubcatchStats[j].runon  += runonVol;
-    SubcatchStats[j].evap   += evapVol;
-    SubcatchStats[j].infil  += infilVol;
-    SubcatchStats[j].runoff += runoffVol;
-    SubcatchStats[j].maxFlow = MAX(SubcatchStats[j].maxFlow, runoff);
+    TStatsExport *sttsx = &sp->StatsExport;
+
+    sttsx->SubcatchStats[j].precip += rainVol;
+    sttsx->SubcatchStats[j].runon  += runonVol;
+    sttsx->SubcatchStats[j].evap   += evapVol;
+    sttsx->SubcatchStats[j].infil  += infilVol;
+    sttsx->SubcatchStats[j].runoff += runoffVol;
+    sttsx->SubcatchStats[j].maxFlow = MAX(sttsx->SubcatchStats[j].maxFlow, runoff);
     
     for ( p = 0; p < sp->Nobjects[POLLUT]; p++ )
     {
-        SubcatchStats[j].surfaceBuildup[p] = subcatch_getBuildup(sp, j, p);
+        sttsx->SubcatchStats[j].surfaceBuildup[p] = subcatch_getBuildup(sp, j, p);
     }
         
 }
@@ -413,15 +406,18 @@ void  stats_updateMaxRunoff(SWMM_Project *sp)
     int j;
     double sysRunoff = 0.0;
     
-    for (j=0; j<sp->Nobjects[SUBCATCH]; j++) sysRunoff += sp->Subcatch[j].newRunoff;
-    MaxRunoffFlow = MAX(MaxRunoffFlow, sysRunoff);
+    TStatsExport *sttsx = &sp->StatsExport;
+
+    for (j=0; j<sp->Nobjects[SUBCATCH]; j++)
+        sysRunoff += sp->Subcatch[j].newRunoff;
+    sttsx->MaxRunoffFlow = MAX(sttsx->MaxRunoffFlow, sysRunoff);
 }    
 
 //=============================================================================
 
 ////  New function added for release 5.1.008.  ////                            //(5.1.008)
 
-void   stats_updateMaxNodeDepth(int j, double depth)
+void   stats_updateMaxNodeDepth(SWMM_Project *sp, int j, double depth)
 //
 //   Input:   j = node index
 //            depth = water depth at node at current reporting time (ft)
@@ -429,8 +425,10 @@ void   stats_updateMaxNodeDepth(int j, double depth)
 //   Purpose: updates a node's maximum depth recorded at reporting times.
 //
 {
-    if ( NodeStats != NULL )
-        NodeStats[j].maxRptDepth = MAX(NodeStats[j].maxRptDepth, depth);
+    TStatsExport *sttsx = &sp->StatsExport;
+
+    if ( sttsx->NodeStats != NULL )
+        sttsx->NodeStats[j].maxRptDepth = MAX(sttsx->NodeStats[j].maxRptDepth, depth);
 }
 
 //=============================================================================
@@ -449,6 +447,7 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
     int   j;
 
     TStatsShared *stts = &sp->StatsShared;
+    TStatsExport *sttsx = &sp->StatsExport;
 
     // --- update stats only after reporting period begins
     if ( aDate < sp->ReportStart ) return;
@@ -488,12 +487,12 @@ void   stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
 ////
 
     // --- update max. system outfall flow
-    MaxOutfallFlow = MAX(MaxOutfallFlow, stts->SysOutfallFlow);
+	sttsx->MaxOutfallFlow = MAX(sttsx->MaxOutfallFlow, stts->SysOutfallFlow);
 }
 
 //=============================================================================
    
-void stats_updateCriticalTimeCount(int node, int link)
+void stats_updateCriticalTimeCount(SWMM_Project *sp, int node, int link)
 //
 //  Input:   node = node index
 //           link = link index
@@ -501,8 +500,12 @@ void stats_updateCriticalTimeCount(int node, int link)
 //  Purpose: updates count of times a node or link was time step-critical.
 //
 {
-    if      ( node >= 0 ) NodeStats[node].timeCourantCritical += 1.0;
-    else if ( link >= 0 ) LinkStats[link].timeCourantCritical += 1.0;
+    TStatsExport *sttsx = &sp->StatsExport;
+
+    if      ( node >= 0 )
+        sttsx->NodeStats[node].timeCourantCritical += 1.0;
+    else if ( link >= 0 )
+        sttsx->LinkStats[link].timeCourantCritical += 1.0;
 }
 
 //=============================================================================
@@ -524,13 +527,14 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     int    canPond = (sp->AllowPonding && sp->Node[j].pondedArea > 0.0);
 
     TStatsShared *stts = &sp->StatsShared;
+    TStatsExport *sttsx = &sp->StatsExport;
 
     // --- update depth statistics
-    NodeStats[j].avgDepth += newDepth;
-    if ( newDepth > NodeStats[j].maxDepth )
+    sttsx->NodeStats[j].avgDepth += newDepth;
+    if ( newDepth > sttsx->NodeStats[j].maxDepth )
     {
-        NodeStats[j].maxDepth = newDepth;
-        NodeStats[j].maxDepthDate = aDate;
+        sttsx->NodeStats[j].maxDepth = newDepth;
+        sttsx->NodeStats[j].maxDepthDate = aDate;
     }
     
     // --- update flooding, ponding, and surcharge statistics
@@ -538,10 +542,10 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     {
         if ( newVolume > sp->Node[j].fullVolume || sp->Node[j].overflow > 0.0 )
         {
-            NodeStats[j].timeFlooded += tStep;
-            NodeStats[j].volFlooded += sp->Node[j].overflow * tStep;
-            if ( canPond ) NodeStats[j].maxPondedVol =
-                MAX(NodeStats[j].maxPondedVol,
+            sttsx->NodeStats[j].timeFlooded += tStep;
+            sttsx->NodeStats[j].volFlooded += sp->Node[j].overflow * tStep;
+            if ( canPond ) sttsx->NodeStats[j].maxPondedVol =
+                MAX(sttsx->NodeStats[j].maxPondedVol,
                     (newVolume - sp->Node[j].fullVolume));
         }
 
@@ -550,7 +554,7 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
         if ( sp->RouteModel == DW && sp->Node[j].type != STORAGE &&                    //(5.1.011)
              newDepth + sp->Node[j].invertElev + FUDGE >= sp->Node[j].crownElev )
         {
-            NodeStats[j].timeSurcharged += tStep;
+            sttsx->NodeStats[j].timeSurcharged += tStep;
         }
     }
 
@@ -558,19 +562,19 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
     if ( sp->Node[j].type == STORAGE )
     {
         k = sp->Node[j].subIndex;
-        StorageStats[k].avgVol += newVolume;
-        StorageStats[k].evapLosses += 
+        sttsx->StorageStats[k].avgVol += newVolume;
+        sttsx->StorageStats[k].evapLosses +=
             sp->Storage[sp->Node[j].subIndex].evapLoss; 
-        StorageStats[k].exfilLosses +=
+        sttsx->StorageStats[k].exfilLosses +=
             sp->Storage[sp->Node[j].subIndex].exfilLoss; 
 
         newVolume = MIN(newVolume, sp->Node[j].fullVolume);
-        if ( newVolume > StorageStats[k].maxVol )
+        if ( newVolume > sttsx->StorageStats[k].maxVol )
         {
-            StorageStats[k].maxVol = newVolume;
-            StorageStats[k].maxVolDate = aDate;
+            sttsx->StorageStats[k].maxVol = newVolume;
+            sttsx->StorageStats[k].maxVolDate = aDate;
         }
-        StorageStats[k].maxFlow = MAX(StorageStats[k].maxFlow, sp->Node[j].outflow);
+        sttsx->StorageStats[k].maxFlow = MAX(sttsx->StorageStats[k].maxFlow, sp->Node[j].outflow);
     }
 
     // --- update outfall statistics
@@ -579,34 +583,34 @@ void stats_updateNodeStats(SWMM_Project *sp, int j, double tStep, DateTime aDate
         k = sp->Node[j].subIndex;
         if ( sp->Node[j].inflow >= MIN_RUNOFF_FLOW )
         {
-            OutfallStats[k].avgFlow += sp->Node[j].inflow;
-            OutfallStats[k].maxFlow = MAX(OutfallStats[k].maxFlow, sp->Node[j].inflow);
-            OutfallStats[k].totalPeriods++;
+            sttsx->OutfallStats[k].avgFlow += sp->Node[j].inflow;
+            sttsx->OutfallStats[k].maxFlow = MAX(sttsx->OutfallStats[k].maxFlow, sp->Node[j].inflow);
+            sttsx->OutfallStats[k].totalPeriods++;
         }
         for (p=0; p<sp->Nobjects[POLLUT]; p++)
         {
-            OutfallStats[k].totalLoad[p] += sp->Node[j].inflow * 
+            sttsx->OutfallStats[k].totalLoad[p] += sp->Node[j].inflow *
                 sp->Node[j].newQual[p] * tStep;
         }
         stts->SysOutfallFlow += sp->Node[j].inflow;
     }
 
     // --- update inflow statistics
-    NodeStats[j].totLatFlow += ( (sp->Node[j].oldLatFlow + sp->Node[j].newLatFlow) * 
+    sttsx->NodeStats[j].totLatFlow += ( (sp->Node[j].oldLatFlow + sp->Node[j].newLatFlow) *
                                  0.5 * tStep );
-    if ( fabs(sp->Node[j].newLatFlow) > fabs(NodeStats[j].maxLatFlow) )
-        NodeStats[j].maxLatFlow = sp->Node[j].newLatFlow;
-    if ( sp->Node[j].inflow > NodeStats[j].maxInflow )
+    if ( fabs(sp->Node[j].newLatFlow) > fabs(sttsx->NodeStats[j].maxLatFlow) )
+        sttsx->NodeStats[j].maxLatFlow = sp->Node[j].newLatFlow;
+    if ( sp->Node[j].inflow > sttsx->NodeStats[j].maxInflow )
     {
-        NodeStats[j].maxInflow = sp->Node[j].inflow;
-        NodeStats[j].maxInflowDate = aDate;
+        sttsx->NodeStats[j].maxInflow = sp->Node[j].inflow;
+        sttsx->NodeStats[j].maxInflowDate = aDate;
     }
 
     // --- update overflow statistics
-    if ( sp->Node[j].overflow > NodeStats[j].maxOverflow )
+    if ( sp->Node[j].overflow > sttsx->NodeStats[j].maxOverflow )
     {
-        NodeStats[j].maxOverflow = sp->Node[j].overflow;
-        NodeStats[j].maxOverflowDate = aDate;
+        sttsx->NodeStats[j].maxOverflow = sp->Node[j].overflow;
+        sttsx->NodeStats[j].maxOverflowDate = aDate;
     }
 }
 
@@ -625,98 +629,100 @@ void  stats_updateLinkStats(SWMM_Project *sp, int j, double tStep, DateTime aDat
     double q, v;
     double dq;
 
+    TStatsExport *sttsx = &sp->StatsExport;
+
     // --- update max. flow
     dq = sp->Link[j].newFlow - sp->Link[j].oldFlow;
     q = fabs(sp->Link[j].newFlow);
-    if ( q > LinkStats[j].maxFlow )
+    if ( q > sttsx->LinkStats[j].maxFlow )
     {
-        LinkStats[j].maxFlow = q;
-        LinkStats[j].maxFlowDate = aDate;
+        sttsx->LinkStats[j].maxFlow = q;
+        sttsx->LinkStats[j].maxFlowDate = aDate;
     }
 
     // --- update max. velocity
     v = link_getVelocity(sp, j, q, sp->Link[j].newDepth);
-    if ( v > LinkStats[j].maxVeloc )
+    if ( v > sttsx->LinkStats[j].maxVeloc )
     {
-        LinkStats[j].maxVeloc = v;
+        sttsx->LinkStats[j].maxVeloc = v;
         //LinkStats[j].maxVelocDate = aDate;                                   //(5.1.008)
     }
 
     // --- update max. depth
-    if ( sp->Link[j].newDepth > LinkStats[j].maxDepth )
+    if ( sp->Link[j].newDepth > sttsx->LinkStats[j].maxDepth )
     {
-        LinkStats[j].maxDepth = sp->Link[j].newDepth;
+        sttsx->LinkStats[j].maxDepth = sp->Link[j].newDepth;
     }
 
     if ( sp->Link[j].type == PUMP )
     {
         if ( q >= sp->Link[j].qFull )
-            LinkStats[j].timeFullFlow += tStep;
+            sttsx->LinkStats[j].timeFullFlow += tStep;
         if ( q > MIN_RUNOFF_FLOW )
         {
             k = sp->Link[j].subIndex;
-            PumpStats[k].minFlow = MIN(PumpStats[k].minFlow, q);
-            PumpStats[k].maxFlow = LinkStats[j].maxFlow;
-            PumpStats[k].avgFlow += q;
-            PumpStats[k].volume += q*tStep;
-            PumpStats[k].utilized += tStep;
-            PumpStats[k].energy += link_getPower(sp, j)*tStep/3600.0;
+            sttsx->PumpStats[k].minFlow = MIN(sttsx->PumpStats[k].minFlow, q);
+            sttsx->PumpStats[k].maxFlow = sttsx->LinkStats[j].maxFlow;
+            sttsx->PumpStats[k].avgFlow += q;
+            sttsx->PumpStats[k].volume += q*tStep;
+            sttsx->PumpStats[k].utilized += tStep;
+            sttsx->PumpStats[k].energy += link_getPower(sp, j)*tStep/3600.0;
             if ( sp->Link[j].flowClass == DN_DRY )
-                PumpStats[k].offCurveLow += tStep;
+                sttsx->PumpStats[k].offCurveLow += tStep;
             if ( sp->Link[j].flowClass == UP_DRY )
-                PumpStats[k].offCurveHigh += tStep;
+                sttsx->PumpStats[k].offCurveHigh += tStep;
             if ( sp->Link[j].oldFlow < MIN_RUNOFF_FLOW )
-                PumpStats[k].startUps++;
-            PumpStats[k].totalPeriods++;
-            LinkStats[j].timeSurcharged += tStep;
-            LinkStats[j].timeFullUpstream += tStep;
-            LinkStats[j].timeFullDnstream += tStep;
+                sttsx->PumpStats[k].startUps++;
+            sttsx->PumpStats[k].totalPeriods++;
+            sttsx->LinkStats[j].timeSurcharged += tStep;
+            sttsx->LinkStats[j].timeFullUpstream += tStep;
+            sttsx->LinkStats[j].timeFullDnstream += tStep;
         }
     }
     else if ( sp->Link[j].type == CONDUIT )
     {
 
         // --- update time under normal flow & inlet control 
-        if ( sp->Link[j].normalFlow ) LinkStats[j].timeNormalFlow += tStep;
-        if ( sp->Link[j].inletControl ) LinkStats[j].timeInletControl += tStep;
+        if ( sp->Link[j].normalFlow ) sttsx->LinkStats[j].timeNormalFlow += tStep;
+        if ( sp->Link[j].inletControl ) sttsx->LinkStats[j].timeInletControl += tStep;
     
         // --- update flow classification distribution
         k = sp->Link[j].flowClass;
         if ( k >= 0 && k < MAX_FLOW_CLASSES )
         {
-            ++LinkStats[j].timeInFlowClass[k];
+            ++sttsx->LinkStats[j].timeInFlowClass[k];
         }
 
         // --- update time conduit is full
         k = sp->Link[j].subIndex;
         if ( q >= sp->Link[j].qFull * (double)sp->Conduit[k].barrels )                 //(5.1.012)
-            LinkStats[j].timeFullFlow += tStep; 
+            sttsx->LinkStats[j].timeFullFlow += tStep;
         if ( sp->Conduit[k].capacityLimited )
-            LinkStats[j].timeCapacityLimited += tStep;
+            sttsx->LinkStats[j].timeCapacityLimited += tStep;
 
 ////  Following section modified for release 5.1.008.  ////                    //(5.1.008)
 ////
         switch (sp->Conduit[k].fullState)
         {
         case ALL_FULL:
-            LinkStats[j].timeSurcharged += tStep;
-            LinkStats[j].timeFullUpstream += tStep;
-            LinkStats[j].timeFullDnstream += tStep;
+            sttsx->LinkStats[j].timeSurcharged += tStep;
+            sttsx->LinkStats[j].timeFullUpstream += tStep;
+            sttsx->LinkStats[j].timeFullDnstream += tStep;
             break;
         case UP_FULL:
-            LinkStats[j].timeFullUpstream += tStep;
+            sttsx->LinkStats[j].timeFullUpstream += tStep;
             break;
         case DN_FULL:
-            LinkStats[j].timeFullDnstream += tStep;
+            sttsx->LinkStats[j].timeFullDnstream += tStep;
         }
 ////
     }
 
     // --- update flow turn count
-    k = LinkStats[j].flowTurnSign;
-    LinkStats[j].flowTurnSign = SGN(dq);
-    if ( fabs(dq) > 0.001 &&  k * LinkStats[j].flowTurnSign < 0 )
-            LinkStats[j].flowTurns++;
+    k = sttsx->LinkStats[j].flowTurnSign;
+    sttsx->LinkStats[j].flowTurnSign = SGN(dq);
+    if ( fabs(dq) > 0.001 &&  k * sttsx->LinkStats[j].flowTurnSign < 0 )
+        sttsx->LinkStats[j].flowTurns++;
 }
 
 //=============================================================================
@@ -733,6 +739,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     double x;
 
     TStatsShared *stts = &sp->StatsShared;
+    TStatsExport *sttsx = &sp->StatsExport;
     TMassbalExport *mssblx = &sp->MassbalExport;
 
     // --- initialize max. stats arrays
@@ -752,7 +759,7 @@ void  stats_findMaxStats(SWMM_Project *sp)
     {
         for (j=0; j<sp->Nobjects[LINK]; j++)
         {
-            x = 100.0 * LinkStats[j].flowTurns / (2./3.*(sp->StepCount-2));
+            x = 100.0 * sttsx->LinkStats[j].flowTurns / (2./3.*(sp->StepCount-2));
             stats_updateMaxStats(stts->MaxFlowTurns, LINK, j, x);
         }
     }
@@ -781,14 +788,14 @@ void  stats_findMaxStats(SWMM_Project *sp)
     if ( sp->StepCount == 0 ) return;                                              //(5.1.008)
     for (j=0; j<sp->Nobjects[NODE]; j++)
     {
-        x = NodeStats[j].timeCourantCritical / sp->StepCount;
+        x = sttsx->NodeStats[j].timeCourantCritical / sp->StepCount;
         stats_updateMaxStats(stts->MaxCourantCrit, NODE, j, 100.0*x);
     }
 
     // --- find links most frequently Courant critical
     for (j=0; j<sp->Nobjects[LINK]; j++)
     {
-        x = LinkStats[j].timeCourantCritical / sp->StepCount;
+        x = sttsx->LinkStats[j].timeCourantCritical / sp->StepCount;
         stats_updateMaxStats(stts->MaxCourantCrit, LINK, j, 100.0*x);
     }
 }
@@ -833,6 +840,8 @@ int stats_getNodeStat(SWMM_Project *sp, int index, TNodeStats *nodeStats)
 {
 	int errorcode = 0;
 
+    TStatsExport *sttsx = &sp->StatsExport;
+
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
 	{
@@ -853,7 +862,7 @@ int stats_getNodeStat(SWMM_Project *sp, int index, TNodeStats *nodeStats)
 
 	else
 	{
-		memcpy(nodeStats, &NodeStats[index], sizeof(TNodeStats));
+		memcpy(nodeStats, &sttsx->NodeStats[index], sizeof(TNodeStats));
 	}
 	return errorcode;
 }
@@ -867,6 +876,8 @@ int stats_getStorageStat(SWMM_Project *sp, int index, TStorageStats *storageStat
 //
 {
 	int errorcode = 0;
+
+    TStatsExport *sttsx = &sp->StatsExport;
 
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
@@ -897,7 +908,7 @@ int stats_getStorageStat(SWMM_Project *sp, int index, TStorageStats *storageStat
 		// fetch sub index
 		int k = sp->Node[index].subIndex;
 		// Copy Structure
-		memcpy(storageStats, &StorageStats[k], sizeof(TStorageStats));
+		memcpy(storageStats, &sttsx->StorageStats[k], sizeof(TStorageStats));
 	}
 	return errorcode;
 }
@@ -912,6 +923,8 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
 {
 	int errorcode = 0;
     int p;
+
+    TStatsExport *sttsx = &sp->StatsExport;
 
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
@@ -942,7 +955,7 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
 		// fetch sub index
 		int k = sp->Node[index].subIndex;
 		// Copy Structure
-		memcpy(outfallStats, &OutfallStats[k], sizeof(TOutfallStats));
+		memcpy(outfallStats, &sttsx->OutfallStats[k], sizeof(TOutfallStats));
 		
 		// Perform Deep Copy of Pollutants Results
         if (sp->Nobjects[POLLUT] > 0)
@@ -956,7 +969,7 @@ int stats_getOutfallStat(SWMM_Project *sp, int index, TOutfallStats *outfallStat
             if (errorcode == 0)
             {
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    outfallStats->totalLoad[p] = OutfallStats[k].totalLoad[p];
+                    outfallStats->totalLoad[p] = sttsx->OutfallStats[k].totalLoad[p];
             }
         }
         else outfallStats->totalLoad = NULL;
@@ -973,6 +986,8 @@ int stats_getLinkStat(SWMM_Project *sp, int index, TLinkStats *linkStats)
 //
 {
 	int errorcode = 0;
+
+    TStatsExport *sttsx = &sp->StatsExport;
 
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
@@ -995,7 +1010,7 @@ int stats_getLinkStat(SWMM_Project *sp, int index, TLinkStats *linkStats)
 	else
 	{
 		// Copy Structure
-		memcpy(linkStats, &LinkStats[index], sizeof(TLinkStats));
+		memcpy(linkStats, &sttsx->LinkStats[index], sizeof(TLinkStats));
 	}
 	return errorcode;
 }
@@ -1009,6 +1024,8 @@ int stats_getPumpStat(SWMM_Project *sp, int index, TPumpStats *pumpStats)
 //
 {
 	int errorcode = 0;
+
+    TStatsExport *sttsx = &sp->StatsExport;
 
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
@@ -1039,7 +1056,7 @@ int stats_getPumpStat(SWMM_Project *sp, int index, TPumpStats *pumpStats)
 		// fetch sub index
 		int k = sp->Link[index].subIndex;
 		// Copy Structure
-		memcpy(pumpStats, &PumpStats[k], sizeof(TPumpStats));
+		memcpy(pumpStats, &sttsx->PumpStats[k], sizeof(TPumpStats));
 	}
 	return errorcode;
 }
@@ -1054,6 +1071,8 @@ int stats_getSubcatchStat(SWMM_Project *sp ,int index, TSubcatchStats *subcatchS
 {
 	int errorcode = 0;
     int p;
+
+    TStatsExport *sttsx = &sp->StatsExport;
 
 	// Check if Open
 	if (swmm_IsOpenFlag(sp) == FALSE)
@@ -1076,7 +1095,7 @@ int stats_getSubcatchStat(SWMM_Project *sp ,int index, TSubcatchStats *subcatchS
 	else
 	{
 		// Copy Structure
-		memcpy(subcatchStats, &SubcatchStats[index], sizeof(TSubcatchStats));
+		memcpy(subcatchStats, &sttsx->SubcatchStats[index], sizeof(TSubcatchStats));
         
         // Perform Deep Copy of Pollutant Buildup Results
         if (sp->Nobjects[POLLUT] > 0)
@@ -1090,7 +1109,7 @@ int stats_getSubcatchStat(SWMM_Project *sp ,int index, TSubcatchStats *subcatchS
             if (errorcode == 0)
             {
                 for (p = 0; p < sp->Nobjects[POLLUT]; p++)
-                    subcatchStats->surfaceBuildup[p] = SubcatchStats[index].surfaceBuildup[p];
+                    subcatchStats->surfaceBuildup[p] = sttsx->SubcatchStats[index].surfaceBuildup[p];
             }
         }
         else subcatchStats->surfaceBuildup = NULL;

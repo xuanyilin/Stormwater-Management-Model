@@ -310,7 +310,7 @@ int     stats_open(SWMM_Project *sp);
 void    stats_close(SWMM_Project *sp);
 void    stats_report(SWMM_Project *sp);
 
-void    stats_updateCriticalTimeCount(int node, int link);
+void    stats_updateCriticalTimeCount(SWMM_Project *sp, int node, int link);
 void    stats_updateFlowStats(SWMM_Project *sp, double tStep, DateTime aDate,
         int stepCount, int steadyState);
 void    stats_updateSubcatchStats(SWMM_Project *sp, int subcatch, double rainVol, double runonVol,
@@ -319,7 +319,7 @@ void    stats_updateGwaterStats(SWMM_Project *sp, int j, double infil, double ev
         double latFlow, double deepFlow, double theta, double waterTable,      //(5.1.008)
         double tStep);                                                         //(5.1.008)
 void    stats_updateMaxRunoff(SWMM_Project *sp);
-void    stats_updateMaxNodeDepth(int node, double depth);                      //(5.1.008)
+void    stats_updateMaxNodeDepth(SWMM_Project *sp, int node, double depth);                      //(5.1.008)
 
 //-----------------------------------------------------------------------------
 //   Raingage Methods

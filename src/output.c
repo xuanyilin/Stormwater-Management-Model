@@ -583,7 +583,7 @@ void output_saveNodeResults(SWMM_Project *sp, double reportTime, FILE* file)
         node_getResults(sp, j, f, NodeResults);
         if ( sp->Node[j].rptFlag )
             fwrite(NodeResults, sizeof(REAL4), otpt->NnodeResults, file);
-        stats_updateMaxNodeDepth(j, NodeResults[NODE_DEPTH]);                 //(5.1.008)
+        stats_updateMaxNodeDepth(sp, j, NodeResults[NODE_DEPTH]);                 //(5.1.008)
 
         // --- update system-wide storage volume 
         otpt->SysResults[SYS_STORAGE] += NodeResults[NODE_VOLUME];

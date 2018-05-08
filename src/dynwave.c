@@ -788,7 +788,7 @@ double getVariableStep(SWMM_Project *sp, double maxStep)
     }
 
     // --- update count of times the minimum node or link was critical
-    stats_updateCriticalTimeCount(minNode, minLink);
+    stats_updateCriticalTimeCount(sp, minNode, minLink);
 
     // --- don't let time step go below an absolute minimum
     if ( tMin < sp->MinRouteStep ) tMin = sp->MinRouteStep;                            //(5.1.008)
