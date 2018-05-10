@@ -16,6 +16,7 @@ typedef struct
    long  dummy;
 }  alloc_handle_t;
 
+
 alloc_handle_t *AllocInit(void);
 char           *Alloc(long);
 alloc_handle_t *AllocSetPool(alloc_handle_t *);

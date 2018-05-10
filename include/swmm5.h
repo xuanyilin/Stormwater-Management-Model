@@ -67,7 +67,9 @@ int  DLLEXPORT   swmm_free_project(SWMM_ProjectHandle *ph);
  @param f3 pointer to name of binary output file (to be created)
  @return error code
 */
-int  DLLEXPORT   swmm_run(char* f1, char* f2, char* f3);
+int  DLLEXPORT   swmm_run(const char* f1, const char* f2, const char* f3);
+int  DLLEXPORT   swmm_run_project(SWMM_ProjectHandle ph, const char* f1,
+        const char* f2, const char* f3);
 
 /**
  @brief Opens SWMM input file & reads in network data
@@ -76,8 +78,9 @@ int  DLLEXPORT   swmm_run(char* f1, char* f2, char* f3);
  @param f3 pointer to name of binary output file (to be created)
  @return error code
 */
-int  DLLEXPORT   swmm_open(char* f1, char* f2, char* f3);
-int  DLLEXPORT   swmm_open_project(SWMM_ProjectHandle ph, char* f1, char*f2, char*f3);
+int  DLLEXPORT   swmm_open(const char* f1, const char* f2, const char* f3);
+int  DLLEXPORT   swmm_open_project(SWMM_ProjectHandle ph, const char* f1,
+        const char* f2, const char* f3);
 
 /**
  @brief Start SWMM simulation
@@ -162,9 +165,6 @@ void DLLEXPORT   swmm_clearError_project(SWMM_ProjectHandle ph);
 
 int  DLLEXPORT   swmm_checkError(char** msg_buffer);
 int  DLLEXPORT   swmm_checkError_project(SWMM_ProjectHandle ph, char** msg_buffer);
-
-int  swmm_IsOpenFlag(SWMM_Project *sp);
-int  swmm_IsStartedFlag(SWMM_Project *sp);
 
 #ifdef __cplusplus 
 }   // matches the linkage specification from above */ 

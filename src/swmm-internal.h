@@ -9,6 +9,9 @@
 #define SRC_SWMM_INTERNAL_H_
 
 
+int  swmm_IsOpenFlag(SWMM_Project *sp);
+int  swmm_IsStartedFlag(SWMM_Project *sp);
+
 //-----------------------------------------------------------------------------
 //  Shared variables
 //-----------------------------------------------------------------------------

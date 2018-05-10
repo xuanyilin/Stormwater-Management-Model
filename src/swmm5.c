@@ -311,7 +311,21 @@ int DLLEXPORT swmm_free_project(SWMM_ProjectHandle *ph) {
     return errorcode;
 }
 
-int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
+int DLLEXPORT swmm_run(const char* f1, const char* f2, const char* f3)
+{
+    int errorcode = 0;
+
+    swmm_alloc_project(&_defaultProject);
+
+    errorcode = swmm_run_project(_defaultProject, f1, f2, f3);
+
+    swmm_free_project(&_defaultProject);
+
+    return errorcode;
+}
+
+int DLLEXPORT  swmm_run_project(SWMM_ProjectHandle ph, const char* f1,
+        const char* f2, const char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -326,21 +340,17 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
     long theDay, theHour;
     double elapsedTime = 0.0;                                                  //(5.1.011)
 
-    SWMM_Project *sp;
-
-    // --- open the files & read input data
-    swmm_alloc_project(&_defaultProject);
-    sp = (SWMM_Project*)_defaultProject;
+    SWMM_Project *sp = (SWMM_Project*)ph;
 
     sp->ErrorCode = 0;
 
-    swmm_open_project(_defaultProject, f1, f2, f3);
+    swmm_open_project(ph, f1, f2, f3);
 
     // --- run the simulation if input data OK
     if ( !sp->ErrorCode )
     {
         // --- initialize values
-        swmm_start_project(_defaultProject, TRUE);
+        swmm_start_project(ph, TRUE);
 
         // --- execute each time step until elapsed time is re-set to 0
         if ( !sp->ErrorCode )
@@ -348,14 +358,13 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
             writecon("\n o  Simulating day: 0     hour:  0");
             do
             {
-                swmm_step_project(_defaultProject, &elapsedTime);
+                swmm_step_project(ph, &elapsedTime);
                 newHour = (long)(elapsedTime * 24.0);
                 if ( newHour > oldHour )
                 {
                     theDay = (long)elapsedTime;
                     theHour = (long)((elapsedTime - floor(elapsedTime)) * 24.0);
                     writecon("\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-                    //sprintf(_defaultProject->Msg, "%-5d hour: %-2d", theDay, theHour);
 					sprintf(sp->Msg, "%-5ld hour: %-2ld", theDay, theHour);
                     writecon(sp->Msg);
                     oldHour = newHour;
@@ -367,28 +376,29 @@ int DLLEXPORT  swmm_run(char* f1, char* f2, char* f3)
         }
 
         // --- clean up
-        swmm_end_project(_defaultProject);
+        swmm_end_project(ph);
     }
 
     // --- report results
-    if ( sp->Fout.mode == SCRATCH_FILE ) swmm_report();
+    if ( sp->Fout.mode == SCRATCH_FILE ) swmm_report_project(ph);
 
     // --- close the system
-    swmm_close_project(_defaultProject);
+    swmm_close_project(ph);
 
     error = sp->ErrorCode;
-    swmm_free_project(&_defaultProject);
 
     return error;
 }
 
 //=============================================================================
 
-int DLLEXPORT swmm_open(char* f1, char* f2, char* f3) {
+int DLLEXPORT swmm_open(const char* f1, const char* f2, const char* f3) {
+
     return swmm_open_project(_defaultProject, f1, f2, f3);
 }
 
-int DLLEXPORT swmm_open_project(SWMM_ProjectHandle ph, char* f1, char* f2, char* f3)
+int DLLEXPORT swmm_open_project(SWMM_ProjectHandle ph, const char* f1,
+        const char* f2, const char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
@@ -1087,7 +1097,7 @@ DateTime getDateTime(SWMM_Project *sp, double elapsedMsec)
 
 //=============================================================================
 
-void  writecon(char *s)
+void  writecon(const char *s)
 //
 //  Input:   s = a character string
 //  Output:  none

@@ -56,7 +56,7 @@
 #endif
 
 
-void     project_open(SWMM_Project *sp, char *f1, char *f2, char *f3);
+void     project_open(SWMM_Project *sp, const char* f1, const char* f2, const char* f3);
 void     project_close(SWMM_Project *sp);
 
 void     project_readInput(SWMM_Project *sp);
@@ -560,7 +560,7 @@ int      findmatch(char *s, const char *keyword[]); // search for matching keywo
 int      match(const char *str, const char *substr);// true if substr matches part of str
 int      strcomp(const char *s1, const char *s2);   // case insensitive string compare
 char*    sstrncpy(char *dest, const char *src, size_t maxlen);// safe string copy
-void     writecon(char *s);                         // writes string to console
+void     writecon(const char *s);                         // writes string to console
 DateTime getDateTime(SWMM_Project *sp, double elapsedMsec);   // convert elapsed time to date
 void     getElapsedTime(SWMM_Project *sp, DateTime aDate,     // convert elapsed date
          int* days, int* hrs, int* mins);

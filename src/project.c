@@ -91,7 +91,8 @@
 //-----------------------------------------------------------------------------
 static void initPointers(SWMM_Project *sp);
 static void setDefaults(SWMM_Project *sp);
-static void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3);
+static void openFiles(SWMM_Project *sp, const char* f1, const char* f2,
+        const char* f3);
 static void createObjects(SWMM_Project *sp);
 static void deleteObjects(SWMM_Project *sp);
 static void createHashTables(SWMM_Project *sp);
@@ -100,7 +101,7 @@ static void deleteHashTables(SWMM_Project *sp);
 
 //=============================================================================
 
-void project_open(SWMM_Project *sp, char *f1, char *f2, char *f3)
+void project_open(SWMM_Project *sp, const char* f1, const char* f2, const char* f3)
 //
 //  Input:   f1 = pointer to name of input file
 //           f2 = pointer to name of report file
@@ -905,7 +906,7 @@ void setDefaults(SWMM_Project *sp)
 
 //=============================================================================
 
-void openFiles(SWMM_Project *sp, char *f1, char *f2, char *f3)
+void openFiles(SWMM_Project *sp, const char* f1, const char* f2, const char* f3)
 //
 //  Input:   f1 = name of input file
 //           f2 = name of report file
