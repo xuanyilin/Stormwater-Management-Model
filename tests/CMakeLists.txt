@@ -34,9 +34,7 @@ include_directories (${Boost_INCLUDE_DIRS})
 file(GLOB TEST_SRCS . test_*.cpp)
 
 # Rentrancy test currently written in pthreads breaks build on CI
-if(MSVC)
-    list(REMOVE_ITEM TEST_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_reent.cpp)
-endif(MSVC)
+list(REMOVE_ITEM TEST_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_reent.cpp)
 
 #Run through each source
 foreach(testSrc ${TEST_SRCS})
