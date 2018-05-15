@@ -830,8 +830,8 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_ProjectHandle ph, int index,
                 sp->Subcatch[index].width = value / UCF(sp, LENGTH); break;
             case SM_AREA:
                 sp->Subcatch[index].area = value / UCF(sp, LANDAREA); break;
-//            case SM_FRACIMPERV:
-//                sp->Subcatch[index].fracImperv; break;
+            case SM_FRACIMPERV:
+                sp->Subcatch[index].fracImperv; break;
                 // Cannot Open Function just yet.  Need
                 // to adjust some internal functions to 
                 // ensure parameters are recalculated
@@ -956,7 +956,6 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_ProjectHandle ph, int index, int t
     int errcode = 0;
 
     SWMM_Project *sp = (SWMM_Project*)ph;
-
 
     // Check if Simulation is Running
     if(swmm_IsStartedFlag(sp) == FALSE)
