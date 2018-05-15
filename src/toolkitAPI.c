@@ -15,12 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "headers.h"
 #include "toolkitAPI.h"
 #include "swmm5.h"                     // declaration of exportable functions
 #include "hash.h"
-
 
 // Function Declarations for API
 int     massbal_getRoutingFlowTotal(SWMM_Project *sp, SM_RoutingTotals *routingTot);
@@ -97,6 +97,7 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr)
 {
     return swmm_setSimulationDateTime_project(_defaultProject, timetype, dtimestr);
 }
+
 int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_ProjectHandle ph, int timetype,
         char *dtimestr)
 //
@@ -731,12 +732,12 @@ int DLLEXPORT swmm_setLinkParam_project(SWMM_ProjectHandle ph, int index, int Pa
                 sp->Link[index].q0 = value / UCF(sp, FLOW); break;
             case SM_FLOWLIMIT:
                 sp->Link[index].qLimit = value / UCF(sp, FLOW); break;
-//            case SM_INLETLOSS:
-//                sp->Link[index].cLossInlet; break;
-//            case SM_OUTLETLOSS:
-//                sp->Link[index].cLossOutlet; break;
-//            case SM_AVELOSS:
-//                sp->Link[index].cLossAvg; break;
+            case SM_INLETLOSS:
+                sp->Link[index].cLossInlet = value; break;
+            case SM_OUTLETLOSS:
+                sp->Link[index].cLossOutlet = value; break;
+            case SM_AVELOSS:
+                sp->Link[index].cLossAvg = value; break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
         // re-validated link
@@ -764,15 +765,11 @@ int DLLEXPORT swmm_getSubcatchParam_project(SWMM_ProjectHandle ph, int index, in
     SWMM_Project *sp = (SWMM_Project*)ph;
 
     // Check if Open
-    if(swmm_IsOpenFlag(sp) == FALSE)
-    {
+    if ( swmm_IsOpenFlag(sp) == FALSE )
         errcode = ERR_API_INPUTNOTOPEN;
-    }
     // Check if object index is within bounds
-    else if (index < 0 || index >= sp->Nobjects[SUBCATCH])
-    {
+    else if ( index < 0 || index >= sp->Nobjects[SUBCATCH] )
         errcode = ERR_API_OBJECT_INDEX;
-    }
     else
     {
         switch(Param)
@@ -833,17 +830,21 @@ int DLLEXPORT swmm_setSubcatchParam_project(SWMM_ProjectHandle ph, int index,
                 sp->Subcatch[index].width = value / UCF(sp, LENGTH); break;
             case SM_AREA:
                 sp->Subcatch[index].area = value / UCF(sp, LANDAREA); break;
-            case SM_FRACIMPERV:
-                sp->Subcatch[index].fracImperv; break;
+//            case SM_FRACIMPERV:
+//                sp->Subcatch[index].fracImperv; break;
+                // Cannot Open Function just yet.  Need
+                // to adjust some internal functions to 
+                // ensure parameters are recalculated
+                // = MIN(value, 100.0) / 100.0; break;
             case SM_SLOPE:
-                sp->Subcatch[index].slope; break;
+                sp->Subcatch[index].slope = value; break;
             case SM_CURBLEN:
                 sp->Subcatch[index].curbLength = value / UCF(sp, LENGTH); break;
             default: errcode = ERR_API_OUTBOUNDS; break;
         }
+        //re-validate subcatchment
+        subcatch_validate(sp, index); // incorprate callback here
     }
-    //re-validate subcatchment
-    subcatch_validate(sp, index); // incorprate callback here
 
     return(errcode);
 }
@@ -912,6 +913,7 @@ int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_ProjectHandle ph, char *dt
 // Return:  API Error
 // Purpose: Get the current simulation time
 {
+    //strcpy(dtimestr,"");
     //Provide Empty Character Array
     char     theDate[12];
     char     theTime[9];
@@ -954,6 +956,7 @@ int DLLEXPORT swmm_getNodeResult_project(SWMM_ProjectHandle ph, int index, int t
     int errcode = 0;
 
     SWMM_Project *sp = (SWMM_Project*)ph;
+
 
     // Check if Simulation is Running
     if(swmm_IsStartedFlag(sp) == FALSE)
@@ -1097,6 +1100,7 @@ int DLLEXPORT swmm_getSubcatchResult_project(SWMM_ProjectHandle ph, int index, i
 int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats){
     return swmm_getNodeStats_project(_defaultProject, index, nodeStats);
 }
+
 int DLLEXPORT swmm_getNodeStats_project(SWMM_ProjectHandle ph, int index,
         SM_NodeStats *nodeStats)
 //
@@ -1150,7 +1154,6 @@ int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_ProjectHandle ph, int index, 
 // Return:  API Error
 // Purpose: Get Node Total Inflow Volume.
 {
-
     int errorcode = 0;
 
     SWMM_Project *sp = (SWMM_Project*)ph;
@@ -1168,6 +1171,7 @@ int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_ProjectHandle ph, int index, 
 int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats){
     return swmm_getStorageStats_project(_defaultProject, index, storageStats);
 }
+
 int DLLEXPORT swmm_getStorageStats_project(SWMM_ProjectHandle ph, int index,
         SM_StorageStats *storageStats)
 //
@@ -1538,6 +1542,7 @@ int DLLEXPORT swmm_getGagePrecip_project(SWMM_ProjectHandle ph, int index,
     }
     return(errcode);
 }
+
 int DLLEXPORT swmm_setGagePrecip(int index, double value)
 {
     return swmm_setGagePrecip_project(_defaultProject, index, value);

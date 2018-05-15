@@ -171,6 +171,8 @@ typedef enum {
     SM_SUBCSNOW      = 5,  /**< Snow Depth */
 } SM_SubcResult;
 
+typedef double DateTime;
+
 // --- Define the SWMM toolkit structures
 
 /// Node stats structure

@@ -394,6 +394,8 @@ int DLLEXPORT  swmm_run_project(SWMM_ProjectHandle ph, const char* f1,
 
 int DLLEXPORT swmm_open(const char* f1, const char* f2, const char* f3) {
 
+    swmm_alloc_project(&_defaultProject);
+
     return swmm_open_project(_defaultProject, f1, f2, f3);
 }
 
@@ -763,7 +765,11 @@ int DLLEXPORT swmm_report_project(SWMM_ProjectHandle ph)
 //=============================================================================
 
 int DLLEXPORT swmm_close(void) {
-    return swmm_close_project(_defaultProject);
+
+    swmm_close_project(_defaultProject);
+
+    return swmm_free_project(&_defaultProject);
+
 }
 
 int DLLEXPORT swmm_close_project(SWMM_ProjectHandle ph)
