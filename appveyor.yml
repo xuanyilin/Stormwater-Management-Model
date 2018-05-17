@@ -18,8 +18,8 @@ environment:
       VS_VERSION: "10 2010"
       ARCH: Win32
       GROUP: "SUPPORTED"
-      BOOST_ROOT: "C:/Libraries/boost_1_58_0"
-    #  BOOST_LIB: "C:/Libraries/boost/lib32-msvc-10.0"
+      BOOST_ROOT: "C:/Libraries/boost"
+      BOOST_LIB: "C:/Libraries/boost/lib32-msvc-10.0"
     #- APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     #  VS_VERSION: "10 2010"
     #  ARCH: Win64
@@ -75,6 +75,7 @@ init:
   - echo %ARCH%
   - echo %GENERATOR%
   - echo %BOOST_ROOT%
+  - echo %BOOST_LIB%
 
 install:
   # Install nrtest and dependencies for regression tests
@@ -85,6 +86,7 @@ before_build:
   - cd %BUILD_HOME%
   - cmake -G %GENERATOR% 
     -DBOOST_ROOT="%BOOST_ROOT%"
+    -DBOOST_LIBRARYDIR="%BOOST_LIB%"
     -DBoost_USE_STATIC_LIBS="ON" ..
 
 build_script:
