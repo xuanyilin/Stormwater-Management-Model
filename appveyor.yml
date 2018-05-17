@@ -64,8 +64,7 @@ environment:
     #  GROUP: "EXPERIMENTAL"
 
 init:
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-  #
+#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - set SWMM_HOME=%APPVEYOR_BUILD_FOLDER%
   - set BUILD_HOME=buildprod
   - set TEST_HOME=nrtestsuite
@@ -87,6 +86,7 @@ before_build:
   - mkdir %BUILD_HOME%
   - cd %BUILD_HOME%
   - cmake -G %GENERATOR% 
+    -DBoost_DEBUG="ON"
     -DBOOST_ROOT="%BOOST_ROOT%"
     -DBOOST_LIBRARYDIR="%BOOST_LIB%"
     -DBoost_USE_STATIC_LIBS="ON" ..
