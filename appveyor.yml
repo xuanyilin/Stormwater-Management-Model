@@ -64,6 +64,8 @@ environment:
     #  GROUP: "EXPERIMENTAL"
 
 init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  #
   - set SWMM_HOME=%APPVEYOR_BUILD_FOLDER%
   - set BUILD_HOME=buildprod
   - set TEST_HOME=nrtestsuite
