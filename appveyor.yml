@@ -75,7 +75,6 @@ init:
   - echo %ARCH%
   - echo %GENERATOR%
   - echo %BOOST_ROOT%
-  - echo %BOOST_LIB%
 
 install:
   # Install nrtest and dependencies for regression tests
@@ -86,7 +85,6 @@ before_build:
   - cd %BUILD_HOME%
   - cmake -G %GENERATOR% 
     -DBOOST_ROOT="%BOOST_ROOT%"
-    -DBOOST_LIBRARYDIR="%BOOST_LIB%"
     -DBoost_USE_STATIC_LIBS="ON" ..
 
 build_script:
