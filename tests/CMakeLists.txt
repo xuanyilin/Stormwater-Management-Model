@@ -26,7 +26,7 @@ endif(UNIX)
 
 
 #Prep ourselves for compiling boost
-find_package(Boost COMPONENTS thread unit_test_framework REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread unit_test_framework)
 include_directories (${Boost_INCLUDE_DIRS})
 
 
