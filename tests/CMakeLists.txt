@@ -31,7 +31,7 @@ if(MSVC)
     set(Boost_DETAILED_FAILURE_MSG  ON)
     set(Boost_USE_STATIC_LIBS       ON)
 endif(MSVC)    
-find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Boost COMPONENTS thread)
 include_directories (${Boost_INCLUDE_DIRS})
 
 
