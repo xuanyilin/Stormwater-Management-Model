@@ -26,16 +26,22 @@ endif(UNIX)
 
 
 #Prep ourselves for compiling boost
-set(Boost_DEBUG                 ON)
-set(Boost_DETAILED_FAILURE_MSG  ON)
-set(Boost_USE_STATIC_LIBS       ON)
-find_package(Boost 1.54.0 REQUIRED COMPONENTS thread)
+if(MSVC)
+    set(Boost_DEBUG                 ON)
+    set(Boost_DETAILED_FAILURE_MSG  ON)
+    set(Boost_USE_STATIC_LIBS       ON)
+endif(MSVC)    
+find_package(Boost REQUIRED COMPONENTS thread)
 include_directories (${Boost_INCLUDE_DIRS})
 
 
 # Test files are a separate source directory called tests
 file(GLOB TEST_SRCS . test_*.cpp)
 
+# If thread library is not found skip the reentrancy test
+if(NOT ${Boost_THREAD_FOUND})
+    list(REMOVE_ITEM TEST_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_reent.cpp)
+endif()
 
 #Run through each source
 foreach(testSrc ${TEST_SRCS})
