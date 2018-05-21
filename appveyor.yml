@@ -19,8 +19,8 @@ environment:
       ARCH: Win32
       GROUP: "SUPPORTED"
       BOOST_ROOT: "C:/Libraries/boost"
-      BOOST_INC: "C:/Libraries/boost/boost"
-      BOOST_LIB: "C:/Libraries/boost/lib32-msvc-12.0"
+    #  BOOST_INC: "C:/Libraries/boost/boost"
+    #  BOOST_LIB: "C:/Libraries/boost/lib32-msvc-12.0"
     #- APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     #  VS_VERSION: "10 2010"
     #  ARCH: Win64
@@ -76,7 +76,7 @@ init:
   - echo %ARCH%
   - echo %GENERATOR%
   - echo %BOOST_ROOT%
-  - echo %BOOST_LIB%
+#  - echo %BOOST_LIB%
 
 install:
   # Install nrtest and dependencies for regression tests
@@ -86,11 +86,11 @@ before_build:
   - mkdir %BUILD_HOME%
   - cd %BUILD_HOME%
   - cmake -G %GENERATOR% 
-    -DBoost_DEBUG="ON"
     -DBOOST_ROOT="%BOOST_ROOT%"
-    -DBOOST_INCLUDEDIR="%BOOST_INC%"
-    -DBOOST_LIBRARYDIR="%BOOST_LIB%"
-    -DBoost_USE_STATIC_LIBS="ON" ..
+     ..
+#    -DBOOST_INCLUDEDIR="%BOOST_INC%"
+#    -DBOOST_LIBRARYDIR="%BOOST_LIB%"
+#     ..
 
 build_script:
   - cmake --build . --config Release
@@ -107,8 +107,8 @@ test_script:
   - cd %SWMM_HOME%
   - tools\run-nrtest.cmd %NRTEST_SCRIPT% %TEST_HOME% %APPVEYOR_REPO_COMMIT%
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 #cache:
 #  - C:\ProgramData\chocolatey\bin -> appveyor.yml

@@ -26,7 +26,10 @@ endif(UNIX)
 
 
 #Prep ourselves for compiling boost
-find_package(Boost REQUIRED COMPONENTS thread unit_test_framework)
+set(Boost_DEBUG                 ON)
+set(Boost_DETAILED_FAILURE_MSG  ON)
+set(Boost_USE_STATIC_LIBS       ON)
+find_package(Boost 1.54.0 REQUIRED COMPONENTS thread)
 include_directories (${Boost_INCLUDE_DIRS})
 
 
