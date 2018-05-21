@@ -18,9 +18,9 @@ environment:
       VS_VERSION: "10 2010"
       ARCH: Win32
       GROUP: "SUPPORTED"
-      BOOST_ROOT: "C:/Libraries/boost_1_56_0"
-      BOOST_INC: "C:/Libraries/boost_1_56_0/boost"
-      BOOST_LIB: "C:/Libraries/boost_1_56_0/lib32-msvc-10.0"
+      BOOST_ROOT: "C:/Libraries/boost"
+      BOOST_INC: "C:/Libraries/boost/boost"
+      BOOST_LIB: "C:/Libraries/boost/lib32-msvc-12.0"
     #- APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     #  VS_VERSION: "10 2010"
     #  ARCH: Win64
@@ -65,7 +65,6 @@ environment:
     #  GROUP: "EXPERIMENTAL"
 
 init:
-#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - set SWMM_HOME=%APPVEYOR_BUILD_FOLDER%
   - set BUILD_HOME=buildprod
   - set TEST_HOME=nrtestsuite
@@ -107,6 +106,9 @@ test_script:
     # Run regression tests
   - cd %SWMM_HOME%
   - tools\run-nrtest.cmd %NRTEST_SCRIPT% %TEST_HOME% %APPVEYOR_REPO_COMMIT%
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 #cache:
 #  - C:\ProgramData\chocolatey\bin -> appveyor.yml
