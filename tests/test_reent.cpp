@@ -32,7 +32,7 @@ void swmmThread(long i)
     errorcode = swmm_run_project(ph, input.c_str(), report.c_str(), output.c_str());
     swmm_free_project(&ph);
 
-    printf("Thread #%ld SWMM done. Status = %ld\n", i, errorcode);
+    printf("Thread #%ld SWMM done. Status = %d\n", i, errorcode);
 }
 
 int main(int argc, char *argv[])
