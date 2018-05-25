@@ -13,50 +13,57 @@
 //   - Keyword arrays listed in alphabetical order.
 //-----------------------------------------------------------------------------
 
-extern char* BuildupTypeWords[];
-extern char* CurveTypeWords[];
-extern char* DividerTypeWords[];
-extern char* DynWaveMethodWords[];
-extern char* EvapTypeWords[];
-extern char* FileModeWords[];
-extern char* FileTypeWords[];
-extern char* FlowUnitWords[];
-extern char* ForceMainEqnWords[];
-extern char* GageDataWords[];
-extern char* InertDampingWords[];
-extern char* InfilModelWords[];
-extern char* LinkOffsetWords[];
-extern char* LinkTypeWords[];
-extern char* LoadUnitsWords[];
-extern char* NodeTypeWords[];
-extern char* NoneAllWords[];
-extern char* NormalFlowWords[];
-extern char* NormalizerWords[];
-extern char* NoYesWords[];
-extern char* OldRouteModelWords[];
-extern char* OffOnWords[];
-extern char* OptionWords[];
-extern char* OrificeTypeWords[];
-extern char* OutfallTypeWords[];
-extern char* PatternTypeWords[];
-extern char* PondingUnitsWords[];
-extern char* ProcessVarWords[];
-extern char* PumpTypeWords[];
-extern char* QualUnitsWords[];
-extern char* RainTypeWords[];
-extern char* RainUnitsWords[];
-extern char* ReportWords[];
-extern char* RelationWords[];
-extern char* RouteModelWords[];
-extern char* RuleKeyWords[];
-extern char* SectWords[];
-extern char* SnowmeltWords[];
-extern char* TempKeyWords[];
-extern char* TransectKeyWords[];
-extern char* TreatTypeWords[];
-extern char* UHTypeWords[];
-extern char* VolUnitsWords[];
-extern char* VolUnitsWords2[];
-extern char* WashoffTypeWords[];
-extern char* WeirTypeWords[];
-extern char* XsectTypeWords[];
+#ifndef KEYWORDS_H
+#define KEYWORDS_H
+
+
+extern const char* BuildupTypeWords[];
+extern const char* CurveTypeWords[];
+extern const char* DividerTypeWords[];
+extern const char* DynWaveMethodWords[];
+extern const char* EvapTypeWords[];
+extern const char* FileModeWords[];
+extern const char* FileTypeWords[];
+extern const char* FlowUnitWords[];
+extern const char* ForceMainEqnWords[];
+extern const char* GageDataWords[];
+extern const char* InertDampingWords[];
+extern const char* InfilModelWords[];
+extern const char* LinkOffsetWords[];
+extern const char* LinkTypeWords[];
+extern const char* LoadUnitsWords[];
+extern const char* NodeTypeWords[];
+extern const char* NoneAllWords[];
+extern const char* NormalFlowWords[];
+extern const char* NormalizerWords[];
+extern const char* NoYesWords[];
+extern const char* OldRouteModelWords[];
+extern const char* OffOnWords[];
+extern const char* OptionWords[];
+extern const char* OrificeTypeWords[];
+extern const char* OutfallTypeWords[];
+extern const char* PatternTypeWords[];
+extern const char* PondingUnitsWords[];
+extern const char* ProcessVarWords[];
+extern const char* PumpTypeWords[];
+extern const char* QualUnitsWords[];
+extern const char* RainTypeWords[];
+extern const char* RainUnitsWords[];
+extern const char* ReportWords[];
+extern const char* RelationWords[];
+extern const char* RouteModelWords[];
+extern const char* RuleKeyWords[];
+extern const char* SectWords[];
+extern const char* SnowmeltWords[];
+extern const char* TempKeyWords[];
+extern const char* TransectKeyWords[];
+extern const char* TreatTypeWords[];
+extern const char* UHTypeWords[];
+extern const char* VolUnitsWords[];
+extern const char* VolUnitsWords2[];
+extern const char* WashoffTypeWords[];
+extern const char* WeirTypeWords[];
+extern const char* XsectTypeWords[];
+
+
+#endif //KEYWORDS_H

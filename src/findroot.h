@@ -5,8 +5,17 @@
 //
 //   Last modified on 11/19/13.
 //-----------------------------------------------------------------------------
-int findroot_Newton(double x1, double x2, double* rts, double xacc,
-                    void (*func) (double x, double* f, double* df, void* p),
-					void* p);
-double findroot_Ridder(double x1, double x2, double xacc,
-	                   double (*func)(double, void* p), void* p);
+
+#ifndef FINDROOT_H
+#define FINDROOT_H
+
+
+int findroot_Newton(SWMM_Project *sp, double x1, double x2, double* rts, double xacc,
+        void (*func) (SWMM_Project *sp, double x, double* f, double* df,
+                void* p), void* p);
+
+double findroot_Ridder(SWMM_Project *sp, double x1, double x2, double xacc,
+	                   double (*func)(SWMM_Project *sp, double, void* p), void* p);
+
+
+#endif //FINDROOT_H

@@ -10,6 +10,10 @@
 //   Various Constants
 //-----------------------------------------------------------------------------
 
+#ifndef CONSTS_H
+#define CONSTS_H
+
+
 //------------------
 // General Constants
 //------------------
@@ -99,3 +103,6 @@
 // Token separator characters
 //--------------------------- 
 #define   SEPSTR    " \t\n\r" 
+
+
+#endif //CONSTS_H

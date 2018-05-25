@@ -11,6 +11,7 @@
 #ifndef TOOLKITAPI_H
 #define TOOLKITAPI_H
 
+
 #ifdef WINDOWS
 #ifdef __MINGW32__
 // <- More wrapper friendly
@@ -27,8 +28,6 @@ extern "C" {
 #endif
 
 #define _CRT_SECURE_NO_DEPRECATE
-
-#include "../src/datetime.h"
 
 // --- Define the SWMM toolkit constants
 
@@ -172,6 +171,8 @@ typedef enum {
     SM_SUBCSNOW      = 5,  /**< Snow Depth */
 } SM_SubcResult;
 
+typedef double DateTime;
+
 // --- Define the SWMM toolkit structures
 
 /// Node stats structure
@@ -314,6 +315,8 @@ void DLLEXPORT swmm_getAPIError(int errcode, char *s);
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationUnit(int type, int *value);
+int DLLEXPORT swmm_getSimulationUnit_project(SWMM_ProjectHandle ph, int type,
+        int *value);
 
 /**
  @brief Gets Simulation Analysis Setting
@@ -322,6 +325,8 @@ int DLLEXPORT swmm_getSimulationUnit(int type, int *value);
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationAnalysisSetting(int type, int *value);
+int DLLEXPORT swmm_getSimulationAnalysisSetting_project(SWMM_ProjectHandle ph,
+        int type, int *value);
 
 /**
  @brief Gets Simulation Analysis Setting
@@ -330,6 +335,8 @@ int DLLEXPORT swmm_getSimulationAnalysisSetting(int type, int *value);
  @return Error code
  */
 int DLLEXPORT swmm_getSimulationParam(int type, double *value);
+int DLLEXPORT  swmm_getSimulationParam_project(SWMM_ProjectHandle ph, int type,
+        double *value);
 
 /**
  @brief Gets Object Count
@@ -338,6 +345,8 @@ int DLLEXPORT swmm_getSimulationParam(int type, double *value);
  @return Error code
  */
 int DLLEXPORT swmm_countObjects(int type, int *count);
+int DLLEXPORT  swmm_countObjects_project(SWMM_ProjectHandle ph, int type,
+        int *count);
 
 /**
  @brief Gets Object ID
@@ -347,7 +356,8 @@ int DLLEXPORT swmm_countObjects(int type, int *count);
  @return Error code
  */
 int DLLEXPORT swmm_getObjectId(int type, int index, char *id);
-
+int DLLEXPORT swmm_getObjectId_project(SWMM_ProjectHandle ph, int type,
+        int index, char *id);
 /**
  @brief Get the type of node with specified index.
  @param index The index of a node
@@ -356,6 +366,8 @@ int DLLEXPORT swmm_getObjectId(int type, int index, char *id);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeType(int index, int *Ntype);
+int DLLEXPORT swmm_getNodeType_project(SWMM_ProjectHandle ph, int index,
+        int *Ntype);
 
 /**
  @brief Get the type of link with specified index.
@@ -364,6 +376,8 @@ int DLLEXPORT swmm_getNodeType(int index, int *Ntype);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkType(int index, int *Ltype);
+int DLLEXPORT swmm_getLinkType_project(SWMM_ProjectHandle ph, int index,
+        int *Ltype);
 
 /**
  @brief Get the link Connection Node Indeces. If the conduit has a 
@@ -375,6 +389,8 @@ int DLLEXPORT swmm_getLinkType(int index, int *Ltype);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2);
+int DLLEXPORT swmm_getLinkConnections_project(SWMM_ProjectHandle ph, int index,
+        int *Node1, int *Node2);
 
 /**
  @brief Get the link flow direction (see @ref swmm_getLinkType() for notes.
@@ -383,6 +399,8 @@ int DLLEXPORT swmm_getLinkConnections(int index, int *Node1, int *Node2);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkDirection(int index, signed char *value);
+int DLLEXPORT swmm_getLinkDirection_project(SWMM_ProjectHandle ph, int index,
+        signed char *value);
 
 /**
  @brief Get the Subcatchment connection. Subcatchments can load to a
@@ -393,6 +411,8 @@ int DLLEXPORT swmm_getLinkDirection(int index, signed char *value);
  @return Error code
 */
 int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *Index);
+int DLLEXPORT swmm_getSubcatchOutConnection_project(SWMM_ProjectHandle ph,
+        int index, int *type, int *ObjIndex );
 
 /**
  @brief Get a property value for specified node.
@@ -402,6 +422,8 @@ int DLLEXPORT swmm_getSubcatchOutConnection(int index, int *type, int *Index);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value);
+int DLLEXPORT swmm_getNodeParam_project(SWMM_ProjectHandle ph, int index,
+        int Param, double *value);
 
 /**
  @brief Set a property value for specified node.
@@ -411,6 +433,8 @@ int DLLEXPORT swmm_getNodeParam(int index, int Param, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_setNodeParam(int index, int Param, double value);
+int DLLEXPORT swmm_setNodeParam_project(SWMM_ProjectHandle ph, int index,
+        int Param, double value);
 
 /**
  @brief Get a property value for specified link.
@@ -420,6 +444,8 @@ int DLLEXPORT swmm_setNodeParam(int index, int Param, double value);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value);
+int DLLEXPORT swmm_getLinkParam_project(SWMM_ProjectHandle ph, int index, int Param,
+        double *value);
 
 /**
  @brief Set a property value for specified link.
@@ -429,6 +455,8 @@ int DLLEXPORT swmm_getLinkParam(int index, int Param, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_setLinkParam(int index, int Param, double value);
+int DLLEXPORT swmm_setLinkParam_project(SWMM_ProjectHandle ph, int index, int Param,
+        double value);
 
 /**
  @brief Get a property value for specified subcatchment.
@@ -438,6 +466,8 @@ int DLLEXPORT swmm_setLinkParam(int index, int Param, double value);
  @return Error code
 */
 int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value);
+int DLLEXPORT swmm_getSubcatchParam_project(SWMM_ProjectHandle ph, int index,
+        int Param, double *value);
 
 /**
  @brief Set a property value for specified subcatchment.
@@ -447,6 +477,8 @@ int DLLEXPORT swmm_getSubcatchParam(int index, int Param, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value);
+int DLLEXPORT swmm_setSubcatchParam_project(SWMM_ProjectHandle ph, int index,
+        int Param, double value);
 
 /**
  @brief Get the current simulation datetime information.
@@ -460,8 +492,10 @@ int DLLEXPORT swmm_setSubcatchParam(int index, int Param, double value);
  @return Error code
 */
 int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
-                                         int *day, int *hour, int *minute,
-                                         int *seconds);
+        int *day, int *hour, int *minute, int *seconds);
+int DLLEXPORT swmm_getSimulationDateTime_project(SWMM_ProjectHandle ph,
+        int timetype, int *year, int *month, int *day, int *hours, int *minutes,
+        int *seconds);
 
 /**
  @brief Set simulation datetime information.
@@ -471,6 +505,8 @@ int DLLEXPORT swmm_getSimulationDateTime(int timetype, int *year, int *month,
  @return Error code
 */
 int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr);
+int DLLEXPORT swmm_setSimulationDateTime_project(SWMM_ProjectHandle ph,
+        int timetype, char *dtimestr);
 
 //-------------------------------
 // Active Simulation Results API
@@ -482,6 +518,8 @@ int DLLEXPORT swmm_setSimulationDateTime(int timetype, char *dtimestr);
  @return Error code
 */
 int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr);
+int DLLEXPORT swmm_getCurrentDateTimeStr_project(SWMM_ProjectHandle ph,
+        char *dtimestr);
 
 /**
  @brief Get a result value for specified node.
@@ -491,6 +529,8 @@ int DLLEXPORT swmm_getCurrentDateTimeStr(char *dtimestr);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeResult(int index, int type, double *result);
+int DLLEXPORT swmm_getNodeResult_project(SWMM_ProjectHandle ph, int index,
+        int type, double *result);
 
 /**
  @brief Get a result value for specified link.
@@ -500,6 +540,8 @@ int DLLEXPORT swmm_getNodeResult(int index, int type, double *result);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkResult(int index, int type, double *result);
+int DLLEXPORT swmm_getLinkResult_project(SWMM_ProjectHandle ph, int index,
+        int type, double *result);
 
 /**
  @brief Get a result value for specified subcatchment.
@@ -509,6 +551,8 @@ int DLLEXPORT swmm_getLinkResult(int index, int type, double *result);
  @return Error code
 */
 int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result);
+int DLLEXPORT swmm_getSubcatchResult_project(SWMM_ProjectHandle ph, int index,
+        int type, double *result);
 
 /**
  @brief Get a node statistics.
@@ -518,6 +562,8 @@ int DLLEXPORT swmm_getSubcatchResult(int index, int type, double *result);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats);
+int DLLEXPORT swmm_getNodeStats_project(SWMM_ProjectHandle ph, int index,
+        SM_NodeStats *nodeStats);
 
 /**
  @brief Get the cumulative inflow for a node.
@@ -526,6 +572,8 @@ int DLLEXPORT swmm_getNodeStats(int index, SM_NodeStats *nodeStats);
  @return Error code
 */
 int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value);
+int DLLEXPORT swmm_getNodeTotalInflow_project(SWMM_ProjectHandle ph, int index,
+        double *value);
 
 /**
  @brief Get a storage statistics.
@@ -535,7 +583,8 @@ int DLLEXPORT swmm_getNodeTotalInflow(int index, double *value);
  @return Error code
 */
 int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats);
-
+int DLLEXPORT swmm_getStorageStats_project(SWMM_ProjectHandle ph, int index,
+        SM_StorageStats *storageStats);
 /**
  @brief Get outfall statistics.
  @param index The index of a outfall node
@@ -546,6 +595,8 @@ int DLLEXPORT swmm_getStorageStats(int index, SM_StorageStats *storageStats);
  @return Error code
 */
 int DLLEXPORT swmm_getOutfallStats(int index, SM_OutfallStats *outfallStats);
+int DLLEXPORT swmm_getOutfallStats_project(SWMM_ProjectHandle ph, int index,
+        SM_OutfallStats *outfallStats);
 
 /**
  @brief Free outfall statistics structure.
@@ -563,6 +614,8 @@ void DLLEXPORT swmm_freeOutfallStats(SM_OutfallStats *outfallStats);
  @return Error code
 */
 int DLLEXPORT swmm_getLinkStats(int index, SM_LinkStats *linkStats);
+int DLLEXPORT swmm_getLinkStats_project(SWMM_ProjectHandle ph, int index,
+        SM_LinkStats *linkStats);
 
 /**
  @brief Get pump statistics.
@@ -572,7 +625,10 @@ int DLLEXPORT swmm_getLinkStats(int index, SM_LinkStats *linkStats);
  @return Error code
 */
 int DLLEXPORT swmm_getPumpStats(int index, SM_PumpStats *pumpStats);
-    
+int DLLEXPORT swmm_getPumpStats_project(SWMM_ProjectHandle ph, int index,
+        SM_PumpStats *pumpStats);
+
+
 /**
 @brief Get rainfall rates for a gage.
 @param index The index of gage
@@ -582,6 +638,8 @@ int DLLEXPORT swmm_getPumpStats(int index, SM_PumpStats *pumpStats);
 @return Error code
 */
 int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall, double *total);
+int DLLEXPORT swmm_getGagePrecip_project(SWMM_ProjectHandle ph, int index,
+        double *rainfall, double *snowfall, double *total);
 
 /**
  @brief Get subcatchment statistics.
@@ -593,6 +651,8 @@ int DLLEXPORT swmm_getGagePrecip(int index, double *rainfall, double *snowfall, 
  @return Error code
 */
 int DLLEXPORT swmm_getSubcatchStats(int index, SM_SubcatchStats *subcatchStats);
+int DLLEXPORT swmm_getSubcatchStats_project(SWMM_ProjectHandle ph, int index,
+        SM_SubcatchStats *subcatchStats);
 
 /**
  @brief Free subcatchment statistics structure.
@@ -609,7 +669,8 @@ void DLLEXPORT swmm_freeSubcatchStats(SM_SubcatchStats *subcatchStats);
  @return Error code
 */
 int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot);
-
+int DLLEXPORT swmm_getSystemRoutingStats_project(SWMM_ProjectHandle ph,
+        SM_RoutingTotals *routingTot);
 /**
  @brief Get system runoff statistics.
  @param[out] runoffTot The system Runoff Stats struct (see @ref SM_RunoffTotals). 
@@ -617,6 +678,8 @@ int DLLEXPORT swmm_getSystemRoutingStats(SM_RoutingTotals *routingTot);
  @return Error code
 */
 int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot);
+int DLLEXPORT swmm_getSystemRunoffStats_project(SWMM_ProjectHandle ph,
+        SM_RunoffTotals *runoffTot);
 
 //-------------------------------
 // Setters API
@@ -631,6 +694,8 @@ int DLLEXPORT swmm_getSystemRunoffStats(SM_RunoffTotals *runoffTot);
  @return Error code
 */
 int DLLEXPORT swmm_setLinkSetting(int index, double setting);
+int DLLEXPORT swmm_setLinkSetting_project(SWMM_ProjectHandle ph, int index,
+        double setting);
 
 /**
  @brief Set an inflow rate to a node. The inflow rate is held constant 
@@ -640,7 +705,8 @@ int DLLEXPORT swmm_setLinkSetting(int index, double setting);
  @return Error code
 */
 int DLLEXPORT swmm_setNodeInflow(int index, double flowrate);
-
+int DLLEXPORT swmm_setNodeInflow_project(SWMM_ProjectHandle ph, int index,
+        double flowrate);
 /**
  @brief Set outfall stage.
  @param index The outfall node index. 
@@ -648,6 +714,8 @@ int DLLEXPORT swmm_setNodeInflow(int index, double flowrate);
  @return Error code
 */
 int DLLEXPORT swmm_setOutfallStage(int index, double stage);
+int DLLEXPORT swmm_setOutfallStage_project(SWMM_ProjectHandle ph, int index,
+        double stage);
 
 /**
 @brief Set an rainfall intensity to the gage.
@@ -656,10 +724,12 @@ int DLLEXPORT swmm_setOutfallStage(int index, double stage);
 @return Error code
 */
 int DLLEXPORT swmm_setGagePrecip(int index, double value);
+int DLLEXPORT swmm_setGagePrecip_project(SWMM_ProjectHandle ph, int index,
+        double value);
 
 #ifdef __cplusplus
 }    // matches the linkage specification from above */
 #endif
 
 
-#endif
+#endif //TOOLKITAPI_H

@@ -29,11 +29,11 @@
 #include "infil.h"
 #include "exfil.h"
 
-static int  createStorageExfil(int k, double x[]);
+static int  createStorageExfil(SWMM_Project *sp, int k, double x[]);
 
 //=============================================================================
 
-int exfil_readStorageParams(int k, char* tok[], int ntoks, int n)
+int exfil_readStorageParams(SWMM_Project *sp, int k, char* tok[], int ntoks, int n)
 //
 //  Input:   k = storage unit index
 //           tok[] = array of string tokens
@@ -51,29 +51,29 @@ int exfil_readStorageParams(int k, char* tok[], int ntoks, int n)
     if ( ntoks == n+1 )
     {
         if ( ! getDouble(tok[n], &x[1]) )
-            return error_setInpError(ERR_NUMBER, tok[n]);
+            return error_setInpError(sp, ERR_NUMBER, tok[n]);
         x[0] = 0.0;
         x[2] = 0.0;
     }
 
     // --- otherwise read Green-Ampt infiltration parameters from input tokens
-    else if ( ntoks < n + 3 ) return error_setInpError(ERR_ITEMS, "");
+    else if ( ntoks < n + 3 ) return error_setInpError(sp, ERR_ITEMS, "");
     else for (i = 0; i < 3; i++)
     {
         if ( ! getDouble(tok[n+i], &x[i]) )
-            return error_setInpError(ERR_NUMBER, tok[n+i]);
+            return error_setInpError(sp, ERR_NUMBER, tok[n+i]);
     }
 
     // --- no exfiltration if Ksat is 0
     if ( x[1] == 0.0 ) return 0;
 
     // --- create an exfiltration object
-    return createStorageExfil(k, x);
+    return createStorageExfil(sp, k, x);
 }
 
 //=============================================================================
 
-void  exfil_initState(int k)
+void  exfil_initState(SWMM_Project *sp, int k)
 //
 //  Input:   k = storage unit index
 //  Output:  none
@@ -83,7 +83,7 @@ void  exfil_initState(int k)
     int i;
     double a, alast, d;
     TTable* aCurve;
-    TExfil* exfil = Storage[k].exfil;
+    TExfil* exfil = sp->Storage[k].exfil;
 
     // --- initialize exfiltration object
     if ( exfil != NULL )
@@ -93,20 +93,20 @@ void  exfil_initState(int k)
         grnampt_initState(exfil->bankExfil);
 
         // --- shape given by a Storage Curve
-        i = Storage[k].aCurve;
+        i = sp->Storage[k].aCurve;
         if ( i >= 0 )
         {
             // --- get bottom area
-            aCurve = &Curve[i];
-            Storage[k].exfil->btmArea = table_lookupEx(aCurve, 0.0);
+            aCurve = &sp->Curve[i];
+            sp->Storage[k].exfil->btmArea = table_lookupEx(aCurve, 0.0);
 
             // --- find min/max bank depths and max. bank area
-            table_getFirstEntry(aCurve, &d, &a);
+            table_getFirstEntry(sp, aCurve, &d, &a);
             exfil->bankMinDepth = 0.0;
             exfil->bankMaxDepth = 0.0;
             exfil->bankMaxArea = 0.0;
             alast = a;
-            while ( table_getNextEntry(aCurve, &d, &a) )
+            while ( table_getNextEntry(sp, aCurve, &d, &a) )
             {
                 if ( a < alast ) break;
                 else if ( a > alast )
@@ -121,10 +121,10 @@ void  exfil_initState(int k)
 
 ////  Following code block added to release 5.1.011  ////                      //(5.1.011)
             // --- convert from user units to internal units
-            exfil->btmArea /= UCF(LENGTH) * UCF(LENGTH);
-            exfil->bankMaxArea /= UCF(LENGTH) * UCF(LENGTH);
-            exfil->bankMinDepth /= UCF(LENGTH);
-            exfil->bankMaxDepth /= UCF(LENGTH);
+            exfil->btmArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
+            exfil->bankMaxArea /= UCF(sp, LENGTH) * UCF(sp, LENGTH);
+            exfil->bankMinDepth /= UCF(sp, LENGTH);
+            exfil->bankMaxDepth /= UCF(sp, LENGTH);
 ////////////////////////////////////////////////////////
 
         }
@@ -132,8 +132,8 @@ void  exfil_initState(int k)
         // --- functional storage shape curve
         else
         {
-            exfil->btmArea = Storage[k].aConst;
-            if ( Storage[k].aExpon == 0.0 ) exfil->btmArea +=Storage[k].aCoeff;
+            exfil->btmArea = sp->Storage[k].aConst;
+            if ( sp->Storage[k].aExpon == 0.0 ) exfil->btmArea +=sp->Storage[k].aCoeff;
             exfil->bankMinDepth = 0.0;
             exfil->bankMaxDepth = BIG;
             exfil->bankMaxArea = BIG;
@@ -143,7 +143,8 @@ void  exfil_initState(int k)
 
 //=============================================================================
 
-double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
+double exfil_getLoss(SWMM_Project *sp, TExfil* exfil, double tStep, double depth,
+        double area)
 //
 //  Input:   exfil = ptr. to a storage exfiltration object
 //           tStep = time step (sec)
@@ -159,9 +160,9 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
     // --- find infiltration through bottom of unit
     if ( exfil->btmExfil->IMDmax == 0.0 )
     {
-        exfilRate = exfil->btmExfil->Ks * Adjust.hydconFactor;                 //(5.1.008)
+        exfilRate = exfil->btmExfil->Ks * sp->Adjust.hydconFactor;                 //(5.1.008)
     }
-    else exfilRate = grnampt_getInfil(exfil->btmExfil, tStep, 0.0, depth,
+    else exfilRate = grnampt_getInfil(sp, exfil->btmExfil, tStep, 0.0, depth,
                                       MOD_GREEN_AMPT);                         //(5.1.010)
     exfilRate *= exfil->btmArea;
 
@@ -175,7 +176,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
             // --- if infil. rate not a function of depth
             if ( exfil->btmExfil->IMDmax == 0.0 )
             {    
-                exfilRate += area * exfil->btmExfil->Ks * Adjust.hydconFactor; //(5.1.008)
+                exfilRate += area * exfil->btmExfil->Ks * sp->Adjust.hydconFactor; //(5.1.008)
             }
 
             // --- infil. rate depends on depth above bank
@@ -193,7 +194,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
                 else depth = (depth - exfil->bankMinDepth) / 2.0;
 
                 // --- use Green-Ampt function for bank infiltration
-                exfilRate += area * grnampt_getInfil(exfil->bankExfil,
+                exfilRate += area * grnampt_getInfil(sp, exfil->bankExfil,
                                     tStep, 0.0, depth, MOD_GREEN_AMPT);        //(5.1.010)
             }
         }
@@ -203,7 +204,7 @@ double exfil_getLoss(TExfil* exfil, double tStep, double depth, double area)
 
 //=============================================================================
 
-int  createStorageExfil(int k, double x[])
+int  createStorageExfil(SWMM_Project *sp, int k, double x[])
 //
 //  Input:   k = index of storage unit node
 //           x = array of Green-Ampt infiltration parameters
@@ -216,25 +217,25 @@ int  createStorageExfil(int k, double x[])
     TExfil*   exfil;
 
     // --- create an exfiltration object for the storage node
-    exfil = Storage[k].exfil;
+    exfil = sp->Storage[k].exfil;
     if ( exfil == NULL )
     {
         exfil = (TExfil *) malloc(sizeof(TExfil));
-        if ( exfil == NULL ) return error_setInpError(ERR_MEMORY, "");
-        Storage[k].exfil = exfil;
+        if ( exfil == NULL ) return error_setInpError(sp, ERR_MEMORY, "");
+        sp->Storage[k].exfil = exfil;
 
         // --- create Green-Ampt infiltration objects for the bottom & banks
         exfil->btmExfil = NULL;
         exfil->bankExfil = NULL;
         exfil->btmExfil = (TGrnAmpt *) malloc(sizeof(TGrnAmpt));
-        if ( exfil->btmExfil == NULL ) return error_setInpError(ERR_MEMORY, "");
+        if ( exfil->btmExfil == NULL ) return error_setInpError(sp, ERR_MEMORY, "");
         exfil->bankExfil = (TGrnAmpt *) malloc(sizeof(TGrnAmpt));
-        if ( exfil->bankExfil == NULL ) return error_setInpError(ERR_MEMORY, "");
+        if ( exfil->bankExfil == NULL ) return error_setInpError(sp, ERR_MEMORY, "");
     }
 
     // --- initialize the Green-Ampt parameters
-    if ( !grnampt_setParams(exfil->btmExfil, x) )
-        return error_setInpError(ERR_NUMBER, "");
-    grnampt_setParams(exfil->bankExfil, x);
+    if ( !grnampt_setParams(sp, exfil->btmExfil, x) )
+        return error_setInpError(sp, ERR_NUMBER, "");
+    grnampt_setParams(sp, exfil->bankExfil, x);
     return 0;
 }

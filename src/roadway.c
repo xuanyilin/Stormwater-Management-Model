@@ -77,7 +77,8 @@ static double getY(double x, const double table[][2], const int n);
 
 //=============================================================================
 
-double roadway_getInflow(int j,          // link index
+double roadway_getInflow(SWMM_Project *sp,
+                         int j,          // link index
                          double dir,     // flow direction (+1 or -1)
                          double hRoad,   // road elev. (ft)
                          double h1,      // upstream head (ft)
@@ -95,14 +96,14 @@ double roadway_getInflow(int j,          // link index
            dqdh = 0.0;       // derivative of flow w.r.t. head (ft2/sec)
 
     // --- get road width & surface type
-    if ( Link[j].type != WEIR ) return 0.0;
-    k = Link[j].subIndex;
-    roadWidth = Weir[k].roadWidth;
-    roadSurf = Weir[k].roadSurface;
+    if ( sp->Link[j].type != WEIR ) return 0.0;
+    k = sp->Link[j].subIndex;
+    roadWidth = sp->Weir[k].roadWidth;
+    roadSurf = sp->Weir[k].roadSurface;
 
     // --- user-supplied discharge coeff.
-    cD = Weir[k].cDisch1;
-    if ( UnitSystem == SI ) cD = cD / 0.552;
+    cD = sp->Weir[k].cDisch1;
+    if ( sp->UnitSystem == SI ) cD = cD / 0.552;
 
     // --- check if there's enough info to use a variable cD value
     useVariableCd = FALSE;
@@ -117,7 +118,7 @@ double roadway_getInflow(int j,          // link index
         if ( useVariableCd ) cD = getCd(hWr, ht, roadWidth, roadSurf);
 
         // --- use user-supplied weir length
-        length = Link[j].xsect.wMax;
+        length = sp->Link[j].xsect.wMax;
 
         // --- weir eqn. for discharge across roadway
         q = cD * length * pow(hWr, 1.5);
@@ -125,13 +126,13 @@ double roadway_getInflow(int j,          // link index
     }
 
     // --- assign output values
-    Link[j].dqdh = dqdh;
-    Link[j].newDepth = MAX(h1 - hRoad, 0.0);
-    Link[j].flowClass = SUBCRITICAL;
+    sp->Link[j].dqdh = dqdh;
+    sp->Link[j].newDepth = MAX(h1 - hRoad, 0.0);
+    sp->Link[j].flowClass = SUBCRITICAL;
     if ( hRoad > h2 )
     {
-        if ( dir == 1.0 ) Link[j].flowClass = DN_CRITICAL;
-        else              Link[j].flowClass = UP_CRITICAL;
+        if ( dir == 1.0 ) sp->Link[j].flowClass = DN_CRITICAL;
+        else              sp->Link[j].flowClass = UP_CRITICAL;
     }
     return dir * q;
 }

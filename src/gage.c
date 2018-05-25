@@ -37,16 +37,16 @@ const double OneSecond = 1.1574074e-5;
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-static int    readGageSeriesFormat(char* tok[], int ntoks, double x[]);
-static int    readGageFileFormat(char* tok[], int ntoks, double x[]);
-static int    getFirstRainfall(int gage);
-static int    getNextRainfall(int gage);
-static double convertRainfall(int gage, double rain);
+static int    readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[]);
+static int    readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[]);
+static int    getFirstRainfall(SWMM_Project *sp, int gage);
+static int    getNextRainfall(SWMM_Project *sp, int gage);
+static double convertRainfall(SWMM_Project *sp, int gage, double rain);
 
 
 //=============================================================================
 
-int gage_readParams(int j, char* tok[], int ntoks)
+int gage_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = rain gage index
 //           tok[] = array of string tokens
@@ -66,9 +66,9 @@ int gage_readParams(int j, char* tok[], int ntoks)
     double   x[7];
 
     // --- check that gage exists
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(GAGE, tok[0]);
-    if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
+    id = project_findID(sp, GAGE, tok[0]);
+    if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- assign default parameter values
     x[0] = -1.0;         // No time series index
@@ -81,56 +81,56 @@ int gage_readParams(int j, char* tok[], int ntoks)
     strcpy(fname, "");
     strcpy(staID, "");
 
-    if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 5 ) return error_setInpError(sp, ERR_ITEMS, "");
     k = findmatch(tok[4], GageDataWords);
     if      ( k == RAIN_TSERIES )
     {
-        err = readGageSeriesFormat(tok, ntoks, x);
+        err = readGageSeriesFormat(sp, tok, ntoks, x);
     }
     else if ( k == RAIN_FILE    )
     {
-        if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
+        if ( ntoks < 8 ) return error_setInpError(sp, ERR_ITEMS, "");
         sstrncpy(fname, tok[5], MAXFNAME);
         sstrncpy(staID, tok[6], MAXMSG);
-        err = readGageFileFormat(tok, ntoks, x);
+        err = readGageFileFormat(sp, tok, ntoks, x);
     }
-    else return error_setInpError(ERR_KEYWORD, tok[4]);
+    else return error_setInpError(sp, ERR_KEYWORD, tok[4]);
 
     // --- save parameters to rain gage object
     if ( err > 0 ) return err;
-    Gage[j].ID = id;
-    Gage[j].tSeries      = (int)x[0];
-    Gage[j].rainType     = (int)x[1];
-    Gage[j].rainInterval = (int)x[2];
-    Gage[j].snowFactor   = x[3];
-    Gage[j].rainUnits    = (int)x[6];
-    if ( Gage[j].tSeries >= 0 ) Gage[j].dataSource = RAIN_TSERIES;
-    else                        Gage[j].dataSource = RAIN_FILE;
-    if ( Gage[j].dataSource == RAIN_FILE )
+    sp->Gage[j].ID = id;
+    sp->Gage[j].tSeries      = (int)x[0];
+    sp->Gage[j].rainType     = (int)x[1];
+    sp->Gage[j].rainInterval = (int)x[2];
+    sp->Gage[j].snowFactor   = x[3];
+    sp->Gage[j].rainUnits    = (int)x[6];
+    if ( sp->Gage[j].tSeries >= 0 ) sp->Gage[j].dataSource = RAIN_TSERIES;
+    else                        sp->Gage[j].dataSource = RAIN_FILE;
+    if ( sp->Gage[j].dataSource == RAIN_FILE )
     {
-        sstrncpy(Gage[j].fname, fname, MAXFNAME);
-        sstrncpy(Gage[j].staID, staID, MAXMSG);
-        Gage[j].startFileDate = x[4];
-        Gage[j].endFileDate = x[5];
+        sstrncpy(sp->Gage[j].fname, fname, MAXFNAME);
+        sstrncpy(sp->Gage[j].staID, staID, MAXMSG);
+        sp->Gage[j].startFileDate = x[4];
+        sp->Gage[j].endFileDate = x[5];
     }
-    Gage[j].unitsFactor = 1.0;
-    Gage[j].coGage = -1;
-    Gage[j].isUsed = FALSE;
+    sp->Gage[j].unitsFactor = 1.0;
+    sp->Gage[j].coGage = -1;
+    sp->Gage[j].isUsed = FALSE;
     return 0;
 }
 
 //=============================================================================
 
-int readGageSeriesFormat(char* tok[], int ntoks, double x[])
+int readGageSeriesFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
 {
     int m, ts;
     DateTime aTime;
 
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- determine type of rain data
     m = findmatch(tok[1], RainTypeWords);
-    if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+    if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     x[1] = (double)m;
 
     // --- get data time interval & convert to seconds
@@ -139,16 +139,16 @@ int readGageSeriesFormat(char* tok[], int ntoks, double x[])
     {
         x[2] = floor(aTime*SECperDAY + 0.5);
     }
-    else return error_setInpError(ERR_DATETIME, tok[2]);
-    if ( x[2] <= 0.0 ) return error_setInpError(ERR_DATETIME, tok[2]);
+    else return error_setInpError(sp, ERR_DATETIME, tok[2]);
+    if ( x[2] <= 0.0 ) return error_setInpError(sp, ERR_DATETIME, tok[2]);
 
     // --- get snow catch deficiency factor
     if ( !getDouble(tok[3], &x[3]) )
-        return error_setInpError(ERR_DATETIME, tok[3]);;
+        return error_setInpError(sp, ERR_DATETIME, tok[3]);;
 
     // --- get time series index
-    ts = project_findObject(TSERIES, tok[5]);
-    if ( ts < 0 ) return error_setInpError(ERR_NAME, tok[5]);
+    ts = project_findObject(sp, TSERIES, tok[5]);
+    if ( ts < 0 ) return error_setInpError(sp, ERR_NAME, tok[5]);
     x[0] = (double)ts;
     strcpy(tok[2], "");
     return 0;
@@ -156,7 +156,7 @@ int readGageSeriesFormat(char* tok[], int ntoks, double x[])
 
 //=============================================================================
 
-int readGageFileFormat(char* tok[], int ntoks, double x[])
+int readGageFileFormat(SWMM_Project *sp, char* tok[], int ntoks, double x[])
 {
     int   m, u;
     DateTime aDate;
@@ -164,7 +164,7 @@ int readGageFileFormat(char* tok[], int ntoks, double x[])
 
     // --- determine type of rain data
     m = findmatch(tok[1], RainTypeWords);
-    if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+    if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
     x[1] = (double)m;
 
     // --- get data time interval & convert to seconds
@@ -173,23 +173,23 @@ int readGageFileFormat(char* tok[], int ntoks, double x[])
     {
         x[2] = floor(aTime*SECperDAY + 0.5);
     }
-    else return error_setInpError(ERR_DATETIME, tok[2]);
-    if ( x[2] <= 0.0 ) return error_setInpError(ERR_DATETIME, tok[2]);
+    else return error_setInpError(sp, ERR_DATETIME, tok[2]);
+    if ( x[2] <= 0.0 ) return error_setInpError(sp, ERR_DATETIME, tok[2]);
 
     // --- get snow catch deficiency factor
     if ( !getDouble(tok[3], &x[3]) )
-        return error_setInpError(ERR_NUMBER, tok[3]);
+        return error_setInpError(sp, ERR_NUMBER, tok[3]);
  
     // --- get rain depth units
     u = findmatch(tok[7], RainUnitsWords);
-    if ( u < 0 ) return error_setInpError(ERR_KEYWORD, tok[7]);
+    if ( u < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[7]);
     x[6] = (double)u;
 
     // --- get start date (if present)
     if ( ntoks > 8 && *tok[8] != '*')
     {
-        if ( !datetime_strToDate(tok[8], &aDate) )
-            return error_setInpError(ERR_DATETIME, tok[8]);
+        if ( !datetime_strToDate(sp, tok[8], &aDate) )
+            return error_setInpError(sp, ERR_DATETIME, tok[8]);
         x[4] = (float) aDate;
     }
     return 0;
@@ -197,7 +197,7 @@ int readGageFileFormat(char* tok[], int ntoks, double x[])
 
 //=============================================================================
 
-void  gage_validate(int j)
+void  gage_validate(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  none
@@ -211,40 +211,40 @@ void  gage_validate(int j)
     int gageInterval;
 
     // --- for gage with time series data:
-    if ( Gage[j].dataSource == RAIN_TSERIES )
+    if ( sp->Gage[j].dataSource == RAIN_TSERIES )
     {
         // --- check gage's recording interval against that of time series
-        k = Gage[j].tSeries;
-        if ( Tseries[k].refersTo >= 0 )
+        k = sp->Gage[j].tSeries;
+        if ( sp->Tseries[k].refersTo >= 0 )
         {
-            report_writeErrorMsg(ERR_RAIN_GAGE_TSERIES, Gage[j].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_GAGE_TSERIES, sp->Gage[j].ID);
         }
-        gageInterval = (int)(floor(Tseries[k].dxMin*SECperDAY + 0.5));
-        if ( gageInterval > 0 && Gage[j].rainInterval > gageInterval )
+        gageInterval = (int)(floor(sp->Tseries[k].dxMin*SECperDAY + 0.5));
+        if ( gageInterval > 0 && sp->Gage[j].rainInterval > gageInterval )
         {
-            report_writeErrorMsg(ERR_RAIN_GAGE_INTERVAL, Gage[j].ID);
+            report_writeErrorMsg(sp, ERR_RAIN_GAGE_INTERVAL, sp->Gage[j].ID);
         } 
-        if ( Gage[j].rainInterval < gageInterval )
+        if ( sp->Gage[j].rainInterval < gageInterval )
         {
-            report_writeWarningMsg(WARN09, Gage[j].ID);
+            report_writeWarningMsg(sp, WARN09, sp->Gage[j].ID);
         }
-        if ( Gage[j].rainInterval < WetStep )
+        if ( sp->Gage[j].rainInterval < sp->WetStep )
         {
-            report_writeWarningMsg(WARN01, Gage[j].ID);
-            WetStep = Gage[j].rainInterval;
+            report_writeWarningMsg(sp, WARN01, sp->Gage[j].ID);
+            sp->WetStep = sp->Gage[j].rainInterval;
         }
 
         // --- see if gage uses same time series as another gage
         for (i=0; i<j; i++)
         {
-            if ( Gage[i].dataSource == RAIN_TSERIES && Gage[i].tSeries == k )
+            if ( sp->Gage[i].dataSource == RAIN_TSERIES && sp->Gage[i].tSeries == k )
             {
-                Gage[j].coGage = i;
+                sp->Gage[j].coGage = i;
 
                 // --- check that both gages record same type of data
-                if ( Gage[j].rainType != Gage[i].rainType )
+                if ( sp->Gage[j].rainType != sp->Gage[i].rainType )
                 {
-                    report_writeErrorMsg(ERR_RAIN_GAGE_FORMAT, Gage[j].ID);
+                    report_writeErrorMsg(sp, ERR_RAIN_GAGE_FORMAT, sp->Gage[j].ID);
                 }
                 return;
             }
@@ -254,7 +254,7 @@ void  gage_validate(int j)
 
 //=============================================================================
 
-void  gage_initState(int j)
+void  gage_initState(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  none
@@ -263,53 +263,53 @@ void  gage_initState(int j)
 {
     // --- assume gage not used by any subcatchment
     //     (will be updated in subcatch_initState)
-    Gage[j].isUsed = FALSE;
-    Gage[j].rainfall = 0.0;
-    Gage[j].reportRainfall = 0.0;
+    sp->Gage[j].isUsed = FALSE;
+    sp->Gage[j].rainfall = 0.0;
+    sp->Gage[j].reportRainfall = 0.0;
     // --- rainfall api sets external rainfall rate
-    Gage[j].externalRain = 0.0;
-    if ( IgnoreRainfall ) return;
+    sp->Gage[j].externalRain = 0.0;
+    if ( sp->IgnoreRainfall ) return;
 
     // --- for gage with file data:
-    if ( Gage[j].dataSource == RAIN_FILE)
+    if ( sp->Gage[j].dataSource == RAIN_FILE)
     {
         // --- set current file position to start of period of record
-        Gage[j].currentFilePos = Gage[j].startFilePos;
+        sp->Gage[j].currentFilePos = sp->Gage[j].startFilePos;
 
         // --- assign units conversion factor
         //     (rain depths on interface file are in inches)
-        if ( UnitSystem == SI ) Gage[j].unitsFactor = MMperINCH;
+        if ( sp->UnitSystem == SI ) sp->Gage[j].unitsFactor = MMperINCH;
     }
 
     // --- get first & next rainfall values
-    if ( getFirstRainfall(j) )
+    if ( getFirstRainfall(sp, j) )
     {
         // --- find date at end of starting rain interval
-        Gage[j].endDate = datetime_addSeconds(
-                          Gage[j].startDate, Gage[j].rainInterval);
+        sp->Gage[j].endDate = datetime_addSeconds(
+                          sp->Gage[j].startDate, sp->Gage[j].rainInterval);
 
         // --- if rainfall record begins after start of simulation,
-        if ( Gage[j].startDate > StartDateTime )
+        if ( sp->Gage[j].startDate > sp->StartDateTime )
         {
             // --- make next rainfall date the start of the rain record
-            Gage[j].nextDate = Gage[j].startDate;
-            Gage[j].nextRainfall = Gage[j].rainfall;
+            sp->Gage[j].nextDate = sp->Gage[j].startDate;
+            sp->Gage[j].nextRainfall = sp->Gage[j].rainfall;
 
             // --- make start of current rain interval the simulation start
-            Gage[j].startDate = StartDateTime;
-            Gage[j].endDate = Gage[j].nextDate;
-            Gage[j].rainfall = 0.0;
+            sp->Gage[j].startDate = sp->StartDateTime;
+            sp->Gage[j].endDate = sp->Gage[j].nextDate;
+            sp->Gage[j].rainfall = 0.0;
         }
 
         // --- otherwise find next recorded rainfall
-        else if ( !getNextRainfall(j) ) Gage[j].nextDate = NO_DATE;
+        else if ( !getNextRainfall(sp, j) ) sp->Gage[j].nextDate = NO_DATE;
     }
-    else Gage[j].startDate = NO_DATE;
+    else sp->Gage[j].startDate = NO_DATE;
 }
 
 //=============================================================================
 
-void gage_setState(int j, DateTime t)
+void gage_setState(SWMM_Project *sp, int j, DateTime t)
 //
 //  Input:   j = rain gage index
 //           t = a calendar date/time
@@ -318,20 +318,20 @@ void gage_setState(int j, DateTime t)
 //
 {
     // --- return if gage not used by any subcatchment
-    if ( Gage[j].isUsed == FALSE ) return;
+    if ( sp->Gage[j].isUsed == FALSE ) return;
 
     // --- set rainfall to zero if disabled
-    if ( IgnoreRainfall )
+    if ( sp->IgnoreRainfall )
     {
-        Gage[j].rainfall = 0.0;
+        sp->Gage[j].rainfall = 0.0;
         return;
     }
 
     // --- use rainfall from co-gage (gage with lower index that uses
     //     same rainfall time series or file) if it exists
-    if ( Gage[j].coGage >= 0)
+    if ( sp->Gage[j].coGage >= 0)
     {
-        Gage[j].rainfall = Gage[Gage[j].coGage].rainfall;
+        sp->Gage[j].rainfall = sp->Gage[sp->Gage[j].coGage].rainfall;
         return;
     }
 
@@ -340,52 +340,52 @@ void gage_setState(int j, DateTime t)
     for (;;)
     {
 	// --- no rainfall if no interval start date
-	if ( Gage[j].startDate == NO_DATE )
+	if ( sp->Gage[j].startDate == NO_DATE )
 	{
-	    Gage[j].rainfall = 0.0;
+	    sp->Gage[j].rainfall = 0.0;
 	    return;
 	}
 
 	// --- no rainfall if time is before interval start date
-	if ( t < Gage[j].startDate )
+	if ( t < sp->Gage[j].startDate )
 	{
-	    Gage[j].rainfall = 0.0;
+	    sp->Gage[j].rainfall = 0.0;
 	    return;
 	}
 
 	// --- use current rainfall if time is before interval end date
-	if ( t < Gage[j].endDate )
+	if ( t < sp->Gage[j].endDate )
 	{
 	    return;
 	}
 
 	// --- no rainfall if t >= interval end date & no next interval exists
-	if ( Gage[j].nextDate == NO_DATE)
+	if ( sp->Gage[j].nextDate == NO_DATE)
 	{
-	    Gage[j].rainfall = 0.0;
+	    sp->Gage[j].rainfall = 0.0;
 	    return;
 	}
 
 	// --- no rainfall if t > interval end date & <  next interval date
-	if ( t < Gage[j].nextDate )
+	if ( t < sp->Gage[j].nextDate )
 	{
-	    Gage[j].rainfall = 0.0;
+	    sp->Gage[j].rainfall = 0.0;
 	    return;
 	}
 
 	// --- otherwise update next rainfall interval date
-	Gage[j].startDate = Gage[j].nextDate;
-	Gage[j].endDate = datetime_addSeconds(Gage[j].startDate,
-			  Gage[j].rainInterval);
-	Gage[j].rainfall = Gage[j].nextRainfall;
+	sp->Gage[j].startDate = sp->Gage[j].nextDate;
+	sp->Gage[j].endDate = datetime_addSeconds(sp->Gage[j].startDate,
+			  sp->Gage[j].rainInterval);
+	sp->Gage[j].rainfall = sp->Gage[j].nextRainfall;
 
-	if ( !getNextRainfall(j) ) Gage[j].nextDate = NO_DATE;
+	if ( !getNextRainfall(sp, j) ) sp->Gage[j].nextDate = NO_DATE;
     }
 }
 
 //=============================================================================
 
-DateTime gage_getNextRainDate(int j, DateTime aDate)
+DateTime gage_getNextRainDate(SWMM_Project *sp, int j, DateTime aDate)
 //
 //  Input:   j = rain gage index
 //           aDate = calendar date/time
@@ -393,16 +393,16 @@ DateTime gage_getNextRainDate(int j, DateTime aDate)
 //  Purpose: finds the next date from  specified date when rainfall occurs.
 //
 {
-    if ( Gage[j].isUsed == FALSE ) return aDate;
+    if ( sp->Gage[j].isUsed == FALSE ) return aDate;
     aDate += OneSecond;
-    if ( aDate < Gage[j].startDate ) return Gage[j].startDate;
-    if ( aDate < Gage[j].endDate   ) return Gage[j].endDate;
-    return Gage[j].nextDate;
+    if ( aDate < sp->Gage[j].startDate ) return sp->Gage[j].startDate;
+    if ( aDate < sp->Gage[j].endDate   ) return sp->Gage[j].endDate;
+    return sp->Gage[j].nextDate;
 }
 
 //=============================================================================
 
-double gage_getPrecip(int j, double *rainfall, double *snowfall)
+double gage_getPrecip(SWMM_Project *sp, int j, double *rainfall, double *snowfall)
 //
 //  Input:   j = rain gage index
 //  Output:  rainfall = rainfall rate (ft/sec)
@@ -413,17 +413,17 @@ double gage_getPrecip(int j, double *rainfall, double *snowfall)
 {
     *rainfall = 0.0;
     *snowfall = 0.0;
-    if ( !IgnoreSnowmelt && Temp.ta <= Snow.snotmp )
+    if ( !sp->IgnoreSnowmelt && sp->Temp.ta <= sp->Snow.snotmp )
     {
-       *snowfall = Gage[j].rainfall * Gage[j].snowFactor / UCF(RAINFALL);
+       *snowfall = sp->Gage[j].rainfall * sp->Gage[j].snowFactor / UCF(sp, RAINFALL);
     }
-    else *rainfall = Gage[j].rainfall / UCF(RAINFALL);
+    else *rainfall = sp->Gage[j].rainfall / UCF(sp, RAINFALL);
     return (*rainfall) + (*snowfall);
 } 
 
 //=============================================================================
 
-void gage_setReportRainfall(int j, DateTime reportDate)
+void gage_setReportRainfall(SWMM_Project *sp, int j, DateTime reportDate)
 //
 //  Input:   j = rain gage index
 //           reportDate = date/time value of current reporting time
@@ -434,9 +434,9 @@ void gage_setReportRainfall(int j, DateTime reportDate)
     double result;
 
     // --- use value from co-gage if it exists
-    if ( Gage[j].coGage >= 0)
+    if ( sp->Gage[j].coGage >= 0)
     {
-        Gage[j].reportRainfall = Gage[Gage[j].coGage].reportRainfall;
+        sp->Gage[j].reportRainfall = sp->Gage[sp->Gage[j].coGage].reportRainfall;
         return;
     }
 
@@ -446,20 +446,20 @@ void gage_setReportRainfall(int j, DateTime reportDate)
 
     // --- use current rainfall if report date/time is before end
     //     of current rain interval
-    if ( reportDate < Gage[j].endDate ) result = Gage[j].rainfall;
+    if ( reportDate < sp->Gage[j].endDate ) result = sp->Gage[j].rainfall;
 
     // --- use 0.0 if report date/time is before start of next rain interval
-    else if ( reportDate < Gage[j].nextDate ) result = 0.0;
+    else if ( reportDate < sp->Gage[j].nextDate ) result = 0.0;
 
     // --- otherwise report date/time falls right on end of current rain
     //     interval and start of next interval so use next interval's rainfall
-    else result = Gage[j].nextRainfall;
-    Gage[j].reportRainfall = result;
+    else result = sp->Gage[j].nextRainfall;
+    sp->Gage[j].reportRainfall = result;
 }
 
 //=============================================================================
 
-int getFirstRainfall(int j)
+int getFirstRainfall(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  returns TRUE if successful
@@ -471,25 +471,25 @@ int getFirstRainfall(int j)
     double rFirst;                     // first rain intensity (in/hr or mm/hr)
 
     // --- assign default values to date & rainfall
-    Gage[j].startDate = NO_DATE;
-    Gage[j].rainfall = 0.0;
+    sp->Gage[j].startDate = NO_DATE;
+    sp->Gage[j].rainfall = 0.0;
 
     // --- initialize internal cumulative rainfall value
-    Gage[j].rainAccum = 0;
+    sp->Gage[j].rainAccum = 0;
 
     // --- use rain interface file if applicable
-    if ( Gage[j].dataSource == RAIN_FILE )
+    if ( sp->Gage[j].dataSource == RAIN_FILE )
     {
-        if ( Frain.file && Gage[j].endFilePos > Gage[j].startFilePos )
+        if ( sp->Frain.file && sp->Gage[j].endFilePos > sp->Gage[j].startFilePos )
         {
             // --- retrieve 1st date & rainfall volume from file
-            fseek(Frain.file, Gage[j].startFilePos, SEEK_SET);
-            fread(&Gage[j].startDate, sizeof(DateTime), 1, Frain.file);
-            fread(&vFirst, sizeof(float), 1, Frain.file);
-            Gage[j].currentFilePos = ftell(Frain.file);
+            fseek(sp->Frain.file, sp->Gage[j].startFilePos, SEEK_SET);
+            fread(&sp->Gage[j].startDate, sizeof(DateTime), 1, sp->Frain.file);
+            fread(&vFirst, sizeof(float), 1, sp->Frain.file);
+            sp->Gage[j].currentFilePos = ftell(sp->Frain.file);
 
             // --- convert rainfall to intensity
-            Gage[j].rainfall = convertRainfall(j, (double)vFirst);
+            sp->Gage[j].rainfall = convertRainfall(sp, j, (double)vFirst);
             return 1;
         }
         return 0;
@@ -498,15 +498,15 @@ int getFirstRainfall(int j)
     // --- otherwise access user-supplied rainfall time series
     else
     {
-        k = Gage[j].tSeries;
+        k = sp->Gage[j].tSeries;
         if ( k >= 0 )
         {
             // --- retrieve first rainfall value from time series
-            if ( table_getFirstEntry(&Tseries[k], &Gage[j].startDate,
+            if ( table_getFirstEntry(sp, &sp->Tseries[k], &sp->Gage[j].startDate,
                                      &rFirst) )
             {
                 // --- convert rainfall to intensity
-                Gage[j].rainfall = convertRainfall(j, rFirst);
+                sp->Gage[j].rainfall = convertRainfall(sp, j, rFirst);
                 return 1;
             }
         }
@@ -516,7 +516,7 @@ int getFirstRainfall(int j)
 
 //=============================================================================
 
-int getNextRainfall(int j)
+int getNextRainfall(SWMM_Project *sp, int j)
 //
 //  Input:   j = rain gage index
 //  Output:  returns 1 if successful; 0 if not
@@ -532,36 +532,36 @@ int getNextRainfall(int j)
     float  vNext;                      // next rain volume (ft or m)
     double rNext;                      // next rain intensity (in/hr or mm/hr)
 
-    Gage[j].nextRainfall = 0.0;
-    if (Gage[j].dataSource == RAIN_API)
+    sp->Gage[j].nextRainfall = 0.0;
+    if (sp->Gage[j].dataSource == RAIN_API)
     {
-	    rNext = Gage[j].externalRain;
+	    rNext = sp->Gage[j].externalRain;
     }
     else
     {
 	    do
 	    {
-		if ( Gage[j].dataSource == RAIN_FILE )
+		if ( sp->Gage[j].dataSource == RAIN_FILE )
 		{
-		    if ( Frain.file && Gage[j].currentFilePos < Gage[j].endFilePos )
+		    if ( sp->Frain.file && sp->Gage[j].currentFilePos < sp->Gage[j].endFilePos )
 		    {
-			fseek(Frain.file, Gage[j].currentFilePos, SEEK_SET);
-			fread(&Gage[j].nextDate, sizeof(DateTime), 1, Frain.file);
-			fread(&vNext, sizeof(float), 1, Frain.file);
-			Gage[j].currentFilePos = ftell(Frain.file);
-			rNext = convertRainfall(j, (double)vNext);
+			fseek(sp->Frain.file, sp->Gage[j].currentFilePos, SEEK_SET);
+			fread(&sp->Gage[j].nextDate, sizeof(DateTime), 1, sp->Frain.file);
+			fread(&vNext, sizeof(float), 1, sp->Frain.file);
+			sp->Gage[j].currentFilePos = ftell(sp->Frain.file);
+			rNext = convertRainfall(sp, j, (double)vNext);
 		    }
 		    else return 0;
 		}
 
-		else if (Gage[j].dataSource == RAIN_TSERIES)
+		else if (sp->Gage[j].dataSource == RAIN_TSERIES)
 		{
-		    k = Gage[j].tSeries;
+		    k = sp->Gage[j].tSeries;
 		    if ( k >= 0 )
 		    {
-			if ( !table_getNextEntry(&Tseries[k],
-				&Gage[j].nextDate, &rNext) ) return 0;
-			rNext = convertRainfall(j, rNext);
+			if ( !table_getNextEntry(sp, &sp->Tseries[k],
+				&sp->Gage[j].nextDate, &rNext) ) return 0;
+			rNext = convertRainfall(sp, j, rNext);
 		    }
 		    else return 0;
 		}
@@ -569,13 +569,13 @@ int getNextRainfall(int j)
 
 	    } while (rNext == 0.0);
     }
-    Gage[j].nextRainfall = rNext;
+    sp->Gage[j].nextRainfall = rNext;
     return 1;
 }
 
 //=============================================================================
 
-double convertRainfall(int j, double r)
+double convertRainfall(SWMM_Project *sp, int j, double r)
 //
 //  Input:   j = rain gage index
 //           r = rainfall value (user units)
@@ -584,26 +584,26 @@ double convertRainfall(int j, double r)
 //
 {
     double r1;
-    switch ( Gage[j].rainType )
+    switch ( sp->Gage[j].rainType )
     {
       case RAINFALL_INTENSITY:
         r1 = r;
         break;
 
       case RAINFALL_VOLUME:
-        r1 = r / Gage[j].rainInterval * 3600.0;
+        r1 = r / sp->Gage[j].rainInterval * 3600.0;
         break;
 
       case CUMULATIVE_RAINFALL:
-        if ( r  < Gage[j].rainAccum )
-             r1 = r / Gage[j].rainInterval * 3600.0;
-        else r1 = (r - Gage[j].rainAccum) / Gage[j].rainInterval * 3600.0;
-        Gage[j].rainAccum = r;
+        if ( r  < sp->Gage[j].rainAccum )
+             r1 = r / sp->Gage[j].rainInterval * 3600.0;
+        else r1 = (r - sp->Gage[j].rainAccum) / sp->Gage[j].rainInterval * 3600.0;
+        sp->Gage[j].rainAccum = r;
         break;
 
       default: r1 = r;
     }
-    return r1 * Gage[j].unitsFactor * Adjust.rainFactor;                       //(5.1.007)
+    return r1 * sp->Gage[j].unitsFactor * sp->Adjust.rainFactor;                       //(5.1.007)
 }
 
 //=============================================================================

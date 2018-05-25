@@ -33,8 +33,9 @@
 //-----------------------------------------------------------------------------
 //  Local functions
 //-----------------------------------------------------------------------------
-int    table_getNextFileEntry(TTable* table, double* x, double* y);
-int    table_parseFileLine(char* line, TTable* table, double* x, double* y);
+int    table_getNextFileEntry(SWMM_Project *sp, TTable* table, double* x, double* y);
+int    table_parseFileLine(SWMM_Project *sp, char* line, TTable* table,
+        double* x, double* y);
 double table_interpolate(double x, double x1, double y1, double x2, double y2);//(5.1.008)
 
 
@@ -56,7 +57,7 @@ double table_interpolate(double x, double x1, double y1, double x2, double y2)
 
 //=============================================================================
 
-int table_readCurve(char* tok[], int ntoks)
+int table_readCurve(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -68,40 +69,40 @@ int table_readCurve(char* tok[], int ntoks)
     double x, y;
 
     // --- check for minimum number of tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that curve exists in database
-    j = project_findObject(CURVE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    j = project_findObject(sp, CURVE, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- check if this is first line of curve's data
     //     (curve's ID will not have been assigned yet)
-    if ( Curve[j].ID == NULL )
+    if ( sp->Curve[j].ID == NULL )
     {
         // --- assign ID pointer & curve type
-        Curve[j].ID = project_findID(CURVE, tok[0]);
+        sp->Curve[j].ID = project_findID(sp, CURVE, tok[0]);
         m = findmatch(tok[1], CurveTypeWords);
-        if ( m < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
-        Curve[j].curveType = m;
+        if ( m < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
+        sp->Curve[j].curveType = m;
         k1 = 2;
     }
 
     // --- start reading pairs of X-Y value tokens
     for ( k = k1; k < ntoks; k = k+2)
     {
-        if ( k+1 >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+        if ( k+1 >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
         if ( ! getDouble(tok[k], &x) )
-            return error_setInpError(ERR_NUMBER, tok[k]);
+            return error_setInpError(sp, ERR_NUMBER, tok[k]);
         if ( ! getDouble(tok[k+1], &y) )
-            return error_setInpError(ERR_NUMBER, tok[k+1]);
-        table_addEntry(&Curve[j], x, y);
+            return error_setInpError(sp, ERR_NUMBER, tok[k+1]);
+        table_addEntry(&sp->Curve[j], x, y);
     }
     return 0;
 }
 
 //=============================================================================
 
-int table_readTimeseries(char* tok[], int ntoks)
+int table_readTimeseries(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -119,21 +120,21 @@ int table_readTimeseries(char* tok[], int ntoks)
     DateTime t;                        // time portion of date/time value
 
     // --- check for minimum number of tokens
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that time series exists in database
-    j = project_findObject(TSERIES, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    j = project_findObject(sp, TSERIES, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- if first line of data, assign ID pointer
-    if ( Tseries[j].ID == NULL )
-        Tseries[j].ID = project_findID(TSERIES, tok[0]);
+    if ( sp->Tseries[j].ID == NULL )
+        sp->Tseries[j].ID = project_findID(sp, TSERIES, tok[0]);
 
     // --- check if time series data is in an external file
     if ( strcomp(tok[1], w_FILE ) )
     {
-        sstrncpy(Tseries[j].file.name, tok[2], MAXFNAME);
-        Tseries[j].file.mode = USE_FILE;
+        sstrncpy(sp->Tseries[j].file.name, tok[2], MAXFNAME);
+        sp->Tseries[j].file.mode = USE_FILE;
         return 0;
     }
 
@@ -146,9 +147,9 @@ int table_readTimeseries(char* tok[], int ntoks)
         switch(state)
         {
           case 1:            // look for a date entry
-            if ( datetime_strToDate(tok[k], &d) )
+            if ( datetime_strToDate(sp, tok[k], &d) )
             {
-                Tseries[j].lastDate = d;
+                sp->Tseries[j].lastDate = d;
                 k++;
             }
 
@@ -157,17 +158,17 @@ int table_readTimeseries(char* tok[], int ntoks)
             break;
 
           case 2:            // look for a time entry
-            if ( k >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+            if ( k >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
 
             // --- first check for decimal hours format
             if ( getDouble(tok[k], &t) ) t /= 24.0;
 
             // --- then for an hrs:min format
             else if ( !datetime_strToTime(tok[k], &t) )
-                return error_setInpError(ERR_NUMBER, tok[k]);
+                return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
             // --- save date + time in x
-            x = Tseries[j].lastDate + t;
+            x = sp->Tseries[j].lastDate + t;
 
             // --- next token must be a numeric value
             k++;
@@ -176,12 +177,12 @@ int table_readTimeseries(char* tok[], int ntoks)
 
           case 3:
             // --- extract a numeric value from token
-            if ( k >= ntoks ) return error_setInpError(ERR_ITEMS, "");
+            if ( k >= ntoks ) return error_setInpError(sp, ERR_ITEMS, "");
             if ( ! getDouble(tok[k], &y) )
-                return error_setInpError(ERR_NUMBER, tok[k]);
+                return error_setInpError(sp, ERR_NUMBER, tok[k]);
 
             // --- add date/time & value to time series
-            table_addEntry(&Tseries[j], x, y);
+            table_addEntry(&sp->Tseries[j], x, y);
 
             // --- start over looking first for a date
             k++;
@@ -271,7 +272,7 @@ void   table_init(TTable *table)
 
 //=============================================================================
 
-int   table_validate(TTable *table)
+int   table_validate(SWMM_Project *sp, TTable *table)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  returns error code
@@ -290,13 +291,13 @@ int   table_validate(TTable *table)
     }
 
     // --- retrieve the first data entry in the table
-    result = table_getFirstEntry(table, &x1, &y1);
+    result = table_getFirstEntry(sp, table, &x1, &y1);
 
     // --- return error condition if external file has no valid data
     if ( !result && table->file.mode == USE_FILE ) return ERR_TABLE_FILE_READ;
 
     // --- retrieve successive table entries and check for non-increasing x-values
-    while ( table_getNextEntry(table, &x2, &y2) )
+    while ( table_getNextEntry(sp, table, &x2, &y2) )
     {
         dx = x2 - x1;
         if ( dx <= 0.0 )
@@ -317,7 +318,7 @@ int   table_validate(TTable *table)
 
 //=============================================================================
 
-int table_getFirstEntry(TTable *table, double *x, double *y)
+int table_getFirstEntry(SWMM_Project *sp, TTable *table, double *x, double *y)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  x = x-value of first table entry
@@ -336,7 +337,7 @@ int table_getFirstEntry(TTable *table, double *x, double *y)
     {
         if ( table->file.file == NULL ) return FALSE;
         rewind(table->file.file);
-        return table_getNextFileEntry(table, x, y);
+        return table_getNextFileEntry(sp, table, x, y);
     }
 
     entry = table->firstEntry;
@@ -352,7 +353,7 @@ int table_getFirstEntry(TTable *table, double *x, double *y)
 
 //=============================================================================
 
-int table_getNextEntry(TTable *table, double *x, double *y)
+int table_getNextEntry(SWMM_Project *sp, TTable *table, double *x, double *y)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  x = x-value of next table entry
@@ -366,7 +367,7 @@ int table_getNextEntry(TTable *table, double *x, double *y)
     TTableEntry *entry;
 
     if ( table->file.mode == USE_FILE )
-        return table_getNextFileEntry(table, x, y);
+        return table_getNextFileEntry(sp, table, x, y);
     
     entry = table->thisEntry->next;
     if ( entry )
@@ -731,22 +732,22 @@ double  table_getInverseArea(TTable* table, double a)
 
 //=============================================================================
 
-void   table_tseriesInit(TTable *table)
+void   table_tseriesInit(SWMM_Project *sp, TTable *table)
 //
 //  Input:   table = pointer to a TTable structure
 //  Output:  none
 //  Purpose: initializes the time bracket within a time series table.
 //
 {
-    table_getFirstEntry(table, &(table->x1), &(table->y1));
+    table_getFirstEntry(sp, table, &(table->x1), &(table->y1));
     table->x2 = table->x1;
     table->y2 = table->y1;
-    table_getNextEntry(table, &(table->x2), &(table->y2));
+    table_getNextEntry(sp, table, &(table->x2), &(table->y2));
 }
 
 //=============================================================================
 
-double table_tseriesLookup(TTable *table, double x, char extend)
+double table_tseriesLookup(SWMM_Project *sp, TTable *table, double x, char extend)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = a date/time value
@@ -770,7 +771,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
     //     move to start of time series
     if ( table->x1 == table->x2 || x < table->x1 )
     {
-        table_getFirstEntry(table, &(table->x1), &(table->y1));
+        table_getFirstEntry(sp, table, &(table->x1), &(table->y1));
         if ( x < table->x1 )
         {
             if ( extend == TRUE ) return table->y1;
@@ -784,7 +785,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
     table->y1 = table->y2;
 
     // --- get end of next time bracket
-    while ( table_getNextEntry(table, &(table->x2), &(table->y2)) )
+    while ( table_getNextEntry(sp, table, &(table->x2), &(table->y2)) )
     {
         // --- x lies within the bracket
         if ( x <= table->x2 )
@@ -802,7 +803,7 @@ double table_tseriesLookup(TTable *table, double x, char extend)
 
 //=============================================================================
 
-int  table_getNextFileEntry(TTable* table, double* x, double* y)
+int  table_getNextFileEntry(SWMM_Project *sp, TTable* table, double* x, double* y)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = pointer to a date (as decimal days)
@@ -818,7 +819,7 @@ int  table_getNextFileEntry(TTable* table, double* x, double* y)
     if ( table->file.file == NULL ) return FALSE;
     while ( !feof(table->file.file) && fgets(line, MAXLINE, table->file.file) != NULL )
     {
-        code = table_parseFileLine(line, table, x, y);
+        code = table_parseFileLine(sp, line, table, x, y);
         if ( code < 0 ) continue;      //skip blank & comment lines
         return code;
     }
@@ -827,7 +828,7 @@ int  table_getNextFileEntry(TTable* table, double* x, double* y)
 
 //=============================================================================
 
-int  table_parseFileLine(char* line, TTable* table, double* x, double* y)
+int  table_parseFileLine(SWMM_Project *sp, char* line, TTable* table, double* x, double* y)
 //
 //  Input:   table = pointer to a TTable structure
 //           x = pointer to a date (as decimal days)
@@ -869,7 +870,7 @@ int  table_parseFileLine(char* line, TTable* table, double* x, double* y)
     else if ( n == 3 )
     {
         // --- convert date string to numeric value
-        if ( !datetime_strToDate(s1, &d) ) return FALSE;
+        if ( !datetime_strToDate(sp, s1, &d) ) return FALSE;
 
         // --- update last recorded calendar date
         table->lastDate = d;

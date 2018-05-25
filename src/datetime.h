@@ -18,6 +18,10 @@
 //   - New getTimeStamp function added.
 //-----------------------------------------------------------------------------
 
+#ifndef DATETIME_H
+#define DATETIME_H
+
+
 typedef double DateTime;
 
 #define Y_M_D 0
@@ -44,20 +48,30 @@ int  datetime_hourOfDay(DateTime date);
 int  datetime_daysPerMonth(int year, int month);
 
 // Functions for converting a DateTime value to a string
-void datetime_dateToStr(DateTime date, char* s);
+void datetime_dateToStr(SWMM_Project *sp, DateTime date, char* s);
 void datetime_timeToStr(DateTime time, char* s);
-void datetime_getTimeStamp(int fmt, DateTime aDate, int stampSize,             //5.1.011
-                           char* timeStamp);                                   //5.1.011
+void datetime_getTimeStamp(SWMM_Project *sp, int fmt, DateTime aDate,
+        int stampSize, char* timeStamp);                                       //5.1.011
 
 // Functions for converting a string date or time to a DateTime value
 int  datetime_findMonth(char* s);
-int  datetime_strToDate(char* s, DateTime* d);
+int  datetime_strToDate(SWMM_Project *sp, char* s, DateTime* d);
 int  datetime_strToTime(char* s, DateTime* t);
 
 // Function for setting date format
-void datetime_setDateFormat(int fmt);
+void datetime_setDateFormat(SWMM_Project *sp, int fmt);
 
 // Functions for adding and subtracting dates
 DateTime datetime_addSeconds(DateTime date1, double seconds);
 DateTime datetime_addDays(DateTime date1, DateTime date2);
 long     datetime_timeDiff(DateTime date1, DateTime date2);
+
+//-----------------------------------------------------------------------------
+//  Shared variables
+//-----------------------------------------------------------------------------
+typedef struct
+{
+    int DateFormat;
+} TDatetimeShared;
+
+#endif //DATETIME_H

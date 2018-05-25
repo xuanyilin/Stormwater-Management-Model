@@ -10,15 +10,25 @@
 //
 //   DO NOT CHANGE THE ORDER OF THE #INCLUDE STATEMENTS
 //-----------------------------------------------------------------------------
+
+#ifndef HEADERS_H
+#define HEADERS_H
+
+
 #include <stdio.h>
 #include "consts.h"
 #include "macros.h"
 #include "enums.h"
-#include "error.h"
-#include "datetime.h"
+//#include "error.h"
+//#include "datetime.h"
 #include "objects.h"
 #include "funcs.h"
 #include "text.h"
 #include "keywords.h"
 #define  EXTERN extern
+#include "swmm5.h"
 #include "globals.h"
+#include "error.h"
+
+
+#endif //HEADERS_H

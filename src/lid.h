@@ -28,10 +28,12 @@
 #ifndef LID_H
 #define LID_H
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "infil.h"
+#include "swmm5.h"
 
 //-----------------------------------------------------------------------------
 //  Enumerations
@@ -182,42 +184,84 @@ typedef struct
 //-----------------------------------------------------------------------------
 //   LID Methods
 //-----------------------------------------------------------------------------
-void     lid_create(int lidCount, int subcatchCount);
-void     lid_delete(void);
+void     lid_create(SWMM_Project *sp, int lidCount, int subcatchCount);
+void     lid_delete(SWMM_Project *sp);
 
-int      lid_readProcParams(char* tok[], int ntoks);
-int      lid_readGroupParams(char* tok[], int ntoks);
+int      lid_readProcParams(SWMM_Project *sp, char* tok[], int ntoks);
+int      lid_readGroupParams(SWMM_Project *sp, char* tok[], int ntoks);
 
-void     lid_validate(void);
-void     lid_initState(void);
-void     lid_setOldGroupState(int subcatch);                                   //(5.1.008)
+void     lid_validate(SWMM_Project *sp);
+void     lid_initState(SWMM_Project *sp);
+void     lid_setOldGroupState(SWMM_Project *sp, int subcatch);                                   //(5.1.008)
 
-double   lid_getPervArea(int subcatch);
-double   lid_getFlowToPerv(int subcatch);
-double   lid_getDrainFlow(int subcatch, int timePeriod);                       //(5.1.008)
-double   lid_getStoredVolume(int subcatch);
+double   lid_getPervArea(SWMM_Project *sp, int subcatch);
+double   lid_getFlowToPerv(SWMM_Project *sp, int subcatch);
+double   lid_getDrainFlow(SWMM_Project *sp, int subcatch, int timePeriod);                       //(5.1.008)
+double   lid_getStoredVolume(SWMM_Project *sp, int subcatch);
 
 //double   lid_getSurfaceDepth(int subcatch);                                  //(5.1.008)
 //double   lid_getDepthOnPavement(int subcatch, double impervDepth);           //(5.1.008)
 
-void     lid_addDrainLoads(int subcatch, double c[], double tStep);            //(5.1.008)
-void     lid_addDrainRunon(int subcatch);                                      //(5.1.008)
-void     lid_addDrainInflow(int subcatch, double f);                           //(5.1.008)
+void     lid_addDrainLoads(SWMM_Project *sp, int subcatch, double c[], double tStep);            //(5.1.008)
+void     lid_addDrainRunon(SWMM_Project *sp, int subcatch);                                      //(5.1.008)
+void     lid_addDrainInflow(SWMM_Project *sp, int subcatch, double f);                           //(5.1.008)
 
-void     lid_getRunoff(int subcatch, double tStep);                            //(5.1.008)
+void     lid_getRunoff(SWMM_Project *sp, int subcatch, double tStep);                            //(5.1.008)
 
-void     lid_writeSummary(void);
-void     lid_writeWaterBalance(void);
+void     lid_writeSummary(SWMM_Project *sp);
+void     lid_writeWaterBalance(SWMM_Project *sp);
 
 //-----------------------------------------------------------------------------
 
 void     lidproc_initWaterBalance(TLidUnit *lidUnit, double initVol);
 
-double   lidproc_getOutflow(TLidUnit* lidUnit, TLidProc* lidProc,
+double   lidproc_getOutflow(SWMM_Project *sp, TLidUnit* lidUnit, TLidProc* lidProc,
          double inflow, double evap, double infil, double maxInfil,            //(5.1.008)
          double tStep, double* lidEvap, double* lidInfil, double* lidDrain);   //(5.1.008)
 
-void     lidproc_saveResults(TLidUnit* lidUnit, double ucfRainfall,            //(5.1.011)
-         double ucfRainDepth);
+void     lidproc_saveResults(SWMM_Project *sp, TLidUnit* lidUnit,
+        double ucfRainfall, double ucfRainDepth);
 
-#endif
+
+//-----------------------------------------------------------------------------
+//  Data Structures
+//-----------------------------------------------------------------------------
+
+// LID List - list of LID units contained in an LID group
+struct LidList
+{
+    TLidUnit*        lidUnit;     // ptr. to a LID unit
+    struct LidList*  nextLidUnit;
+};
+typedef struct LidList TLidList;
+
+// LID Group - collection of LID units applied to a specific subcatchment
+////  Re-defined for release 5.1.008. ////                                     //(5.1.008)
+struct LidGroup
+{
+    double         pervArea;      // amount of pervious area in group (ft2)
+    double         flowToPerv;    // total flow sent to pervious area (cfs)
+    double         oldDrainFlow;  // total drain flow in previous period (cfs)
+    double         newDrainFlow;  // total drain flow in current period (cfs)
+    TLidList*      lidList;       // list of LID units in the group
+};
+typedef struct LidGroup* TLidGroup;
+
+
+//-----------------------------------------------------------------------------
+//  Shared Variables
+//-----------------------------------------------------------------------------
+typedef struct
+{
+    TLidProc*  LidProcs;            // array of LID processes
+    int        LidCount;            // number of LID processes
+    TLidGroup* LidGroups;           // array of LID process groups
+    int        GroupCount;          // number of LID groups (subcatchments)
+
+    double     EvapRate;            // evaporation rate (ft/s)
+    double     NativeInfil;         // native soil infil. rate (ft/s)
+    double     MaxNativeInfil;      // native soil infil. rate limit (ft/s)
+} TLidShared;
+
+
+#endif //LID_H

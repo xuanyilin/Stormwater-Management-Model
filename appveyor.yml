@@ -98,6 +98,9 @@ test_script:
   - cd %SWMM_HOME%
   - tools\run-nrtest.cmd %NRTEST_SCRIPT% %TEST_HOME% %APPVEYOR_REPO_COMMIT%
 
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 #cache:
 #  - C:\ProgramData\chocolatey\bin -> appveyor.yml
 #  - C:\ProgramData\chocolatey\lib -> appveyor.yml

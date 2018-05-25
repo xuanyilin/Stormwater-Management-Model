@@ -7,13 +7,21 @@
 //  alloc pool - only the alloc routines know its structure.
 //-----------------------------------------------------------------------------
 
+#ifndef MEMPOOL_H
+#define MEMPOOL_H
+
+
 typedef struct
 {
    long  dummy;
 }  alloc_handle_t;
+
 
 alloc_handle_t *AllocInit(void);
 char           *Alloc(long);
 alloc_handle_t *AllocSetPool(alloc_handle_t *);
 void            AllocReset(void);
 void            AllocFreePool(void);
+
+
+#endif //MEMPOOL_H

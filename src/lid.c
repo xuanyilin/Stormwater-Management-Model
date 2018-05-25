@@ -69,7 +69,6 @@
 
 #include <math.h>
 #include "headers.h"
-#include "lid.h"
 
 ////  New error messages added to release 5.1.008.  ////                       //(5.1.008)
 #define ERR_PAVE_LAYER " - check pavement layer parameters"
@@ -94,10 +93,10 @@ enum LidLayerTypes {
 //// Note: DRAINMAT must be placed before DRAIN so the two keywords can
 ///        be distinguished from one another when parsing a line of input. 
 
-char* LidLayerWords[] =
+const char* LidLayerWords[] =
     {"SURFACE", "SOIL", "STORAGE", "PAVEMENT", "DRAINMAT", "DRAIN", NULL};
 
-char* LidTypeWords[] =
+const char* LidTypeWords[] =
     {"BC",                   //bio-retention cell
      "RG",                   //rain garden
      "GR",                   //green roof
@@ -108,57 +107,21 @@ char* LidTypeWords[] =
      "RD",                   //rooftop disconnection
      NULL};
 
-//-----------------------------------------------------------------------------
-//  Data Structures
-//-----------------------------------------------------------------------------
-
-// LID List - list of LID units contained in an LID group
-struct LidList
-{
-    TLidUnit*        lidUnit;     // ptr. to a LID unit
-    struct LidList*  nextLidUnit;
-};
-typedef struct LidList TLidList;
-
-// LID Group - collection of LID units applied to a specific subcatchment
-////  Re-defined for release 5.1.008. ////                                     //(5.1.008)
-struct LidGroup
-{
-    double         pervArea;      // amount of pervious area in group (ft2)
-    double         flowToPerv;    // total flow sent to pervious area (cfs)
-    double         oldDrainFlow;  // total drain flow in previous period (cfs)
-    double         newDrainFlow;  // total drain flow in current period (cfs)
-    TLidList*      lidList;       // list of LID units in the group
-};
-typedef struct LidGroup* TLidGroup;
-
-
-//-----------------------------------------------------------------------------
-//  Shared Variables
-//-----------------------------------------------------------------------------
-static TLidProc*  LidProcs;            // array of LID processes
-static int        LidCount;            // number of LID processes
-static TLidGroup* LidGroups;           // array of LID process groups
-static int        GroupCount;          // number of LID groups (subcatchments)
-
-static double     EvapRate;            // evaporation rate (ft/s)
-static double     NativeInfil;         // native soil infil. rate (ft/s)
-static double     MaxNativeInfil;      // native soil infil. rate limit (ft/s)
 
 //-----------------------------------------------------------------------------
 //  Imported Variables (from SUBCATCH.C)
 //-----------------------------------------------------------------------------
 // Volumes (ft3) for a subcatchment over a time step                           //(5.1.008)
-extern double     Vevap;               // evaporation
-extern double     Vpevap;              // pervious area evaporation
-extern double     Vinfil;              // non-LID infiltration
-extern double     VlidInfil;           // infiltration from LID units
-extern double     VlidIn;              // impervious area flow to LID units
-extern double     VlidOut;             // surface outflow from LID units
-extern double     VlidDrain;           // drain outflow from LID units
-extern double     VlidReturn;          // LID outflow returned to pervious area
-extern char       HasWetLids;          // TRUE if any LIDs are wet             //(5.1.010)
-                                       // (from RUNOFF.C)                      //(5.1.010)
+//extern double     Vevap;               // evaporation
+//extern double     Vpevap;              // pervious area evaporation
+//extern double     Vinfil;              // non-LID infiltration
+//extern double     VlidInfil;           // infiltration from LID units
+//extern double     VlidIn;              // impervious area flow to LID units
+//extern double     VlidOut;             // surface outflow from LID units
+//extern double     VlidDrain;           // drain outflow from LID units
+//extern double     VlidReturn;          // LID outflow returned to pervious area
+//extern char       HasWetLids;          // TRUE if any LIDs are wet             //(5.1.010)
+//                                       // (from RUNOFF.C)                      //(5.1.010)
 
 ////  Deleted for release 5.1.008.  ////                                       //(5.1.008)
 //static double     NextReportTime;
@@ -199,35 +162,36 @@ extern char       HasWetLids;          // TRUE if any LIDs are wet             /
 //-----------------------------------------------------------------------------
 // Local Functions
 //-----------------------------------------------------------------------------
-static void   freeLidGroup(int j);
-static int    readSurfaceData(int j, char* tok[], int ntoks);
-static int    readPavementData(int j, char* tok[], int ntoks);
-static int    readSoilData(int j, char* tok[], int ntoks);
-static int    readStorageData(int j, char* tok[], int ntoks);
-static int    readDrainData(int j, char* tok[], int ntoks);
-static int    readDrainMatData(int j, char* toks[], int ntoks);
+static void   freeLidGroup(SWMM_Project *sp, int j);
+static int    readSurfaceData(SWMM_Project *sp, int j, char* tok[], int ntoks);
+static int    readPavementData(SWMM_Project *sp, int j, char* tok[], int ntoks);
+static int    readSoilData(SWMM_Project *sp, int j, char* tok[], int ntoks);
+static int    readStorageData(SWMM_Project *sp, int j, char* tok[], int ntoks);
+static int    readDrainData(SWMM_Project *sp, int j, char* tok[], int ntoks);
+static int    readDrainMatData(SWMM_Project *sp, int j, char* toks[], int ntoks);
 
-static int    addLidUnit(int j, int k, int n, double x[], char* fname,
-              int drainSubcatch, int drainNode);                               //(5.1.008)
+static int    addLidUnit(SWMM_Project *sp, int j, int k, int n, double x[],
+        char* fname, int drainSubcatch, int drainNode);                        //(5.1.008)
 static int    createLidRptFile(TLidUnit* lidUnit, char* fname);
-static void   initLidRptFile(char* title, char* lidID, char* subcatchID,
+static void   initLidRptFile(SWMM_Project *sp, char* title, char* lidID,
+        char* subcatchID,
               TLidUnit* lidUnit);
-static void   validateLidProc(int j);
-static void   validateLidGroup(int j);
+static void   validateLidProc(SWMM_Project *sp, int j);
+static void   validateLidGroup(SWMM_Project *sp, int j);
 
-static int    isLidPervious(int k);
-static double getImpervAreaRunoff(int j);                                      //(5.1.008)
-static double getSurfaceDepth(int subcatch);                                   //(5.1.008)
-static void   findNativeInfil(int j, double tStep);                            //(5.1.008)
+static int    isLidPervious(SWMM_Project *sp, int k);
+static double getImpervAreaRunoff(SWMM_Project *sp, int j);                                      //(5.1.008)
+static double getSurfaceDepth(SWMM_Project *sp, int subcatch);                                   //(5.1.008)
+static void   findNativeInfil(SWMM_Project *sp, int j, double tStep);                            //(5.1.008)
 
 ////  Re-definition of evalLidUnit.  ////                                      //(5.1.008)
-static void   evalLidUnit(int j, TLidUnit* lidUnit, double lidArea,
-              double lidInflow, double tStep, double *qRunoff,
-              double *qDrain, double *qReturn);
+static void   evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit,
+        double lidArea, double lidInflow, double tStep, double *qRunoff,
+        double *qDrain, double *qReturn);
 
 //=============================================================================
 
-void lid_create(int lidCount, int subcatchCount)
+void lid_create(SWMM_Project *sp, int lidCount, int subcatchCount)
 //
 //  Purpose: creates an array of LID objects.
 //  Input:   n = number of LID processes
@@ -236,55 +200,58 @@ void lid_create(int lidCount, int subcatchCount)
 {
     int j;
 
+    TLidShared *ld = &sp->LidShared;
+
     //... assign NULL values to LID arrays
-    LidProcs = NULL;
-    LidGroups = NULL;
-    LidCount = lidCount;
+    ld->LidProcs = NULL;
+    ld->LidGroups = NULL;
+    ld->LidCount = lidCount;
 
     //... create LID groups
-    GroupCount = subcatchCount;
-    if ( GroupCount == 0 ) return;
-    LidGroups = (TLidGroup *) calloc(GroupCount, sizeof(TLidGroup));
-    if ( LidGroups == NULL )
+    ld->GroupCount = subcatchCount;
+    if ( ld->GroupCount == 0 ) return;
+    ld->LidGroups = (TLidGroup *) calloc(ld->GroupCount, sizeof(TLidGroup));
+    if ( ld->LidGroups == NULL )
     {
-        ErrorCode = ERR_MEMORY;
+        sp->ErrorCode = ERR_MEMORY;
         return;
     }
 
     //... initialize LID groups
-    for (j = 0; j < GroupCount; j++) LidGroups[j] = NULL;
+    for (j = 0; j < ld->GroupCount; j++)
+        ld->LidGroups[j] = NULL;
 
     //... create LID objects
-    if ( LidCount == 0 ) return;
-    LidProcs = (TLidProc *) calloc(LidCount, sizeof(TLidProc));
-    if ( LidProcs == NULL )
+    if ( ld->LidCount == 0 ) return;
+    ld->LidProcs = (TLidProc *) calloc(ld->LidCount, sizeof(TLidProc));
+    if ( ld->LidProcs == NULL )
     {
-        ErrorCode = ERR_MEMORY;
+        sp->ErrorCode = ERR_MEMORY;
         return;
     }
 
     //... initialize LID objects
-    for (j = 0; j < LidCount; j++)
+    for (j = 0; j < ld->LidCount; j++)
     {
-        LidProcs[j].lidType = -1;
-        LidProcs[j].surface.thickness = 0.0;
-        LidProcs[j].surface.voidFrac = 1.0;
-        LidProcs[j].surface.roughness = 0.0;
-        LidProcs[j].surface.surfSlope = 0.0;
-        LidProcs[j].pavement.thickness = 0.0;
-        LidProcs[j].soil.thickness = 0.0;
-        LidProcs[j].storage.thickness = 0.0;
-        LidProcs[j].storage.kSat = 0.0;
-        LidProcs[j].drain.coeff = 0.0;
-        LidProcs[j].drain.offset = 0.0;
-        LidProcs[j].drainMat.thickness = 0.0;
-        LidProcs[j].drainMat.roughness = 0.0;
+        ld->LidProcs[j].lidType = -1;
+        ld->LidProcs[j].surface.thickness = 0.0;
+        ld->LidProcs[j].surface.voidFrac = 1.0;
+        ld->LidProcs[j].surface.roughness = 0.0;
+        ld->LidProcs[j].surface.surfSlope = 0.0;
+        ld->LidProcs[j].pavement.thickness = 0.0;
+        ld->LidProcs[j].soil.thickness = 0.0;
+        ld->LidProcs[j].storage.thickness = 0.0;
+        ld->LidProcs[j].storage.kSat = 0.0;
+        ld->LidProcs[j].drain.coeff = 0.0;
+        ld->LidProcs[j].drain.offset = 0.0;
+        ld->LidProcs[j].drainMat.thickness = 0.0;
+        ld->LidProcs[j].drainMat.roughness = 0.0;
     }
 }
 
 //=============================================================================
 
-void lid_delete()
+void lid_delete(SWMM_Project *sp)
 //
 //  Purpose: deletes all LID objects
 //  Input:   none
@@ -292,26 +259,32 @@ void lid_delete()
 //
 {
     int j;
-    for (j = 0; j < GroupCount; j++) freeLidGroup(j);
-    FREE(LidGroups);
-    FREE(LidProcs);
-    GroupCount = 0;
-    LidCount = 0;
+
+    TLidShared *ld = &sp->LidShared;
+
+    for (j = 0; j < ld->GroupCount; j++) freeLidGroup(sp, j);
+    FREE(ld->LidGroups);
+    FREE(ld->LidProcs);
+    ld->GroupCount = 0;
+    ld->LidCount = 0;
 }
 
 //=============================================================================
 
-void freeLidGroup(int j)
+void freeLidGroup(SWMM_Project *sp, int j)
 //
 //  Purpose: frees all LID units associated with a subcatchment.
 //  Input:   j = group (or subcatchment) index
 //  Output:  none
 //
 {
-    TLidGroup  lidGroup = LidGroups[j];
     TLidList*  lidList;
     TLidUnit*  lidUnit;
     TLidList*  nextLidUnit;
+
+    TLidShared *ld = &sp->LidShared;
+
+    TLidGroup  lidGroup = ld->LidGroups[j];
 
     if ( lidGroup == NULL ) return;
     lidList = lidGroup->lidList;
@@ -329,12 +302,12 @@ void freeLidGroup(int j)
         lidList = nextLidUnit;
     }
     free(lidGroup);
-    LidGroups[j] = NULL;
+    ld->LidGroups[j] = NULL;
 }
 
 //=============================================================================
 
-int lid_readProcParams(char* toks[], int ntoks)
+int lid_readProcParams(SWMM_Project *sp, char* toks[], int ntoks)
 //
 //  Purpose: reads LID process information from line of input data file
 //  Input:   toks = array of string tokens
@@ -355,22 +328,24 @@ int lid_readProcParams(char* toks[], int ntoks)
 {
     int j, m;
 
+    TLidShared *ld = &sp->LidShared;
+
     // --- check for minimum number of tokens
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that LID exists in database
-    j = project_findObject(LID, toks[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
+    j = project_findObject(sp, LID, toks[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, toks[0]);
 
     // --- assign ID if not done yet
-    if ( LidProcs[j].ID == NULL )
-        LidProcs[j].ID = project_findID(LID, toks[0]);
+    if ( ld->LidProcs[j].ID == NULL )
+        ld->LidProcs[j].ID = project_findID(sp, LID, toks[0]);
 
     // --- check if second token is the type of LID
     m = findmatch(toks[1], LidTypeWords);
     if ( m >= 0 )
     {
-        LidProcs[j].lidType = m;
+        ld->LidProcs[j].lidType = m;
         return 0;
     }
 
@@ -380,19 +355,19 @@ int lid_readProcParams(char* toks[], int ntoks)
     // --- read input parameters for the identified layer
     switch (m)
     {
-    case SURF:  return readSurfaceData(j, toks, ntoks);
-    case SOIL:  return readSoilData(j, toks, ntoks);
-    case STOR:  return readStorageData(j, toks, ntoks);
-    case PAVE:  return readPavementData(j, toks, ntoks);
-    case DRAIN: return readDrainData(j, toks, ntoks);
-    case DRAINMAT: return readDrainMatData(j, toks, ntoks);
+    case SURF:  return readSurfaceData(sp, j, toks, ntoks);
+    case SOIL:  return readSoilData(sp, j, toks, ntoks);
+    case STOR:  return readStorageData(sp, j, toks, ntoks);
+    case PAVE:  return readPavementData(sp, j, toks, ntoks);
+    case DRAIN: return readDrainData(sp, j, toks, ntoks);
+    case DRAINMAT: return readDrainMatData(sp, j, toks, ntoks);
     }
-    return error_setInpError(ERR_KEYWORD, toks[1]);
+    return error_setInpError(sp, ERR_KEYWORD, toks[1]);
 }
 
 //=============================================================================
 
-int lid_readGroupParams(char* toks[], int ntoks)
+int lid_readGroupParams(SWMM_Project *sp, char* toks[], int ntoks)
 //
 //  Purpose: reads input data for a LID unit placed in a subcatchment.
 //  Input:   toks = array of string tokens
@@ -421,31 +396,31 @@ int lid_readGroupParams(char* toks[], int ntoks)
     int        drainSubcatch = -1, drainNode = -1;                             //(5.1.008)
 
     //... check for valid number of input tokens
-    if ( ntoks < 8 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 8 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     //... find subcatchment
-    j = project_findObject(SUBCATCH, toks[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, toks[0]);
+    j = project_findObject(sp, SUBCATCH, toks[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, toks[0]);
 
     //... find LID process in list of LID processes
-    k = project_findObject(LID, toks[1]);
-    if ( k < 0 ) return error_setInpError(ERR_NAME, toks[1]);
+    k = project_findObject(sp, LID, toks[1]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_NAME, toks[1]);
 
     //... get number of replicates
     n = atoi(toks[2]);
-    if ( n < 0 ) return error_setInpError(ERR_NUMBER, toks[2]);
+    if ( n < 0 ) return error_setInpError(sp, ERR_NUMBER, toks[2]);
     if ( n == 0 ) return 0;
 
     //... convert next 4 tokens to doubles
     for (i = 3; i <= 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-3]) || x[i-3] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... check for valid percentages on tokens 5 & 6 (x[2] & x[3])
     for (i = 2; i <= 3; i++) if ( x[i] > 100.0 )
-        return error_setInpError(ERR_NUMBER, toks[i+3]);
+        return error_setInpError(sp, ERR_NUMBER, toks[i+3]);
 
     //... read optional report file name
     if ( ntoks >= 9 && strcmp(toks[8], "*") != 0 ) fname = toks[8];
@@ -455,22 +430,22 @@ int lid_readGroupParams(char* toks[], int ntoks)
     //... read optional underdrain outlet
     if ( ntoks >= 10 && strcmp(toks[9], "*") != 0 )
     {
-        drainSubcatch = project_findObject(SUBCATCH, toks[9]);
+        drainSubcatch = project_findObject(sp, SUBCATCH, toks[9]);
         if ( drainSubcatch < 0 )
         {
-            drainNode = project_findObject(NODE, toks[9]);
-            if ( drainNode < 0 ) return error_setInpError(ERR_NAME, toks[9]);
+            drainNode = project_findObject(sp, NODE, toks[9]);
+            if ( drainNode < 0 ) return error_setInpError(sp, ERR_NAME, toks[9]);
         }
     }
 ////
 
     //... create a new LID unit and add it to the subcatchment's LID group
-    return addLidUnit(j, k, n, x, fname, drainSubcatch, drainNode);
+    return addLidUnit(sp, j, k, n, x, fname, drainSubcatch, drainNode);
 }
 
 //=============================================================================
 
-int addLidUnit(int j, int k, int n, double x[], char* fname,
+int addLidUnit(SWMM_Project *sp, int j, int k, int n, double x[], char* fname,
     int drainSubcatch, int drainNode)                                          //(5.1.008)
 //
 //  Purpose: adds an LID unit to a subcatchment's LID group.
@@ -488,20 +463,22 @@ int addLidUnit(int j, int k, int n, double x[], char* fname,
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
+    TLidShared *ld = &sp->LidShared;
+
     //... create a LID group (pointer to an LidGroup struct)
     //    if one doesn't already exist
-    lidGroup = LidGroups[j];
+    lidGroup = ld->LidGroups[j];
     if ( !lidGroup )
     {
         lidGroup = (struct LidGroup *) malloc(sizeof(struct LidGroup));
-        if ( !lidGroup ) return error_setInpError(ERR_MEMORY, "");
+        if ( !lidGroup ) return error_setInpError(sp, ERR_MEMORY, "");
         lidGroup->lidList = NULL;
-        LidGroups[j] = lidGroup;
+        ld->LidGroups[j] = lidGroup;
     }
 
     //... create a new LID unit to add to the group
     lidUnit = (TLidUnit *) malloc(sizeof(TLidUnit));
-    if ( !lidUnit ) return error_setInpError(ERR_MEMORY, "");
+    if ( !lidUnit ) return error_setInpError(sp, ERR_MEMORY, "");
     lidUnit->rptFile = NULL;
 
     //... add the LID unit to the group
@@ -509,7 +486,7 @@ int addLidUnit(int j, int k, int n, double x[], char* fname,
     if ( !lidList )
     {
         free(lidUnit);
-        return error_setInpError(ERR_MEMORY, "");
+        return error_setInpError(sp, ERR_MEMORY, "");
     }
     lidList->lidUnit = lidUnit;
     lidList->nextLidUnit = lidGroup->lidList;
@@ -518,8 +495,8 @@ int addLidUnit(int j, int k, int n, double x[], char* fname,
     //... assign parameter values to LID unit
     lidUnit->lidIndex     = k;
     lidUnit->number       = n;
-    lidUnit->area         = x[0] / SQR(UCF(LENGTH));
-    lidUnit->fullWidth    = x[1] / UCF(LENGTH);
+    lidUnit->area         = x[0] / SQR(UCF(sp, LENGTH));
+    lidUnit->fullWidth    = x[1] / UCF(sp, LENGTH);
     lidUnit->initSat      = x[2] / 100.0;
     lidUnit->fromImperv   = x[3] / 100.0;
     lidUnit->toPerv       = (x[4] > 0.0);
@@ -530,7 +507,7 @@ int addLidUnit(int j, int k, int n, double x[], char* fname,
     if ( fname != NULL )
     {
         if ( !createLidRptFile(lidUnit, fname) ) 
-            return error_setInpError(ERR_RPT_FILE, fname);
+            return error_setInpError(sp, ERR_RPT_FILE, fname);
     }
     return 0;
 }
@@ -551,7 +528,7 @@ int createLidRptFile(TLidUnit* lidUnit, char* fname)
 
 //=============================================================================
 
-int readSurfaceData(int j, char* toks[], int ntoks)
+int readSurfaceData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads surface layer data for a LID process from line of input
 //           data file
@@ -567,26 +544,28 @@ int readSurfaceData(int j, char* toks[], int ntoks)
     int    i;
     double x[5];
 
-    if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
-    if ( x[1] >= 1.0 ) return error_setInpError(ERR_NUMBER, toks[3]);           
+    if ( x[1] >= 1.0 ) return error_setInpError(sp, ERR_NUMBER, toks[3]);
     if ( x[0] == 0.0 ) x[1] = 0.0;
 
-    LidProcs[j].surface.thickness     = x[0] / UCF(RAINDEPTH);
-    LidProcs[j].surface.voidFrac      = 1.0 - x[1];
-    LidProcs[j].surface.roughness     = x[2];
-    LidProcs[j].surface.surfSlope     = x[3] / 100.0;
-    LidProcs[j].surface.sideSlope     = x[4];
+    ld->LidProcs[j].surface.thickness     = x[0] / UCF(sp, RAINDEPTH);
+    ld->LidProcs[j].surface.voidFrac      = 1.0 - x[1];
+    ld->LidProcs[j].surface.roughness     = x[2];
+    ld->LidProcs[j].surface.surfSlope     = x[3] / 100.0;
+    ld->LidProcs[j].surface.sideSlope     = x[4];
     return 0;
 }
 
 //=============================================================================
 
-int readPavementData(int j, char* toks[], int ntoks)
+int readPavementData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads pavement layer data for a LID process from line of input
 //           data file
@@ -602,27 +581,29 @@ int readPavementData(int j, char* toks[], int ntoks)
     int    i;
     double x[5];
 
-    if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 7; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... convert void ratio to void fraction
     x[1] = x[1]/(x[1] + 1.0);
 
-    LidProcs[j].pavement.thickness    = x[0] / UCF(RAINDEPTH);
-    LidProcs[j].pavement.voidFrac     = x[1];
-    LidProcs[j].pavement.impervFrac   = x[2];
-    LidProcs[j].pavement.kSat         = x[3] / UCF(RAINFALL);
-    LidProcs[j].pavement.clogFactor   = x[4];
+    ld->LidProcs[j].pavement.thickness    = x[0] / UCF(sp, RAINDEPTH);
+    ld->LidProcs[j].pavement.voidFrac     = x[1];
+    ld->LidProcs[j].pavement.impervFrac   = x[2];
+    ld->LidProcs[j].pavement.kSat         = x[3] / UCF(sp, RAINFALL);
+    ld->LidProcs[j].pavement.clogFactor   = x[4];
     return 0;
 }
 
 //=============================================================================
 
-int readSoilData(int j, char* toks[], int ntoks)
+int readSoilData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads soil layer data for a LID process from line of input
 //           data file
@@ -638,25 +619,27 @@ int readSoilData(int j, char* toks[], int ntoks)
     int    i;
     double x[7];
 
-    if ( ntoks < 9 ) return error_setInpError(ERR_ITEMS, "");
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ntoks < 9 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 9; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
-    LidProcs[j].soil.thickness = x[0] / UCF(RAINDEPTH);
-    LidProcs[j].soil.porosity  = x[1];
-    LidProcs[j].soil.fieldCap  = x[2];
-    LidProcs[j].soil.wiltPoint = x[3];
-    LidProcs[j].soil.kSat      = x[4] / UCF(RAINFALL);
-    LidProcs[j].soil.kSlope    = x[5];
-    LidProcs[j].soil.suction   = x[6] / UCF(RAINDEPTH);
+    ld->LidProcs[j].soil.thickness = x[0] / UCF(sp, RAINDEPTH);
+    ld->LidProcs[j].soil.porosity  = x[1];
+    ld->LidProcs[j].soil.fieldCap  = x[2];
+    ld->LidProcs[j].soil.wiltPoint = x[3];
+    ld->LidProcs[j].soil.kSat      = x[4] / UCF(sp, RAINFALL);
+    ld->LidProcs[j].soil.kSlope    = x[5];
+    ld->LidProcs[j].soil.suction   = x[6] / UCF(sp, RAINDEPTH);
     return 0;
 }
 
 //=============================================================================
 
-int readStorageData(int j, char* toks[], int ntoks)
+int readStorageData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads drainage layer data for a LID process from line of input
 //           data file
@@ -672,28 +655,30 @@ int readStorageData(int j, char* toks[], int ntoks)
     int    i;
     double x[6];
 
+    TLidShared *ld = &sp->LidShared;
+
     //... read numerical parameters
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 6; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2])  || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... convert void ratio to void fraction
     x[1] = x[1]/(x[1] + 1.0);
 
     //... save parameters to LID storage layer structure
-    LidProcs[j].storage.thickness   = x[0] / UCF(RAINDEPTH);
-    LidProcs[j].storage.voidFrac    = x[1];
-    LidProcs[j].storage.kSat        = x[2] / UCF(RAINFALL);
-    LidProcs[j].storage.clogFactor  = x[3];
+    ld->LidProcs[j].storage.thickness   = x[0] / UCF(sp, RAINDEPTH);
+    ld->LidProcs[j].storage.voidFrac    = x[1];
+    ld->LidProcs[j].storage.kSat        = x[2] / UCF(sp, RAINFALL);
+    ld->LidProcs[j].storage.clogFactor  = x[3];
     return 0;
 }
  
 //=============================================================================
 
-int readDrainData(int j, char* toks[], int ntoks)
+int readDrainData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads underdrain data for a LID process from line of input
 //           data file
@@ -709,25 +694,27 @@ int readDrainData(int j, char* toks[], int ntoks)
     int    i;
     double x[4];
 
+    TLidShared *ld = &sp->LidShared;
+
     //... read numerical parameters
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
     for (i = 2; i < 6; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2])  || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... save parameters to LID drain layer structure
-    LidProcs[j].drain.coeff  = x[0];
-    LidProcs[j].drain.expon  = x[1];
-    LidProcs[j].drain.offset = x[2] / UCF(RAINDEPTH);
-    LidProcs[j].drain.delay  = x[3] * 3600.0;
+    ld->LidProcs[j].drain.coeff  = x[0];
+    ld->LidProcs[j].drain.expon  = x[1];
+    ld->LidProcs[j].drain.offset = x[2] / UCF(sp, RAINDEPTH);
+    ld->LidProcs[j].drain.delay  = x[3] * 3600.0;
     return 0;
 }
  
 //=============================================================================
 
-int readDrainMatData(int j, char* toks[], int ntoks)
+int readDrainMatData(SWMM_Project *sp, int j, char* toks[], int ntoks)
 //
 //  Purpose: reads drainage mat data for a LID process from line of input
 //           data file
@@ -743,25 +730,27 @@ int readDrainMatData(int j, char* toks[], int ntoks)
     int    i;
     double x[3];
 
+    TLidShared *ld = &sp->LidShared;
+
     //... read numerical parameters
-    if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
-	if ( LidProcs[j].lidType != GREEN_ROOF ) return 0;
+    if ( ntoks < 5 ) return error_setInpError(sp, ERR_ITEMS, "");
+	if ( ld->LidProcs[j].lidType != GREEN_ROOF ) return 0;
     for (i = 2; i < 5; i++)
     {
         if ( ! getDouble(toks[i], &x[i-2]) || x[i-2] < 0.0 )
-            return error_setInpError(ERR_NUMBER, toks[i]);
+            return error_setInpError(sp, ERR_NUMBER, toks[i]);
     }
 
     //... save parameters to LID drain layer structure
-    LidProcs[j].drainMat.thickness = x[0] / UCF(RAINDEPTH);;
-    LidProcs[j].drainMat.voidFrac  = x[1];
-    LidProcs[j].drainMat.roughness = x[2];
+    ld->LidProcs[j].drainMat.thickness = x[0] / UCF(sp, RAINDEPTH);;
+    ld->LidProcs[j].drainMat.voidFrac  = x[1];
+    ld->LidProcs[j].drainMat.roughness = x[2];
     return 0;
 }
 
 //=============================================================================
 
-void lid_writeSummary()
+void lid_writeSummary(SWMM_Project *sp)
 //
 //  Purpose: writes summary of LID processes used to report file.
 //  Input:   none
@@ -773,32 +762,34 @@ void lid_writeSummary()
     TLidUnit*  lidUnit;
     TLidList*  lidList;
     TLidGroup  lidGroup;
- 
-    fprintf(Frpt.file, "\n");
-    fprintf(Frpt.file, "\n");
-    fprintf(Frpt.file, "\n  *******************");
-    fprintf(Frpt.file, "\n  LID Control Summary");
-    fprintf(Frpt.file, "\n  *******************");
-    fprintf(Frpt.file,
+
+    TLidShared *ld = &sp->LidShared;
+
+    fprintf(sp->Frpt.file, "\n");
+    fprintf(sp->Frpt.file, "\n");
+    fprintf(sp->Frpt.file, "\n  *******************");
+    fprintf(sp->Frpt.file, "\n  LID Control Summary");
+    fprintf(sp->Frpt.file, "\n  *******************");
+    fprintf(sp->Frpt.file,
 "\n                                   No. of        Unit        Unit      %% Area    %% Imperv");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  Subcatchment     LID Control      Units        Area       Width     Covered     Treated");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  ---------------------------------------------------------------------------------------");
-    for (j = 0; j < GroupCount; j++)
+    for (j = 0; j < ld->GroupCount; j++)
     {
-        lidGroup = LidGroups[j];
+        lidGroup = ld->LidGroups[j];
         if ( lidGroup == NULL ) continue;
         lidList = lidGroup->lidList;
         while ( lidList )
         {
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            pctArea = lidUnit->area * lidUnit->number / Subcatch[j].area * 100.0;
-            fprintf(Frpt.file, "\n  %-16s %-16s", Subcatch[j].ID, LidProcs[k].ID);
-            fprintf(Frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
-                lidUnit->number, lidUnit->area * SQR(UCF(LENGTH)),
-                lidUnit->fullWidth * UCF(LENGTH), pctArea,
+            pctArea = lidUnit->area * lidUnit->number / sp->Subcatch[j].area * 100.0;
+            fprintf(sp->Frpt.file, "\n  %-16s %-16s", sp->Subcatch[j].ID, ld->LidProcs[k].ID);
+            fprintf(sp->Frpt.file, "%6d  %10.2f  %10.2f  %10.2f  %10.2f",
+                lidUnit->number, lidUnit->area * SQR(UCF(sp, LENGTH)),
+                lidUnit->fullWidth * UCF(sp, LENGTH), pctArea,
                 lidUnit->fromImperv*100.0);
             lidList = lidList->nextLidUnit;
         }
@@ -807,7 +798,7 @@ void lid_writeSummary()
 
 //=============================================================================
 
-void lid_validate()
+void lid_validate(SWMM_Project *sp)
 //
 //  Purpose: validates LID process and group parameters.
 //  Input:   none 
@@ -815,13 +806,16 @@ void lid_validate()
 //
 {
     int j;
-    for (j = 0; j < LidCount; j++) validateLidProc(j);
-    for (j = 0; j < GroupCount; j++) validateLidGroup(j);
+
+    TLidShared *ld = &sp->LidShared;
+
+    for (j = 0; j < ld->LidCount; j++) validateLidProc(sp, j);
+    for (j = 0; j < ld->GroupCount; j++) validateLidGroup(sp, j);
 }
 
 //=============================================================================
 
-void validateLidProc(int j)
+void validateLidProc(SWMM_Project *sp, int j)
 //
 //  Purpose: validates LID process parameters.
 //  Input:   j = LID process index 
@@ -830,84 +824,86 @@ void validateLidProc(int j)
 {
     int layerMissing = FALSE;
 
+    TLidShared *ld = &sp->LidShared;
+
     //... check that LID type was supplied
-    if ( LidProcs[j].lidType < 0 )
+    if ( ld->LidProcs[j].lidType < 0 )
     {
-        report_writeErrorMsg(ERR_LID_TYPE, LidProcs[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_TYPE, ld->LidProcs[j].ID);
         return;
     }
 
     //... check that required layers were defined
-    switch (LidProcs[j].lidType)
+    switch (ld->LidProcs[j].lidType)
     {
     case BIO_CELL:
     case RAIN_GARDEN:
-        if ( LidProcs[j].soil.thickness <= 0.0 ) layerMissing = TRUE;
+        if ( ld->LidProcs[j].soil.thickness <= 0.0 ) layerMissing = TRUE;
         break;
     case GREEN_ROOF:
-        if ( LidProcs[j].soil.thickness <= 0.0 ) layerMissing = TRUE; 
-        if ( LidProcs[j].drainMat.thickness <= 0.0) layerMissing = TRUE;
+        if ( ld->LidProcs[j].soil.thickness <= 0.0 ) layerMissing = TRUE;
+        if ( ld->LidProcs[j].drainMat.thickness <= 0.0) layerMissing = TRUE;
         break;
     case POROUS_PAVEMENT:
-        if ( LidProcs[j].pavement.thickness  <= 0.0 ) layerMissing = TRUE;
+        if ( ld->LidProcs[j].pavement.thickness  <= 0.0 ) layerMissing = TRUE;
         break;
     case INFIL_TRENCH:
-        if ( LidProcs[j].storage.thickness <= 0.0 ) layerMissing = TRUE;
+        if ( ld->LidProcs[j].storage.thickness <= 0.0 ) layerMissing = TRUE;
         break;
     }
     if ( layerMissing )
     {
-        report_writeErrorMsg(ERR_LID_LAYER, LidProcs[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_LAYER, ld->LidProcs[j].ID);
         return;
     }
 
     //... check pavement layer parameters
-    if ( LidProcs[j].lidType == POROUS_PAVEMENT )
+    if ( ld->LidProcs[j].lidType == POROUS_PAVEMENT )
     {
-        if ( LidProcs[j].pavement.thickness  <= 0.0 
-        ||   LidProcs[j].pavement.kSat       <= 0.0 
-        ||   LidProcs[j].pavement.voidFrac   <= 0.0
-        ||   LidProcs[j].pavement.voidFrac   >  1.0
-        ||   LidProcs[j].pavement.impervFrac >  1.0 )
+        if ( ld->LidProcs[j].pavement.thickness  <= 0.0
+        ||   ld->LidProcs[j].pavement.kSat       <= 0.0
+        ||   ld->LidProcs[j].pavement.voidFrac   <= 0.0
+        ||   ld->LidProcs[j].pavement.voidFrac   >  1.0
+        ||   ld->LidProcs[j].pavement.impervFrac >  1.0 )
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_PAVE_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, ld->LidProcs[j].ID);
+            strcat(sp->Msg, ERR_PAVE_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
 
     //... check soil layer parameters
-    if ( LidProcs[j].soil.thickness > 0.0 )
+    if ( ld->LidProcs[j].soil.thickness > 0.0 )
     {
-        if ( LidProcs[j].soil.porosity      <= 0.0 
-        ||   LidProcs[j].soil.fieldCap      >= LidProcs[j].soil.porosity
-        ||   LidProcs[j].soil.wiltPoint     >= LidProcs[j].soil.fieldCap
-        ||   LidProcs[j].soil.kSat          <= 0.0
-        ||   LidProcs[j].soil.kSlope        <  0.0 )
+        if ( ld->LidProcs[j].soil.porosity      <= 0.0
+        ||   ld->LidProcs[j].soil.fieldCap      >= ld->LidProcs[j].soil.porosity
+        ||   ld->LidProcs[j].soil.wiltPoint     >= ld->LidProcs[j].soil.fieldCap
+        ||   ld->LidProcs[j].soil.kSat          <= 0.0
+        ||   ld->LidProcs[j].soil.kSlope        <  0.0 )
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_SOIL_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, ld->LidProcs[j].ID);
+            strcat(sp->Msg, ERR_SOIL_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
 
     //... check storage layer parameters
-    if ( LidProcs[j].storage.thickness > 0.0 )
+    if ( ld->LidProcs[j].storage.thickness > 0.0 )
     {
-        if ( LidProcs[j].storage.voidFrac <= 0.0 ||
-             LidProcs[j].storage.voidFrac > 1.0 )
+        if ( ld->LidProcs[j].storage.voidFrac <= 0.0 ||
+                ld->LidProcs[j].storage.voidFrac > 1.0 )
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_STOR_LAYER);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, ld->LidProcs[j].ID);
+            strcat(sp->Msg, ERR_STOR_LAYER);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
     }
@@ -915,8 +911,8 @@ void validateLidProc(int j)
     //... if no storage layer adjust void fraction and drain offset            //(5.1.007)
     else
     {    
-        LidProcs[j].storage.voidFrac = 1.0;
-        LidProcs[j].drain.offset = 0.0;
+        ld->LidProcs[j].storage.voidFrac = 1.0;
+        ld->LidProcs[j].drain.offset = 0.0;
     }
 
 ////  Removed for release 5.1.011 to allow for upturned drain pipes.  ////     //(5.1.011)
@@ -927,99 +923,99 @@ void validateLidProc(int j)
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
     {
-        strcpy(Msg, LidProcs[j].ID);
-        strcat(Msg, ERR_DRAIN_OFFSET);
-        report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+        strcpy(sp->Msg, LidProcs[j].ID);
+        strcat(sp->Msg, ERR_DRAIN_OFFSET);
+        report_writeErrorMsg(ERR_LID_PARAMS, sp->Msg);
     }
 */
 ////
 
     //... compute the surface layer's overland flow constant (alpha)
-    if ( LidProcs[j].lidType == VEG_SWALE )
+    if ( ld->LidProcs[j].lidType == VEG_SWALE )
     {
-        if ( LidProcs[j].surface.roughness * 
-             LidProcs[j].surface.surfSlope <= 0.0 ||
-             LidProcs[j].surface.thickness == 0.0
+        if ( ld->LidProcs[j].surface.roughness *
+                ld->LidProcs[j].surface.surfSlope <= 0.0 ||
+                ld->LidProcs[j].surface.thickness == 0.0
            )
 
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
         {
-            strcpy(Msg, LidProcs[j].ID);
-            strcat(Msg, ERR_SWALE_SURF);
-            report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+            strcpy(sp->Msg, ld->LidProcs[j].ID);
+            strcat(sp->Msg, ERR_SWALE_SURF);
+            report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
         }
 ////
-        else LidProcs[j].surface.alpha = 
-            1.49 * sqrt(LidProcs[j].surface.surfSlope) /
-                LidProcs[j].surface.roughness;
+        else ld->LidProcs[j].surface.alpha =
+            1.49 * sqrt(ld->LidProcs[j].surface.surfSlope) /
+            ld->LidProcs[j].surface.roughness;
     }
     else
     {
         //... compute surface overland flow coeff.
-        if ( LidProcs[j].surface.roughness > 0.0 )
-            LidProcs[j].surface.alpha = 1.49 / LidProcs[j].surface.roughness *
-                                        sqrt(LidProcs[j].surface.surfSlope);
-        else LidProcs[j].surface.alpha = 0.0;
+        if ( ld->LidProcs[j].surface.roughness > 0.0 )
+            ld->LidProcs[j].surface.alpha = 1.49 / ld->LidProcs[j].surface.roughness *
+                                        sqrt(ld->LidProcs[j].surface.surfSlope);
+        else ld->LidProcs[j].surface.alpha = 0.0;
     }
 
     //... compute drainage mat layer's flow coeff.
-    if ( LidProcs[j].drainMat.roughness > 0.0 )
+    if ( ld->LidProcs[j].drainMat.roughness > 0.0 )
     {
-        LidProcs[j].drainMat.alpha = 1.49 / LidProcs[j].drainMat.roughness *
-                                    sqrt(LidProcs[j].surface.surfSlope);
+        ld->LidProcs[j].drainMat.alpha = 1.49 / ld->LidProcs[j].drainMat.roughness *
+                                    sqrt(ld->LidProcs[j].surface.surfSlope);
     }
-    else LidProcs[j].drainMat.alpha = 0.0;
+    else ld->LidProcs[j].drainMat.alpha = 0.0;
 
 
     //... convert clogging factors to void volume basis
-    if ( LidProcs[j].pavement.thickness > 0.0 )
+    if ( ld->LidProcs[j].pavement.thickness > 0.0 )
     {
-        LidProcs[j].pavement.clogFactor *= 
-            LidProcs[j].pavement.thickness * LidProcs[j].pavement.voidFrac *
-            (1.0 - LidProcs[j].pavement.impervFrac);
+        ld->LidProcs[j].pavement.clogFactor *=
+                ld->LidProcs[j].pavement.thickness * ld->LidProcs[j].pavement.voidFrac *
+            (1.0 - ld->LidProcs[j].pavement.impervFrac);
     }
-    if ( LidProcs[j].storage.thickness > 0.0 )
+    if ( ld->LidProcs[j].storage.thickness > 0.0 )
     {
-        LidProcs[j].storage.clogFactor *=
-            LidProcs[j].storage.thickness * LidProcs[j].storage.voidFrac;
+        ld->LidProcs[j].storage.clogFactor *=
+                ld->LidProcs[j].storage.thickness * ld->LidProcs[j].storage.voidFrac;
     }
-    else LidProcs[j].storage.clogFactor = 0.0;                                 //(5.1.007)
+    else ld->LidProcs[j].storage.clogFactor = 0.0;                                 //(5.1.007)
 
     //... for certain LID types, immediate overflow of excess surface water
     //    occurs if either the surface roughness or slope is zero
-    LidProcs[j].surface.canOverflow = TRUE;
-    switch (LidProcs[j].lidType)
+    ld->LidProcs[j].surface.canOverflow = TRUE;
+    switch (ld->LidProcs[j].lidType)
     {
-        case ROOF_DISCON: LidProcs[j].surface.canOverflow = FALSE; break;      //(5.1.008)
+        case ROOF_DISCON: ld->LidProcs[j].surface.canOverflow = FALSE; break;      //(5.1.008)
         case INFIL_TRENCH:
         case POROUS_PAVEMENT:
         case BIO_CELL:
         case RAIN_GARDEN:
         case GREEN_ROOF:
-            if ( LidProcs[j].surface.alpha > 0.0 )
-                LidProcs[j].surface.canOverflow = FALSE;
+            if ( ld->LidProcs[j].surface.alpha > 0.0 )
+                ld->LidProcs[j].surface.canOverflow = FALSE;
     }
 
     //... rain barrels have 100% void space and impermeable bottom
-    if ( LidProcs[j].lidType == RAIN_BARREL )
+    if ( ld->LidProcs[j].lidType == RAIN_BARREL )
     {
-        LidProcs[j].storage.voidFrac = 1.0;
-        LidProcs[j].storage.kSat = 0.0;
+        ld->LidProcs[j].storage.voidFrac = 1.0;
+        ld->LidProcs[j].storage.kSat = 0.0;
     }
 
     //... set storage layer parameters of a green roof 
-    if ( LidProcs[j].lidType == GREEN_ROOF )
+    if ( ld->LidProcs[j].lidType == GREEN_ROOF )
 	{
-		LidProcs[j].storage.thickness = LidProcs[j].drainMat.thickness;
-		LidProcs[j].storage.voidFrac = LidProcs[j].drainMat.voidFrac;
-		LidProcs[j].storage.clogFactor = 0.0;
-		LidProcs[j].storage.kSat = 0.0;
+        ld->LidProcs[j].storage.thickness = ld->LidProcs[j].drainMat.thickness;
+        ld->LidProcs[j].storage.voidFrac = ld->LidProcs[j].drainMat.voidFrac;
+        ld->LidProcs[j].storage.clogFactor = 0.0;
+        ld->LidProcs[j].storage.kSat = 0.0;
 	}
 }
 
 //=============================================================================
 
-void validateLidGroup(int j)
+void validateLidGroup(SWMM_Project *sp, int j)
 //
 //  Purpose: validates properties of LID units grouped in a subcatchment.
 //  Input:   j = subcatchment index 
@@ -1028,14 +1024,17 @@ void validateLidGroup(int j)
 {
     int        k;
     double     p[3];
-    double     totalArea = Subcatch[j].area;
+    double     totalArea = sp->Subcatch[j].area;
     double     totalLidArea = 0.0;
     double     fromImperv = 0.0;
     TLidUnit*  lidUnit;
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
-    lidGroup = LidGroups[j];
+    TInfilShared *nfl = &sp->InfilShared;
+    TLidShared *ld = &sp->LidShared;
+
+    lidGroup = ld->LidGroups[j];
     if ( lidGroup == NULL ) return;
     lidList = lidGroup->lidList;
     while ( lidList )
@@ -1049,45 +1048,45 @@ void validateLidGroup(int j)
 
         //... assign biocell soil layer infiltration parameters
         lidUnit->soilInfil.Ks = 0.0;
-        if ( LidProcs[k].soil.thickness > 0.0 )
+        if ( ld->LidProcs[k].soil.thickness > 0.0 )
         {
-            p[0] = LidProcs[k].soil.suction * UCF(RAINDEPTH);
-            p[1] = LidProcs[k].soil.kSat * UCF(RAINFALL);
-            p[2] = (LidProcs[k].soil.porosity - LidProcs[k].soil.wiltPoint) *
+            p[0] = ld->LidProcs[k].soil.suction * UCF(sp, RAINDEPTH);
+            p[1] = ld->LidProcs[k].soil.kSat * UCF(sp, RAINFALL);
+            p[2] = (ld->LidProcs[k].soil.porosity - ld->LidProcs[k].soil.wiltPoint) *
                    (1.0 - lidUnit->initSat);
-            if ( grnampt_setParams(&(lidUnit->soilInfil), p) == FALSE )
+            if ( grnampt_setParams(sp, &(lidUnit->soilInfil), p) == FALSE )
             {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                strcpy(Msg, LidProcs[k].ID);
-                strcat(Msg, ERR_SOIL_LAYER);
-                report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                strcpy(sp->Msg, ld->LidProcs[k].ID);
+                strcat(sp->Msg, ERR_SOIL_LAYER);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
             }
         }
         
         //... assign vegetative swale infiltration parameters
-        if ( LidProcs[k].lidType == VEG_SWALE )
+        if ( ld->LidProcs[k].lidType == VEG_SWALE )
         {
-            if ( InfilModel == GREEN_AMPT || InfilModel == MOD_GREEN_AMPT )    //(5.1.010)
+            if ( sp->InfilModel == GREEN_AMPT || sp->InfilModel == MOD_GREEN_AMPT )    //(5.1.010)
             {
-                p[0] = GAInfil[j].S * UCF(RAINDEPTH);
-                p[1] = GAInfil[j].Ks * UCF(RAINFALL);
-                p[2] = GAInfil[j].IMDmax;
-                if ( grnampt_setParams(&(lidUnit->soilInfil), p) == FALSE )
+                p[0] = nfl->GAInfil[j].S * UCF(sp, RAINDEPTH);
+                p[1] = nfl->GAInfil[j].Ks * UCF(sp, RAINFALL);
+                p[2] = nfl->GAInfil[j].IMDmax;
+                if ( grnampt_setParams(sp, &(lidUnit->soilInfil), p) == FALSE )
                 {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                    strcpy(Msg, LidProcs[k].ID);
-                    strcat(Msg, ERR_GREEN_AMPT);
-                    report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                    strcpy(sp->Msg, ld->LidProcs[k].ID);
+                    strcat(sp->Msg, ERR_GREEN_AMPT);
+                    report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
                 }
             }
             if ( lidUnit->fullWidth <= 0.0 )
             {
 ////  Modified for release 5.1.008.  ////                                      //(5.1.008)
-                strcpy(Msg, LidProcs[k].ID);
-                strcat(Msg, ERR_SWALE_WIDTH);
-                report_writeErrorMsg(ERR_LID_PARAMS, Msg);
+                strcpy(sp->Msg, ld->LidProcs[k].ID);
+                strcat(sp->Msg, ERR_SWALE_WIDTH);
+                report_writeErrorMsg(sp, ERR_LID_PARAMS, sp->Msg);
 ////
             }
         }
@@ -1096,13 +1095,13 @@ void validateLidGroup(int j)
 ////
         //... LID unit cannot send outflow back to subcatchment's
         //    pervious area if none exists
-        if ( Subcatch[j].fracImperv >= 0.999 ) lidUnit->toPerv = 0;
+        if ( sp->Subcatch[j].fracImperv >= 0.999 ) lidUnit->toPerv = 0;
 
         //... assign drain outlet if not set by user
         if ( lidUnit->drainNode == -1 && lidUnit->drainSubcatch == -1 )
         {
-            lidUnit->drainNode = Subcatch[j].outNode;
-            lidUnit->drainSubcatch = Subcatch[j].outSubcatch;
+            lidUnit->drainNode = sp->Subcatch[j].outNode;
+            lidUnit->drainSubcatch = sp->Subcatch[j].outSubcatch;
         }
 ////
         lidList = lidList->nextLidUnit;
@@ -1111,21 +1110,21 @@ void validateLidGroup(int j)
     //... check contributing area fractions
     if ( totalLidArea > 1.001 * totalArea )
     {
-        report_writeErrorMsg(ERR_LID_AREAS, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_AREAS, sp->Subcatch[j].ID);
     }
     if ( fromImperv > 1.001 )
     {
-        report_writeErrorMsg(ERR_LID_CAPTURE_AREA, Subcatch[j].ID);
+        report_writeErrorMsg(sp, ERR_LID_CAPTURE_AREA, sp->Subcatch[j].ID);
     }
 
     //... Make subcatchment LID area equal total area if the two are close
     if ( totalLidArea > 0.999 * totalArea ) totalLidArea = totalArea;
-    Subcatch[j].lidArea = totalLidArea;
+    sp->Subcatch[j].lidArea = totalLidArea;
 }
 
 //=============================================================================
 
-void lid_initState()
+void lid_initState(SWMM_Project *sp)
 //
 //  Purpose: initializes the internal state of each LID in a subcatchment.
 //  Input:   none 
@@ -1137,14 +1136,17 @@ void lid_initState()
     TLidList*  lidList;
     TLidGroup  lidGroup;
     double     initVol;
-    double     initDryTime = StartDryDays * SECperDAY;
+    double     initDryTime = sp->StartDryDays * SECperDAY;
 
-    //NextReportTime = (double) (ReportStep * 1000.0);                         //(5.1.008)
-    HasWetLids = FALSE;                                                        //(5.1.010)
-    for (j = 0; j < GroupCount; j++)
+    TLidShared *ld = &sp->LidShared;
+    TRunoffShared *rnff = &sp->RunoffShared;
+
+    //NextReportTime = (double) (sp->ReportStep * 1000.0);                         //(5.1.008)
+    rnff->HasWetLids = FALSE;                                                        //(5.1.010)
+    for (j = 0; j < ld->GroupCount; j++)
     {
         //... check if group exists
-        lidGroup = LidGroups[j];
+        lidGroup = ld->LidGroups[j];
         if ( lidGroup == NULL ) continue;
 
         //... initialize group variables
@@ -1166,26 +1168,26 @@ void lid_initState()
             lidUnit->paveDepth = 0.0;                                          //(5.1.011)
             lidUnit->dryTime = initDryTime;
             initVol = 0.0;
-            if ( LidProcs[k].soil.thickness > 0.0 )
+            if ( ld->LidProcs[k].soil.thickness > 0.0 )
             {
-                lidUnit->soilMoisture = LidProcs[k].soil.wiltPoint + 
-                    lidUnit->initSat * (LidProcs[k].soil.porosity -
-                    LidProcs[k].soil.wiltPoint);
-                initVol += lidUnit->soilMoisture * LidProcs[k].soil.thickness;
+                lidUnit->soilMoisture = ld->LidProcs[k].soil.wiltPoint +
+                    lidUnit->initSat * (ld->LidProcs[k].soil.porosity -
+                            ld->LidProcs[k].soil.wiltPoint);
+                initVol += lidUnit->soilMoisture * ld->LidProcs[k].soil.thickness;
             }
-            if ( LidProcs[k].storage.thickness > 0.0 )
-            {
-                lidUnit->storageDepth = lidUnit->initSat *
-                    LidProcs[k].storage.thickness;
-                initVol += lidUnit->storageDepth * LidProcs[k].storage.voidFrac;
-            }
-            if ( LidProcs[k].drainMat.thickness > 0.0 )
+            if ( ld->LidProcs[k].storage.thickness > 0.0 )
             {
                 lidUnit->storageDepth = lidUnit->initSat *
-                    LidProcs[k].drainMat.thickness;
-                initVol += lidUnit->storageDepth * LidProcs[k].drainMat.voidFrac;
+                        ld->LidProcs[k].storage.thickness;
+                initVol += lidUnit->storageDepth * ld->LidProcs[k].storage.voidFrac;
             }
-            if ( lidUnit->initSat > 0.0 ) HasWetLids = TRUE;                   //(5.1.010)
+            if ( ld->LidProcs[k].drainMat.thickness > 0.0 )
+            {
+                lidUnit->storageDepth = lidUnit->initSat *
+                        ld->LidProcs[k].drainMat.thickness;
+                initVol += lidUnit->storageDepth * ld->LidProcs[k].drainMat.voidFrac;
+            }
+            if ( lidUnit->initSat > 0.0 ) rnff->HasWetLids = TRUE;                   //(5.1.010)
 
             //... initialize water balance totals
             lidproc_initWaterBalance(lidUnit, initVol);
@@ -1193,7 +1195,7 @@ void lid_initState()
             //... initialize report file for the LID
             if ( lidUnit->rptFile )
             {
-                initLidRptFile(Title[0], LidProcs[k].ID, Subcatch[j].ID, lidUnit);
+                initLidRptFile(sp, sp->Title[0], ld->LidProcs[k].ID, sp->Subcatch[j].ID, lidUnit);
             }
 
             //... initialize drain flows                                       //(5.1.008)
@@ -1211,7 +1213,7 @@ void lid_initState()
                 grnampt_initState(&(lidUnit->soilInfil));
 
             //... add contribution to pervious LID area
-            if ( isLidPervious(lidUnit->lidIndex) )
+            if ( isLidPervious(sp, lidUnit->lidIndex) )
                 lidGroup->pervArea += (lidUnit->area * lidUnit->number);
             lidList = lidList->nextLidUnit;
         }
@@ -1222,7 +1224,7 @@ void lid_initState()
 
 ////  New function added to release 5.1.008.    ////                           //(5.1.008)
 
-void  lid_setOldGroupState(int j)
+void  lid_setOldGroupState(SWMM_Project *sp, int j)
 //
 //  Purpose: saves the current drain flow rate for the LIDs in a subcatchment.
 //  Input:   j = subcatchment index 
@@ -1230,11 +1232,14 @@ void  lid_setOldGroupState(int j)
 //
 {
     TLidList*  lidList;
-    if ( LidGroups[j] != NULL )
+
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ld->LidGroups[j] != NULL )
     {
-        LidGroups[j]->oldDrainFlow = LidGroups[j]->newDrainFlow;
-        LidGroups[j]->newDrainFlow = 0.0;
-        lidList = LidGroups[j]->lidList;
+        ld->LidGroups[j]->oldDrainFlow = ld->LidGroups[j]->newDrainFlow;
+        ld->LidGroups[j]->newDrainFlow = 0.0;
+        lidList = ld->LidGroups[j]->lidList;
         while (lidList)
         {
             lidList->lidUnit->oldDrainFlow = lidList->lidUnit->newDrainFlow;
@@ -1246,20 +1251,22 @@ void  lid_setOldGroupState(int j)
 
 //=============================================================================
 
-int isLidPervious(int k)
+int isLidPervious(SWMM_Project *sp, int k)
 //
 //  Purpose: determines if a LID process allows infiltration or not.
 //  Input:   k = LID process index 
 //  Output:  returns 1 if process is pervious or 0 if not
 //
 {
-    return ( LidProcs[k].storage.thickness == 0.0 ||
-             LidProcs[k].storage.kSat > 0.0 );
+    TLidShared *ld = &sp->LidShared;
+
+    return ( ld->LidProcs[k].storage.thickness == 0.0 ||
+            ld->LidProcs[k].storage.kSat > 0.0 );
 }
 
 //=============================================================================
 
-double getSurfaceDepth(int j)                                                  //(5.1.008)
+double getSurfaceDepth(SWMM_Project *sp, int j)                                                  //(5.1.008)
 //
 //  Purpose: computes the depth (volume per unit area) of ponded water on the
 //           surface of all LIDs within a subcatchment.
@@ -1273,37 +1280,41 @@ double getSurfaceDepth(int j)                                                  /
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
-    lidGroup = LidGroups[j];
+    TLidShared *ld = &sp->LidShared;
+
+    lidGroup = ld->LidGroups[j];
     if ( lidGroup == NULL ) return 0.0;
-    if ( Subcatch[j].lidArea == 0.0 ) return 0.0;
+    if ( sp->Subcatch[j].lidArea == 0.0 ) return 0.0;
     lidList = lidGroup->lidList;
     while ( lidList )
     {
         lidUnit = lidList->lidUnit;
         k = lidUnit->lidIndex;
-        depth += lidUnit->surfaceDepth * LidProcs[k].surface.voidFrac *
+        depth += lidUnit->surfaceDepth * ld->LidProcs[k].surface.voidFrac *
                  lidUnit->area * lidUnit->number;
         lidList = lidList->nextLidUnit;
     }
-    return depth / Subcatch[j].lidArea;
+    return depth / sp->Subcatch[j].lidArea;
 }
 
 //=============================================================================
 
-double lid_getPervArea(int j)
+double lid_getPervArea(SWMM_Project *sp, int j)
 //
 //  Purpose: retrieves amount of pervious LID area in a subcatchment.
 //  Input:   j = subcatchment index
 //  Output:  returns amount of pervious LID area (ft2)
 //
 {
-    if ( LidGroups[j] ) return LidGroups[j]->pervArea;
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ld->LidGroups[j] ) return ld->LidGroups[j]->pervArea;
     else return 0.0;
 }
 
 //=============================================================================
 
-double   lid_getFlowToPerv(int j)
+double   lid_getFlowToPerv(SWMM_Project *sp, int j)
 //
 //  Purpose: retrieves flow returned from LID treatment to pervious area of
 //           a subcatchment.
@@ -1311,13 +1322,15 @@ double   lid_getFlowToPerv(int j)
 //  Output:  returns flow returned to pervious area (cfs)
 //
 {
-    if ( LidGroups[j] != NULL ) return LidGroups[j]->flowToPerv;
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ld->LidGroups[j] != NULL ) return ld->LidGroups[j]->flowToPerv;
     return 0.0;
 }
 
 //=============================================================================
 
-double lid_getStoredVolume(int j)
+double lid_getStoredVolume(SWMM_Project *sp, int j)
 //
 //  Purpose: computes stored volume of water for all LIDs 
 //           grouped within a subcatchment.
@@ -1330,8 +1343,10 @@ double lid_getStoredVolume(int j)
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
-    lidGroup = LidGroups[j];
-    if ( lidGroup == NULL || Subcatch[j].lidArea == 0.0 ) return 0.0;
+    TLidShared *ld = &sp->LidShared;
+
+    lidGroup = ld->LidGroups[j];
+    if ( lidGroup == NULL || sp->Subcatch[j].lidArea == 0.0 ) return 0.0;
     lidList = lidGroup->lidList;
     while ( lidList )
     {
@@ -1346,7 +1361,7 @@ double lid_getStoredVolume(int j)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-double  lid_getDrainFlow(int j, int timePeriod)
+double  lid_getDrainFlow(SWMM_Project *sp, int j, int timePeriod)
 //
 //  Purpose: returns flow from all of a subcatchment's LID drains for
 //           a designated time period
@@ -1354,10 +1369,12 @@ double  lid_getDrainFlow(int j, int timePeriod)
 //           timePeriod = either PREVIOUS or CURRENT
 //  Output:  total drain flow (cfs) from the subcatchment.
 {
-    if ( LidGroups[j] != NULL )
+    TLidShared *ld = &sp->LidShared;
+
+    if ( ld->LidGroups[j] != NULL )
     {
-        if ( timePeriod == PREVIOUS ) return LidGroups[j]->oldDrainFlow;
-        else return LidGroups[j]->newDrainFlow;
+        if ( timePeriod == PREVIOUS ) return ld->LidGroups[j]->oldDrainFlow;
+        else return ld->LidGroups[j]->newDrainFlow;
     }
     return 0.0;
 }
@@ -1366,7 +1383,7 @@ double  lid_getDrainFlow(int j, int timePeriod)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void  lid_addDrainLoads(int j, double c[], double tStep)
+void  lid_addDrainLoads(SWMM_Project *sp, int j, double c[], double tStep)
 //
 //  Purpose: adds pollutant loads routed from drains to system
 //           mass balance totals.
@@ -1382,8 +1399,10 @@ void  lid_addDrainLoads(int j, double c[], double tStep)
     TLidList*  lidList; 
     TLidGroup  lidGroup; 
 
+    TLidShared *ld = &sp->LidShared;
+
     //... check if LID group exists
-    lidGroup = LidGroups[j];
+    lidGroup = ld->LidGroups[j];
     if ( lidGroup != NULL )
     {
         //... examine each LID in the group
@@ -1396,14 +1415,14 @@ void  lid_addDrainLoads(int j, double c[], double tStep)
                 || lidUnit->drainSubcatch == j )
             {
                 //... For each pollutant 
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     //... get drain's mass load
                     w = lidUnit->newDrainFlow * c[p] * tStep *
-                         LperFT3 * Pollut[p].mcf;
+                         LperFT3 * sp->Pollut[p].mcf;
 
                     //... update system mass balance totals
-                    massbal_updateLoadingTotals(RUNOFF_LOAD, p, w);
+                    massbal_updateLoadingTotals(sp, RUNOFF_LOAD, p, w);
                 }
             }
             lidList = lidList->nextLidUnit;
@@ -1415,7 +1434,7 @@ void  lid_addDrainLoads(int j, double c[], double tStep)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void lid_addDrainRunon(int j)
+void lid_addDrainRunon(SWMM_Project *sp, int j)
 //
 //  Purpose: adds drain flows from LIDs in a given subcatchment to the
 //           subcatchments that were designated to receive them 
@@ -1430,8 +1449,10 @@ void lid_addDrainRunon(int j)
     TLidList*  lidList; 
     TLidGroup  lidGroup; 
 
+    TLidShared *ld = &sp->LidShared;
+
     //... check if LID group exists
-    lidGroup = LidGroups[j];
+    lidGroup = ld->LidGroups[j];
     if ( lidGroup != NULL )
     {
         //... examine each LID in the group
@@ -1445,15 +1466,15 @@ void lid_addDrainRunon(int j)
             {
                 //... distribute drain flow across subcatchment's areas
                 q = lidUnit->oldDrainFlow;
-                subcatch_addRunonFlow(k, q);
+                subcatch_addRunonFlow(sp, k, q);
 
                 //... add pollutant loads from drain to subcatchment
                 //    (newQual[] contains loading rate (mass/sec) at this
                 //    point which is converted later on to a concentration)
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
-                    Subcatch[k].newQual[p] +=
-                        q * Subcatch[j].oldQual[p] * LperFT3;
+                    sp->Subcatch[k].newQual[p] +=
+                        q * sp->Subcatch[j].oldQual[p] * LperFT3;
                 }
             }
             lidList = lidList->nextLidUnit;
@@ -1465,15 +1486,15 @@ void lid_addDrainRunon(int j)
 
 ////  New function added to release 5.1.008.  ////                             //(5.1.008)
 
-void  lid_addDrainInflow(int j, double f)
+void  lid_addDrainInflow(SWMM_Project *sp, int j, double f)
 //
 //  Purpose: adds LID drain flow to conveyance system nodes 
 //  Input:   j = subcatchment index
 //           f = time interval weighting factor
 //  Output:  none.
 //
-//  Note:    this function updates the total lateral flow (Node[].newLatFlow)
-//           and pollutant mass (Node[].newQual[]) inflow seen by nodes that
+//  Note:    this function updates the total lateral flow (sp->Node[].newLatFlow)
+//           and pollutant mass (sp->Node[].newQual[]) inflow seen by nodes that
 //           receive drain flow from the LID units in subcatchment j.
 {
     int        k,            // node index
@@ -1484,8 +1505,10 @@ void  lid_addDrainInflow(int j, double f)
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
+    TLidShared *ld = &sp->LidShared;
+
     //... check if LID group exists
-    lidGroup = LidGroups[j];
+    lidGroup = ld->LidGroups[j];
     if ( lidGroup != NULL )
     {
         //... examine each LID in the group
@@ -1499,20 +1522,20 @@ void  lid_addDrainInflow(int j, double f)
             {
                 //... add drain flow to node's wet weather inflow
                 q = (1.0 - f) * lidUnit->oldDrainFlow + f * lidUnit->newDrainFlow;
-                Node[k].newLatFlow += q;
-                massbal_addInflowFlow(WET_WEATHER_INFLOW, q);
+                sp->Node[k].newLatFlow += q;
+                massbal_addInflowFlow(sp, WET_WEATHER_INFLOW, q);
 
                 //... add pollutant load, based on parent subcatchment quality 
-                for (p = 0; p < Nobjects[POLLUT]; p++)
+                for (p = 0; p < sp->Nobjects[POLLUT]; p++)
                 {
                     //... get previous & current drain loads
-                    w1 = lidUnit->oldDrainFlow * Subcatch[j].oldQual[p];
-                    w2 = lidUnit->newDrainFlow * Subcatch[j].newQual[p]; 
+                    w1 = lidUnit->oldDrainFlow * sp->Subcatch[j].oldQual[p];
+                    w2 = lidUnit->newDrainFlow * sp->Subcatch[j].newQual[p]; 
 
                     //... add interpolated load to node's wet weather loading
                     w = (1.0 - f) * w1 + f * w2;
-                    Node[k].newQual[p] += w;
-                    massbal_addInflowQual(WET_WEATHER_INFLOW, p, w);
+                    sp->Node[k].newQual[p] += w;
+                    massbal_addInflowQual(sp, WET_WEATHER_INFLOW, p, w);
                 }
             }
             lidList = lidList->nextLidUnit;
@@ -1524,7 +1547,7 @@ void  lid_addDrainInflow(int j, double f)
 
 ////  This function was re-written for release 5.1.008.  ////                  //(5.1.008)
 
-void lid_getRunoff(int j, double tStep)
+void lid_getRunoff(SWMM_Project *sp, int j, double tStep)
 //
 //  Purpose: computes runoff and drain flows from the LIDs in a subcatchment.
 //  Input:   j     = subcatchment index 
@@ -1543,23 +1566,26 @@ void lid_getRunoff(int j, double tStep)
     double qDrain = 0.0;          // drain flow from all LID units (cfs)
     double qReturn = 0.0;         // LID outflow returned to pervious area (cfs) 
 
+    TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     //... return if there are no LID's
-    theLidGroup = LidGroups[j];
+    theLidGroup = ld->LidGroups[j];
     if ( !theLidGroup ) return;
     lidList = theLidGroup->lidList;
     if ( !lidList ) return;
 
     //... determine if evaporation can occur
-    EvapRate = Evap.rate;
-    if ( Evap.dryOnly && Subcatch[j].rainfall > 0.0 ) EvapRate = 0.0;
+    ld->EvapRate = sp->Evap.rate;
+    if ( sp->Evap.dryOnly && sp->Subcatch[j].rainfall > 0.0 ) ld->EvapRate = 0.0;
 
     //... find subcatchment's infiltration rate into native soil
-    findNativeInfil(j, tStep);
+    findNativeInfil(sp, j, tStep);
 
     //... get runoff from impervious, non-LID subarea of subcatchment (cfs)
-    if ( Subcatch[j].area > Subcatch[j].lidArea )
+    if ( sp->Subcatch[j].area > sp->Subcatch[j].lidArea )
     {    
-        qImperv = getImpervAreaRunoff(j);
+        qImperv = getImpervAreaRunoff(sp, j);
     }
 
     //... evaluate performance of each LID unit placed in the subcatchment
@@ -1576,21 +1602,21 @@ void lid_getRunoff(int j, double tStep)
             lidInflow = qImperv * lidUnit->fromImperv / lidArea;
 
             //... update total runoff volume treated
-            VlidIn += lidInflow * lidArea * tStep;
+            sbctch->VlidIn += lidInflow * lidArea * tStep;
 
             //... add rainfall onto LID inflow (ft/s)
-            lidInflow = lidInflow + Subcatch[j].rainfall;
+            lidInflow = lidInflow + sp->Subcatch[j].rainfall;
 
             // ... add upstream runon only if LID occupies full subcatchment
-            if ( Subcatch[j].area == Subcatch[j].lidArea )
+            if ( sp->Subcatch[j].area == sp->Subcatch[j].lidArea )
             {
-                lidInflow += Subcatch[j].runon;
+                lidInflow += sp->Subcatch[j].runon;
             }
 
             //... evaluate the LID unit's performance, updating the LID group's
             //    total surface runoff, drain flow, and flow returned to
             //    pervious area 
-            evalLidUnit(j, lidUnit, lidArea, lidInflow, tStep,
+            evalLidUnit(sp, j, lidUnit, lidArea, lidInflow, tStep,
                         &qRunoff, &qDrain, &qReturn);
         }
         lidList = lidList->nextLidUnit;
@@ -1601,14 +1627,14 @@ void lid_getRunoff(int j, double tStep)
     theLidGroup->flowToPerv = qReturn;
 
     //... save the LID group's total surface, drain and return flow volumes
-    VlidOut = qRunoff * tStep; 
-    VlidDrain = qDrain * tStep;
-    VlidReturn = qReturn * tStep;
+    sbctch->VlidOut = qRunoff * tStep;
+    sbctch->VlidDrain = qDrain * tStep;
+    sbctch->VlidReturn = qReturn * tStep;
 }
 
 //=============================================================================
 
-void findNativeInfil(int j, double tStep)
+void findNativeInfil(SWMM_Project *sp, int j, double tStep)
 //
 //  Purpose: determines a subcatchment's current infiltration rate into
 //           its native soil.
@@ -1619,35 +1645,38 @@ void findNativeInfil(int j, double tStep)
 {
     double nonLidArea;
 
+    TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     //... subcatchment has non-LID pervious area
-    nonLidArea = Subcatch[j].area - Subcatch[j].lidArea;
-    if ( nonLidArea > 0.0 && Subcatch[j].fracImperv < 1.0 )
+    nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
+    if ( nonLidArea > 0.0 && sp->Subcatch[j].fracImperv < 1.0 )
     {
-        NativeInfil = Vinfil / nonLidArea / tStep;
+        ld->NativeInfil = sbctch->Vinfil / nonLidArea / tStep;
     }
 
     //... otherwise find infil. rate for the subcatchment's rainfall + runon
     else
     {
-        NativeInfil = infil_getInfil(j, InfilModel, tStep,
-                                     Subcatch[j].rainfall,
-                                     Subcatch[j].runon,
-                                     getSurfaceDepth(j));                      //(5.1.008)
+        ld->NativeInfil = infil_getInfil(sp, j, sp->InfilModel, tStep,
+                                     sp->Subcatch[j].rainfall,
+                                     sp->Subcatch[j].runon,
+                                     getSurfaceDepth(sp, j));                  //(5.1.008)
     }
 
     //... see if there is any groundwater-imposed limit on infil.
-    if ( !IgnoreGwater && Subcatch[j].groundwater )
+    if ( !sp->IgnoreGwater && sp->Subcatch[j].groundwater )
     {
-        MaxNativeInfil = Subcatch[j].groundwater->maxInfilVol / tStep;
+        ld->MaxNativeInfil = sp->Subcatch[j].groundwater->maxInfilVol / tStep;
     }
-    else MaxNativeInfil = BIG;
+    else ld->MaxNativeInfil = BIG;
 }
 
 //=============================================================================
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double getImpervAreaRunoff(int j)
+double getImpervAreaRunoff(SWMM_Project *sp, int j)
 //
 //  Purpose: computes runoff from impervious area of a subcatchment that
 //           is available for LID treatment.
@@ -1662,16 +1691,16 @@ double getImpervAreaRunoff(int j)
     // --- runoff from impervious area w/ & w/o depression storage
     for (i = IMPERV0; i <= IMPERV1; i++)
     {
-        q += Subcatch[j].subArea[i].runoff * Subcatch[j].subArea[i].fArea;
+        q += sp->Subcatch[j].subArea[i].runoff * sp->Subcatch[j].subArea[i].fArea;
     }
 
     // --- adjust for any fraction of runoff sent to pervious area
-    if ( Subcatch[j].subArea[IMPERV0].routeTo == TO_PERV &&
-         Subcatch[j].fracImperv < 1.0 )
+    if ( sp->Subcatch[j].subArea[IMPERV0].routeTo == TO_PERV &&
+         sp->Subcatch[j].fracImperv < 1.0 )
     {
-        q *= Subcatch[j].subArea[IMPERV0].fOutlet;
+        q *= sp->Subcatch[j].subArea[IMPERV0].fOutlet;
     }
-    nonLidArea = Subcatch[j].area - Subcatch[j].lidArea;
+    nonLidArea = sp->Subcatch[j].area - sp->Subcatch[j].lidArea;
     return q * nonLidArea;
 }
 
@@ -1679,8 +1708,9 @@ double getImpervAreaRunoff(int j)
 
 ////  This function was re-named and re-written for release 5.1.008.  ////     //(5.1.008)
 
-void evalLidUnit(int j, TLidUnit* lidUnit, double lidArea, double lidInflow,
-    double tStep, double *qRunoff, double *qDrain, double *qReturn)
+void evalLidUnit(SWMM_Project *sp, int j, TLidUnit* lidUnit, double lidArea,
+        double lidInflow, double tStep, double *qRunoff, double *qDrain,
+        double *qReturn)
 //
 //  Purpose: evaluates performance of a specific LID unit over current time step.
 //  Input:   j         = subcatchment index
@@ -1699,31 +1729,34 @@ void evalLidUnit(int j, TLidUnit* lidUnit, double lidArea, double lidInflow,
            lidInfil,         // infiltration rate from LID unit (ft/s)
            lidDrain;         // drain flow rate from LID unit (ft/s & cfs)
 
+    TLidShared *ld = &sp->LidShared;
+    TSubcatchShared *sbctch = &sp->SubcatchShared;
+
     //... identify the LID process of the LID unit being analyzed
-    lidProc = &LidProcs[lidUnit->lidIndex];
+    lidProc = &ld->LidProcs[lidUnit->lidIndex];
 
     //... initialize evap and infil losses
     lidEvap = 0.0;
     lidInfil = 0.0;
 
     //... find surface runoff from the LID unit (in cfs)
-    lidRunoff = lidproc_getOutflow(lidUnit, lidProc, lidInflow, EvapRate,
-                                  NativeInfil, MaxNativeInfil, tStep,
+    lidRunoff = lidproc_getOutflow(sp, lidUnit, lidProc, lidInflow, ld->EvapRate,
+            ld->NativeInfil, ld->MaxNativeInfil, tStep,
                                   &lidEvap, &lidInfil, &lidDrain) * lidArea;
     
     //... convert drain flow to CFS
     lidDrain *= lidArea;
 
     //... revise flows if LID outflow returned to pervious area
-    if ( lidUnit->toPerv && Subcatch[j].area > Subcatch[j].lidArea )           //(5.1.009)
+    if ( lidUnit->toPerv && sp->Subcatch[j].area > sp->Subcatch[j].lidArea )           //(5.1.009)
     {
         //... surface runoff is always returned
         *qReturn += lidRunoff;
         lidRunoff = 0.0;
 
         //... drain flow returned if it has same outlet as subcatchment
-        if ( lidUnit->drainNode == Subcatch[j].outNode &&
-            lidUnit->drainSubcatch == Subcatch[j].outSubcatch )
+        if ( lidUnit->drainNode == sp->Subcatch[j].outNode &&
+            lidUnit->drainSubcatch == sp->Subcatch[j].outSubcatch )
         {
             *qReturn += lidDrain;
             lidDrain = 0.0;
@@ -1734,26 +1767,26 @@ void evalLidUnit(int j, TLidUnit* lidUnit, double lidArea, double lidInflow,
     //    conveyance system node
     if ( lidUnit->drainNode >= 0 )
     {
-        massbal_updateRunoffTotals(RUNOFF_DRAINS, lidDrain * tStep);
+        massbal_updateRunoffTotals(sp, RUNOFF_DRAINS, lidDrain * tStep);
     }
 
     //... save new drain outflow
     lidUnit->newDrainFlow = lidDrain;
 
     //... update moisture losses (ft3)
-    Vevap  += lidEvap * tStep * lidArea;
-    VlidInfil += lidInfil * tStep * lidArea;
-    if ( isLidPervious(lidUnit->lidIndex) )
+    sbctch->Vevap  += lidEvap * tStep * lidArea;
+    sbctch->VlidInfil += lidInfil * tStep * lidArea;
+    if ( isLidPervious(sp, lidUnit->lidIndex) )
     {
-        Vpevap += lidEvap * tStep * lidArea;
+        sbctch->Vpevap += lidEvap * tStep * lidArea;
     }
 
     //... update time since last rainfall (for Rain Barrel emptying)
-    if ( Subcatch[j].rainfall > MIN_RUNOFF ) lidUnit->dryTime = 0.0;
+    if ( sp->Subcatch[j].rainfall > MIN_RUNOFF ) lidUnit->dryTime = 0.0;
     else lidUnit->dryTime += tStep;
 
     //... update LID water balance and save results
-    lidproc_saveResults(lidUnit, UCF(RAINFALL), UCF(RAINDEPTH));               //(5.1.011)
+    lidproc_saveResults(sp, lidUnit, UCF(sp, RAINFALL), UCF(sp, RAINDEPTH));               //(5.1.011)
 
     //... update LID group totals
     *qRunoff += lidRunoff;
@@ -1762,7 +1795,7 @@ void evalLidUnit(int j, TLidUnit* lidUnit, double lidArea, double lidInflow,
 
 //=============================================================================
 
-void lid_writeWaterBalance()
+void lid_writeWaterBalance(SWMM_Project *sp)
 //
 //  Purpose: writes a LID performance summary table to the project's report file.
 //  Input:   none
@@ -1771,7 +1804,7 @@ void lid_writeWaterBalance()
 {
     int        j;
     int        k = 0;
-    double     ucf = UCF(RAINDEPTH);
+    double     ucf = UCF(sp, RAINDEPTH);
     double     inflow;
     double     outflow;
     double     err;
@@ -1779,46 +1812,48 @@ void lid_writeWaterBalance()
     TLidList*  lidList;
     TLidGroup  lidGroup;
 
+    TLidShared *ld = &sp->LidShared;
+
     //... check that project has LIDs
-    for ( j = 0; j < GroupCount; j++ )
+    for ( j = 0; j < ld->GroupCount; j++ )
     {
-        if ( LidGroups[j] ) k++;
+        if ( ld->LidGroups[j] ) k++;
     }
     if ( k == 0 ) return;
 
     //... write table header
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
     "\n"
     "\n  ***********************"
     "\n  LID Performance Summary"
     "\n  ***********************\n");
 
 ////  Headings modified for release 5.1.008.  ////                             //(5.1.008)
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------"
 "\n                                         Total      Evap     Infil   Surface    Drain    Initial     Final  Continuity"
 "\n                                        Inflow      Loss      Loss   Outflow   Outflow   Storage   Storage       Error");
-    if ( UnitSystem == US ) fprintf(Frpt.file, 
+    if ( sp->UnitSystem == US ) fprintf(sp->Frpt.file,
 "\n  Subcatchment      LID Control             in        in        in        in        in        in        in           %%");
-    else fprintf(Frpt.file,
+    else fprintf(sp->Frpt.file,
 "\n  Subcatchment      LID Control             mm        mm        mm        mm        mm        mm        mm           %%");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  --------------------------------------------------------------------------------------------------------------------");
 
     //... examine each LID unit in each subcatchment
-    for ( j = 0; j < GroupCount; j++ )
+    for ( j = 0; j < ld->GroupCount; j++ )
     {
-        lidGroup = LidGroups[j];
-        if ( !lidGroup || Subcatch[j].lidArea == 0.0 ) continue;
+        lidGroup = ld->LidGroups[j];
+        if ( !lidGroup || sp->Subcatch[j].lidArea == 0.0 ) continue;
         lidList = lidGroup->lidList;
         while ( lidList )
         {
             //... write water balance components to report file
             lidUnit = lidList->lidUnit;
             k = lidUnit->lidIndex;
-            fprintf(Frpt.file, "\n  %-16s  %-16s", Subcatch[j].ID,
-                                                   LidProcs[k].ID);
-            fprintf(Frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
+            fprintf(sp->Frpt.file, "\n  %-16s  %-16s", sp->Subcatch[j].ID,
+                    ld->LidProcs[k].ID);
+            fprintf(sp->Frpt.file, "%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f%10.2f",
                     lidUnit->waterBalance.inflow*ucf,
                     lidUnit->waterBalance.evap*ucf,
                     lidUnit->waterBalance.infil*ucf,
@@ -1837,7 +1872,7 @@ void lid_writeWaterBalance()
                       lidUnit->waterBalance.drainFlow;
             if ( inflow > 0.0 ) err = (inflow - outflow) / inflow;
             else                err = 1.0;
-            fprintf(Frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
+            fprintf(sp->Frpt.file, "  %10.2f", err*100.0);                         //(5.1.008)
             lidList = lidList->nextLidUnit;
         }
     }
@@ -1847,7 +1882,7 @@ void lid_writeWaterBalance()
 
 ////  This function was re-written for release 5.1.011.  ////                  //(5.1.011)
 
-void initLidRptFile(char* title, char* lidID, char* subcatchID, TLidUnit* lidUnit)
+void initLidRptFile(SWMM_Project *sp, char* title, char* lidID, char* subcatchID, TLidUnit* lidUnit)
 //
 //  Purpose: initializes the report file used for a specific LID unit
 //  Input:   title = project's title
@@ -1893,7 +1928,7 @@ void initLidRptFile(char* title, char* lidID, char* subcatchID, TLidUnit* lidUni
     //... write column headings
     for ( i = 0; i < colCount; i++) fprintf(f, "%s", head1[i]);
     for ( i = 0; i < colCount; i++) fprintf(f, "%s", head2[i]);
-    if (  UnitSystem == US )
+    if (  sp->UnitSystem == US )
     {
         for ( i = 0; i < colCount; i++) fprintf(f, "%s", units1[i]);
     }

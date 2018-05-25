@@ -7,6 +7,10 @@
 //   Author:  L. Rossman
 //-----------------------------------------------------------------------------
 
+#ifndef MACROS_H
+#define MACROS_H
+
+
 //--------------------------------------------------
 // Macro to test for successful allocation of memory
 //--------------------------------------------------
@@ -35,4 +39,7 @@
 //-------------------------------------------------
 // Macro to evaluate function x with error checking
 //-------------------------------------------------
-#define CALL(x) (ErrorCode = ((ErrorCode>0) ? (ErrorCode) : (x)))
+#define CALL(x) (sp->ErrorCode = ((sp->ErrorCode>0) ? (sp->ErrorCode) : (x)))
+
+
+#endif //MACROS_H

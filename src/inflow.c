@@ -29,7 +29,7 @@
 
 //=============================================================================
 
-int inflow_readExtInflow(char* tok[], int ntoks)
+int inflow_readExtInflow(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -51,24 +51,24 @@ int inflow_readExtInflow(char* tok[], int ntoks)
     double baseline = 0.0;             // baseline value
 
     // --- find index of node receiving the inflow
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(NODE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
+    j = project_findObject(sp, NODE, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- find index of inflow pollutant or use -1 for FLOW
-    param = project_findObject(POLLUT, tok[1]);
+    param = project_findObject(sp, POLLUT, tok[1]);
     if ( param < 0 )
     {
         if ( match(tok[1], w_FLOW) ) param = -1;
-        else return error_setInpError(ERR_NAME, tok[1]);
+        else return error_setInpError(sp, ERR_NAME, tok[1]);
     }
 
     // --- find index of inflow time series (if supplied) in data base
     if ( strlen(tok[2]) > 0 )
     {
-        tseries = project_findObject(TSERIES, tok[2]);
-        if ( tseries < 0 ) return error_setInpError(ERR_NAME, tok[2]);
-        Tseries[tseries].refersTo = EXTERNAL_INFLOW;
+        tseries = project_findObject(sp, TSERIES, tok[2]);
+        if ( tseries < 0 ) return error_setInpError(sp, ERR_NAME, tok[2]);
+        sp->Tseries[tseries].refersTo = EXTERNAL_INFLOW;
     }
 
 	// --- assign type & cf values for a FLOW inflow
@@ -82,14 +82,14 @@ int inflow_readExtInflow(char* tok[], int ntoks)
     {
         if      ( match(tok[3], w_CONCEN) ) type = CONCEN_INFLOW;
         else if ( match(tok[3], w_MASS) )   type = MASS_INFLOW;
-        else    return error_setInpError(ERR_KEYWORD, tok[3]);
+        else    return error_setInpError(sp, ERR_KEYWORD, tok[3]);
         if ( ntoks >= 5 && type == MASS_INFLOW )
         {
             if ( ! getDouble(tok[4], &cf) )
             {
-                return error_setInpError(ERR_NUMBER, tok[4]);
+                return error_setInpError(sp, ERR_NUMBER, tok[4]);
             }
-            if ( cf <= 0.0 ) return error_setInpError(ERR_NUMBER, tok[4]);
+            if ( cf <= 0.0 ) return error_setInpError(sp, ERR_NUMBER, tok[4]);
         }
     }
 
@@ -98,29 +98,29 @@ int inflow_readExtInflow(char* tok[], int ntoks)
     {
         if ( ! getDouble(tok[5], &sf) )
         {
-            return error_setInpError(ERR_NUMBER, tok[5]);
+            return error_setInpError(sp, ERR_NUMBER, tok[5]);
         }
     }
     if ( ntoks >= 7 )
     {
         if ( ! getDouble(tok[6], &baseline) )
         {
-            return error_setInpError(ERR_NUMBER, tok[6]);
+            return error_setInpError(sp, ERR_NUMBER, tok[6]);
         }
     }
 
     // --- get baseline time pattern
     if ( ntoks >= 8 )
     {
-        basePat = project_findObject(TIMEPATTERN, tok[7]);
-        if ( basePat < 0 ) return error_setInpError(ERR_NAME, tok[7]);
+        basePat = project_findObject(sp, TIMEPATTERN, tok[7]);
+        if ( basePat < 0 ) return error_setInpError(sp, ERR_NAME, tok[7]);
     }
 	
-	return(inflow_setExtInflow(j, param, type, tseries, basePat,
+	return(inflow_setExtInflow(sp, j, param, type, tseries, basePat,
 		cf, baseline, sf));
 }
 
-int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
+int inflow_validate(SWMM_Project *sp, int param, int type, int tseries, int basePat, double *cf)
 // 
 // Purpose: Validates Inflow
 // Input:  param = -1 for Flow or Index of Pollutant
@@ -132,7 +132,7 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 {
 	int errcode = 0;
 	// Validate param
-	if (param >= Nobjects[POLLUT])
+	if (param >= sp->Nobjects[POLLUT])
 	{
 		errcode = ERR_API_POLLUT_INDEX;
 	}
@@ -144,12 +144,12 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 		errcode = ERR_KEYWORD;
 	}
 	// Validate Timeseries Index
-	else if (tseries >= Nobjects[TSERIES])
+	else if (tseries >= sp->Nobjects[TSERIES])
 	{
 		errcode = ERR_API_TSERIES_INDEX;
 	}
 	// Validate Timepattern Index
-	else if (basePat >= Nobjects[TIMEPATTERN])
+	else if (basePat >= sp->Nobjects[TIMEPATTERN])
 	{
 		errcode = ERR_API_PATTERN_INDEX;
 	}
@@ -158,7 +158,7 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 		// --- assign type & cf values for a FLOW inflow
 		if ( type == FLOW_INFLOW )
 		{
-			*cf = 1.0/UCF(FLOW);
+			*cf = 1.0/UCF(sp, FLOW);
 		}
 		// --- include LperFT3 term in conversion factor for MASS_INFLOW
 		else if ( type == MASS_INFLOW ) 
@@ -171,8 +171,8 @@ int inflow_validate(int param, int type, int tseries, int basePat, double *cf)
 }
 
 
-int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
-						double cf, double baseline, double sf)
+int inflow_setExtInflow(SWMM_Project *sp, int j, int param, int type, int tseries,
+        int basePat, double cf, double baseline, double sf)
 // Purpose:  This function assigns property values to the inflow object 
 // Inputs:   j = Node index
 //           param = FLOW (-1) or pollutant index
@@ -188,14 +188,14 @@ int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
 	int errcode = 0;
 
 	// Validate Inflow
-	errcode = inflow_validate(param, type, tseries, basePat, &cf);
+	errcode = inflow_validate(sp, param, type, tseries, basePat, &cf);
 	
 	if (errcode == 0)
 	{
 		TExtInflow* inflow;            // external inflow object
 
 		// --- check if an external inflow object for this constituent already exists
-		inflow = Node[j].extInflow;
+		inflow = sp->Node[j].extInflow;
 		while ( inflow )
 		{
 			if ( inflow->param == param ) break;
@@ -208,10 +208,10 @@ int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
 			inflow = (TExtInflow *) malloc(sizeof(TExtInflow));
 			if ( inflow == NULL ) 
 			{
-				return error_setInpError(ERR_MEMORY, "");
+				return error_setInpError(sp, ERR_MEMORY, "");
 			}
-			inflow->next = Node[j].extInflow;
-			Node[j].extInflow = inflow;
+			inflow->next = sp->Node[j].extInflow;
+			sp->Node[j].extInflow = inflow;
 		}
 		
 		// Assigning Values to the inflow object 
@@ -229,7 +229,7 @@ int inflow_setExtInflow(int j, int param, int type, int tseries, int basePat,
 
 //=============================================================================
 
-void inflow_deleteExtInflows(int j)
+void inflow_deleteExtInflows(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -238,7 +238,7 @@ void inflow_deleteExtInflows(int j)
 {
     TExtInflow* inflow1;
     TExtInflow* inflow2;
-    inflow1 = Node[j].extInflow;
+    inflow1 = sp->Node[j].extInflow;
     while ( inflow1 )
     {
         inflow2 = inflow1->next;
@@ -249,7 +249,7 @@ void inflow_deleteExtInflows(int j)
 
 //=============================================================================
 
-double inflow_getExtInflow(TExtInflow* inflow, DateTime aDate)
+double inflow_getExtInflow(SWMM_Project *sp, TExtInflow* inflow, DateTime aDate)
 //
 //  Input:   inflow = external inflow data structure
 //           aDate = current simulation date/time
@@ -272,15 +272,15 @@ double inflow_getExtInflow(TExtInflow* inflow, DateTime aDate)
         month = datetime_monthOfYear(aDate) - 1;
         day   = datetime_dayOfWeek(aDate) - 1;
         hour  = datetime_hourOfDay(aDate);
-        blv  *= inflow_getPatternFactor(p, month, day, hour);
+        blv  *= inflow_getPatternFactor(sp, p, month, day, hour);
     }
-    if ( k >= 0 ) tsv = table_tseriesLookup(&Tseries[k], aDate, FALSE) * sf;
+    if ( k >= 0 ) tsv = table_tseriesLookup(sp, &sp->Tseries[k], aDate, FALSE) * sf;
     return cf * (tsv + blv) + cf * extIfaceInflow;
 }
 
 //=============================================================================
 
-int inflow_readDwfInflow(char* tok[], int ntoks)
+int inflow_readDwfInflow(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -300,22 +300,22 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
     TDwfInflow* inflow;                // dry weather flow inflow object
 
     // --- find index of node receiving the inflow
-    if ( ntoks < 3 ) return error_setInpError(ERR_ITEMS, "");
-    j = project_findObject(NODE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( ntoks < 3 ) return error_setInpError(sp, ERR_ITEMS, "");
+    j = project_findObject(sp, NODE, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- find index of inflow pollutant (-1 for FLOW) 
-    k = project_findObject(POLLUT, tok[1]);
+    k = project_findObject(sp, POLLUT, tok[1]);
     if ( k < 0 )
     {
         if ( match(tok[1], w_FLOW) ) k = -1;
-        else return error_setInpError(ERR_NAME, tok[1]);
+        else return error_setInpError(sp, ERR_NAME, tok[1]);
     }
 
     // --- get avg. value of DWF inflow
     if ( !getDouble(tok[2], &x) )
-        return error_setInpError(ERR_NUMBER, tok[2]);
-    if ( k == -1 ) x /= UCF(FLOW);
+        return error_setInpError(sp, ERR_NUMBER, tok[2]);
+    if ( k == -1 ) x /= UCF(sp, FLOW);
 
     // --- get time patterns assigned to the inflow
     for (i=0; i<4; i++) pats[i] = -1;
@@ -323,13 +323,13 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
     {
         if ( i >= ntoks ) break;
         if ( strlen(tok[i]) == 0 ) continue;
-        m = project_findObject(TIMEPATTERN, tok[i]);
-        if ( m < 0 ) return error_setInpError(ERR_NAME, tok[i]);
+        m = project_findObject(sp, TIMEPATTERN, tok[i]);
+        if ( m < 0 ) return error_setInpError(sp, ERR_NAME, tok[i]);
         pats[i-3] = m;
     }
 
     // --- check if inflow for this constituent already exists
-    inflow = Node[j].dwfInflow;
+    inflow = sp->Node[j].dwfInflow;
     while ( inflow )
     {
         if ( inflow->param == k ) break;
@@ -340,9 +340,9 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
     if ( inflow == NULL )
     {
         inflow = (TDwfInflow *) malloc(sizeof(TDwfInflow));
-        if ( inflow == NULL ) return error_setInpError(ERR_MEMORY, "");
-        inflow->next = Node[j].dwfInflow;
-        Node[j].dwfInflow = inflow;
+        if ( inflow == NULL ) return error_setInpError(sp, ERR_MEMORY, "");
+        inflow->next = sp->Node[j].dwfInflow;
+        sp->Node[j].dwfInflow = inflow;
     }
 
     // --- assign property values to the inflow object
@@ -354,7 +354,7 @@ int inflow_readDwfInflow(char* tok[], int ntoks)
 
 //=============================================================================
 
-void inflow_deleteDwfInflows(int j)
+void inflow_deleteDwfInflows(SWMM_Project *sp, int j)
 //
 //  Input:   j = node index
 //  Output:  none
@@ -363,7 +363,7 @@ void inflow_deleteDwfInflows(int j)
 {
     TDwfInflow* inflow1;
     TDwfInflow* inflow2;
-    inflow1 = Node[j].dwfInflow;
+    inflow1 = sp->Node[j].dwfInflow;
     while ( inflow1 )
     {
         inflow2 = inflow1->next;
@@ -374,7 +374,7 @@ void inflow_deleteDwfInflows(int j)
 
 //=============================================================================
 
-void   inflow_initDwfInflow(TDwfInflow* inflow)
+void   inflow_initDwfInflow(SWMM_Project *sp, TDwfInflow* inflow)
 //
 //  Input:   inflow = dry weather inflow data structure
 //  Output:  none
@@ -395,7 +395,7 @@ void   inflow_initDwfInflow(TDwfInflow* inflow)
     for (i=0; i<4; i++)
     {
         p = inflow->patterns[i];
-        if ( p >= 0 ) tmpPattern[Pattern[p].type] = p;
+        if ( p >= 0 ) tmpPattern[sp->Pattern[p].type] = p;
     }
 
     // --- re-fill inflow pattern array by pattern type
@@ -404,7 +404,8 @@ void   inflow_initDwfInflow(TDwfInflow* inflow)
 
 //=============================================================================
 
-double inflow_getDwfInflow(TDwfInflow* inflow, int month, int day, int hour)
+double inflow_getDwfInflow(SWMM_Project *sp, TDwfInflow* inflow, int month,
+        int day, int hour)
 //
 //  Input:   inflow = dry weather inflow data structure
 //           month = current month of year of simulation
@@ -418,26 +419,26 @@ double inflow_getDwfInflow(TDwfInflow* inflow, int month, int day, int hour)
     double f = 1.0;                    // pattern factor
 
     p1 = inflow->patterns[MONTHLY_PATTERN];
-    if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     p1 = inflow->patterns[DAILY_PATTERN];
-    if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     p1 = inflow->patterns[HOURLY_PATTERN];
     p2 = inflow->patterns[WEEKEND_PATTERN];
     if ( p2 >= 0 )
     {
         if ( day == 0 || day == 6 )
-            f *= inflow_getPatternFactor(p2, month, day, hour);
+            f *= inflow_getPatternFactor(sp, p2, month, day, hour);
         else if ( p1 >= 0 )
-            f *= inflow_getPatternFactor(p1, month, day, hour);
+            f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     }
-    else if ( p1 >= 0 ) f *= inflow_getPatternFactor(p1, month, day, hour);
+    else if ( p1 >= 0 ) f *= inflow_getPatternFactor(sp, p1, month, day, hour);
     return f * inflow->avgValue;
 
 }
 
 //=============================================================================
 
-void inflow_initDwfPattern(int j)
+void inflow_initDwfPattern(SWMM_Project *sp, int j)
 //
 //  Input:   j = time pattern index
 //  Output:  none
@@ -445,15 +446,15 @@ void inflow_initDwfPattern(int j)
 //
 {
     int i;
-    for (i=0; i<24; i++) Pattern[j].factor[i] = 1.0;
-    Pattern[j].count = 0;
-    Pattern[j].type  = -1;
-    Pattern[j].ID    = NULL;
+    for (i=0; i<24; i++) sp->Pattern[j].factor[i] = 1.0;
+    sp->Pattern[j].count = 0;
+    sp->Pattern[j].type  = -1;
+    sp->Pattern[j].ID    = NULL;
 }
 
 //=============================================================================
 
-int inflow_readDwfPattern(char* tok[], int ntoks)
+int inflow_readDwfPattern(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -467,31 +468,31 @@ int inflow_readDwfPattern(char* tok[], int ntoks)
     int i, j, k, n = 1;
 
     // --- check for minimum number of tokens
-    if ( ntoks < 2 ) return error_setInpError(ERR_ITEMS, "");
+    if ( ntoks < 2 ) return error_setInpError(sp, ERR_ITEMS, "");
 
     // --- check that pattern exists in database
-    j = project_findObject(TIMEPATTERN, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
+    j = project_findObject(sp, TIMEPATTERN, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
 
     // --- check if this is first line of pattern
     //     (ID pointer will not have been assigned yet)
-    if ( Pattern[j].ID == NULL )
+    if ( sp->Pattern[j].ID == NULL )
     {
         // --- assign ID pointer & pattern type
-        Pattern[j].ID = project_findID(TIMEPATTERN, tok[0]);
+        sp->Pattern[j].ID = project_findID(sp, TIMEPATTERN, tok[0]);
         k = findmatch(tok[1], PatternTypeWords);
-        if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
-        Pattern[j].type = k;
+        if ( k < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
+        sp->Pattern[j].type = k;
         n = 2;
     }
 
     // --- start reading pattern factors from rest of line
-    while ( ntoks > n && Pattern[j].count < 24 )
+    while ( ntoks > n && sp->Pattern[j].count < 24 )
     {
-        i = Pattern[j].count;
-        if ( !getDouble(tok[n], &Pattern[j].factor[i]) )
-            return error_setInpError(ERR_NUMBER, tok[n]);
-        Pattern[j].count++;
+        i = sp->Pattern[j].count;
+        if ( !getDouble(tok[n], &sp->Pattern[j].factor[i]) )
+            return error_setInpError(sp, ERR_NUMBER, tok[n]);
+        sp->Pattern[j].count++;
         n++;
     }
     return 0;
@@ -499,7 +500,7 @@ int inflow_readDwfPattern(char* tok[], int ntoks)
 
 //=============================================================================
 
-double inflow_getPatternFactor(int p, int month, int day, int hour)
+double inflow_getPatternFactor(SWMM_Project *sp, int p, int month, int day, int hour)
 //
 //  Input:   p = time pattern index
 //           month = current month of year of simulation
@@ -508,21 +509,21 @@ double inflow_getPatternFactor(int p, int month, int day, int hour)
 //  Output:  returns value of a time pattern multiplier
 //  Purpose: computes time pattern multiplier for a specific point in time.
 {
-    switch ( Pattern[p].type )
+    switch ( sp->Pattern[p].type )
     {
       case MONTHLY_PATTERN:
-        if ( month >= 0 && month < 12 ) return Pattern[p].factor[month];
+        if ( month >= 0 && month < 12 ) return sp->Pattern[p].factor[month];
         break;
       case DAILY_PATTERN:
-        if ( day >= 0 && day < 7 ) return Pattern[p].factor[day];
+        if ( day >= 0 && day < 7 ) return sp->Pattern[p].factor[day];
         break;
       case HOURLY_PATTERN:
-        if ( hour >= 0 && hour < 24 ) return Pattern[p].factor[hour];
+        if ( hour >= 0 && hour < 24 ) return sp->Pattern[p].factor[hour];
         break;
       case WEEKEND_PATTERN:
         if ( day == 0 || day == 6 )
         {
-            if ( hour >= 0 && hour < 24 ) return Pattern[p].factor[hour];
+            if ( hour >= 0 && hour < 24 ) return sp->Pattern[p].factor[hour];
         }
         break;
     }

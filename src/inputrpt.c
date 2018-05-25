@@ -14,13 +14,12 @@
 #include <string.h>
 #include <time.h>
 #include "headers.h"
-#include "lid.h"
 
-#define WRITE(x) (report_writeLine((x)))
+#define WRITE(x) (report_writeLine(sp,(x)))
 
 //=============================================================================
 
-void inputrpt_writeInput()
+void inputrpt_writeInput(SWMM_Project *sp)
 //
 //  Input:   none
 //  Output:  none
@@ -30,188 +29,189 @@ void inputrpt_writeInput()
     int m;
     int i, k;
     int lidCount = 0;
-    if ( ErrorCode ) return;
+
+    if ( sp->ErrorCode ) return;
 
     WRITE("");
     WRITE("*************");
     WRITE("Element Count");
     WRITE("*************");
-    fprintf(Frpt.file, "\n  Number of rain gages ...... %d", Nobjects[GAGE]);
-    fprintf(Frpt.file, "\n  Number of subcatchments ... %d", Nobjects[SUBCATCH]);
-    fprintf(Frpt.file, "\n  Number of nodes ........... %d", Nobjects[NODE]);
-    fprintf(Frpt.file, "\n  Number of links ........... %d", Nobjects[LINK]);
-    fprintf(Frpt.file, "\n  Number of pollutants ...... %d", Nobjects[POLLUT]);
-    fprintf(Frpt.file, "\n  Number of land uses ....... %d", Nobjects[LANDUSE]);
+    fprintf(sp->Frpt.file, "\n  Number of rain gages ...... %d", sp->Nobjects[GAGE]);
+    fprintf(sp->Frpt.file, "\n  Number of subcatchments ... %d", sp->Nobjects[SUBCATCH]);
+    fprintf(sp->Frpt.file, "\n  Number of nodes ........... %d", sp->Nobjects[NODE]);
+    fprintf(sp->Frpt.file, "\n  Number of links ........... %d", sp->Nobjects[LINK]);
+    fprintf(sp->Frpt.file, "\n  Number of pollutants ...... %d", sp->Nobjects[POLLUT]);
+    fprintf(sp->Frpt.file, "\n  Number of land uses ....... %d", sp->Nobjects[LANDUSE]);
 
-    if ( Nobjects[POLLUT] > 0 )
+    if ( sp->Nobjects[POLLUT] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("*****************");
         WRITE("Pollutant Summary");
         WRITE("*****************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n                               Ppt.      GW         Kdecay");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n  Name                 Units   Concen.   Concen.    1/days    CoPollutant");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n  -----------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[POLLUT]; i++)
+        for (i = 0; i < sp->Nobjects[POLLUT]; i++)
         {
-            fprintf(Frpt.file, "\n  %-20s %5s%10.2f%10.2f%10.2f", Pollut[i].ID,
-                QualUnitsWords[Pollut[i].units], Pollut[i].pptConcen,
-                Pollut[i].gwConcen, Pollut[i].kDecay*SECperDAY);
-            if ( Pollut[i].coPollut >= 0 )
-                fprintf(Frpt.file, "    %-s  (%.2f)",
-                    Pollut[Pollut[i].coPollut].ID, Pollut[i].coFraction);
+            fprintf(sp->Frpt.file, "\n  %-20s %5s%10.2f%10.2f%10.2f", sp->Pollut[i].ID,
+                QualUnitsWords[sp->Pollut[i].units], sp->Pollut[i].pptConcen,
+                sp->Pollut[i].gwConcen, sp->Pollut[i].kDecay*SECperDAY);
+            if ( sp->Pollut[i].coPollut >= 0 )
+                fprintf(sp->Frpt.file, "    %-s  (%.2f)",
+                    sp->Pollut[sp->Pollut[i].coPollut].ID, sp->Pollut[i].coFraction);
         }
     }
 
-    if ( Nobjects[LANDUSE] > 0 )
+    if ( sp->Nobjects[LANDUSE] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("***************");
         WRITE("Landuse Summary");
         WRITE("***************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n                         Sweeping   Maximum      Last");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n  Name                   Interval   Removal     Swept");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
     "\n  ---------------------------------------------------");
-        for (i=0; i<Nobjects[LANDUSE]; i++)
+        for (i=0; i<sp->Nobjects[LANDUSE]; i++)
         {
-            fprintf(Frpt.file, "\n  %-20s %10.2f%10.2f%10.2f", Landuse[i].ID,
-                Landuse[i].sweepInterval, Landuse[i].sweepRemoval,
-                Landuse[i].sweepDays0);
+            fprintf(sp->Frpt.file, "\n  %-20s %10.2f%10.2f%10.2f", sp->Landuse[i].ID,
+                sp->Landuse[i].sweepInterval, sp->Landuse[i].sweepRemoval,
+                sp->Landuse[i].sweepDays0);
         }
     }
 
-    if ( Nobjects[GAGE] > 0 )
+    if ( sp->Nobjects[GAGE] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("****************");
         WRITE("Raingage Summary");
         WRITE("****************");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n                                                      Data       Recording");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  Name                 Data Source                    Type       Interval ");
-    fprintf(Frpt.file,
+    fprintf(sp->Frpt.file,
 "\n  ------------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[GAGE]; i++)
+        for (i = 0; i < sp->Nobjects[GAGE]; i++)
         {
-            if ( Gage[i].tSeries >= 0 )
+            if ( sp->Gage[i].tSeries >= 0 )
             {
-                fprintf(Frpt.file, "\n  %-20s %-30s ",
-                    Gage[i].ID, Tseries[Gage[i].tSeries].ID);
-                fprintf(Frpt.file, "%-10s %3d min.",
-                    RainTypeWords[Gage[i].rainType],
-                    (Gage[i].rainInterval)/60);
+                fprintf(sp->Frpt.file, "\n  %-20s %-30s ",
+                    sp->Gage[i].ID, sp->Tseries[sp->Gage[i].tSeries].ID);
+                fprintf(sp->Frpt.file, "%-10s %3d min.",
+                    RainTypeWords[sp->Gage[i].rainType],
+                    (sp->Gage[i].rainInterval)/60);
             }
-            else fprintf(Frpt.file, "\n  %-20s %-30s",
-                Gage[i].ID, Gage[i].fname);
+            else fprintf(sp->Frpt.file, "\n  %-20s %-30s",
+                sp->Gage[i].ID, sp->Gage[i].fname);
         }
     }
 
-    if ( Nobjects[SUBCATCH] > 0 )
+    if ( sp->Nobjects[SUBCATCH] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("********************");
         WRITE("Subcatchment Summary");
         WRITE("********************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  Name                       Area     Width   %%Imperv    %%Slope Rain Gage            Outlet              ");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  -----------------------------------------------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[SUBCATCH]; i++)
+        for (i = 0; i < sp->Nobjects[SUBCATCH]; i++)
         {
-            fprintf(Frpt.file,"\n  %-20s %10.2f%10.2f%10.2f%10.4f %-20s ",
-                Subcatch[i].ID, Subcatch[i].area*UCF(LANDAREA),
-                Subcatch[i].width*UCF(LENGTH),  Subcatch[i].fracImperv*100.0,
-                Subcatch[i].slope*100.0, Gage[Subcatch[i].gage].ID);
-            if ( Subcatch[i].outNode >= 0 )
+            fprintf(sp->Frpt.file,"\n  %-20s %10.2f%10.2f%10.2f%10.4f %-20s ",
+                sp->Subcatch[i].ID, sp->Subcatch[i].area*UCF(sp, LANDAREA),
+                sp->Subcatch[i].width*UCF(sp, LENGTH),  sp->Subcatch[i].fracImperv*100.0,
+                sp->Subcatch[i].slope*100.0, sp->Gage[sp->Subcatch[i].gage].ID);
+            if ( sp->Subcatch[i].outNode >= 0 )
             {
-                fprintf(Frpt.file, "%-20s", Node[Subcatch[i].outNode].ID);
+                fprintf(sp->Frpt.file, "%-20s", sp->Node[sp->Subcatch[i].outNode].ID);
             }
-            else if ( Subcatch[i].outSubcatch >= 0 )
+            else if ( sp->Subcatch[i].outSubcatch >= 0 )
             {
-                fprintf(Frpt.file, "%-20s", Subcatch[Subcatch[i].outSubcatch].ID);
+                fprintf(sp->Frpt.file, "%-20s", sp->Subcatch[sp->Subcatch[i].outSubcatch].ID);
             }
-            if ( Subcatch[i].lidArea ) lidCount++;
+            if ( sp->Subcatch[i].lidArea ) lidCount++;
         }
     }
-    if ( lidCount > 0 ) lid_writeSummary();
+    if ( lidCount > 0 ) lid_writeSummary(sp);
 
-    if ( Nobjects[NODE] > 0 )
+    if ( sp->Nobjects[NODE] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("************");
         WRITE("Node Summary");
         WRITE("************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n                                           Invert      Max.    Ponded    External");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  Name                 Type                 Elev.     Depth      Area    Inflow  ");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  -------------------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[NODE]; i++)
+        for (i = 0; i < sp->Nobjects[NODE]; i++)
         {
-            fprintf(Frpt.file, "\n  %-20s %-16s%10.2f%10.2f%10.1f", Node[i].ID,
-                NodeTypeWords[Node[i].type-JUNCTION],
-                Node[i].invertElev*UCF(LENGTH),
-                Node[i].fullDepth*UCF(LENGTH),
-                Node[i].pondedArea*UCF(LENGTH)*UCF(LENGTH));
-            if ( Node[i].extInflow || Node[i].dwfInflow || Node[i].rdiiInflow )
+            fprintf(sp->Frpt.file, "\n  %-20s %-16s%10.2f%10.2f%10.1f", sp->Node[i].ID,
+                NodeTypeWords[sp->Node[i].type-JUNCTION],
+                sp->Node[i].invertElev*UCF(sp, LENGTH),
+                sp->Node[i].fullDepth*UCF(sp, LENGTH),
+                sp->Node[i].pondedArea*UCF(sp, LENGTH)*UCF(sp, LENGTH));
+            if ( sp->Node[i].extInflow || sp->Node[i].dwfInflow || sp->Node[i].rdiiInflow )
             {
-                fprintf(Frpt.file, "    Yes");
+                fprintf(sp->Frpt.file, "    Yes");
             }
         }
     }
 
-    if ( Nobjects[LINK] > 0 )
+    if ( sp->Nobjects[LINK] > 0 )
     {
         WRITE("");
         WRITE("");
         WRITE("************");
         WRITE("Link Summary");
         WRITE("************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  Name             From Node        To Node          Type            Length    %%Slope Roughness");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  ---------------------------------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[LINK]; i++)
+        for (i = 0; i < sp->Nobjects[LINK]; i++)
         {
             // --- list end nodes in their original orientation
-            if ( Link[i].direction == 1 )
-                fprintf(Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, Node[Link[i].node1].ID, Node[Link[i].node2].ID);
+            if ( sp->Link[i].direction == 1 )
+                fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
+                    sp->Link[i].ID, sp->Node[sp->Link[i].node1].ID, sp->Node[sp->Link[i].node2].ID);
             else
-                fprintf(Frpt.file, "\n  %-16s %-16s %-16s ",
-                    Link[i].ID, Node[Link[i].node2].ID, Node[Link[i].node1].ID);
+                fprintf(sp->Frpt.file, "\n  %-16s %-16s %-16s ",
+                    sp->Link[i].ID, sp->Node[sp->Link[i].node2].ID, sp->Node[sp->Link[i].node1].ID);
 
             // --- list link type
-            if ( Link[i].type == PUMP )
+            if ( sp->Link[i].type == PUMP )
             {
-                k = Link[i].subIndex;
-                fprintf(Frpt.file, "%-5s PUMP  ",
-                    PumpTypeWords[Pump[k].type]);
+                k = sp->Link[i].subIndex;
+                fprintf(sp->Frpt.file, "%-5s PUMP  ",
+                    PumpTypeWords[sp->Pump[k].type]);
             }
-            else fprintf(Frpt.file, "%-12s",
-                LinkTypeWords[Link[i].type-CONDUIT]);
+            else fprintf(sp->Frpt.file, "%-12s",
+                LinkTypeWords[sp->Link[i].type-CONDUIT]);
 
             // --- list length, slope and roughness for conduit links
-            if (Link[i].type == CONDUIT)
+            if (sp->Link[i].type == CONDUIT)
             {
-                k = Link[i].subIndex;
-                fprintf(Frpt.file, "%10.1f%10.4f%10.4f",
-                    Conduit[k].length*UCF(LENGTH),
-                    Conduit[k].slope*100.0*Link[i].direction,
-                    Conduit[k].roughness);
+                k = sp->Link[i].subIndex;
+                fprintf(sp->Frpt.file, "%10.1f%10.4f%10.4f",
+                    sp->Conduit[k].length*UCF(sp, LENGTH),
+                    sp->Conduit[k].slope*100.0*sp->Link[i].direction,
+                    sp->Conduit[k].roughness);
             }
         }
 
@@ -220,96 +220,96 @@ void inputrpt_writeInput()
         WRITE("*********************");
         WRITE("Cross Section Summary");
         WRITE("*********************");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n                                        Full     Full     Hyd.     Max.   No. of     Full");
-        fprintf(Frpt.file,    
+        fprintf(sp->Frpt.file,
 "\n  Conduit          Shape               Depth     Area     Rad.    Width  Barrels     Flow");
-        fprintf(Frpt.file,
+        fprintf(sp->Frpt.file,
 "\n  ---------------------------------------------------------------------------------------");
-        for (i = 0; i < Nobjects[LINK]; i++)
+        for (i = 0; i < sp->Nobjects[LINK]; i++)
         {
-            if (Link[i].type == CONDUIT)
+            if (sp->Link[i].type == CONDUIT)
             {
-                k = Link[i].subIndex;
-                fprintf(Frpt.file, "\n  %-16s ", Link[i].ID);
-                if ( Link[i].xsect.type == CUSTOM )
-                    fprintf(Frpt.file, "%-16s ", Curve[Link[i].xsect.transect].ID);
-                else if ( Link[i].xsect.type == IRREGULAR )
-                    fprintf(Frpt.file, "%-16s ",
-                    Transect[Link[i].xsect.transect].ID);
-                else fprintf(Frpt.file, "%-16s ",
-                    XsectTypeWords[Link[i].xsect.type]);
-                fprintf(Frpt.file, "%8.2f %8.2f %8.2f %8.2f      %3d %8.2f",
-                    Link[i].xsect.yFull*UCF(LENGTH),
-                    Link[i].xsect.aFull*UCF(LENGTH)*UCF(LENGTH),
-                    Link[i].xsect.rFull*UCF(LENGTH),
-                    Link[i].xsect.wMax*UCF(LENGTH),
-                    Conduit[k].barrels,
-                    Link[i].qFull*UCF(FLOW));
+                k = sp->Link[i].subIndex;
+                fprintf(sp->Frpt.file, "\n  %-16s ", sp->Link[i].ID);
+                if ( sp->Link[i].xsect.type == CUSTOM )
+                    fprintf(sp->Frpt.file, "%-16s ", sp->Curve[sp->Link[i].xsect.transect].ID);
+                else if ( sp->Link[i].xsect.type == IRREGULAR )
+                    fprintf(sp->Frpt.file, "%-16s ",
+                    sp->Transect[sp->Link[i].xsect.transect].ID);
+                else fprintf(sp->Frpt.file, "%-16s ",
+                    XsectTypeWords[sp->Link[i].xsect.type]);
+                fprintf(sp->Frpt.file, "%8.2f %8.2f %8.2f %8.2f      %3d %8.2f",
+                    sp->Link[i].xsect.yFull*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.aFull*UCF(sp, LENGTH)*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.rFull*UCF(sp, LENGTH),
+                    sp->Link[i].xsect.wMax*UCF(sp, LENGTH),
+                    sp->Conduit[k].barrels,
+                    sp->Link[i].qFull*UCF(sp, FLOW));
             }
         }
     }
 
-    if (Nobjects[SHAPE] > 0)
+    if (sp->Nobjects[SHAPE] > 0)
     {
         WRITE("");
         WRITE("");
         WRITE("*************");
         WRITE("Shape Summary");
         WRITE("*************");
-        for (i = 0; i < Nobjects[SHAPE]; i++)
+        for (i = 0; i < sp->Nobjects[SHAPE]; i++)
         {
-            k = Shape[i].curve;
-            fprintf(Frpt.file, "\n\n  Shape %s", Curve[k].ID);
-            fprintf(Frpt.file, "\n  Area:  ");
+            k = sp->Shape[i].curve;
+            fprintf(sp->Frpt.file, "\n\n  Shape %s", sp->Curve[k].ID);
+            fprintf(sp->Frpt.file, "\n  Area:  ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Shape[i].areaTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].areaTbl[m]);
             }
-            fprintf(Frpt.file, "\n  Hrad:  ");
+            fprintf(sp->Frpt.file, "\n  Hrad:  ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Shape[i].hradTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].hradTbl[m]);
             }
-            fprintf(Frpt.file, "\n  Width: ");
+            fprintf(sp->Frpt.file, "\n  Width: ");
             for ( m = 1; m < N_SHAPE_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Shape[i].widthTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Shape[i].widthTbl[m]);
             }
         }
     }
     WRITE("");
 
-    if (Nobjects[TRANSECT] > 0)
+    if (sp->Nobjects[TRANSECT] > 0)
     {
         WRITE("");
         WRITE("");
         WRITE("****************");
         WRITE("Transect Summary");
         WRITE("****************");
-        for (i = 0; i < Nobjects[TRANSECT]; i++)
+        for (i = 0; i < sp->Nobjects[TRANSECT]; i++)
         {
-            fprintf(Frpt.file, "\n\n  Transect %s", Transect[i].ID);
-            fprintf(Frpt.file, "\n  Area:  ");
+            fprintf(sp->Frpt.file, "\n\n  Transect %s", sp->Transect[i].ID);
+            fprintf(sp->Frpt.file, "\n  Area:  ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Transect[i].areaTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].areaTbl[m]);
             }
-            fprintf(Frpt.file, "\n  Hrad:  ");
+            fprintf(sp->Frpt.file, "\n  Hrad:  ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Transect[i].hradTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].hradTbl[m]);
             }
-            fprintf(Frpt.file, "\n  Width: ");
+            fprintf(sp->Frpt.file, "\n  Width: ");
             for ( m = 1; m < N_TRANSECT_TBL; m++)
             {
-                 if ( m % 5 == 1 ) fprintf(Frpt.file,"\n          ");
-                 fprintf(Frpt.file, "%10.4f ", Transect[i].widthTbl[m]);
+                 if ( m % 5 == 1 ) fprintf(sp->Frpt.file,"\n          ");
+                 fprintf(sp->Frpt.file, "%10.4f ", sp->Transect[i].widthTbl[m]);
             }
         }
     }

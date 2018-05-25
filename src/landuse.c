@@ -39,18 +39,20 @@
 //-----------------------------------------------------------------------------
 // Function declarations
 //-----------------------------------------------------------------------------
-static double landuse_getBuildupDays(int landuse, int pollut, double buildup);
-static double landuse_getBuildupMass(int landuse, int pollut, double days);
+static double landuse_getBuildupDays(SWMM_Project *sp, int landuse, int pollut,
+        double buildup);
+static double landuse_getBuildupMass(SWMM_Project *sp, int landuse, int pollut,
+        double days);
 static double landuse_getRunoffLoad(int landuse, int pollut, double area,
               TLandFactor landFactor[], double runoff, double tStep);
-static double landuse_getWashoffQual(int landuse, int pollut, double buildup,  //(5.1.008)
-              double runoff, double area);
-static double landuse_getExternalBuildup(int i, int p, double buildup,
-              double tStep);
+static double landuse_getWashoffQual(SWMM_Project *sp, int landuse, int pollut,
+        double buildup, double runoff, double area);
+static double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p,
+        double buildup, double tStep);
 
 //=============================================================================
 
-int  landuse_readParams(int j, char* tok[], int ntoks)
+int  landuse_readParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = land use index
 //           tok[] = array of string tokens
@@ -63,35 +65,35 @@ int  landuse_readParams(int j, char* tok[], int ntoks)
 //
 {
     char *id;
-    if ( ntoks < 1 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(LANDUSE, tok[0]);
-    if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
-    Landuse[j].ID = id;
+    if ( ntoks < 1 ) return error_setInpError(sp, ERR_ITEMS, "");
+    id = project_findID(sp, LANDUSE, tok[0]);
+    if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[0]);
+    sp->Landuse[j].ID = id;
     if ( ntoks > 1 )
     {
-        if ( ntoks < 4 ) return error_setInpError(ERR_ITEMS, "");
-        if ( ! getDouble(tok[1], &Landuse[j].sweepInterval) )
-            return error_setInpError(ERR_NUMBER, tok[1]);
-        if ( ! getDouble(tok[2], &Landuse[j].sweepRemoval) )
-            return error_setInpError(ERR_NUMBER, tok[2]);
-        if ( ! getDouble(tok[3], &Landuse[j].sweepDays0) )
-            return error_setInpError(ERR_NUMBER, tok[3]);
+        if ( ntoks < 4 ) return error_setInpError(sp, ERR_ITEMS, "");
+        if ( ! getDouble(tok[1], &sp->Landuse[j].sweepInterval) )
+            return error_setInpError(sp, ERR_NUMBER, tok[1]);
+        if ( ! getDouble(tok[2], &sp->Landuse[j].sweepRemoval) )
+            return error_setInpError(sp, ERR_NUMBER, tok[2]);
+        if ( ! getDouble(tok[3], &sp->Landuse[j].sweepDays0) )
+            return error_setInpError(sp, ERR_NUMBER, tok[3]);
     }
     else
     {
-        Landuse[j].sweepInterval = 0.0;
-        Landuse[j].sweepRemoval = 0.0;
-        Landuse[j].sweepDays0 = 0.0;
+        sp->Landuse[j].sweepInterval = 0.0;
+        sp->Landuse[j].sweepRemoval = 0.0;
+        sp->Landuse[j].sweepDays0 = 0.0;
     }
-    if ( Landuse[j].sweepRemoval < 0.0
-        || Landuse[j].sweepRemoval > 1.0 )
-        return error_setInpError(ERR_NUMBER, tok[2]);
+    if ( sp->Landuse[j].sweepRemoval < 0.0
+        || sp->Landuse[j].sweepRemoval > 1.0 )
+        return error_setInpError(sp, ERR_NUMBER, tok[2]);
     return 0;
 }
 
 //=============================================================================
 
-int  landuse_readPollutParams(int j, char* tok[], int ntoks)
+int  landuse_readPollutParams(SWMM_Project *sp, int j, char* tok[], int ntoks)
 //
 //  Input:   j = pollutant index
 //           tok[] = array of string tokens
@@ -108,25 +110,25 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     char   *id;
 
     // --- extract pollutant name & units
-    if ( ntoks < 6 ) return error_setInpError(ERR_ITEMS, "");
-    id = project_findID(POLLUT, tok[0]);
-    if ( id == NULL ) return error_setInpError(ERR_NAME, tok[0]);
+    if ( ntoks < 6 ) return error_setInpError(sp, ERR_ITEMS, "");
+    id = project_findID(sp, POLLUT, tok[0]);
+    if ( id == NULL ) return error_setInpError(sp, ERR_NAME, tok[0]);
     k = findmatch(tok[1], QualUnitsWords);
-    if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[1]);
+    if ( k < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[1]);
 
     // --- extract concen. in rain, gwater, & I&I
     for ( i = 2; i <= 4; i++ )
     {
         if ( ! getDouble(tok[i], &x[i-2]) || x[i-2] < 0.0 )
         {
-            return error_setInpError(ERR_NUMBER, tok[i]);
+            return error_setInpError(sp, ERR_NUMBER, tok[i]);
         }
     }
 
     // --- extract decay coeff. (which can be negative for growth)
     if ( ! getDouble(tok[5], &x[3]) )
     {
-        return error_setInpError(ERR_NUMBER, tok[5]);
+        return error_setInpError(sp, ERR_NUMBER, tok[5]);
     }
 
     // --- set defaults for snow only flag & co-pollut. parameters
@@ -140,7 +142,7 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     if ( ntoks >= 7 )
     {
         snowFlag = findmatch(tok[6], NoYesWords);             
-        if ( snowFlag < 0 ) return error_setInpError(ERR_KEYWORD, tok[6]);
+        if ( snowFlag < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[6]);
     }
 
     // --- check for co-pollutant
@@ -148,10 +150,10 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     {
         if ( !strcomp(tok[7], "*") )
         {
-            coPollut = project_findObject(POLLUT, tok[7]);
-            if ( coPollut < 0 ) return error_setInpError(ERR_NAME, tok[7]);
+            coPollut = project_findObject(sp, POLLUT, tok[7]);
+            if ( coPollut < 0 ) return error_setInpError(sp, ERR_NAME, tok[7]);
             if ( ! getDouble(tok[8], &coFrac) || coFrac < 0.0 )
-                return error_setInpError(ERR_NUMBER, tok[8]);
+                return error_setInpError(sp, ERR_NUMBER, tok[8]);
         }
     }
 
@@ -159,37 +161,37 @@ int  landuse_readPollutParams(int j, char* tok[], int ntoks)
     if ( ntoks >= 10 )
     {
         if ( ! getDouble(tok[9], &cDWF) || cDWF < 0.0)
-            return error_setInpError(ERR_NUMBER, tok[9]);
+            return error_setInpError(sp, ERR_NUMBER, tok[9]);
     }
 
     // --- check for initial concen.
     if ( ntoks >= 11 ) 
     {
         if ( ! getDouble(tok[10], &cInit) || cInit < 0.0 )
-            return error_setInpError(ERR_NUMBER, tok[9]);
+            return error_setInpError(sp, ERR_NUMBER, tok[9]);
     }
 
     // --- save values for pollutant object   
-    Pollut[j].ID = id;
-    Pollut[j].units = k;
-    if      ( Pollut[j].units == MG ) Pollut[j].mcf = UCF(MASS);
-    else if ( Pollut[j].units == UG ) Pollut[j].mcf = UCF(MASS) / 1000.0;
-    else                              Pollut[j].mcf = 1.0;
-    Pollut[j].pptConcen  = x[0];
-    Pollut[j].gwConcen   = x[1];
-    Pollut[j].rdiiConcen = x[2];
-    Pollut[j].kDecay     = x[3]/SECperDAY;
-    Pollut[j].snowOnly   = snowFlag;
-    Pollut[j].coPollut   = coPollut;
-    Pollut[j].coFraction = coFrac;
-    Pollut[j].dwfConcen  = cDWF;
-    Pollut[j].initConcen = cInit;
+    sp->Pollut[j].ID = id;
+    sp->Pollut[j].units = k;
+    if      ( sp->Pollut[j].units == MG ) sp->Pollut[j].mcf = UCF(sp, MASS);
+    else if ( sp->Pollut[j].units == UG ) sp->Pollut[j].mcf = UCF(sp, MASS) / 1000.0;
+    else                              sp->Pollut[j].mcf = 1.0;
+    sp->Pollut[j].pptConcen  = x[0];
+    sp->Pollut[j].gwConcen   = x[1];
+    sp->Pollut[j].rdiiConcen = x[2];
+    sp->Pollut[j].kDecay     = x[3]/SECperDAY;
+    sp->Pollut[j].snowOnly   = snowFlag;
+    sp->Pollut[j].coPollut   = coPollut;
+    sp->Pollut[j].coFraction = coFrac;
+    sp->Pollut[j].dwfConcen  = cDWF;
+    sp->Pollut[j].initConcen = cInit;
     return 0;
 }
 
 //=============================================================================
 
-int  landuse_readBuildupParams(char* tok[], int ntoks)
+int  landuse_readBuildupParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -204,35 +206,35 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
     double c[3], tmax;
 
     if ( ntoks < 3 ) return 0;
-    j = project_findObject(LANDUSE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
-    p = project_findObject(POLLUT, tok[1]);
-    if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
+    j = project_findObject(sp, LANDUSE, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
+    p = project_findObject(sp, POLLUT, tok[1]);
+    if ( p < 0 ) return error_setInpError(sp, ERR_NAME, tok[1]);
     k = findmatch(tok[2], BuildupTypeWords);
-    if ( k < 0 ) return error_setInpError(ERR_KEYWORD, tok[2]);
-    Landuse[j].buildupFunc[p].funcType = k;
+    if ( k < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[2]);
+    sp->Landuse[j].buildupFunc[p].funcType = k;
     if ( k > NO_BUILDUP )
     {
-        if ( ntoks < 7 ) return error_setInpError(ERR_ITEMS, "");
+        if ( ntoks < 7 ) return error_setInpError(sp, ERR_ITEMS, "");
         if ( k != EXTERNAL_BUILDUP ) for (i=0; i<3; i++)
         {
             if ( ! getDouble(tok[i+3], &c[i])  || c[i] < 0.0  )
             {
-                return error_setInpError(ERR_NUMBER, tok[i+3]);
+                return error_setInpError(sp, ERR_NUMBER, tok[i+3]);
             }
         }
         n = findmatch(tok[6], NormalizerWords);
-        if (n < 0 ) return error_setInpError(ERR_KEYWORD, tok[6]);
-        Landuse[j].buildupFunc[p].normalizer = n;
+        if (n < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[6]);
+        sp->Landuse[j].buildupFunc[p].normalizer = n;
     }
 
     // Find time until max. buildup (or time series for external buildup)
-    switch (Landuse[j].buildupFunc[p].funcType)
+    switch (sp->Landuse[j].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         // --- check for too small or large an exponent
         if ( c[2] > 0.0 && (c[2] < 0.01 || c[2] > 10.0) )
-            return error_setInpError(ERR_KEYWORD, tok[5]);
+            return error_setInpError(sp, ERR_KEYWORD, tok[5]);
 
         // --- find time to reach max. buildup
         // --- use zero if coeffs. are 0        
@@ -256,12 +258,12 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
 
       case EXTERNAL_BUILDUP:
         if ( !getDouble(tok[3], &c[0]) || c[0] < 0.0 )     //max. buildup
-            return error_setInpError(ERR_NUMBER, tok[3]);
+            return error_setInpError(sp, ERR_NUMBER, tok[3]);
         if ( !getDouble(tok[4], &c[1]) || c[1] < 0.0 )     //scaling factor
-            return error_setInpError(ERR_NUMBER, tok[3]);
-        n = project_findObject(TSERIES, tok[5]);           //time series
-        if ( n < 0 ) return error_setInpError(ERR_NAME, tok[4]);
-        Tseries[n].refersTo = EXTERNAL_BUILDUP;
+            return error_setInpError(sp, ERR_NUMBER, tok[3]);
+        n = project_findObject(sp, TSERIES, tok[5]);           //time series
+        if ( n < 0 ) return error_setInpError(sp, ERR_NAME, tok[4]);
+        sp->Tseries[n].refersTo = EXTERNAL_BUILDUP;
         c[2] = n;
         tmax = 0.0;
         break;
@@ -271,16 +273,16 @@ int  landuse_readBuildupParams(char* tok[], int ntoks)
     }
 
     // Assign parameters to buildup object
-    Landuse[j].buildupFunc[p].coeff[0]   = c[0];
-    Landuse[j].buildupFunc[p].coeff[1]   = c[1];
-    Landuse[j].buildupFunc[p].coeff[2]   = c[2];
-    Landuse[j].buildupFunc[p].maxDays = tmax;
+    sp->Landuse[j].buildupFunc[p].coeff[0]   = c[0];
+    sp->Landuse[j].buildupFunc[p].coeff[1]   = c[1];
+    sp->Landuse[j].buildupFunc[p].coeff[2]   = c[2];
+    sp->Landuse[j].buildupFunc[p].maxDays = tmax;
     return 0;
 }
 
 //=============================================================================
 
-int  landuse_readWashoffParams(char* tok[], int ntoks)
+int  landuse_readWashoffParams(SWMM_Project *sp, char* tok[], int ntoks)
 //
 //  Input:   tok[] = array of string tokens
 //           ntoks = number of tokens
@@ -297,30 +299,30 @@ int  landuse_readWashoffParams(char* tok[], int ntoks)
     if ( ntoks < 3 ) return 0;
     for (i=0; i<4; i++) x[i] = 0.0;
     func = NO_WASHOFF;
-    j = project_findObject(LANDUSE, tok[0]);
-    if ( j < 0 ) return error_setInpError(ERR_NAME, tok[0]);
-    p = project_findObject(POLLUT, tok[1]);
-    if ( p < 0 ) return error_setInpError(ERR_NAME, tok[1]);
+    j = project_findObject(sp, LANDUSE, tok[0]);
+    if ( j < 0 ) return error_setInpError(sp, ERR_NAME, tok[0]);
+    p = project_findObject(sp, POLLUT, tok[1]);
+    if ( p < 0 ) return error_setInpError(sp, ERR_NAME, tok[1]);
     if ( ntoks > 2 )
     {
         func = findmatch(tok[2], WashoffTypeWords);
-        if ( func < 0 ) return error_setInpError(ERR_KEYWORD, tok[2]);
+        if ( func < 0 ) return error_setInpError(sp, ERR_KEYWORD, tok[2]);
         if ( func != NO_WASHOFF )
         {
-            if ( ntoks < 5 ) return error_setInpError(ERR_ITEMS, "");
+            if ( ntoks < 5 ) return error_setInpError(sp, ERR_ITEMS, "");
             if ( ! getDouble(tok[3], &x[0]) )
-                    return error_setInpError(ERR_NUMBER, tok[3]);
+                    return error_setInpError(sp, ERR_NUMBER, tok[3]);
             if ( ! getDouble(tok[4], &x[1]) )
-                    return error_setInpError(ERR_NUMBER, tok[4]);
+                    return error_setInpError(sp, ERR_NUMBER, tok[4]);
             if ( ntoks >= 6 )
             {
                 if ( ! getDouble(tok[5], &x[2]) )
-                        return error_setInpError(ERR_NUMBER, tok[5]);
+                        return error_setInpError(sp, ERR_NUMBER, tok[5]);
             }
             if ( ntoks >= 7 )
             {
                 if ( ! getDouble(tok[6], &x[3]) )
-                        return error_setInpError(ERR_NUMBER, tok[6]);
+                        return error_setInpError(sp, ERR_NUMBER, tok[6]);
             }
         }
     }
@@ -330,32 +332,32 @@ int  landuse_readWashoffParams(char* tok[], int ntoks)
     //     x[1] = washoff expon.
     //     x[2] = sweep effic.
     //     x[3] = BMP effic.
-    if ( x[0] < 0.0 ) return error_setInpError(ERR_NUMBER, tok[3]);
+    if ( x[0] < 0.0 ) return error_setInpError(sp, ERR_NUMBER, tok[3]);
     if ( x[1] < -10.0 || x[1] > 10.0 )
-        return error_setInpError(ERR_NUMBER, tok[4]);;
+        return error_setInpError(sp, ERR_NUMBER, tok[4]);;
     if ( x[2] < 0.0 || x[2] > 100.0 )
-        return error_setInpError(ERR_NUMBER, tok[5]);
+        return error_setInpError(sp, ERR_NUMBER, tok[5]);
     if ( x[3] < 0.0 || x[3] > 100.0 )
-        return error_setInpError(ERR_NUMBER, tok[6]);
+        return error_setInpError(sp, ERR_NUMBER, tok[6]);
 
     // --- convert units of washoff coeff.
     if ( func == EXPON_WASHOFF  ) x[0] /= 3600.0;
-    if ( func == RATING_WASHOFF ) x[0] *= pow(UCF(FLOW), x[1]);
+    if ( func == RATING_WASHOFF ) x[0] *= pow(UCF(sp, FLOW), x[1]);
     if ( func == EMC_WASHOFF    ) x[0] *= LperFT3;
 
     // --- assign washoff parameters to washoff object
-    Landuse[j].washoffFunc[p].funcType = func;
-    Landuse[j].washoffFunc[p].coeff = x[0];
-    Landuse[j].washoffFunc[p].expon = x[1];
-    Landuse[j].washoffFunc[p].sweepEffic = x[2] / 100.0;
-    Landuse[j].washoffFunc[p].bmpEffic = x[3] / 100.0;
+    sp->Landuse[j].washoffFunc[p].funcType = func;
+    sp->Landuse[j].washoffFunc[p].coeff = x[0];
+    sp->Landuse[j].washoffFunc[p].expon = x[1];
+    sp->Landuse[j].washoffFunc[p].sweepEffic = x[2] / 100.0;
+    sp->Landuse[j].washoffFunc[p].bmpEffic = x[3] / 100.0;
     return 0;
 }
 
 //=============================================================================
 
-void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
-		double area, double curb)
+void  landuse_getInitBuildup(SWMM_Project *sp, TLandFactor* landFactor,
+        double* initBuildup, double area, double curb)
 //
 //  Input:   landFactor = array of land use factors
 //           initBuildup = total initial buildup of each pollutant
@@ -378,21 +380,21 @@ void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
 	double buildup;               // pollutant mass buildup
 
     // --- convert antecedent dry days into seconds
-    startDrySeconds = StartDryDays*SECperDAY;
+    startDrySeconds = sp->StartDryDays*SECperDAY;
 
     // --- examine each land use
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
         // --- initialize date when last swept
-        landFactor[i].lastSwept = StartDateTime - Landuse[i].sweepDays0;
+        landFactor[i].lastSwept = sp->StartDateTime - sp->Landuse[i].sweepDays0;
 
         // --- determine area and curb length covered by land use
         f = landFactor[i].fraction;
-        fArea = f * area * UCF(LANDAREA);
+        fArea = f * area * UCF(sp, LANDAREA);
         fCurb = f * curb;
 
         // --- determine buildup of each pollutant
-        for (p = 0; p < Nobjects[POLLUT]; p++)
+        for (p = 0; p < sp->Nobjects[POLLUT]; p++)
         {
             // --- if an initial loading was supplied, then use it to
             //     find the starting buildup over the land use
@@ -401,7 +403,7 @@ void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
 
             // --- otherwise use the land use's buildup function to 
             //     compute a buildup over the antecedent dry period
-            else buildup = landuse_getBuildup(i, p, fArea, fCurb, buildup,
+            else buildup = landuse_getBuildup(sp, i, p, fArea, fCurb, buildup,
                            startDrySeconds);
             landFactor[i].buildup[p] = buildup;
         }
@@ -410,8 +412,8 @@ void  landuse_getInitBuildup(TLandFactor* landFactor,  double* initBuildup,
 
 //=============================================================================
 
-double  landuse_getBuildup(int i, int p, double area, double curb, double buildup,
-                           double tStep)
+double  landuse_getBuildup(SWMM_Project *sp, int i, int p, double area,
+        double curb, double buildup, double tStep)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -428,36 +430,36 @@ double  landuse_getBuildup(int i, int p, double area, double curb, double buildu
     double  perUnit;                   // normalizer value (area or curb length)
 
     // --- return current buildup if no buildup function or time increment
-    if ( Landuse[i].buildupFunc[p].funcType == NO_BUILDUP || tStep == 0.0 )
+    if ( sp->Landuse[i].buildupFunc[p].funcType == NO_BUILDUP || tStep == 0.0 )
     {
         return buildup;
     }
 
     // --- see what buildup is normalized to
-    n = Landuse[i].buildupFunc[p].normalizer;
+    n = sp->Landuse[i].buildupFunc[p].normalizer;
     perUnit = 1.0;
     if ( n == PER_AREA ) perUnit = area;
     if ( n == PER_CURB ) perUnit = curb;
     if ( perUnit == 0.0 ) return 0.0;
 
     // --- buildup determined by loading time series
-    if ( Landuse[i].buildupFunc[p].funcType == EXTERNAL_BUILDUP )
+    if ( sp->Landuse[i].buildupFunc[p].funcType == EXTERNAL_BUILDUP )
     {
-        return landuse_getExternalBuildup(i, p, buildup/perUnit, tStep) *
+        return landuse_getExternalBuildup(sp, i, p, buildup/perUnit, tStep) *
                perUnit;
     }
 
     // --- determine equivalent days of current buildup
-    days = landuse_getBuildupDays(i, p, buildup/perUnit);
+    days = landuse_getBuildupDays(sp, i, p, buildup/perUnit);
 
     // --- compute buildup after adding on time increment
     days += tStep / SECperDAY;
-    return landuse_getBuildupMass(i, p, days) * perUnit;
+    return landuse_getBuildupMass(sp, i, p, days) * perUnit;
 }
 
 //=============================================================================
 
-double landuse_getBuildupDays(int i, int p, double buildup)
+double landuse_getBuildupDays(SWMM_Project *sp, int i, int p, double buildup)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -466,13 +468,13 @@ double landuse_getBuildupDays(int i, int p, double buildup)
 //  Purpose: finds the number of days corresponding to a pollutant buildup.
 //
 {
-    double c0 = Landuse[i].buildupFunc[p].coeff[0];
-    double c1 = Landuse[i].buildupFunc[p].coeff[1];
-    double c2 = Landuse[i].buildupFunc[p].coeff[2];
+    double c0 = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double c1 = sp->Landuse[i].buildupFunc[p].coeff[1];
+    double c2 = sp->Landuse[i].buildupFunc[p].coeff[2];
 
     if ( buildup == 0.0 ) return 0.0;
-    if ( buildup >= c0 ) return Landuse[i].buildupFunc[p].maxDays;   
-    switch (Landuse[i].buildupFunc[p].funcType)
+    if ( buildup >= c0 ) return sp->Landuse[i].buildupFunc[p].maxDays;   
+    switch (sp->Landuse[i].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         if ( c1*c2 == 0.0 ) return 0.0;
@@ -493,7 +495,7 @@ double landuse_getBuildupDays(int i, int p, double buildup)
 
 //=============================================================================
 
-double landuse_getBuildupMass(int i, int p, double days)
+double landuse_getBuildupMass(SWMM_Project *sp, int i, int p, double days)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -503,13 +505,13 @@ double landuse_getBuildupMass(int i, int p, double days)
 //
 {
     double b;
-    double c0 = Landuse[i].buildupFunc[p].coeff[0];
-    double c1 = Landuse[i].buildupFunc[p].coeff[1];
-    double c2 = Landuse[i].buildupFunc[p].coeff[2];
+    double c0 = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double c1 = sp->Landuse[i].buildupFunc[p].coeff[1];
+    double c2 = sp->Landuse[i].buildupFunc[p].coeff[2];
 
     if ( days == 0.0 ) return 0.0;
-    if ( days >= Landuse[i].buildupFunc[p].maxDays ) return c0;
-    switch (Landuse[i].buildupFunc[p].funcType)
+    if ( days >= sp->Landuse[i].buildupFunc[p].maxDays ) return c0;
+    switch (sp->Landuse[i].buildupFunc[p].funcType)
     {
       case POWER_BUILDUP:
         b = c1 * pow(days, c2);
@@ -531,7 +533,7 @@ double landuse_getBuildupMass(int i, int p, double days)
 
 //=============================================================================
 
-double landuse_getAvgBmpEffic(int j, int p)
+double landuse_getAvgBmpEffic(SWMM_Project *sp, int j, int p)
 //
 //  Input:   j = subcatchment index
 //           p = pollutant index
@@ -542,10 +544,10 @@ double landuse_getAvgBmpEffic(int j, int p)
 {
     int    i;
     double r = 0.0;
-    for (i = 0; i < Nobjects[LANDUSE]; i++)
+    for (i = 0; i < sp->Nobjects[LANDUSE]; i++)
     {
-        r += Subcatch[j].landFactor[i].fraction *
-             Landuse[i].washoffFunc[p].bmpEffic;
+        r += sp->Subcatch[j].landFactor[i].fraction *
+             sp->Landuse[i].washoffFunc[p].bmpEffic;
     }
     return r;
 }
@@ -554,7 +556,7 @@ double landuse_getAvgBmpEffic(int j, int p)
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double landuse_getWashoffLoad(int i, int p, double area,
+double landuse_getWashoffLoad(SWMM_Project *sp, int i, int p, double area,
     TLandFactor landFactor[], double runoff, double vOutflow)
 //
 //  Input:   i = land use index
@@ -576,14 +578,14 @@ double landuse_getWashoffLoad(int i, int p, double area,
     // --- compute concen. of pollutant in washoff (mass/ft3)
     buildup = landFactor[i].buildup[p];
     landuseArea = landFactor[i].fraction * area;
-    washoffQual = landuse_getWashoffQual(i, p, buildup, runoff, landuseArea);
+    washoffQual = landuse_getWashoffQual(sp, i, p, buildup, runoff, landuseArea);
 
     // --- compute washoff load exported (lbs or kg) from landuse
-    //     (Pollut[].mcf converts from mg (or ug) mass units to lbs (or kg)
-    washoffLoad = washoffQual * vOutflow * landuseArea / area * Pollut[p].mcf;
+    //     (sp->Pollut[].mcf converts from mg (or ug) mass units to lbs (or kg)
+    washoffLoad = washoffQual * vOutflow * landuseArea / area * sp->Pollut[p].mcf;
 
     // --- if buildup modelled, reduce it by amount of washoff
-    if ( Landuse[i].buildupFunc[p].funcType != NO_BUILDUP ||
+    if ( sp->Landuse[i].buildupFunc[p].funcType != NO_BUILDUP ||
          buildup > washoffLoad )
     {
         washoffLoad = MIN(washoffLoad, buildup);
@@ -595,28 +597,28 @@ double landuse_getWashoffLoad(int i, int p, double area,
     //     so that things will balance
     else
     {
-        massbal_updateLoadingTotals(BUILDUP_LOAD, p, washoffLoad);
+        massbal_updateLoadingTotals(sp, BUILDUP_LOAD, p, washoffLoad);
         landFactor[i].buildup[p] = 0.0;
     }
 	
     // --- apply any BMP removal to washoff
-    bmpRemoval = Landuse[i].washoffFunc[p].bmpEffic * washoffLoad;
+    bmpRemoval = sp->Landuse[i].washoffFunc[p].bmpEffic * washoffLoad;
     if ( bmpRemoval > 0.0 )
     {
-        massbal_updateLoadingTotals(BMP_REMOVAL_LOAD, p, bmpRemoval);
+        massbal_updateLoadingTotals(sp, BMP_REMOVAL_LOAD, p, bmpRemoval);
         washoffLoad -= bmpRemoval;
     }
 
     // --- return washoff load converted back to mass (mg or ug)
-    return washoffLoad / Pollut[p].mcf;
+    return washoffLoad / sp->Pollut[p].mcf;
 }
 
 //=============================================================================
 
 ////  This function was re-named and modified for release 5.1.008.  ////       //(5.1.008)
 
-double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
-                              double area)
+double landuse_getWashoffQual(SWMM_Project *sp, int i, int p, double buildup,
+        double runoff, double area)
 //
 //  Input:   i = land use index
 //           p = pollutant index
@@ -631,15 +633,15 @@ double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
 //
 {
     double cWashoff = 0.0;
-    double coeff = Landuse[i].washoffFunc[p].coeff;
-    double expon = Landuse[i].washoffFunc[p].expon;
-    int    func  = Landuse[i].washoffFunc[p].funcType;
+    double coeff = sp->Landuse[i].washoffFunc[p].coeff;
+    double expon = sp->Landuse[i].washoffFunc[p].expon;
+    int    func  = sp->Landuse[i].washoffFunc[p].funcType;
 
     // --- if no washoff function or no runoff, return 0
     if ( func == NO_WASHOFF || runoff == 0.0 ) return 0.0;
     
     // --- if buildup function exists but no current buildup, return 0
-    if ( Landuse[i].buildupFunc[p].funcType != NO_BUILDUP && buildup == 0.0 )
+    if ( sp->Landuse[i].buildupFunc[p].funcType != NO_BUILDUP && buildup == 0.0 )
         return 0.0;
 
     // --- Exponential Washoff function
@@ -647,8 +649,8 @@ double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
     {
         // --- evaluate washoff eqn. with runoff in in/hr (or mm/hr)
         //     and buildup converted from lbs (or kg) to concen. mass units
-        cWashoff = coeff * pow(runoff * UCF(RAINFALL), expon) *
-                  buildup / Pollut[p].mcf;
+        cWashoff = coeff * pow(runoff * UCF(sp, RAINFALL), expon) *
+                  buildup / sp->Pollut[p].mcf;
         cWashoff /= runoff * area;
     }
 
@@ -668,7 +670,7 @@ double landuse_getWashoffQual(int i, int p, double buildup, double runoff,
 
 //=============================================================================
 
-double landuse_getCoPollutLoad(int p, double washoff[])
+double landuse_getCoPollutLoad(SWMM_Project *sp, int p, double washoff[])
 //
 //  Input:   p = pollutant index
 //           washoff = pollut. washoff rate (mass/sec)
@@ -680,15 +682,15 @@ double landuse_getCoPollutLoad(int p, double washoff[])
     double w;
 
     // --- check if pollutant p has a co-pollutant k
-    k = Pollut[p].coPollut;
+    k = sp->Pollut[p].coPollut;
     if ( k >= 0 )
     {
         // --- compute addition to washoff from co-pollutant
-        w = Pollut[p].coFraction * washoff[k];
+        w = sp->Pollut[p].coFraction * washoff[k];
 
         // --- add washoff to buildup mass balance totals
         //     so that things will balance
-        massbal_updateLoadingTotals(BUILDUP_LOAD, p, w * Pollut[p].mcf);
+        massbal_updateLoadingTotals(sp, BUILDUP_LOAD, p, w * sp->Pollut[p].mcf);
         return w;
     }
     return 0.0;
@@ -696,7 +698,8 @@ double landuse_getCoPollutLoad(int p, double washoff[])
 
 //=============================================================================
 
-double landuse_getExternalBuildup(int i, int p, double buildup, double tStep)
+double landuse_getExternalBuildup(SWMM_Project *sp, int i, int p, double buildup,
+        double tStep)
 //
 //  Input:   i = landuse index
 //           p = pollutant index
@@ -707,19 +710,19 @@ double landuse_getExternalBuildup(int i, int p, double buildup, double tStep)
 //           given time step.
 //
 {
-    double maxBuildup = Landuse[i].buildupFunc[p].coeff[0];
-    double sf = Landuse[i].buildupFunc[p].coeff[1];              // scaling factor
-    int    ts = (int)floor(Landuse[i].buildupFunc[p].coeff[2]);  // time series index
+    double maxBuildup = sp->Landuse[i].buildupFunc[p].coeff[0];
+    double sf = sp->Landuse[i].buildupFunc[p].coeff[1];              // scaling factor
+    int    ts = (int)floor(sp->Landuse[i].buildupFunc[p].coeff[2]);  // time series index
     double rate = 0.0;
 
     // --- no buildup increment at start of simulation
-    if (NewRunoffTime == 0.0) return 0.0;
+    if (sp->NewRunoffTime == 0.0) return 0.0;
 
     // --- get buildup rate (mass/unit/day) over the interval
     if ( ts >= 0 )
     {        
-        rate = sf * table_tseriesLookup(&Tseries[ts],
-               getDateTime(NewRunoffTime), FALSE);
+        rate = sf * table_tseriesLookup(sp, &sp->Tseries[ts],
+               getDateTime(sp, sp->NewRunoffTime), FALSE);
     }
 
     // --- compute buildup at end of time interval

@@ -10,6 +10,12 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef ERROR_H
+#define ERROR_H
+
+
+#define ERR_MAXMSGLEN 256
+
 enum  ErrorType {
 
   //... Runtime Errors
@@ -172,6 +178,9 @@ enum  ErrorType {
 	  ERR_API_PATTERN_INDEX,    //509  112
       MAXERRMSG};
       
-char* error_getMsg(int i);
+const char* error_getMsg(int i);
 int   error_getCode(int i);
-int   error_setInpError(int errcode, char* s);
+int   error_setInpError(SWMM_Project *sp, int errcode, char* s);
+
+
+#endif //ERROR_H
