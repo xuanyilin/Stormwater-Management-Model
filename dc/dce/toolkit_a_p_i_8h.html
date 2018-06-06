@@ -75,7 +75,8 @@ $(function() {
 
 <p>Exportable Functions for Toolkit API.  
 <a href="#details">More...</a></p>
-
+<div class="textblock"><code>#include &quot;../src/datetime.h&quot;</code><br />
+</div>
 <p><a href="../../dc/dce/toolkit_a_p_i_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -268,6 +269,9 @@ Enumerations</h2></td></tr>
  }<tr class="memdesc:ab8ea3904bf690674e03651e94ea79095"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subcatchment result property codes.  <a href="../../dc/dce/toolkit_a_p_i_8h.html#ab8ea3904bf690674e03651e94ea79095">More...</a><br /></td></tr>
 </td></tr>
 <tr class="separator:ab8ea3904bf690674e03651e94ea79095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c6955352fb2e1079b26956b80b75e4d"><td class="memItemLeft" align="right" valign="top"><a id="a2c6955352fb2e1079b26956b80b75e4d"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#a2c6955352fb2e1079b26956b80b75e4d">SM_GagePrecip</a> <tr class="memdesc:a2c6955352fb2e1079b26956b80b75e4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gage precip array property codes. <br /></td></tr>
+</td></tr>
+<tr class="separator:a2c6955352fb2e1079b26956b80b75e4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -289,6 +293,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga8bad91e436bc64458cf0958b722781a0"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d2f/group___network_info.html#ga8bad91e436bc64458cf0958b722781a0">swmm_getObjectId</a> (int type, int index, char *id)</td></tr>
 <tr class="memdesc:ga8bad91e436bc64458cf0958b722781a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets Object ID.  <a href="../../d6/d2f/group___network_info.html#ga8bad91e436bc64458cf0958b722781a0">More...</a><br /></td></tr>
 <tr class="separator:ga8bad91e436bc64458cf0958b722781a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a158e2086f5dc8e4515637cad0a15f7b5"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#a158e2086f5dc8e4515637cad0a15f7b5">swmm_getObjectIndex</a> (int type, char *id, int *errcode)</td></tr>
+<tr class="memdesc:a158e2086f5dc8e4515637cad0a15f7b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets Object ID Index.  <a href="#a158e2086f5dc8e4515637cad0a15f7b5">More...</a><br /></td></tr>
+<tr class="separator:a158e2086f5dc8e4515637cad0a15f7b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gae66a64aee207928c902cb399222cf418"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d2f/group___network_info.html#gae66a64aee207928c902cb399222cf418">swmm_getNodeType</a> (int index, int *Ntype)</td></tr>
 <tr class="memdesc:gae66a64aee207928c902cb399222cf418"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of node with specified index.  <a href="../../d6/d2f/group___network_info.html#gae66a64aee207928c902cb399222cf418">More...</a><br /></td></tr>
 <tr class="separator:gae66a64aee207928c902cb399222cf418"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -340,6 +347,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga32311167c22094c1eb9aa69edee29d63"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga32311167c22094c1eb9aa69edee29d63">swmm_getSubcatchResult</a> (int index, int type, double *result)</td></tr>
 <tr class="memdesc:ga32311167c22094c1eb9aa69edee29d63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a result value for specified subcatchment.  <a href="../../d2/da4/group__tkfuncs.html#ga32311167c22094c1eb9aa69edee29d63">More...</a><br /></td></tr>
 <tr class="separator:ga32311167c22094c1eb9aa69edee29d63"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae618b633fecd1b9d1df93b013f93153e"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#ae618b633fecd1b9d1df93b013f93153e">swmm_getGagePrecip</a> (int index, double **GageArray)</td></tr>
+<tr class="memdesc:ae618b633fecd1b9d1df93b013f93153e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get precipitation rates for a gage.  <a href="#ae618b633fecd1b9d1df93b013f93153e">More...</a><br /></td></tr>
+<tr class="separator:ae618b633fecd1b9d1df93b013f93153e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0d52d8f1b900a0ef3d3df309c5df21f8"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga0d52d8f1b900a0ef3d3df309c5df21f8">swmm_getNodeStats</a> (int index, <a class="el" href="../../df/df5/struct_s_m___node_stats.html">SM_NodeStats</a> *nodeStats)</td></tr>
 <tr class="memdesc:ga0d52d8f1b900a0ef3d3df309c5df21f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a node statistics.  <a href="../../d2/da4/group__tkfuncs.html#ga0d52d8f1b900a0ef3d3df309c5df21f8">More...</a><br /></td></tr>
 <tr class="separator:ga0d52d8f1b900a0ef3d3df309c5df21f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -361,9 +371,6 @@ Functions</h2></td></tr>
 <tr class="memitem:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#gafb2a5a295fb4a038edb2a36eab8c576d">swmm_getPumpStats</a> (int index, <a class="el" href="../../d5/dc1/struct_s_m___pump_stats.html">SM_PumpStats</a> *pumpStats)</td></tr>
 <tr class="memdesc:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pump statistics.  <a href="../../d2/da4/group__tkfuncs.html#gafb2a5a295fb4a038edb2a36eab8c576d">More...</a><br /></td></tr>
 <tr class="separator:gafb2a5a295fb4a038edb2a36eab8c576d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc7dc3b45a313081743a5feb1d93367b"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#adc7dc3b45a313081743a5feb1d93367b">swmm_getGagePrecip</a> (int index, double *rainfall, double *snowfall, double *total)</td></tr>
-<tr class="memdesc:adc7dc3b45a313081743a5feb1d93367b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get rainfall rates for a gage.  <a href="#adc7dc3b45a313081743a5feb1d93367b">More...</a><br /></td></tr>
-<tr class="separator:adc7dc3b45a313081743a5feb1d93367b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga07cf0c633357b86bfcd0886fed0ae2fb">swmm_getSubcatchStats</a> (int index, <a class="el" href="../../d8/d26/struct_s_m___subcatch_stats.html">SM_SubcatchStats</a> *subcatchStats)</td></tr>
 <tr class="memdesc:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get subcatchment statistics.  <a href="../../d2/da4/group__tkfuncs.html#ga07cf0c633357b86bfcd0886fed0ae2fb">More...</a><br /></td></tr>
 <tr class="separator:ga07cf0c633357b86bfcd0886fed0ae2fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -385,9 +392,12 @@ Functions</h2></td></tr>
 <tr class="memitem:ga80d902400625073d8ff2c392365fde9b"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/da4/group__tkfuncs.html#ga80d902400625073d8ff2c392365fde9b">swmm_setOutfallStage</a> (int index, double stage)</td></tr>
 <tr class="memdesc:ga80d902400625073d8ff2c392365fde9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set outfall stage.  <a href="../../d2/da4/group__tkfuncs.html#ga80d902400625073d8ff2c392365fde9b">More...</a><br /></td></tr>
 <tr class="separator:ga80d902400625073d8ff2c392365fde9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af133f1fbc074c6e328acc551c61476da"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#af133f1fbc074c6e328acc551c61476da">swmm_setGagePrecip</a> (int index, double value)</td></tr>
-<tr class="memdesc:af133f1fbc074c6e328acc551c61476da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an rainfall intensity to the gage.  <a href="#af133f1fbc074c6e328acc551c61476da">More...</a><br /></td></tr>
-<tr class="separator:af133f1fbc074c6e328acc551c61476da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a900b152b178db57bd6bd48fd4423a22c"><td class="memItemLeft" align="right" valign="top">int DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#a900b152b178db57bd6bd48fd4423a22c">swmm_setGagePrecip</a> (int index, double total_precip)</td></tr>
+<tr class="memdesc:a900b152b178db57bd6bd48fd4423a22c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a total precipitation intensity to the gage.  <a href="#a900b152b178db57bd6bd48fd4423a22c">More...</a><br /></td></tr>
+<tr class="separator:a900b152b178db57bd6bd48fd4423a22c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed442d4e735bf98dc735c4e3e0662d3f"><td class="memItemLeft" align="right" valign="top">void DLLEXPORT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#aed442d4e735bf98dc735c4e3e0662d3f">freeArray</a> (void **array)</td></tr>
+<tr class="memdesc:aed442d4e735bf98dc735c4e3e0662d3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper function to free memory array allocated in SWMM.  <a href="#aed442d4e735bf98dc735c4e3e0662d3f">More...</a><br /></td></tr>
+<tr class="separator:aed442d4e735bf98dc735c4e3e0662d3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Exportable Functions for Toolkit API. </p>
@@ -427,7 +437,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00120">120</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00122">122</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -463,7 +473,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00152">152</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00154">154</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -493,7 +503,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00062">62</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00064">64</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -523,7 +533,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00111">111</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00113">113</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -559,7 +569,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00140">140</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00142">142</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -587,7 +597,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00054">54</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00056">56</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -639,7 +649,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00034">34</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00036">36</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -673,7 +683,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00082">82</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00084">84</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -719,7 +729,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00093">93</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00095">95</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -749,7 +759,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00131">131</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00133">133</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -781,7 +791,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00164">164</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00166">166</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -807,7 +817,7 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00071">71</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00073">73</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
@@ -829,13 +839,41 @@ Functions</h2></td></tr>
 </td></tr>
 </table>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00077">77</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html#l00079">79</a> of file <a class="el" href="../../dc/dce/toolkit_a_p_i_8h_source.html">toolkitAPI.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="adc7dc3b45a313081743a5feb1d93367b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adc7dc3b45a313081743a5feb1d93367b">&#9670;&nbsp;</a></span>swmm_getGagePrecip()</h2>
+<a id="aed442d4e735bf98dc735c4e3e0662d3f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed442d4e735bf98dc735c4e3e0662d3f">&#9670;&nbsp;</a></span>freeArray()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DLLEXPORT freeArray </td>
+          <td>(</td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>array</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Helper function to free memory array allocated in SWMM. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">array</td><td>The pointer to the array </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01540">1540</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
+
+</div>
+</div>
+<a id="ae618b633fecd1b9d1df93b013f93153e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae618b633fecd1b9d1df93b013f93153e">&#9670;&nbsp;</a></span>swmm_getGagePrecip()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -849,20 +887,8 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">double *&#160;</td>
-          <td class="paramname"><em>rainfall</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double *&#160;</td>
-          <td class="paramname"><em>snowfall</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double *&#160;</td>
-          <td class="paramname"><em>total</em>&#160;</td>
+          <td class="paramtype">double **&#160;</td>
+          <td class="paramname"><em>GageArray</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -872,24 +898,69 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Get rainfall rates for a gage. </p>
+<p>Get precipitation rates for a gage. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir"></td><td class="paramname">index</td><td>The index of gage </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">rainfall</td><td>rainfall rate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">snowfall</td><td>snowfall rate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">total</td><td>total precipitation rate </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">Fage</td><td>precipitation rates array [total, rainfall, snowfall] </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01251">1251</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l00980">980</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
 
 </div>
 </div>
-<a id="af133f1fbc074c6e328acc551c61476da"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af133f1fbc074c6e328acc551c61476da">&#9670;&nbsp;</a></span>swmm_setGagePrecip()</h2>
+<a id="a158e2086f5dc8e4515637cad0a15f7b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a158e2086f5dc8e4515637cad0a15f7b5">&#9670;&nbsp;</a></span>swmm_getObjectIndex()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DLLEXPORT swmm_getObjectIndex </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>type</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>errcode</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Gets Object ID Index. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir"></td><td class="paramname">type</td><td>Option code (see <a class="el" href="../../dc/dce/toolkit_a_p_i_8h.html#a1c1a5cece690c3dbb5d743336b88e0e4">SM_ObjectType</a>) </td></tr>
+    <tr><td class="paramdir"></td><td class="paramname">id</td><td>of the Object </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">Error</td><td>code </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Object Injdex </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l00294">294</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
+
+</div>
+</div>
+<a id="a900b152b178db57bd6bd48fd4423a22c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a900b152b178db57bd6bd48fd4423a22c">&#9670;&nbsp;</a></span>swmm_setGagePrecip()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -904,7 +975,7 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>value</em>&#160;</td>
+          <td class="paramname"><em>total_precip</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -914,17 +985,17 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set an rainfall intensity to the gage. </p>
+<p>Set a total precipitation intensity to the gage. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">index</td><td>The gage index. </td></tr>
-    <tr><td class="paramname">value</td><td>The new rainfall intensity. </td></tr>
+    <tr><td class="paramname">total_precip</td><td>The new total precipitation intensity. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Error code </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01277">1277</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html#l01489">1489</a> of file <a class="el" href="../../dd/d40/toolkit_a_p_i_8c_source.html">toolkitAPI.c</a>.</p>
 
 </div>
 </div>
